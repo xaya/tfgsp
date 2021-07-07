@@ -1,0 +1,41 @@
+[
+  {
+    "name": "stop",
+    "params": {}
+  },
+  {
+    "name": "getcurrentstate",
+    "params": {},
+    "returns": {}
+  },
+  {
+    "name": "getnullstate",
+    "params": {},
+    "returns": {}
+  },
+  {
+    "name": "getpendingstate",
+    "params": {},
+    "returns": {}
+  },
+  {
+    "name": "waitforchange",
+    "params": ["known block"],
+    "returns": ""
+  },
+  {
+    "name": "waitforpendingchange",
+    "params": [42],
+    "returns": {}
+  },
+  {
+    "name": "getxayaplayers",
+    "params": {},
+    "returns": {}
+  },  
+  {
+    "name": "getmoneysupply",
+    "params": {},
+    "returns": {}
+  }  
+]

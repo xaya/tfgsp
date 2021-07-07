@@ -1,0 +1,13 @@
+AM_TESTS_ENVIRONMENT = \
+  CHARON_PREFIX=$(CHARON_PREFIX) \
+  PYTHONPATH=$(PYTHONPATH):$(top_srcdir)
+
+TEST_LIBRARY = \
+  pxtest.py
+
+REGTESTS = \
+  accounts.py \
+  burnsale.py
+
+EXTRA_DIST = $(REGTESTS) $(TEST_LIBRARY)
+TESTS = $(REGTESTS)

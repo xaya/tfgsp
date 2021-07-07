@@ -1,0 +1,10 @@
+msys2 mingw windows build detected, adjustings paths
+setting new tempdir as C:/Users/assig/AppData/Local/Temp
+setting new bynary path as C:/msys64/mingw64/lib/daemon/xayad
+setting new game_daemon path as C:/msys64/home/RyuMaster/tfgsp/gametest/../src/tfd.exe
+Base directory for integration test: C:/Users/assig/AppData/Local/Temp/xayagametest_a424f773
+No accounts yet...
+Accounts are created with any moves...
+Initialising basic accounts...
+Test succeeded
+PASS accounts.py (exit status: 0)
