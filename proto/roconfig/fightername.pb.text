@@ -1,0 +1,9000 @@
+fighternames:
+{
+  key: "FighterName_Epic_Last_Boxer"
+  value:
+  {
+    AuthoredId: "0d66cfa3-128e-2904-48d4-73a55fc1cab7"
+    Name: "Boxer"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionButterscotch"
+  value:
+  {
+    AuthoredId: "0d0fe377-02ea-eca4-0810-264ce2f6df30"
+    Name: "Centurion Butterscotch"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_Of_Fudgeland"
+  value:
+  {
+    AuthoredId: "da9ffa75-43d1-63e4-ead1-ecc4af5de720"
+    Name: "Of Fudgeland"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterFrosted"
+  value:
+  {
+    AuthoredId: "6c23082c-7765-d824-f801-ddecc339412c"
+    Name: "Grand Master Frosted"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_The_Moldy"
+  value:
+  {
+    AuthoredId: "c2af0caa-787d-ecd4-89b8-1d6ac552dad1"
+    Name: "The Moldy"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_Sugary"
+  value:
+  {
+    AuthoredId: "0accbfa9-9279-56c4-db81-0e96b38e83ce"
+    Name: "Sugarie"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_Of_Jellyton"
+  value:
+  {
+    AuthoredId: "e76dca62-0d94-ba54-99fb-9707f7b9d54c"
+    Name: "Of Jellyton"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_Pudding"
+  value:
+  {
+    AuthoredId: "5f081a07-09a1-f2c4-fa09-a3b7df0c625f"
+    Name: "Pudding"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirRootBeer"
+  value:
+  {
+    AuthoredId: "88d68be1-ae45-7f94-ead1-b0fd185f60b7"
+    Name: "Sir Root Beer"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterFizzy"
+  value:
+  {
+    AuthoredId: "7b374c83-39a0-d264-58ca-bb3dd3e1a96f"
+    Name: "Grand Master Fizzy"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_The_Nutty"
+  value:
+  {
+    AuthoredId: "9e8b549f-7758-89d4-c883-bf3ee9907709"
+    Name: "The Nutty"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_Everlasting"
+  value:
+  {
+    AuthoredId: "4adc8af6-c8c7-69f4-c93e-e2ebbd1400d7"
+    Name: "Everlasting"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirGrumpy"
+  value:
+  {
+    AuthoredId: "450d815b-10b8-71d4-a9e2-29559c205101"
+    Name: "Sir Grumpy"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_Counterpuncher"
+  value:
+  {
+    AuthoredId: "e8ebd649-5a51-cb64-d8b4-604265091540"
+    Name: "Counterpuncher"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_Checkhook"
+  value:
+  {
+    AuthoredId: "16c9d5dc-7bc8-9504-a969-2f26d6383fe9"
+    Name: "Checkhook"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_The_Fresh"
+  value:
+  {
+    AuthoredId: "8f0b3c0f-7421-9264-588c-83a5ea6879a7"
+    Name: "The Fresh"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterLazy"
+  value:
+  {
+    AuthoredId: "bb978b77-a5ee-9e24-897a-4f61a13ce5bf"
+    Name: "Grand Master Lazy"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_The_Moldy"
+  value:
+  {
+    AuthoredId: "e56769ed-cc14-2224-3837-f0fd353c7bf6"
+    Name: "The Moldy"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiCaramelized"
+  value:
+  {
+    AuthoredId: "81d1a8bc-a727-ff14-3b28-dd5319a482b4"
+    Name: "Senpai Caramelized"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterButtered"
+  value:
+  {
+    AuthoredId: "c88206f6-5a76-3c04-d83a-3c36f2fb0d8c"
+    Name: "Grand Master Buttered"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionMelty"
+  value:
+  {
+    AuthoredId: "ad32099a-befe-a0e4-6948-aa6de144728e"
+    Name: "Centurion Melty"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiPrechewed"
+  value:
+  {
+    AuthoredId: "2232a3a3-f164-9754-688a-aa11aaedc6de"
+    Name: "Senpai Prechewed"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirRollie"
+  value:
+  {
+    AuthoredId: "b3d25af6-7166-38a4-588d-bbc34e72f774"
+    Name: "Sir Rollie"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_Pie"
+  value:
+  {
+    AuthoredId: "69216dae-20b0-e0e4-eaae-cf5d560e6909"
+    Name: "Pie"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionaryIcey"
+  value:
+  {
+    AuthoredId: "cdfd5bba-322e-b9b4-7a4c-462a74f43444"
+    Name: "Legionary Icey"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiCandied"
+  value:
+  {
+    AuthoredId: "c355feaf-01ed-2364-1903-249b2f0789e5"
+    Name: "Senpai Candied"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_Fighter"
+  value:
+  {
+    AuthoredId: "3d69920b-201c-c9a4-aaaf-cf8abbbf3d9c"
+    Name: "Fighter"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressAngry"
+  value:
+  {
+    AuthoredId: "9a1de7b4-c0b4-42a4-8af2-023fac1f2aa1"
+    Name: "Mistress Angry"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionBadass"
+  value:
+  {
+    AuthoredId: "1cfd5434-40de-84b4-38ef-e941c399e52b"
+    Name: "Centurion Badass"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Coconut"
+  value:
+  {
+    AuthoredId: "6cdc41b1-c364-0a84-bbe4-ceae58497bb8"
+    Name: "Coconut"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_Southpaw"
+  value:
+  {
+    AuthoredId: "55ec6f01-2655-0d04-eab9-c89c974d7306"
+    Name: "Southpaw"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterFruity"
+  value:
+  {
+    AuthoredId: "b9c5c24f-0ee8-e2e4-e956-f0b571556384"
+    Name: "Grand Master Fruity"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_The_Crazy"
+  value:
+  {
+    AuthoredId: "8cfa818d-97b6-e484-3839-da2979e2c39d"
+    Name: "The Crazy"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_Of_Puddingham"
+  value:
+  {
+    AuthoredId: "d1a4f1aa-5843-b114-8879-e31a2f08ac61"
+    Name: "Of Puddingham"
+    Position: 1
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Fried"
+  value:
+  {
+    AuthoredId: "ba94e5d7-aa87-e304-0839-7f79a7471d36"
+    Name: "Fried"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_The_Melty"
+  value:
+  {
+    AuthoredId: "74705edf-a7ba-07b4-8925-27fd08fefd4e"
+    Name: "The Melty"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_Sucker"
+  value:
+  {
+    AuthoredId: "ec0ac184-c662-0b54-6a11-5cec45127d4b"
+    Name: "Sucker"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_OfCakerton"
+  value:
+  {
+    AuthoredId: "7b00a1e9-d835-6e54-7b8d-8db7ad95516d"
+    Name: "Of Cakerton"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionThornberry"
+  value:
+  {
+    AuthoredId: "01273cc6-c240-4e64-59cd-072d6d27d66f"
+    Name: "Centurion Thornbery"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirSneezy"
+  value:
+  {
+    AuthoredId: "f17fdc33-efde-2db4-8897-26a38b8f4ac2"
+    Name: "Sir Sneezy"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionaryHotButtered"
+  value:
+  {
+    AuthoredId: "2788bbe1-261e-09b4-7806-b083c1087e55"
+    Name: "Legionary Hot Buttered"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Dusted"
+  value:
+  {
+    AuthoredId: "1359296d-e943-0e24-a8d8-01a433286f83"
+    Name: "Dusted"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiButtered"
+  value:
+  {
+    AuthoredId: "0292481d-b153-bcb4-da26-b829d5ab929a"
+    Name: "Senpai Buttered"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionPineapple"
+  value:
+  {
+    AuthoredId: "23f8d7ed-0878-7234-b8b9-f1376ea99101"
+    Name: "Centurion Pineapple"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_The_Lemony"
+  value:
+  {
+    AuthoredId: "7aa77b57-1a44-1be4-e9c0-d7acb87d6e6c"
+    Name: "The Lemony"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_Chewy"
+  value:
+  {
+    AuthoredId: "314bdee2-b00d-9b64-895c-2eeae514cc61"
+    Name: "Chewy"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionCaramelized"
+  value:
+  {
+    AuthoredId: "d223ffce-c202-8fc4-da14-d33929ca08ee"
+    Name: "Centurion Caramelized"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirMinty"
+  value:
+  {
+    AuthoredId: "aac99205-872a-2254-c805-de9e8e0e0709"
+    Name: "Sir Minty"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_Counterpuncher"
+  value:
+  {
+    AuthoredId: "7f0b7a03-477c-b684-8b3b-f840cde7412d"
+    Name: "Counterpuncher"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressFrenchVanilla"
+  value:
+  {
+    AuthoredId: "007156ea-6b1e-ac14-2a57-23d798d798ee"
+    Name: "Mistress French Vanilla"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterMelon"
+  value:
+  {
+    AuthoredId: "2115aff4-90e4-e614-cb52-e724a8b72e48"
+    Name: "Grand Master Melon"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressOrange"
+  value:
+  {
+    AuthoredId: "67a87c3a-f037-b914-6a85-076d32432168"
+    Name: "Mistress Orange"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_The_Crusty"
+  value:
+  {
+    AuthoredId: "4c52f9ab-8db2-7444-e9a9-f32f4689a959"
+    Name: "The Crusty"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_Thornberry"
+  value:
+  {
+    AuthoredId: "e7e0a11a-045d-34c4-d9fc-20eb93f711af"
+    Name: "Thornbery"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressFresh"
+  value:
+  {
+    AuthoredId: "bf142567-e96b-94d4-fb2e-4ecf09db3ac2"
+    Name: "Mistress Fresh"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_Last_Cake"
+  value:
+  {
+    AuthoredId: "0f88abb7-2f31-1754-4b99-7941a7b4503d"
+    Name: "Cake"
+    Position: 1
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirDeepFried"
+  value:
+  {
+    AuthoredId: "8daba0f5-c1b7-cab4-389d-453e2cdb7278"
+    Name: "Sir Deep Fried"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirSquishy"
+  value:
+  {
+    AuthoredId: "9b28a5a2-d6db-8414-5b11-8b0a7b07551b"
+    Name: "Sir Squishy"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterEverlasting"
+  value:
+  {
+    AuthoredId: "7473fee6-5aa2-6314-d9c4-9590c54686c2"
+    Name: "Grand Master Everlasting"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressCrunchy"
+  value:
+  {
+    AuthoredId: "74d49bf0-3f51-5554-4be8-cc083eef550e"
+    Name: "Mistress Crunchy"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressMelted"
+  value:
+  {
+    AuthoredId: "3a7a68c4-afbb-7124-fab8-1ba0f7c8f54d"
+    Name: "Mistress Melted"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_Cake"
+  value:
+  {
+    AuthoredId: "679aef91-11c6-13d4-da2a-2c9337f71a5e"
+    Name: "Cake"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiBlueberry"
+  value:
+  {
+    AuthoredId: "99cfca2a-bd21-9354-88ba-f2da7081f8a8"
+    Name: "Senpai Blueberry"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterThornberry"
+  value:
+  {
+    AuthoredId: "44563416-caf4-5d04-6888-6ce5f5a94d14"
+    Name: "Grand Master Thornbery"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressMelon"
+  value:
+  {
+    AuthoredId: "8c49243c-6bbd-d174-7813-193e8103af97"
+    Name: "Mistress Melon"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_Last_Pickle"
+  value:
+  {
+    AuthoredId: "ba5b6463-36b1-bf34-9a4b-cdd0b940b230"
+    Name: "Pickle"
+    Position: 1
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_Raspberry"
+  value:
+  {
+    AuthoredId: "f404bb91-9566-c184-8b07-3b1b5a99afe7"
+    Name: "Rasperry"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Brandied"
+  value:
+  {
+    AuthoredId: "44b52cdc-0dea-49c4-9956-f70db85a019b"
+    Name: "Brandied"
+    Position: 0
+    Quality: 0
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_Grumpy"
+  value:
+  {
+    AuthoredId: "e5161799-7faf-c874-5831-155b48118d5d"
+    Name: "Grumpy"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressCrazy"
+  value:
+  {
+    AuthoredId: "9ebb1137-91ac-9d14-8add-484db4991f3c"
+    Name: "Mistress Crazy"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirSnozzberry"
+  value:
+  {
+    AuthoredId: "5e70012f-3b16-b3d4-6a5e-224e3d81bb5e"
+    Name: "Sir Snozzberry"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_The_Bitter"
+  value:
+  {
+    AuthoredId: "12a77f50-2447-b344-bb0f-7b29d9187ced"
+    Name: "The Bitter"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressFlying"
+  value:
+  {
+    AuthoredId: "24d57323-3b53-7fd4-7982-a2157c207e52"
+    Name: "Mistress Flying"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_The_Very_Tasty"
+  value:
+  {
+    AuthoredId: "8faf5746-6ba0-0a54-19e0-34048e56542c"
+    Name: "The Very Tasty"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirMango"
+  value:
+  {
+    AuthoredId: "05b7a38f-33fc-b074-6b4c-ab9d03f5a2a4"
+    Name: "Sir Mango"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_Noogie"
+  value:
+  {
+    AuthoredId: "7f7f8f6d-73d0-e6d4-5b17-723fb2f44f5a"
+    Name: "Noogie"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_TravelSized"
+  value:
+  {
+    AuthoredId: "ec517e02-0445-2c04-685f-1af13604637f"
+    Name: "Travel Sized"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_The_Candy_Coated"
+  value:
+  {
+    AuthoredId: "f64788bd-f745-c1c4-2b15-a2c0af618fe3"
+    Name: "The Candy Coated"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiLifeSized"
+  value:
+  {
+    AuthoredId: "e5acc6b8-424d-4fc4-a91f-367da5e8c4ab"
+    Name: "Senpai Life Sized"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirBiteSized"
+  value:
+  {
+    AuthoredId: "f74a0d94-d060-8bf4-3b04-ce85f3cda17f"
+    Name: "Sir Bite Sized"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirLimon"
+  value:
+  {
+    AuthoredId: "841ac00a-c513-7c14-79e6-34aed0ede0f6"
+    Name: "Sir Limon"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiSnozzberry"
+  value:
+  {
+    AuthoredId: "5a000301-3c4f-d834-1bb2-9d49261cebbc"
+    Name: "Senpai Snozzberry"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Powdered"
+  value:
+  {
+    AuthoredId: "3106fb8f-7b8c-38d4-0b16-285c1089a95d"
+    Name: "Powdered"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterNutty"
+  value:
+  {
+    AuthoredId: "ee1d80dd-66fb-3d14-f998-5c7e02afcd86"
+    Name: "Grand Master Nutty"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_Dusted"
+  value:
+  {
+    AuthoredId: "b4915b5f-53f8-a154-1b20-778d05ce70e3"
+    Name: "Dusted"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionVanilla"
+  value:
+  {
+    AuthoredId: "ba2ea7ef-5af8-6304-ea4f-78b7f7c65192"
+    Name: "Centurion Vanilla"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_Last_Kicker"
+  value:
+  {
+    AuthoredId: "34b015db-9d72-55a4-3a39-5ca8238e7361"
+    Name: "Kicker"
+    Position: 1
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterFrenchVanilla"
+  value:
+  {
+    AuthoredId: "6142da44-1d30-2c84-4927-d4be01c0d110"
+    Name: "Grand Master French Vanilla"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Stale"
+  value:
+  {
+    AuthoredId: "80ec0f53-7e94-e4b4-8b4e-bde083f1cacc"
+    Name: "Stale"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionAngry"
+  value:
+  {
+    AuthoredId: "cad3c4c3-6e08-d504-a969-0ff585681407"
+    Name: "Centurion Angry"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_The_Hardened"
+  value:
+  {
+    AuthoredId: "31a05e98-7677-9c84-fb0f-ed95587adf8f"
+    Name: "The Hardened"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionaryCrusty"
+  value:
+  {
+    AuthoredId: "3976235f-8997-22c4-e9ab-9b424d553027"
+    Name: "Legionary Crusty"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_Pop"
+  value:
+  {
+    AuthoredId: "65b11fde-60ab-10f4-2b96-c51164dd0760"
+    Name: "Pop"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_Drizzled"
+  value:
+  {
+    AuthoredId: "8e15a5b9-3951-d454-7b2d-e3ea9617f4d8"
+    Name: "Drizzled"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterCrunchy"
+  value:
+  {
+    AuthoredId: "9bdb23c8-55ef-d9a4-59c3-90ef6ee6053d"
+    Name: "Grand Master Crunchy"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiSingleServing"
+  value:
+  {
+    AuthoredId: "ac2472b7-9e76-8214-d99a-419bd87da560"
+    Name: "Senpai Single Serving"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiMelon"
+  value:
+  {
+    AuthoredId: "2a6b1e46-e26a-d074-fad5-a08fe1ec902e"
+    Name: "Senpai Melon"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionGreenApple"
+  value:
+  {
+    AuthoredId: "4d677206-4e08-6d54-2b1d-a337f97f6d5d"
+    Name: "Centurion Green Apple"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiThornberry"
+  value:
+  {
+    AuthoredId: "34a848f8-8c45-07a4-5930-0591153e7051"
+    Name: "Senpai Thornbery"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_Sneezy"
+  value:
+  {
+    AuthoredId: "1055650f-c3ef-96f4-19da-2d15e86ed278"
+    Name: "Sneezy"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_Fightah"
+  value:
+  {
+    AuthoredId: "f9b383ea-7e4d-2cc4-ebb5-1d98ea48eba9"
+    Name: "Fightah"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressSpicy"
+  value:
+  {
+    AuthoredId: "cb98879c-6a6b-f074-a992-735ff0cb26be"
+    Name: "Mistress Spicy"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterSquishy"
+  value:
+  {
+    AuthoredId: "9fdfe4bf-c5db-0b24-680f-5f23cf8b4886"
+    Name: "Grand Master Squishy"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_OfLicorice"
+  value:
+  {
+    AuthoredId: "56e5889f-443b-dcf4-1825-bd1725f2a791"
+    Name: "Of Licorice"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_Last_Clinch"
+  value:
+  {
+    AuthoredId: "149aae2f-d2c3-d5e4-2acc-c96e639f69b7"
+    Name: "Clinch"
+    Position: 1
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionaryFrenchVanilla"
+  value:
+  {
+    AuthoredId: "5adb6398-55cb-c844-6b92-f1622c89b492"
+    Name: "Legionary French Vanilla"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterRolly"
+  value:
+  {
+    AuthoredId: "d2f2f46f-b397-4a34-aa68-82fe34281432"
+    Name: "Grand Master Rolly"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressBashful"
+  value:
+  {
+    AuthoredId: "904e8c10-671c-41a4-7b1b-8b96d146151b"
+    Name: "Mistress Vanilla"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirGrouchy"
+  value:
+  {
+    AuthoredId: "8994cb35-70c1-4af4-1a37-4fb37dc8010c"
+    Name: "Sir Grouchy"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_The_Angry"
+  value:
+  {
+    AuthoredId: "958e07db-6269-1484-e8e1-0fb88ed9f513"
+    Name: "The Angry"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_The_Chewy"
+  value:
+  {
+    AuthoredId: "4d69d7dc-2bd5-66a4-39b0-e8471fbd1ee8"
+    Name: "The Chewy"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_The_Frosted"
+  value:
+  {
+    AuthoredId: "a64b86d7-0808-ed44-4b84-82b4caff085e"
+    Name: "The Frosted"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionarySalted"
+  value:
+  {
+    AuthoredId: "8b5051b4-0bc3-f734-5a7d-811b17bd4e81"
+    Name: "Legionary Salted"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_The_Everlasting"
+  value:
+  {
+    AuthoredId: "6d171ecc-33a8-3774-386b-026d227f88e2"
+    Name: "The Everlasting"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterMelty"
+  value:
+  {
+    AuthoredId: "96527d39-290a-e224-a917-8d458e22f9fd"
+    Name: "Grand Master Melty"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiCoconut"
+  value:
+  {
+    AuthoredId: "418b3f78-25c8-da04-193f-521a24f9d885"
+    Name: "Senpai Coconut"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Baked"
+  value:
+  {
+    AuthoredId: "43961912-fa95-6174-1a0b-1341efd440de"
+    Name: "Baked"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Glazed"
+  value:
+  {
+    AuthoredId: "b50c8ab4-fb1a-e8d4-7a9d-9c90824cbf28"
+    Name: "Glazed"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Crunchy"
+  value:
+  {
+    AuthoredId: "f465a442-74ea-ca94-082f-e9b6c55f075a"
+    Name: "Crunchy"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionaryBitter"
+  value:
+  {
+    AuthoredId: "799ff409-5c76-9c04-1b46-cb2a34fcd368"
+    Name: "Legionary Bitter"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionFresh"
+  value:
+  {
+    AuthoredId: "2be06101-352f-1b04-2a94-6e44a22c5b49"
+    Name: "Centurion Fresh"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionMoldy"
+  value:
+  {
+    AuthoredId: "ef98f9f9-098c-2204-eb62-3cbaa8e4f961"
+    Name: "Centurion Moldy"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionEverlasting"
+  value:
+  {
+    AuthoredId: "775352e1-8065-06a4-1b5b-1bf1e11e4435"
+    Name: "Centurion Everlasting"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_DeepFried"
+  value:
+  {
+    AuthoredId: "3e7d36b1-f441-3164-0bea-86f267cbb7aa"
+    Name: "Deep Fried"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionFrenchVanilla"
+  value:
+  {
+    AuthoredId: "51164421-2a1e-d154-9ae7-9a5d3d290fa0"
+    Name: "Centurion French Vanilla"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionaryTravelSized"
+  value:
+  {
+    AuthoredId: "696e4baf-dac6-fa84-8a47-ffdb0621e469"
+    Name: "Legionary Travel Sized"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_The_Chocolate"
+  value:
+  {
+    AuthoredId: "c1971eae-5758-a174-ebab-0f88fbd1bc50"
+    Name: "The Chocolate"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_Slugger"
+  value:
+  {
+    AuthoredId: "c87f34ca-2d8e-9844-a841-5f5885556bf7"
+    Name: "Slugger"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterDusted"
+  value:
+  {
+    AuthoredId: "b5c73c2f-8e6b-bd14-0b05-b5bc0483aa4a"
+    Name: "Grand Master Dusted"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiNutty"
+  value:
+  {
+    AuthoredId: "67c32986-2332-be74-6ac9-2542461959e9"
+    Name: "Senpai Nutty"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_The_Strong"
+  value:
+  {
+    AuthoredId: "a9e36886-7152-b714-0901-740cd65ac2e6"
+    Name: "The Strong"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_Last_Biter"
+  value:
+  {
+    AuthoredId: "9f6e9b68-13e5-2064-eaaf-fadf75c034aa"
+    Name: "Biter"
+    Position: 1
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_The_Fried"
+  value:
+  {
+    AuthoredId: "23957a84-130b-8e64-6a30-103a75a10af0"
+    Name: "The Fried"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiCherry"
+  value:
+  {
+    AuthoredId: "afe7095e-7243-8c14-6bef-fb8eeab1977f"
+    Name: "Senpai Cherry"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_The_Fresh"
+  value:
+  {
+    AuthoredId: "4b54fcac-8dc2-cec4-1afa-db3938539922"
+    Name: "The Fresh"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_The_Brandied"
+  value:
+  {
+    AuthoredId: "caae666f-3767-9c04-9ab9-65cd3dae47fc"
+    Name: "The Brandied"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_The_Moldy"
+  value:
+  {
+    AuthoredId: "302b1e92-cdc0-ec84-39f6-6caa531181a9"
+    Name: "The Moldy"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_Last_Pie"
+  value:
+  {
+    AuthoredId: "6618d93a-3257-c484-3961-49272bb666f8"
+    Name: "Pie"
+    Position: 1
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_Jelly"
+  value:
+  {
+    AuthoredId: "946d02ab-7021-9144-9b31-9f2bcaa466e9"
+    Name: "Jelly"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_HotButtered"
+  value:
+  {
+    AuthoredId: "51cb6c27-568d-8874-b9f4-bfda37effb3d"
+    Name: "Hot Buttered"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_Last_Superstar"
+  value:
+  {
+    AuthoredId: "f3278580-b13b-f734-c8b5-e8b7487a8d3d"
+    Name: "Superstar"
+    Position: 1
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterBashful"
+  value:
+  {
+    AuthoredId: "a4001999-a632-8064-393c-e608dc4713f2"
+    Name: "Grand Master Vanilla"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionaryMinty"
+  value:
+  {
+    AuthoredId: "b23339e9-eca7-ef94-cad1-09dbb151fdf6"
+    Name: "Legionary Minty"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_Fast"
+  value:
+  {
+    AuthoredId: "c22b1ff4-a7ff-4cf4-6926-d94c4c59ca75"
+    Name: "Fast"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirPineapple"
+  value:
+  {
+    AuthoredId: "15f00b33-c08f-96f4-7871-be3c3e273b0e"
+    Name: "Sir Pineapple"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionaryCreamy"
+  value:
+  {
+    AuthoredId: "84fc719b-543a-bd74-3863-4d21c394a1f7"
+    Name: "Legionary Creamy"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_Fightah"
+  value:
+  {
+    AuthoredId: "e00d4921-f6b6-f484-bb5e-a181b884014c"
+    Name: "Fightah"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_Checkhook"
+  value:
+  {
+    AuthoredId: "91f468f2-1a30-bfe4-7a68-c128e81183cb"
+    Name: "Checkhook"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_The_Chocolate"
+  value:
+  {
+    AuthoredId: "d2ae971e-81d9-3e14-3a1d-fc2899053ee4"
+    Name: "The Chocolate"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressChewy"
+  value:
+  {
+    AuthoredId: "92191c2c-2f2a-b354-c91b-32c82619f739"
+    Name: "Mistress Chewy"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_Last_Switch_Hitter"
+  value:
+  {
+    AuthoredId: "a851b866-4a05-abf4-9927-6b95deefea88"
+    Name: "Switch-Hitter"
+    Position: 1
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_BiteSized"
+  value:
+  {
+    AuthoredId: "890adc00-9389-a5f4-3ac3-89ffd2634b8a"
+    Name: "Bite Sized"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Rolled"
+  value:
+  {
+    AuthoredId: "00d445d7-4a7e-97f4-1a64-d2ad06964b90"
+    Name: "Rolled"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Tasty"
+  value:
+  {
+    AuthoredId: "c6a1d77b-5fd6-6474-6b0a-de10455ca247"
+    Name: "Tasty"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressBrandied"
+  value:
+  {
+    AuthoredId: "4e977d4e-2434-6eb4-ebdb-3c5f65b60063"
+    Name: "Mistress Brandied"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_Of_Sourway"
+  value:
+  {
+    AuthoredId: "252a6834-8736-ee84-6b94-b7babe5400e0"
+    Name: "Of Sourway"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_The_Crazy"
+  value:
+  {
+    AuthoredId: "4b503d25-3b0c-39b4-e906-75f2b2daab03"
+    Name: "The Crazy"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirChopped"
+  value:
+  {
+    AuthoredId: "839d85ac-c64c-1c44-085e-c805cecf4f3b"
+    Name: "Sir Chopped"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirThornberry"
+  value:
+  {
+    AuthoredId: "03717946-3c23-3fe4-7b83-83c77c03a2ff"
+    Name: "Sir Thornbery"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Cheesy"
+  value:
+  {
+    AuthoredId: "5b046405-fbfe-afd4-9bfc-5466ed3417d8"
+    Name: "Cheesy"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiMelty"
+  value:
+  {
+    AuthoredId: "75c4b0b6-82a7-bf34-686b-acefc24e62b8"
+    Name: "Senpai Melty"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Snozzberry"
+  value:
+  {
+    AuthoredId: "455ea0b5-4ac7-f994-b866-5923032a4544"
+    Name: "Snozzberry"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_The_Lazy"
+  value:
+  {
+    AuthoredId: "17b203a8-25e8-5704-da3a-bce3411c4b8d"
+    Name: "The Lazy"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_Last_Pop"
+  value:
+  {
+    AuthoredId: "9e24f6ae-4105-c4e2-db2a-72ac6e32553f"
+    Name: "Pop"
+    Position: 1
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionSour"
+  value:
+  {
+    AuthoredId: "bc772513-d7f8-9b44-59f0-c96597e2f5b7"
+    Name: "Centurion Sour"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_The_Boiled"
+  value:
+  {
+    AuthoredId: "c24fd4e2-1891-98c4-9adb-1d9439b2ca95"
+    Name: "The Boiled"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Dopey"
+  value:
+  {
+    AuthoredId: "08add95b-abc6-9ac4-385e-3dbb5670642d"
+    Name: "Bashful"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_Pickle"
+  value:
+  {
+    AuthoredId: "d33422cf-0d87-5454-ba5a-6e21e4599bdb"
+    Name: "Pickle"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Malted"
+  value:
+  {
+    AuthoredId: "70c054dc-2682-06b4-a912-df0ba81beb8b"
+    Name: "Malted"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionaryHappy"
+  value:
+  {
+    AuthoredId: "3af1dfee-6351-8144-59e8-886fec10dd3c"
+    Name: "Legionary Happy"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionSpicy"
+  value:
+  {
+    AuthoredId: "cb0461c2-3edc-fa04-eb5f-0e34885a6c30"
+    Name: "Centurion Spicy"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_Breaker"
+  value:
+  {
+    AuthoredId: "547e506c-4e01-fbe4-f813-1cb54728c116"
+    Name: "Breaker"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressPowdered"
+  value:
+  {
+    AuthoredId: "a5ef2ac6-ccaa-c884-281c-c0bd150ec7ee"
+    Name: "Mistress Powdered"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Caramelized"
+  value:
+  {
+    AuthoredId: "714d28d7-74de-f004-99ca-2c64d11b786c"
+    Name: "Caramelized"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Salty"
+  value:
+  {
+    AuthoredId: "d2f5073c-ca5b-ab84-899d-93c1c34a1380"
+    Name: "Salty"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_The_Plump"
+  value:
+  {
+    AuthoredId: "4d062f30-6675-8024-db7b-3a6cbce38dde"
+    Name: "The Plump"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_The_Prechewed"
+  value:
+  {
+    AuthoredId: "07e19c8d-a935-e6d4-bb6d-9acb9c891993"
+    Name: "The Prechewed"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_The_Single_Serving"
+  value:
+  {
+    AuthoredId: "da89da52-de3c-6b74-6a3f-2f3a04c7ccf0"
+    Name: "The Single Serving"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionaryMango"
+  value:
+  {
+    AuthoredId: "59540aa5-2370-53a4-f983-f7518183cf6f"
+    Name: "Legionary Mango"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirLemon"
+  value:
+  {
+    AuthoredId: "72360f56-3c96-08b4-1b91-36a572d643ac"
+    Name: "Sir Lemony"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_The_Sugary"
+  value:
+  {
+    AuthoredId: "9b047a3e-a06f-9524-bbb8-7043d181fd25"
+    Name: "The Sugary"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_Biter"
+  value:
+  {
+    AuthoredId: "4d08e759-5a5e-5414-dbd8-b47542bce3a7"
+    Name: "Biter"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiSour"
+  value:
+  {
+    AuthoredId: "df7a7826-c79d-ddd4-19e8-ae45761c6606"
+    Name: "Senpai Sour"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionaryLimon"
+  value:
+  {
+    AuthoredId: "3d5073ff-ef1e-a0c4-ab62-ab33506fabea"
+    Name: "Legionary Limon"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_The_Angry"
+  value:
+  {
+    AuthoredId: "a743ed2a-07e7-6174-89a7-99fe14450eb0"
+    Name: "The Angry"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_Pie"
+  value:
+  {
+    AuthoredId: "ed0ad4cf-e149-8ff4-daf7-470913e164b4"
+    Name: "Pie"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressGrouchy"
+  value:
+  {
+    AuthoredId: "c3b600ec-6f65-1754-7893-7915f4ca8b66"
+    Name: "Mistress Grouchy"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterAngry"
+  value:
+  {
+    AuthoredId: "06fa50f5-3ff9-0a24-09f0-b0531110d297"
+    Name: "Grand Master Angry"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_The_Crunchy"
+  value:
+  {
+    AuthoredId: "702b9682-1b20-5f64-89b1-e1618d95475e"
+    Name: "The Crunchy"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_Fried"
+  value:
+  {
+    AuthoredId: "539be2c0-d837-db64-48e0-44de180b7a17"
+    Name: "Fried"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_Kicker"
+  value:
+  {
+    AuthoredId: "27ead6fc-3970-0b24-3a61-6de0dae944a2"
+    Name: "Kicker"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_Sundae"
+  value:
+  {
+    AuthoredId: "8c738b0c-3740-98c4-89d0-afc020cebdb9"
+    Name: "Sundae"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_Last_Boxer"
+  value:
+  {
+    AuthoredId: "4d1f8487-cbfb-d4a4-3bba-1afdf5f4369b"
+    Name: "Boxer"
+    Position: 1
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressToffee"
+  value:
+  {
+    AuthoredId: "d8274d19-1cd7-1064-d926-54e853e81054"
+    Name: "Mistress Toffee"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionLimon"
+  value:
+  {
+    AuthoredId: "afe3a430-5a28-8364-4816-d5e635fffe68"
+    Name: "Centurion Limon"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_Swarmer"
+  value:
+  {
+    AuthoredId: "38615891-5b20-4d04-08f1-78326bb08c6a"
+    Name: "Swarmer"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressSweetAndSour"
+  value:
+  {
+    AuthoredId: "2cdc510a-7e5d-a1e4-fa6c-297a75096938"
+    Name: "Mistress Sweet and Sour"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirBlueberry"
+  value:
+  {
+    AuthoredId: "61239c6d-f8b7-d894-aa22-8f5c3277286f"
+    Name: "Sir Blueberry"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_Sucker"
+  value:
+  {
+    AuthoredId: "1e637829-09e6-0004-088e-ee921412a109"
+    Name: "Sucker"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionRaspberry"
+  value:
+  {
+    AuthoredId: "cc330116-0938-4cf4-db7a-b920c67881bc"
+    Name: "Centurion Rasperry"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_The_Everlasting"
+  value:
+  {
+    AuthoredId: "2624782d-7c0f-3af4-b83f-e6c85f70fb70"
+    Name: "The Everlasting"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_Fighter"
+  value:
+  {
+    AuthoredId: "65972c8e-af69-b824-2824-42c3da9b417f"
+    Name: "Fighter"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_The_Grumpy"
+  value:
+  {
+    AuthoredId: "de7ff712-290c-ef84-ea17-814c7bd8e21f"
+    Name: "The Grumpy"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_The_Melted"
+  value:
+  {
+    AuthoredId: "0c884c92-620a-36e4-5a10-324b9bb82b76"
+    Name: "The Melted"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_The_Candied"
+  value:
+  {
+    AuthoredId: "3ba562b0-ed37-16b4-7aef-fd2426f367be"
+    Name: "The Candied"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_Clinch"
+  value:
+  {
+    AuthoredId: "8dc56101-2057-7904-e84c-cc8d4f6ba616"
+    Name: "Clinch"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiBashful"
+  value:
+  {
+    AuthoredId: "7576872d-37e5-5cf4-d897-16a34bcf82fb"
+    Name: "Senpai Bashful"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirSour"
+  value:
+  {
+    AuthoredId: "3d2d537f-1faf-7d04-db38-7d49672c655d"
+    Name: "Sir Sour"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_The_Crunchy"
+  value:
+  {
+    AuthoredId: "583dfad4-cb47-3874-6bc6-50c213aa845a"
+    Name: "The Crunchy"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_The_Icey"
+  value:
+  {
+    AuthoredId: "ce4d88b6-f66c-aef4-8b17-d4d8683b95de"
+    Name: "The Icey"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_The_Frosted"
+  value:
+  {
+    AuthoredId: "17b498aa-e23a-be54-082d-5e20a4d7c31e"
+    Name: "The Frosted"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_Cheesy"
+  value:
+  {
+    AuthoredId: "9d3a60aa-f99d-fcd4-395b-52971c90ed8d"
+    Name: "Cheesy"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionaryTricky"
+  value:
+  {
+    AuthoredId: "71bac394-69c3-b3c4-da79-b4e78171743e"
+    Name: "Legionary Tricky"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterGlazed"
+  value:
+  {
+    AuthoredId: "73ebc3ba-4eb7-8cc4-2acc-776ea96cee00"
+    Name: "Grand Master Glazed"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressEverlasting"
+  value:
+  {
+    AuthoredId: "162dfe1a-2a60-8ad4-a84d-0507bb41ced7"
+    Name: "Mistress Everlasting"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_Last_Slugger"
+  value:
+  {
+    AuthoredId: "5ca13528-1a6f-d874-1ac6-fc923a3a5d1b"
+    Name: "Slugger"
+    Position: 1
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirLifeSized"
+  value:
+  {
+    AuthoredId: "a02c0515-83b2-d134-59a4-d0b1970fe7ae"
+    Name: "Sir Life Sized"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressFlakey"
+  value:
+  {
+    AuthoredId: "4e9f1065-cec8-8c54-5837-1453775598da"
+    Name: "Mistress Flakey"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterFresh"
+  value:
+  {
+    AuthoredId: "0332701c-ac69-1c44-788a-c41008f46e41"
+    Name: "Grand Master Fresh"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_The_Flying"
+  value:
+  {
+    AuthoredId: "e872d8c3-4738-6584-da62-4c89b11ad2c4"
+    Name: "The Flying"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionChewy"
+  value:
+  {
+    AuthoredId: "99a8e8e0-f30b-45b4-da4f-37750d73eb76"
+    Name: "Centurion Chewy"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_The_Baked"
+  value:
+  {
+    AuthoredId: "4b041e53-8746-d6d4-28ef-0cda9190f904"
+    Name: "The Baked"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterMoldy"
+  value:
+  {
+    AuthoredId: "c0a628a8-d4c4-c604-7aeb-68fdb0dcbcc7"
+    Name: "Grand Master Moldy"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Grouchy"
+  value:
+  {
+    AuthoredId: "18d201d4-25c3-b0a4-ba6a-41330f411266"
+    Name: "Grouchy"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_Prechewed"
+  value:
+  {
+    AuthoredId: "1d78c94b-2cf8-00f4-1b3f-5f439ca2a5b6"
+    Name: "Prechewed"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_Pickle"
+  value:
+  {
+    AuthoredId: "897d265a-25e5-8504-7981-7ad7f8d6d0ff"
+    Name: "Pickle"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_OfLicorice"
+  value:
+  {
+    AuthoredId: "74625e31-6b0e-9f44-c8c2-0b6a75db9238"
+    Name: "Of Licorice"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionSpeedy"
+  value:
+  {
+    AuthoredId: "608a914b-7581-eca4-7b58-607b7d6223be"
+    Name: "Centurion Speedy"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressGreenApple"
+  value:
+  {
+    AuthoredId: "4b2ba81d-8381-e0f4-4a51-0710be17d39e"
+    Name: "Mistress Green Apple"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterSingleServing"
+  value:
+  {
+    AuthoredId: "3785a246-b4e1-3074-a958-b670b142312d"
+    Name: "Grand Master Single Serving"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterSugary"
+  value:
+  {
+    AuthoredId: "6d4294c0-8003-0d14-393b-d2758bb3bf7d"
+    Name: "Grand Master Sugary"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressLazy"
+  value:
+  {
+    AuthoredId: "6f92870c-b2b2-bc74-9be9-38665cea4300"
+    Name: "Mistress Lazy"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiTricky"
+  value:
+  {
+    AuthoredId: "7cbd03fb-b649-58d4-8b0d-e191f706579f"
+    Name: "Senpai Tricky"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionarySnozzberry"
+  value:
+  {
+    AuthoredId: "ff261533-29a0-a4b4-894e-edb2da53d625"
+    Name: "Legionary Snozzberry"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Blackberry"
+  value:
+  {
+    AuthoredId: "6a4d45e2-c620-d474-59e9-cc2e4521658f"
+    Name: "Blackberry"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterChocolatey"
+  value:
+  {
+    AuthoredId: "8a7bd8f1-cf09-4bd4-f838-18ea87c08167"
+    Name: "Grand Master Chocolatey"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_The_Chewy"
+  value:
+  {
+    AuthoredId: "d674f2db-7ec8-69e4-cbcb-6bd3a8949485"
+    Name: "The Chewy"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressSpeedy"
+  value:
+  {
+    AuthoredId: "b429d3d4-940c-9fb4-dacc-70f2e3970252"
+    Name: "Mistress Speedy"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiBadass"
+  value:
+  {
+    AuthoredId: "e2786bd1-f780-4e14-a945-c3f12dfea6ab"
+    Name: "Senpai Badass"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiAngry"
+  value:
+  {
+    AuthoredId: "2b259744-76c6-fc14-fa5f-7e68ec3ca08a"
+    Name: "Senpai Angry"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterCrazy"
+  value:
+  {
+    AuthoredId: "6ca1b943-f196-f594-e9d1-14e3ef6a2d1c"
+    Name: "Grand Master Crazy"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_Grouchy"
+  value:
+  {
+    AuthoredId: "06182793-2e49-22d4-18f8-f6b67a3902bc"
+    Name: "Grouchy"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionaryOrange"
+  value:
+  {
+    AuthoredId: "02794e6b-15ff-5e34-7a9c-4ef394fa048b"
+    Name: "Legionary Orange"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirStrawberry"
+  value:
+  {
+    AuthoredId: "59d45749-313c-f234-ca3a-fd0b944989a3"
+    Name: "Sir Stawberry"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_Of_Sugarville"
+  value:
+  {
+    AuthoredId: "dc1e1490-45be-3714-3b01-f5f5b3d81898"
+    Name: "Of Sugarville"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirCandyCoated"
+  value:
+  {
+    AuthoredId: "346ed4c0-08a1-0b54-ca90-d274be415d36"
+    Name: "Sir Candy Coated"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_Stale"
+  value:
+  {
+    AuthoredId: "87c53ccb-2958-5a34-dad3-7edac6d7ff7e"
+    Name: "Stale"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_The_Fruity"
+  value:
+  {
+    AuthoredId: "d20d50df-3a77-38b4-88d0-5dce2993dbe0"
+    Name: "The Fruity"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionFruity"
+  value:
+  {
+    AuthoredId: "f0f267d6-096d-4344-7b80-58fde14aed28"
+    Name: "Centurion Fruity"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirCherryCola"
+  value:
+  {
+    AuthoredId: "fde3a018-1cd7-4ea4-68db-d2a410cfb94f"
+    Name: "Sir Cherry Cola"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_Last_Breaker"
+  value:
+  {
+    AuthoredId: "cbfca0fd-cdf2-04e2-d85d-b959c255c6a9"
+    Name: "Breaker"
+    Position: 1
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiStrawberry"
+  value:
+  {
+    AuthoredId: "4228fa69-c01b-a234-b9ac-082c0dc36e8d"
+    Name: "Senpai Stawberry"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionaryMalted"
+  value:
+  {
+    AuthoredId: "c27132bc-ebb6-af44-ca69-3e13de31e7f7"
+    Name: "Legionary Malted"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_Brandied"
+  value:
+  {
+    AuthoredId: "3db7f30d-09fa-e624-0a2f-d007beee75d3"
+    Name: "Brandied"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_Sprinkled"
+  value:
+  {
+    AuthoredId: "daf101d8-71f7-e4c4-eb2a-e9d27836346f"
+    Name: "Sprinkled"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_RootBeer"
+  value:
+  {
+    AuthoredId: "4f6271c6-2b5d-ba34-c8ba-4f8936981e92"
+    Name: "Root Beer"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_The_Bashful"
+  value:
+  {
+    AuthoredId: "6a5659a4-03bd-2c84-2a9d-8d284c4c3056"
+    Name: "The Bashful"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionDeepFried"
+  value:
+  {
+    AuthoredId: "64a83d55-c2e8-6e14-494a-d823d4edfba0"
+    Name: "Centurion Deep Fried"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterCheesy"
+  value:
+  {
+    AuthoredId: "93066010-4c50-fb14-8a72-ac5405547550"
+    Name: "Grand Master Cheesy"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_The_Tasty"
+  value:
+  {
+    AuthoredId: "8e79b224-f3f5-1104-3b8e-d798df8b5f01"
+    Name: "The Tasty"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_Bob"
+  value:
+  {
+    AuthoredId: "9178c085-e0d8-83c4-9b2b-83e1c5f1477d"
+    Name: "Bob"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiOrange"
+  value:
+  {
+    AuthoredId: "15319476-99ef-9254-9a30-abdc53488f3b"
+    Name: "Senpai Orange"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiSalted"
+  value:
+  {
+    AuthoredId: "7a8cf3ea-455f-e3a4-6992-f89d8b032901"
+    Name: "Senpai Salted"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiCherryCola"
+  value:
+  {
+    AuthoredId: "85c7527d-df98-6104-8816-35cc55edae43"
+    Name: "Senpai Cherry Cola"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_Pop"
+  value:
+  {
+    AuthoredId: "31784ee9-d5e2-e6c4-7875-b40f06a7e2c1"
+    Name: "Pop"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_Last_Southpaw"
+  value:
+  {
+    AuthoredId: "e3e37301-02d2-5854-59b5-f33e6510125d"
+    Name: "Southpaw"
+    Position: 1
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterMalted"
+  value:
+  {
+    AuthoredId: "b7d17a71-3bc0-9714-8827-20aa647ad61b"
+    Name: "Grand Master Malted"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_Biter"
+  value:
+  {
+    AuthoredId: "8a47a7fb-446d-bb94-3b8c-943acc333706"
+    Name: "Biter"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionaryFlying"
+  value:
+  {
+    AuthoredId: "d9998cb8-a8fa-d164-5b10-09a4c823a208"
+    Name: "Legionary Flying"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterPineapple"
+  value:
+  {
+    AuthoredId: "840e18a1-e3fd-a234-8b78-77f2f10954cd"
+    Name: "Grand Master Pineapple"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterSpicy"
+  value:
+  {
+    AuthoredId: "2901eb01-e50c-49a4-9ad2-d9b3cdf7a979"
+    Name: "Grand Master Spicy"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiMelted"
+  value:
+  {
+    AuthoredId: "26bc8a83-d428-1a64-b843-7de22bf10e1f"
+    Name: "Senpai Melted"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirPlump"
+  value:
+  {
+    AuthoredId: "c304922c-4fd0-3bb4-daef-fbad2a1709f8"
+    Name: "Sir Plump"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_Blueberry"
+  value:
+  {
+    AuthoredId: "7b907dd9-1ee5-a864-5b25-00f5286b2f1f"
+    Name: "Blueberry"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressSugary"
+  value:
+  {
+    AuthoredId: "d5a11f91-5102-d464-dae4-240ad0007030"
+    Name: "Mistress Sugary"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionarySweetAndSour"
+  value:
+  {
+    AuthoredId: "d4b10b2b-d5dd-a014-09a6-d9ccea8a71e5"
+    Name: "Legionary Sweet and Sour"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionaryCandied"
+  value:
+  {
+    AuthoredId: "5b73a687-3660-6554-6b6b-86e86b784815"
+    Name: "Legionary Candied"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_The_Dopey"
+  value:
+  {
+    AuthoredId: "35a0db2c-98ab-e224-ea5d-171e67900347"
+    Name: "The Dopey"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Chopped"
+  value:
+  {
+    AuthoredId: "76308cf0-8147-87f4-898f-510a91190a4b"
+    Name: "Chopped"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_Frosted"
+  value:
+  {
+    AuthoredId: "f01a88d2-ec4c-3c64-982e-f27f68a8ae82"
+    Name: "Frosted"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Sour"
+  value:
+  {
+    AuthoredId: "ad7ae213-2552-0364-1aaf-e7c480c2709c"
+    Name: "Sour"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_The_Salty"
+  value:
+  {
+    AuthoredId: "4659978d-0fd8-5f04-0bc9-c6017bca52a6"
+    Name: "The Salty"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionaryLemon"
+  value:
+  {
+    AuthoredId: "15cb54e5-e119-02e4-fa2a-df8b57ed5318"
+    Name: "Legionary Lemony"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_Last_Swarmer"
+  value:
+  {
+    AuthoredId: "bab347e1-4ebc-1094-3824-0e432a2ea1cd"
+    Name: "Swarmer"
+    Position: 1
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_Boxer"
+  value:
+  {
+    AuthoredId: "ffd1d814-8b82-f464-390a-3997a2de02b1"
+    Name: "Boxer"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressCaramelized"
+  value:
+  {
+    AuthoredId: "2391634a-45bd-ad54-db3f-2c6d2f7f2a63"
+    Name: "Mistress Caramelized"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_Southpaw"
+  value:
+  {
+    AuthoredId: "ac33113a-735b-5ac4-5ac8-0abd98eb309d"
+    Name: "Southpaw"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_Of_Gummiway"
+  value:
+  {
+    AuthoredId: "4c656185-cb56-4424-084d-e54f3f97783a"
+    Name: "Of Gummiway"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiFlying"
+  value:
+  {
+    AuthoredId: "4398308c-7236-8e04-9b49-004026cbd75e"
+    Name: "Senpai Flying"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionBiteSized"
+  value:
+  {
+    AuthoredId: "e28cbed9-3d45-04a4-3aad-f198d150c043"
+    Name: "Centurion Bite Sized"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirSingleServing"
+  value:
+  {
+    AuthoredId: "3458ff68-6ecb-cc24-daf2-68fc9bcede1d"
+    Name: "Sir Single Serving"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirBitter"
+  value:
+  {
+    AuthoredId: "6f8b939f-3b33-1604-384a-5b0b59012cac"
+    Name: "Sir Bitter"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiHotButtered"
+  value:
+  {
+    AuthoredId: "3fd64e11-cda5-8024-b92d-5036004163fb"
+    Name: "Senpai Hot Buttered"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterCandyCoated"
+  value:
+  {
+    AuthoredId: "f3c9b4c2-b446-f9f4-4ba1-adad7ecf7a58"
+    Name: "Grand Master Candy Coated"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiCrazy"
+  value:
+  {
+    AuthoredId: "4b112743-b217-f6e4-b9f2-0276076123eb"
+    Name: "Senpai Crazy"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_LifeSized"
+  value:
+  {
+    AuthoredId: "36fce2d5-996c-4754-da9f-230c99d6764b"
+    Name: "Life Sized"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_Butterscotch"
+  value:
+  {
+    AuthoredId: "7473bbae-b818-66d4-2a17-6937facdc387"
+    Name: "Butterscotch"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_Chopped"
+  value:
+  {
+    AuthoredId: "0496a89f-ef86-62d4-3b29-227c6f72d79c"
+    Name: "Chopped"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionCandied"
+  value:
+  {
+    AuthoredId: "cbf82684-ac9b-a5b4-48e3-f594de9188c8"
+    Name: "Centurion Candied"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_Puncher"
+  value:
+  {
+    AuthoredId: "591bad65-e2db-d6a4-2b9f-44c028f48063"
+    Name: "Puncher"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_Brawler"
+  value:
+  {
+    AuthoredId: "021a9537-e0ce-73a4-e883-5bccbf214eee"
+    Name: "Brawler"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_The_Cherry"
+  value:
+  {
+    AuthoredId: "bee49c0f-a6b0-2c14-6ae7-6cb53a6c3ff9"
+    Name: "The Cherry"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionLazy"
+  value:
+  {
+    AuthoredId: "9a9ab9e1-6591-63b4-298c-644dea99493e"
+    Name: "Centurion Lazy"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionBrandied"
+  value:
+  {
+    AuthoredId: "86a888b0-e40c-9554-9bd6-012bcf6556fc"
+    Name: "Centurion Brandied"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_Jelly"
+  value:
+  {
+    AuthoredId: "46dcd591-72b5-a534-8854-0c0f887035e2"
+    Name: "Jelly"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressFried"
+  value:
+  {
+    AuthoredId: "65320306-14ef-ea34-989b-2a13160e8d2e"
+    Name: "Mistress Fried"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Bitter"
+  value:
+  {
+    AuthoredId: "63e5ad21-f808-a2f4-19f4-53c200f8eeef"
+    Name: "Bitter"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_Breaker"
+  value:
+  {
+    AuthoredId: "81cdfad1-ecf8-c474-4b01-062e935891d4"
+    Name: "Breaker"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_Baked"
+  value:
+  {
+    AuthoredId: "a5d42908-ecba-46f4-2b14-b72e2beed813"
+    Name: "Baked"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_RootBeer"
+  value:
+  {
+    AuthoredId: "ce7630ec-ecec-7a94-4bc7-c2961930b529"
+    Name: "Root Beer"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_The_Candied"
+  value:
+  {
+    AuthoredId: "84fbe349-52fa-4174-0b3e-cecca4722d88"
+    Name: "The Candied"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirFruity"
+  value:
+  {
+    AuthoredId: "6fc2a87a-776b-2424-397f-cb60e3be7e72"
+    Name: "Sir Fruity"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiLazy"
+  value:
+  {
+    AuthoredId: "aa62a724-ec49-0404-0add-1795066ff418"
+    Name: "Senpai Lazy"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterIcey"
+  value:
+  {
+    AuthoredId: "f84ff86d-0ba0-4114-d8fa-e9c2220b7c30"
+    Name: "Grand Master Icey"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_The_Buttered"
+  value:
+  {
+    AuthoredId: "2fc88e78-0ed0-61e4-cbeb-32a0d4314cc4"
+    Name: "The Buttered"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionaryPineapple"
+  value:
+  {
+    AuthoredId: "89a8f7d3-d2bd-9734-3ab8-797d8d6c0c84"
+    Name: "Legionary Pineapple"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterButterscotch"
+  value:
+  {
+    AuthoredId: "2bf8b981-b021-5bf4-8895-5d2ef1e0fa5e"
+    Name: "Grand Master Butterscotch"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_The_Single_Serving"
+  value:
+  {
+    AuthoredId: "e2228468-6abb-4eb4-4899-e1ea98936349"
+    Name: "The Single Serving"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_Slugger"
+  value:
+  {
+    AuthoredId: "20adb91e-e19d-1ff4-db27-b12cab36ed7e"
+    Name: "Slugger"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_Slip"
+  value:
+  {
+    AuthoredId: "2efc1ec6-b258-b1b4-cb2b-b7ea0b60fa2e"
+    Name: "Slip"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_The_Prechewed"
+  value:
+  {
+    AuthoredId: "e2ff9949-bf21-3cb4-8b3a-feac5fe18f73"
+    Name: "The Prechewed"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_The_Fried"
+  value:
+  {
+    AuthoredId: "fdb37126-da0f-c024-3813-a67a4e95f29b"
+    Name: "The Fried"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_The_Candy_Coated"
+  value:
+  {
+    AuthoredId: "af03f492-a72b-6fd4-4b7d-dfd9f667bd52"
+    Name: "The Candy Coated"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionHotButtered"
+  value:
+  {
+    AuthoredId: "27c6bf3b-5e60-ded4-5be2-2dc579f73f2b"
+    Name: "Centurion Hot Buttered"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiSpicy"
+  value:
+  {
+    AuthoredId: "169aa258-fc36-27d4-da90-f85cb1375ff7"
+    Name: "Senpai Spicy"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressCherry"
+  value:
+  {
+    AuthoredId: "201a0468-d77f-4224-2807-73d2bae5bab1"
+    Name: "Mistress Cherry"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterChewy"
+  value:
+  {
+    AuthoredId: "60799ff9-b2ce-af74-5a4f-431905a5373e"
+    Name: "Grand Master Chewy"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionaryToffee"
+  value:
+  {
+    AuthoredId: "55628be7-356f-6894-9898-ad1d7cc77472"
+    Name: "Legionary Toffee"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionaryThornberry"
+  value:
+  {
+    AuthoredId: "882742a8-b5b4-ea24-9851-5b5354e9c09a"
+    Name: "Legionary Thornbery"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_The_Dusted"
+  value:
+  {
+    AuthoredId: "e8d47787-2723-7274-3a70-f3987ee89c5c"
+    Name: "The Dusted"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Buttered"
+  value:
+  {
+    AuthoredId: "03746f71-471a-2654-fa09-bb38f96d8b75"
+    Name: "Buttered"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_Crusty"
+  value:
+  {
+    AuthoredId: "8dd9f4ed-63d1-f874-89c5-911e83f56817"
+    Name: "Crusty"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_Swarmer"
+  value:
+  {
+    AuthoredId: "e4d14f3e-98b3-37e4-9985-633b8e1be688"
+    Name: "Swarmer"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_Of_Mintdom"
+  value:
+  {
+    AuthoredId: "d1b75f93-b3f7-5834-c8ae-b515ad951185"
+    Name: "Of Mintdom"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_Noogie"
+  value:
+  {
+    AuthoredId: "cfcdbb6c-e537-5ab4-9ae8-a5933c71ec76"
+    Name: "Noogie"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Creamy"
+  value:
+  {
+    AuthoredId: "42e7556b-35e6-1084-49b3-82b00eb0b840"
+    Name: "Creamy"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_Salty"
+  value:
+  {
+    AuthoredId: "ac6a6871-f490-2e44-da49-66ec2fbebc61"
+    Name: "Salty"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Strawberry"
+  value:
+  {
+    AuthoredId: "ade65b6a-ed6d-ed24-1beb-b68c49a130a2"
+    Name: "Stawberry"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_The_Powdered"
+  value:
+  {
+    AuthoredId: "abedf771-9e53-1a04-1b4c-26378da91796"
+    Name: "The Powdered"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Minty"
+  value:
+  {
+    AuthoredId: "edf2ce20-2019-1dd4-f8c6-cdc7c1dd1b8c"
+    Name: "Minty"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirLazy"
+  value:
+  {
+    AuthoredId: "7ae1de29-7d7f-5674-184e-93eb03311cf0"
+    Name: "Sir Lazy"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiToffee"
+  value:
+  {
+    AuthoredId: "1a04fcc7-7d1c-3a74-da29-fc0437c33835"
+    Name: "Senpai Toffee"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_Snozzberry"
+  value:
+  {
+    AuthoredId: "49740a14-d535-6d84-b9f7-def1a235d613"
+    Name: "Snozzberry"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressIcey"
+  value:
+  {
+    AuthoredId: "441414ca-7cdd-a3c4-38ac-004e426aaf09"
+    Name: "Mistress Icey"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_The_Baked"
+  value:
+  {
+    AuthoredId: "8ebf6fd3-02ac-75f4-18df-022cae9f53ca"
+    Name: "The Baked"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirFrosted"
+  value:
+  {
+    AuthoredId: "5e098f61-2446-bb94-ba2c-c639b9e7a310"
+    Name: "Sir Frosted"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionaryBashful"
+  value:
+  {
+    AuthoredId: "a7c78bc2-c3ca-5f64-a95e-853b6032482b"
+    Name: "Legionary Vanilla"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_Last_Jelly"
+  value:
+  {
+    AuthoredId: "6d9fa111-5c23-29d4-0a19-f3ad02c62473"
+    Name: "Jelly"
+    Position: 1
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterTravelSized"
+  value:
+  {
+    AuthoredId: "1bee3521-2a85-2884-3995-438fa9668bfb"
+    Name: "Grand Master Travel Sized"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_CherryCola"
+  value:
+  {
+    AuthoredId: "998571bb-3c1c-3f14-f807-aaedd01e55c7"
+    Name: "Cherry Cola"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_The_Fresh"
+  value:
+  {
+    AuthoredId: "c1f0a879-ed3f-5dd4-4989-5c684b189fc5"
+    Name: "The Fresh"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_Slapper"
+  value:
+  {
+    AuthoredId: "e37d6015-b118-3474-7ae2-9504cd41f85a"
+    Name: "Slapper"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Crusty"
+  value:
+  {
+    AuthoredId: "3784cd0a-c629-1df4-e938-f8e28adec79a"
+    Name: "Crusty"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_Bitter"
+  value:
+  {
+    AuthoredId: "73c3d404-cdad-1ab4-6adb-f203b802691e"
+    Name: "Bitter"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_Breaker"
+  value:
+  {
+    AuthoredId: "13cc6e1c-bedc-7054-38c7-8565019d290c"
+    Name: "Breaker"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionSquishy"
+  value:
+  {
+    AuthoredId: "22ba230b-6687-87c4-882d-d9588bd74406"
+    Name: "Centurion Squishy"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_The_Dusted"
+  value:
+  {
+    AuthoredId: "21c36ea9-1b2c-32c4-78c8-692bc1dfd62f"
+    Name: "The Dusted"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionDusted"
+  value:
+  {
+    AuthoredId: "c7a7243b-6e86-12f4-f994-45e77d4c3720"
+    Name: "Centurion Dusted"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_Striker"
+  value:
+  {
+    AuthoredId: "279744f9-cd5b-2e94-fb95-8a403885bc09"
+    Name: "Striker"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressStale"
+  value:
+  {
+    AuthoredId: "5937d22d-15be-3304-584d-d8c4324601d9"
+    Name: "Mistress Stale"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_The_Bashful"
+  value:
+  {
+    AuthoredId: "fbe689e5-10f7-a2f4-9b1e-ca4531d204c8"
+    Name: "The Bashful"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressStrawberry"
+  value:
+  {
+    AuthoredId: "4f4111f4-de99-5434-b8e2-f72e4d959c6d"
+    Name: "Mistress Stawberry"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_Caramel"
+  value:
+  {
+    AuthoredId: "0bc00a87-9f60-c794-29d7-8e48fdea0e31"
+    Name: "Caramel"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Happy"
+  value:
+  {
+    AuthoredId: "3e472012-1543-24e5-2820-450448c583ca"
+    Name: "Happy"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_Switch_Hitter"
+  value:
+  {
+    AuthoredId: "5e3c369b-1aa7-f814-7b88-6acce2cc3fa8"
+    Name: "Switch-Hitter"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_Fast"
+  value:
+  {
+    AuthoredId: "474abc49-94a0-0564-baa9-c86676bed539"
+    Name: "Fast"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirFizzy"
+  value:
+  {
+    AuthoredId: "08238347-5781-7a94-0ac2-8737cd3bd634"
+    Name: "Sir Fizzy"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionaryCoconut"
+  value:
+  {
+    AuthoredId: "a5a90133-2bfc-10e4-5af1-ba997b62daac"
+    Name: "Legionary Coconut"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiChewy"
+  value:
+  {
+    AuthoredId: "e0004f3e-6494-6e84-a99b-758b19ba6793"
+    Name: "Senpai Chewy"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Mango"
+  value:
+  {
+    AuthoredId: "309373f1-fa28-ee74-784e-9db79e712528"
+    Name: "Mango"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionToffee"
+  value:
+  {
+    AuthoredId: "af422ec7-f704-4bc4-bbcc-9e0528c389d5"
+    Name: "Centurion Toffee"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionaryPlump"
+  value:
+  {
+    AuthoredId: "d93cc817-a507-ef24-3a9f-d2bb45d717c0"
+    Name: "Legionary Plump"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Limon"
+  value:
+  {
+    AuthoredId: "272fbdba-5f2e-ef14-5826-81d7fe233007"
+    Name: "Limon"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterCrusty"
+  value:
+  {
+    AuthoredId: "0c678bfe-dd89-9004-a9a2-06fb55cf1b5c"
+    Name: "Grand Master Crusty"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_Last_Sundae"
+  value:
+  {
+    AuthoredId: "653f0ddd-4e1a-16d4-f827-8fa44766c03f"
+    Name: "Sundae"
+    Position: 1
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_Last_Puncher"
+  value:
+  {
+    AuthoredId: "067845dc-9bf4-24d4-dae7-b79240f1489a"
+    Name: "Puncher"
+    Position: 1
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_Poker"
+  value:
+  {
+    AuthoredId: "5f06b618-094d-9f54-198b-b36f6a648cbb"
+    Name: "Poker"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_Last_Brawler"
+  value:
+  {
+    AuthoredId: "50d28f64-f83d-ec74-999e-ab956088fa46"
+    Name: "Brawler"
+    Position: 1
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_Of_Jellyton"
+  value:
+  {
+    AuthoredId: "ba51c5a2-26bb-01b4-ab91-c89075e7e4ec"
+    Name: "Of Jellyton"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_Swarmer"
+  value:
+  {
+    AuthoredId: "e4d6cc68-c7a3-f3d4-59b8-4ee229948719"
+    Name: "Swarmer"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_The_Tasty"
+  value:
+  {
+    AuthoredId: "7a9e3932-9f2f-d094-0be6-e4457a95fd68"
+    Name: "The Tasty"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_Creamy"
+  value:
+  {
+    AuthoredId: "e933f1bc-8601-6d64-2981-c7bf168695c6"
+    Name: "Creamy"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiTravelSized"
+  value:
+  {
+    AuthoredId: "7948b54a-9ed6-9934-f8aa-2af200e8f17f"
+    Name: "Senpai Travel Sized"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressBaked"
+  value:
+  {
+    AuthoredId: "c44e1823-87b8-f9c4-e934-8c06606f961a"
+    Name: "Mistress Baked"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_The_Fried"
+  value:
+  {
+    AuthoredId: "71000eb3-b8e5-58b4-188a-a59b449f5adf"
+    Name: "The Fried"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_The_Prechewed"
+  value:
+  {
+    AuthoredId: "202c6ed4-d4b6-ebe4-2bd8-ac1692bc4231"
+    Name: "The Prechewed"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_Of_Gummiway"
+  value:
+  {
+    AuthoredId: "87e279cb-fe19-6984-3b39-351f241c7b5a"
+    Name: "Of Gummiway"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionCoconut"
+  value:
+  {
+    AuthoredId: "94061318-376d-2304-197b-27fe2d62d3eb"
+    Name: "Centurion Coconut"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiGrouchy"
+  value:
+  {
+    AuthoredId: "49d04a83-80a2-62a4-7994-3842aff00ffc"
+    Name: "Senpai Grouchy"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionSprinkled"
+  value:
+  {
+    AuthoredId: "9aa9d254-1731-5ac4-9bb4-a2205ca8e0a9"
+    Name: "Centurion Sprinkled"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionGrouchy"
+  value:
+  {
+    AuthoredId: "7885c46a-2c8c-2ae4-3987-3ae5f20ce642"
+    Name: "Centurion Grouchy"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirHappy"
+  value:
+  {
+    AuthoredId: "1e812acd-2aa4-a904-c9dc-87b3bb4e217e"
+    Name: "Sir Happy"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Quick"
+  value:
+  {
+    AuthoredId: "f3fe88bf-8781-8ce4-69f6-1721243fa712"
+    Name: "Quick"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressDeepFried"
+  value:
+  {
+    AuthoredId: "dd18e5a7-51fc-bb34-5bcb-b98ed73bbcb8"
+    Name: "Mistress Deep Fried"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_The_Dopey"
+  value:
+  {
+    AuthoredId: "7ba78947-df04-4f94-cbdd-46e4a00493d9"
+    Name: "The Dopey"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Tricky"
+  value:
+  {
+    AuthoredId: "ef9fb786-b0a5-7462-0aad-bf74ca633b61"
+    Name: "Tricky"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_Cover-up"
+  value:
+  {
+    AuthoredId: "0201c9d7-91f2-3374-0840-e63c9cdb122f"
+    Name: "Cover-up"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiFresh"
+  value:
+  {
+    AuthoredId: "de8b1cab-8eca-3314-abb5-6e0d8804fb12"
+    Name: "Senpai Fresh"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_Butterscotch"
+  value:
+  {
+    AuthoredId: "f91f8317-6d26-03d4-baa7-075fbdf9c570"
+    Name: "Butterscotch"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiPineapple"
+  value:
+  {
+    AuthoredId: "5e60f84a-9816-cde4-786b-fccc8f44d626"
+    Name: "Senpai Pineapple"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterBitter"
+  value:
+  {
+    AuthoredId: "22af4fc6-67b3-4884-da5e-10c2b0328e66"
+    Name: "Grand Master Bitter"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_The_Salty"
+  value:
+  {
+    AuthoredId: "0e38abd7-b717-e314-3872-3dbefcb46d2f"
+    Name: "The Salty"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionaryBrandied"
+  value:
+  {
+    AuthoredId: "686c5a3e-0f70-0644-49a0-a77726d92861"
+    Name: "Legionary Brandied"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_Fast"
+  value:
+  {
+    AuthoredId: "e2f80dbd-36e2-4334-09d0-3567a6b8d8d1"
+    Name: "Fast"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_The_Grouchy"
+  value:
+  {
+    AuthoredId: "e2ae1ad6-9137-7a64-f9b2-f26b8f13cb5c"
+    Name: "The Grouchy"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_The_Brandied"
+  value:
+  {
+    AuthoredId: "b8ebbed0-c38f-45d4-197a-c69bfeb63e31"
+    Name: "The Brandied"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionaryStrawberry"
+  value:
+  {
+    AuthoredId: "830cce44-1755-7f74-289d-6ab307b046a6"
+    Name: "Legionary Stawberry"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_Last_Fast"
+  value:
+  {
+    AuthoredId: "b2912b36-c5bb-5490-69b0-3fdd9c58735d"
+    Name: "Fast"
+    Position: 1
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionBlueberry"
+  value:
+  {
+    AuthoredId: "7406dd51-2fdf-b044-6ba3-2558359a9550"
+    Name: "Centurion Blueberry"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirDukeCaramel"
+  value:
+  {
+    AuthoredId: "af2082f8-17f5-ed54-b9b1-9f3f4b8acda4"
+    Name: "Sir Legionary Caramel"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_The_Sugary"
+  value:
+  {
+    AuthoredId: "7e93d52f-b92a-e044-da61-064c98d404b9"
+    Name: "The Sugary"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Lazy"
+  value:
+  {
+    AuthoredId: "9760a57d-deea-f824-caab-ec0bd40e7ff0"
+    Name: "Lazy"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionaryFlakey"
+  value:
+  {
+    AuthoredId: "d5038c01-76c9-56c4-dbc2-3b20bba55443"
+    Name: "Legionary Flakey"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_FrenchVanilla"
+  value:
+  {
+    AuthoredId: "198da9a6-970e-08b4-eb75-39a61dbbd213"
+    Name: "French Vanilla"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionaryAngry"
+  value:
+  {
+    AuthoredId: "1dcec88b-0b78-f3e4-fab5-803115d18286"
+    Name: "Legionary  Angry"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionaryCherryCola"
+  value:
+  {
+    AuthoredId: "25d5c8bb-6576-e334-6a2e-d917dddd9365"
+    Name: "Legionary Cherry Cola"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionTravelSized"
+  value:
+  {
+    AuthoredId: "0dd0dbcc-3906-1794-fa5b-eeb81bd56ed3"
+    Name: "Centurion Travel Sized"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirMelon"
+  value:
+  {
+    AuthoredId: "db86de37-cf2e-70d4-4a6b-c394ae0163f1"
+    Name: "Sir Melon"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressButtered"
+  value:
+  {
+    AuthoredId: "2330f735-1807-d3e4-5b68-52f64f33569d"
+    Name: "Mistress Buttered"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirDusted"
+  value:
+  {
+    AuthoredId: "86c691b9-35fe-52d4-fadb-9669d60b685f"
+    Name: "Sir Dusted"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionaryPowdered"
+  value:
+  {
+    AuthoredId: "27a46dd0-7059-80e4-39af-99bfdf342289"
+    Name: "Legionary Powdered"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_Of_Mintdom"
+  value:
+  {
+    AuthoredId: "de1254a2-8a80-bc24-8ba5-21b9923b1576"
+    Name: "Of Mintdom"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_The_Powdered"
+  value:
+  {
+    AuthoredId: "08c0ba8b-6169-8ce4-a808-359c0eaf73cd"
+    Name: "The Powdered"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressBadass"
+  value:
+  {
+    AuthoredId: "c576adc5-80bf-b394-8a3f-cd0735ec4dd8"
+    Name: "Mistress Badass"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_Last_Checkhook"
+  value:
+  {
+    AuthoredId: "8ce14162-14b5-5874-cafa-b407ddc2e712"
+    Name: "Checkhook"
+    Position: 1
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_Pickle"
+  value:
+  {
+    AuthoredId: "ba512d07-7573-7b54-ca12-a8c29846a228"
+    Name: "Pickle"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionLifeSized"
+  value:
+  {
+    AuthoredId: "61479fb1-df75-15a4-4bed-0a4e40a7ebb9"
+    Name: "Centurion Life Sized"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressSneezy"
+  value:
+  {
+    AuthoredId: "c3bc930d-8a74-2f34-6b1d-409e6e1c022a"
+    Name: "Mistress Sneezy"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_Biter"
+  value:
+  {
+    AuthoredId: "556e1578-19db-7714-88b7-4df1b3151b04"
+    Name: "Biter"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Chocolatey"
+  value:
+  {
+    AuthoredId: "8926399c-e98f-30a4-d8c9-03bbb13b6ca1"
+    Name: "Chocolatey"
+    Position: 0
+    Quality: 0
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Orange"
+  value:
+  {
+    AuthoredId: "8e0c475c-c584-6864-db8e-befa1f477809"
+    Name: "Orange"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_Puncher"
+  value:
+  {
+    AuthoredId: "bffd0236-a495-1884-18a1-45da85e52752"
+    Name: "Puncher"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_Brawler"
+  value:
+  {
+    AuthoredId: "591d4c02-6881-ea64-a91b-91ff27d13a35"
+    Name: "Brawler"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionStale"
+  value:
+  {
+    AuthoredId: "4f876b51-301a-e054-bac4-028c59a29b8e"
+    Name: "Centurion Stale"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_Jelly"
+  value:
+  {
+    AuthoredId: "db56f53b-fb7d-e234-f845-4d3de9fd3d81"
+    Name: "Jelly"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_Bob"
+  value:
+  {
+    AuthoredId: "db665c78-3c98-b6e4-18eb-111d41f07dee"
+    Name: "Bob"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiFlakey"
+  value:
+  {
+    AuthoredId: "8dedc92a-4e94-1c64-ca4e-6dc548c848af"
+    Name: "Senpai Flakey"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterRaspberry"
+  value:
+  {
+    AuthoredId: "4d9a3106-a392-cac4-2bb3-962edd86a38a"
+    Name: "Grand Master Rasperry"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionarySpeedy"
+  value:
+  {
+    AuthoredId: "e59c81d2-e67a-d974-4a2b-94cebf2b0f15"
+    Name: "Legionary Speedy"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionaryCaramel"
+  value:
+  {
+    AuthoredId: "7ec99a86-428e-5cf4-5a0c-1c1b3ac8e0f3"
+    Name: "Legionary Caramel"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Melted"
+  value:
+  {
+    AuthoredId: "bcd51415-f64c-b6b4-e846-0fbc603b877d"
+    Name: "Melted"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_The_Glazed"
+  value:
+  {
+    AuthoredId: "ab5bd0d7-df27-82b4-c818-08136a24a11c"
+    Name: "The Glazed"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressDopey"
+  value:
+  {
+    AuthoredId: "ae28c0f0-8dbb-1524-eb9f-1c415e4dfe24"
+    Name: "Mistress Dopey"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_The_Bite_Sized"
+  value:
+  {
+    AuthoredId: "023ce678-513b-c5d4-68b1-3bc4a003cbb3"
+    Name: "The Bite Sized"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiChopped"
+  value:
+  {
+    AuthoredId: "f137cdc3-dcd5-61c4-99d6-373eb7f815e4"
+    Name: "Senpai Chopped"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_Last_Striker"
+  value:
+  {
+    AuthoredId: "59c9f245-497a-9f84-1bf7-9536422f6307"
+    Name: "Striker"
+    Position: 1
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_The_Strong"
+  value:
+  {
+    AuthoredId: "cb7c0ce5-d115-fc54-d9db-55741492e67a"
+    Name: "The Strong"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressSalty"
+  value:
+  {
+    AuthoredId: "e80780e9-1db8-d074-3963-67f3db99904b"
+    Name: "Mistress Salty"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionTricky"
+  value:
+  {
+    AuthoredId: "af99dc9c-b65c-6f34-9a2b-41483367c61c"
+    Name: "Centurion Tricky"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirCrunchy"
+  value:
+  {
+    AuthoredId: "52ee92b8-7dda-09c4-1b98-facb14938ca2"
+    Name: "Sir Crunchy"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_Kicker"
+  value:
+  {
+    AuthoredId: "52c135ad-855a-0334-3b10-f0cf5de00fe8"
+    Name: "Kicker"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressCandied"
+  value:
+  {
+    AuthoredId: "f23c5fac-4756-16c4-7a80-28bb27bb5a54"
+    Name: "Mistress Candied"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterLifeSized"
+  value:
+  {
+    AuthoredId: "cd2d9be8-ec9b-b1e4-5ba4-654cde12136a"
+    Name: "Grand Master Life Sized"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_Switch_Hitter"
+  value:
+  {
+    AuthoredId: "6e2fa335-9ba5-4dc4-5ade-50a56c5cb7de"
+    Name: "Switch-Hitter"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Flying"
+  value:
+  {
+    AuthoredId: "69ed2fee-eb68-c334-d8ed-14b57f31ea35"
+    Name: "Flying"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressPineapple"
+  value:
+  {
+    AuthoredId: "630fa3bb-50e4-8574-9808-2a7aef54a47f"
+    Name: "Mistress Pineapple"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiSpeedy"
+  value:
+  {
+    AuthoredId: "8d45e01d-0a61-6204-4a39-8d8db695d77c"
+    Name: "Senpai Speedy"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_The_Lemony"
+  value:
+  {
+    AuthoredId: "ddcb0293-8258-6c54-a92e-0da3b6081df1"
+    Name: "The Lemony"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionBaked"
+  value:
+  {
+    AuthoredId: "6edfe2d6-5c56-4044-3833-64a326d5a034"
+    Name: "Centurion Baked"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterBrandied"
+  value:
+  {
+    AuthoredId: "235bd0ad-afaa-cfc4-fb6c-8945ad3b5f6c"
+    Name: "Grand Master Brandied"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiRootBeer"
+  value:
+  {
+    AuthoredId: "afd2c059-da9a-3664-dbdf-0242643ef023"
+    Name: "Senpai Root Beer"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirBrandied"
+  value:
+  {
+    AuthoredId: "9a4a3b7b-b64a-b384-ba7c-237c3a48ac6e"
+    Name: "Sir Brandied"
+    Position: 0
+    Quality: 0
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_Clinch"
+  value:
+  {
+    AuthoredId: "00c0bee7-1a5f-5474-58e5-3f1fc43d7f9c"
+    Name: "Clinch"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Frosted"
+  value:
+  {
+    AuthoredId: "79a1e481-2c89-4c24-583b-9a5d2d3e7fe6"
+    Name: "Frosted"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_OverhandRight"
+  value:
+  {
+    AuthoredId: "96d921c8-57cd-5814-0a24-10d07d7b3f7a"
+    Name: "Overhand Right"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiDeepFried"
+  value:
+  {
+    AuthoredId: "aa76e47d-b811-f244-8876-1f873b7198f7"
+    Name: "Senpai Deep Fried"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_Of_Sourway"
+  value:
+  {
+    AuthoredId: "e9a7c2b2-cd80-1784-a983-c64c09ab089b"
+    Name: "Of Sourway"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_The_Icey"
+  value:
+  {
+    AuthoredId: "6f192a6b-22f4-7574-0851-7c4d7012e444"
+    Name: "The Icey"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionarySugary"
+  value:
+  {
+    AuthoredId: "f36b5e93-963b-6144-f934-fcef45c3149a"
+    Name: "Senpai Sugarie"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_The_Cherry"
+  value:
+  {
+    AuthoredId: "88ab98cd-4bd7-2774-2954-261112ef1488"
+    Name: "The Cherry"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_The_Happy"
+  value:
+  {
+    AuthoredId: "882d694b-9ee0-b2e4-fab8-67d06f6a5c58"
+    Name: "The Happy"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterFried"
+  value:
+  {
+    AuthoredId: "85d4e96c-fd39-3de4-d825-2e7cff1d9694"
+    Name: "Grand Master Fried"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_BoloPunch"
+  value:
+  {
+    AuthoredId: "a008c134-9e2c-d3c4-a9c0-cd5d7c8f6d66"
+    Name: "Bolo Punch"
+    Position: 1
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_Last_Pudding"
+  value:
+  {
+    AuthoredId: "eaf31d35-59ce-6483-98ac-b3ebdd8def73"
+    Name: "Pudding"
+    Position: 1
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_Fighter"
+  value:
+  {
+    AuthoredId: "a1021826-7db9-7394-ea98-3dc11464ea7d"
+    Name: "Fighter"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_Last_Counterpuncher"
+  value:
+  {
+    AuthoredId: "f270c19c-1559-3ac4-e84e-ea1ee57314cf"
+    Name: "Counterpuncher"
+    Position: 1
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Lemon"
+  value:
+  {
+    AuthoredId: "da495b54-3b76-7468-9ba8-63923c2787b6"
+    Name: "Lemony"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_Cutie"
+  value:
+  {
+    AuthoredId: "9c469beb-d69e-f194-2b47-f936521efdfa"
+    Name: "Cutie"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_The_Boiled"
+  value:
+  {
+    AuthoredId: "2ac57db2-93ae-e2d4-3a21-de024243a02f"
+    Name: "The Boiled"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionRolled"
+  value:
+  {
+    AuthoredId: "82561caa-97ac-b5e4-bbcc-a2888b902b31"
+    Name: "Centurion Rolled"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirPowdered"
+  value:
+  {
+    AuthoredId: "3b212626-436d-e6f4-3ba8-73357e853d54"
+    Name: "Sir Powdered"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_Blackberry"
+  value:
+  {
+    AuthoredId: "f13975f8-8fbb-edb4-aaa1-a77d6b55ecb6"
+    Name: "Blackberry"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionaryRaspberry"
+  value:
+  {
+    AuthoredId: "0b0b4698-833f-57c4-fae1-24195160c4cf"
+    Name: "Legionary Rasperry"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_Puncher"
+  value:
+  {
+    AuthoredId: "8749bc04-7341-25e4-2b5a-4af06ea2e182"
+    Name: "Puncher"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_Brawler"
+  value:
+  {
+    AuthoredId: "ed4313f5-92fb-5364-59fb-6007ef4a5c9e"
+    Name: "Brawler"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiBrandied"
+  value:
+  {
+    AuthoredId: "541d1ae5-547f-b6e4-fafb-55d4489c3129"
+    Name: "Senpai Brandied"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirMelty"
+  value:
+  {
+    AuthoredId: "6eb591f4-47e5-7644-7909-96690f3e4c14"
+    Name: "Sir Melty"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_SweetAndSour"
+  value:
+  {
+    AuthoredId: "0b99381c-6b3d-d394-6835-64f1c2b8739d"
+    Name: "Sweet and Sour"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_Of_Candycity"
+  value:
+  {
+    AuthoredId: "41c635b1-c36b-44e4-2bc7-723741d2ae11"
+    Name: "Of Candycity"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_The_Cheesy"
+  value:
+  {
+    AuthoredId: "760b4e23-9e47-7414-c9b5-4d962d6263fc"
+    Name: "The Cheesy"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Salted"
+  value:
+  {
+    AuthoredId: "456472f9-2ea7-0634-e9da-72c794c37e20"
+    Name: "Salted"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionCheesy"
+  value:
+  {
+    AuthoredId: "fe4de57d-ca84-2414-0b69-5fc9cb802a71"
+    Name: "Centurion Cheesy"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_The_Frosted"
+  value:
+  {
+    AuthoredId: "09ab031b-8f58-c6d4-ea3c-7142a4c92520"
+    Name: "The Frosted"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiSugary"
+  value:
+  {
+    AuthoredId: "05b07d76-b453-c674-3bbd-0728e6f5bacb"
+    Name: "Sugary"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiDrizzled"
+  value:
+  {
+    AuthoredId: "57b65ff1-0f33-cbe4-6b5d-e8f55c377084"
+    Name: "Senpai Drizzled"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirButterscotch"
+  value:
+  {
+    AuthoredId: "b78f2c36-ef0a-8664-f86f-880bf81af52c"
+    Name: "Sir Butterscotch"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterCandied"
+  value:
+  {
+    AuthoredId: "3bfe577b-a6bf-0f04-285c-8c67823509f1"
+    Name: "Grand Master Candied"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiEverlasting"
+  value:
+  {
+    AuthoredId: "3801f648-f223-0934-29fc-791d54123ea4"
+    Name: "Senpai Everlasting"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_The_Malted"
+  value:
+  {
+    AuthoredId: "3e54038b-4fbd-c8e4-5b2a-487badc088b9"
+    Name: "The Malted"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionMalted"
+  value:
+  {
+    AuthoredId: "179a0d3b-4669-3ea4-cb13-122958961ad1"
+    Name: "Centurion Malted"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_Striker"
+  value:
+  {
+    AuthoredId: "50ad0c60-0643-faf4-faa3-366a064070aa"
+    Name: "Striker"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_The_Grumpy"
+  value:
+  {
+    AuthoredId: "b9b75456-3de9-f624-fb6a-e76f0eadf38b"
+    Name: "The Grumpy"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirBashful"
+  value:
+  {
+    AuthoredId: "7c13593f-2ced-d0a4-cbb4-be6e09f47747"
+    Name: "Sir Vanilla"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterTricky"
+  value:
+  {
+    AuthoredId: "5b74fed0-acb8-20d4-3bd9-07057c8ec3a4"
+    Name: "Grand Master Tricky"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionaryChocolatey"
+  value:
+  {
+    AuthoredId: "74ed1c66-8d58-26f4-38f3-b52c4d07fb2e"
+    Name: "Legionary Chocolatey"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterRootBeer"
+  value:
+  {
+    AuthoredId: "20fa7c1a-c63e-2f44-8a89-faae209cd787"
+    Name: "Grand Master Root Beer"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirGlazed"
+  value:
+  {
+    AuthoredId: "09f6aab0-7001-5f24-98c9-8b7f1c66ffab"
+    Name: "Sir Glazed"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_Minty"
+  value:
+  {
+    AuthoredId: "a3a2d291-2a91-f6f4-f90d-1562e4a94881"
+    Name: "Minty"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_CandyCoated"
+  value:
+  {
+    AuthoredId: "daaa9994-7d36-4e44-8b53-f684bc843a56"
+    Name: "Candy Coated"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_The_Flakey"
+  value:
+  {
+    AuthoredId: "41c02115-b9db-1b74-dad7-42a66ab8b178"
+    Name: "The Flakey"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_The_Quick"
+  value:
+  {
+    AuthoredId: "8f44d49b-0c70-eef4-fb85-2765265117d8"
+    Name: "The Quick"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_Flying"
+  value:
+  {
+    AuthoredId: "67471cd8-de4b-1254-0ac4-df905ec8c673"
+    Name: "Flying"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressLemon"
+  value:
+  {
+    AuthoredId: "59c823eb-9847-f544-5b04-1744275c8f58"
+    Name: "Mistress Lemony"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterBlackberry"
+  value:
+  {
+    AuthoredId: "6b32796f-e1db-5c94-6848-96045c67e611"
+    Name: "Grand Master Blackberry"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_Soup"
+  value:
+  {
+    AuthoredId: "46b81dd2-1530-b8b4-d878-b2682b0b176c"
+    Name: "Soup"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_Icey"
+  value:
+  {
+    AuthoredId: "9b484b4f-bcb0-7624-a843-c5689c19f1f3"
+    Name: "Icey"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_The_Tasty"
+  value:
+  {
+    AuthoredId: "3d762444-0b63-f7f4-29ba-1d793ea1e5c0"
+    Name: "The Tasty"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionStrawberry"
+  value:
+  {
+    AuthoredId: "4741b1fa-e1e2-8114-b9c1-9781e9bbde50"
+    Name: "Centurion Strawberry"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_Strawberry"
+  value:
+  {
+    AuthoredId: "00c25d20-d259-cb54-188a-8fdb046a5eea"
+    Name: "Stawberry"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionSalty"
+  value:
+  {
+    AuthoredId: "40231710-a998-5334-a9b3-6f6c827a36b9"
+    Name: "Centurion Salty"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionaryCherry"
+  value:
+  {
+    AuthoredId: "778d3123-5463-22f4-6bd7-363fec02f44d"
+    Name: "Legionary Cherry"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionaryMelon"
+  value:
+  {
+    AuthoredId: "c97a13c7-bf64-3774-08df-e0b65b89bef3"
+    Name: "Legionary Melon"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiFried"
+  value:
+  {
+    AuthoredId: "f5476faa-272b-2ce4-1b34-167309712947"
+    Name: "Senpai Fried"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiSweetAndSour"
+  value:
+  {
+    AuthoredId: "fcce41fd-33f0-2914-89df-69c252595022"
+    Name: "Senpai Sweet and Sour"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirSprinkled"
+  value:
+  {
+    AuthoredId: "0e17ebdd-a6a2-52e4-ebd9-6239cabfae2d"
+    Name: "Sir Sprinkled"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionCherryCola"
+  value:
+  {
+    AuthoredId: "66c68e00-befe-0904-aa67-4031aa73c4c5"
+    Name: "Centurion Cherry Cola"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_CherryCola"
+  value:
+  {
+    AuthoredId: "3c80b9ee-3dec-57f4-8afa-829052d5e787"
+    Name: "Cherry Cola"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterFudgey"
+  value:
+  {
+    AuthoredId: "e21ce82d-cf41-f374-1b10-3fe8ea206c67"
+    Name: "Grand Master Fudgey"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_Happy"
+  value:
+  {
+    AuthoredId: "9730b930-c2e4-07d4-38a5-c01b8c6032d9"
+    Name: "Happy"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterOrange"
+  value:
+  {
+    AuthoredId: "5b2082b5-29d5-bcc4-9ab5-5ba8bcc11015"
+    Name: "Grand Master Orange"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_The_Dopey"
+  value:
+  {
+    AuthoredId: "ad4561bd-8968-beb4-58c5-b2b7f8fd1c5c"
+    Name: "The Dopey"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_Last_Slip"
+  value:
+  {
+    AuthoredId: "ba8c5535-3141-f6f4-8943-7ee6e1a5d832"
+    Name: "Slip"
+    Position: 1
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterStale"
+  value:
+  {
+    AuthoredId: "53c85640-d495-6d34-2bdd-3e491fff5f85"
+    Name: "Grand Master Stale"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_The_Salty"
+  value:
+  {
+    AuthoredId: "6ac49d57-6de9-6004-4a77-321a3237b065"
+    Name: "The Salty"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_Mango"
+  value:
+  {
+    AuthoredId: "66607cc2-0d5c-9384-d937-464388f40227"
+    Name: "Mango"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterMelted"
+  value:
+  {
+    AuthoredId: "ab378d79-958a-0374-1859-598b3c0f7f58"
+    Name: "Grand Master Melted"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionaryDeepFried"
+  value:
+  {
+    AuthoredId: "3fecc053-d569-4ab4-58fa-baee10e1534e"
+    Name: "Legionary Deep Fried"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_Slip"
+  value:
+  {
+    AuthoredId: "917e27c3-f518-af14-c885-06ba5b5ac1e5"
+    Name: "Slip"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_Limon"
+  value:
+  {
+    AuthoredId: "f1b233c5-8270-2514-f86b-da84d6f9066c"
+    Name: "Limon"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_Poker"
+  value:
+  {
+    AuthoredId: "26754c8b-cc30-c394-b98e-beda180a41da"
+    Name: "Poker"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionaryGrumpy"
+  value:
+  {
+    AuthoredId: "cc360e2f-7027-aa44-0bf3-3447266ed2d1"
+    Name: "Legionary Grumpy"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressSalted"
+  value:
+  {
+    AuthoredId: "5e3beb8c-cc26-a324-ea15-f4d7c2fa464a"
+    Name: "Mistress Salted"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterStrawberry"
+  value:
+  {
+    AuthoredId: "94fd285f-970f-efd4-38ff-8489c15a6504"
+    Name: "Grand Master Stawberry"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_Striker"
+  value:
+  {
+    AuthoredId: "3d603ae3-9ac4-f8e4-489e-50da3f1d0797"
+    Name: "Striker"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirCheesy"
+  value:
+  {
+    AuthoredId: "e2fa95c5-2cc4-1754-d80c-a8cb8d99d736"
+    Name: "Sir Cheesy"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SingleServing"
+  value:
+  {
+    AuthoredId: "0a37b84c-fb9c-e0f4-1804-cd4197c2a1c3"
+    Name: "Single Serving"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressCoconut"
+  value:
+  {
+    AuthoredId: "df063609-bd6d-fc84-8a55-39cbed1b731a"
+    Name: "Mistress Coconut"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiMalted"
+  value:
+  {
+    AuthoredId: "f4b7dd1e-9dcb-e6d4-0904-1f95a97f15ea"
+    Name: "Senpai Malted"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Drizzled"
+  value:
+  {
+    AuthoredId: "c085e9ea-2379-51c4-3b8f-7cb6305c2adc"
+    Name: "Drizzled"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterFlying"
+  value:
+  {
+    AuthoredId: "69683e1c-e353-3914-5a84-de9f77b3f5a9"
+    Name: "Grand Master Flying"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_The_Bite_Sized"
+  value:
+  {
+    AuthoredId: "3464c1c1-1ef4-22c4-580f-f5abc1b525ba"
+    Name: "The Bite Sized"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirMalted"
+  value:
+  {
+    AuthoredId: "79e82723-a78b-2be4-580e-3f281ae996aa"
+    Name: "Sir Malted"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterCherryCola"
+  value:
+  {
+    AuthoredId: "31690c60-ca43-1864-ebdd-e0bd38e124cf"
+    Name: "Grand Master Cherry Cola"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_The_Melty"
+  value:
+  {
+    AuthoredId: "5a1a5c98-74b0-7584-7be9-e329212a18c5"
+    Name: "The Melty"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionaryNutty"
+  value:
+  {
+    AuthoredId: "29e825b3-89a1-1da4-0a36-5d8d0047891b"
+    Name: "Legionary Nutty"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterBaked"
+  value:
+  {
+    AuthoredId: "61eef531-9845-3144-ca64-60adfa71e020"
+    Name: "Grand Master Baked"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_Quick"
+  value:
+  {
+    AuthoredId: "7582bdcb-6d44-ae94-99a7-59683db50ef5"
+    Name: "Quick"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirAngry"
+  value:
+  {
+    AuthoredId: "c0c14231-a864-72c4-2a05-8755a9a9fba9"
+    Name: "Sir Angry"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiGrumpy"
+  value:
+  {
+    AuthoredId: "f379f851-c02e-5cd4-a818-87a14339828b"
+    Name: "Senpai Grumpy"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionBitter"
+  value:
+  {
+    AuthoredId: "169f53dd-ce2e-9504-58e6-00cf724f9480"
+    Name: "Centurion Bitter"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_The_Fruity"
+  value:
+  {
+    AuthoredId: "b9a06098-aea1-ff94-7ac4-173cf2e2a3b7"
+    Name: "The Fruity"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_The_Chocolatey"
+  value:
+  {
+    AuthoredId: "4e555ec3-dbbe-8704-88c6-5c65ece275ba"
+    Name: "The Chocolatey"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionButtered"
+  value:
+  {
+    AuthoredId: "455768af-6e8b-2bb4-0829-64584d577468"
+    Name: "Centurion Buttered"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_Cover-up"
+  value:
+  {
+    AuthoredId: "b85e0d45-ee5f-0404-6878-09d8f97ee308"
+    Name: "Cover-up"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_Last_OverhandRight"
+  value:
+  {
+    AuthoredId: "f1bd3119-1d15-1304-3a6c-86d6c930999d"
+    Name: "Overhand Right"
+    Position: 1
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Fudgy"
+  value:
+  {
+    AuthoredId: "9dfc3592-594a-5490-ab36-6f9b108954f9"
+    Name: "Fudgy"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiRaspberry"
+  value:
+  {
+    AuthoredId: "1fefef33-2619-7bf4-1871-aa71cbe63788"
+    Name: "Senpai Rasperry"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionaryBiteSized"
+  value:
+  {
+    AuthoredId: "d8ad490d-6b9f-9a74-8b83-9cbab7e915fb"
+    Name: "Legionary Bite Sized"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_Of_Candycity"
+  value:
+  {
+    AuthoredId: "ed90040f-bf24-1ea4-d930-f385b0773605"
+    Name: "Of Candycity"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Plump"
+  value:
+  {
+    AuthoredId: "9e85c7bf-234d-c164-9a4a-f169ddddd6c7"
+    Name: "Plump"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_The_Minty"
+  value:
+  {
+    AuthoredId: "a1bd2dfe-6cb4-eed4-4bfc-16be53f1ac9e"
+    Name: "The Minty"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_TravelSized"
+  value:
+  {
+    AuthoredId: "2b96c872-5327-a124-8a07-e61dc32faf21"
+    Name: "Travel Sized"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Squishy"
+  value:
+  {
+    AuthoredId: "aded67c3-6d00-00f4-d83f-939c542fcdf2"
+    Name: "Squishy"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressBoiled"
+  value:
+  {
+    AuthoredId: "5499e932-0621-e854-0a0c-55b28543ed48"
+    Name: "Mistress Boiled"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionarySneezy"
+  value:
+  {
+    AuthoredId: "13056870-8174-5da4-6b36-afcbf9b12c0c"
+    Name: "Legionary Sneezy"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_Last_Runner"
+  value:
+  {
+    AuthoredId: "1f8dec75-0a40-5de4-5b06-11478bec98b3"
+    Name: "Runner"
+    Position: 1
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_Slip"
+  value:
+  {
+    AuthoredId: "6ec5b623-203c-fbe4-79e2-381046736983"
+    Name: "Slip"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_Xaya"
+  value:
+  {
+    AuthoredId: "19047438-1f52-1824-b848-c060840e67bf"
+    Name: "Xaya"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Toffee"
+  value:
+  {
+    AuthoredId: "3f874e81-8e8d-0074-aa03-3f6e29501a89"
+    Name: "Toffee"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiStale"
+  value:
+  {
+    AuthoredId: "989a5e2c-21c1-23f4-a9b4-a87d9a52f99d"
+    Name: "Senpai Stale"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_Crunchy"
+  value:
+  {
+    AuthoredId: "55c5407a-2725-df64-dbb6-afa8e4b7a56e"
+    Name: "Crunchy"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterSalted"
+  value:
+  {
+    AuthoredId: "31f76754-9689-5564-6bad-a05999ed638e"
+    Name: "Grand Master Salted"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_Last_Poker"
+  value:
+  {
+    AuthoredId: "13708387-2433-6474-9a3e-ac82b85ba41b"
+    Name: "Poker"
+    Position: 1
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_The_Buttered"
+  value:
+  {
+    AuthoredId: "4f2d7402-c08d-2e14-3952-7333be0a77a9"
+    Name: "The Buttered"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionaryMelty"
+  value:
+  {
+    AuthoredId: "39a129c0-875e-27d4-0bc6-1e094e971b3e"
+    Name: "Legionary Melty"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_The_Candied"
+  value:
+  {
+    AuthoredId: "d6cd744f-b479-b824-9be2-1806904f3611"
+    Name: "The Candied"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterCoconut"
+  value:
+  {
+    AuthoredId: "2df30bd9-38dd-92c4-3a0f-e53d58638be7"
+    Name: "Grand Master Coconut"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_The_Minty"
+  value:
+  {
+    AuthoredId: "b444519d-0681-f6f4-8ac7-27b18aff4577"
+    Name: "The Minty"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_Squishy"
+  value:
+  {
+    AuthoredId: "ca27ca6d-5fc2-49a4-5beb-71822ee5f918"
+    Name: "Squishy"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_OfCakerton"
+  value:
+  {
+    AuthoredId: "8d9eb4f9-15b1-3d54-f8f5-3a284d34a4cb"
+    Name: "Of Cakerton"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionSweetAndSour"
+  value:
+  {
+    AuthoredId: "2b799869-2168-b5d4-b9a1-4db949c635e6"
+    Name: "Centurion Sweet and Sour"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirFresh"
+  value:
+  {
+    AuthoredId: "2a68f03b-2650-4ba4-c92f-8cd74a9bf8a7"
+    Name: "Sir Fresh"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiSneezy"
+  value:
+  {
+    AuthoredId: "0a79e6aa-b7d6-6ff4-68f5-015521476769"
+    Name: "Senpai Sneezy"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiLemon"
+  value:
+  {
+    AuthoredId: "2323d6f2-6626-3294-4868-cbc03defe75e"
+    Name: "Senpai Lemony"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirMoldy"
+  value:
+  {
+    AuthoredId: "7edaf272-1d05-d374-8b96-f121bc47327a"
+    Name: "Sir Moldy"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_The_Happy"
+  value:
+  {
+    AuthoredId: "bb13dd21-c58b-97c4-bb3a-30d5cc1eeaef"
+    Name: "The Happy"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_BoloPunch"
+  value:
+  {
+    AuthoredId: "6241762f-89fc-3964-6b72-c78847f8656c"
+    Name: "Bolo Punch"
+    Position: 1
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_Switch_Hitter"
+  value:
+  {
+    AuthoredId: "11ede1d2-0ded-0884-4b07-80c67961cd32"
+    Name: "Switch-Hitter"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_Glazed"
+  value:
+  {
+    AuthoredId: "462c0286-52ac-8274-9bdd-561f8c77ec34"
+    Name: "Glazed"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_Of_Puddingham"
+  value:
+  {
+    AuthoredId: "5b6351a1-5c42-2f94-cadd-49e2dfcc146f"
+    Name: "Of Puddingham"
+    Position: 1
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_The_Everlasting"
+  value:
+  {
+    AuthoredId: "6307f519-c15b-dd84-893a-8b369538000b"
+    Name: "The Everlasting"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Flakey"
+  value:
+  {
+    AuthoredId: "7645b448-4183-97a4-ba45-cb0bb2090ec4"
+    Name: "Flakey"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_Rolled"
+  value:
+  {
+    AuthoredId: "404f4990-7dbb-5344-59aa-46787af008bb"
+    Name: "Rolled"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionIcey"
+  value:
+  {
+    AuthoredId: "ed5cac8d-3d91-1884-d9cc-711dd5461124"
+    Name: "Centurion Icey"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_The_Crusty"
+  value:
+  {
+    AuthoredId: "a266d594-912e-4044-4967-b2d9d8428f4e"
+    Name: "The Crusty"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterGreenApple"
+  value:
+  {
+    AuthoredId: "4cbaf19e-7385-f364-4b61-4d1b604fe8e0"
+    Name: "Grand Master Green Apple"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressSingleServing"
+  value:
+  {
+    AuthoredId: "a870f140-059e-a544-39c8-7881cafb4712"
+    Name: "Mistress Single Serving"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionChocolatey"
+  value:
+  {
+    AuthoredId: "f7ec0fe1-60d5-8a54-fa45-0d560f2c31c5"
+    Name: "Centurion Chocolatey"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_Chocolatey"
+  value:
+  {
+    AuthoredId: "7b2f4680-c3f7-cbd4-680d-34ac97a70825"
+    Name: "Chocolatey"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirBlackberry"
+  value:
+  {
+    AuthoredId: "0d12c3b0-3278-f8c4-8bbc-17981fa48fa7"
+    Name: "Sir Blackberry"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiBaked"
+  value:
+  {
+    AuthoredId: "734d92ae-cee3-0054-1828-34d15fe6bc7d"
+    Name: "Senpai Baked"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirCrazy"
+  value:
+  {
+    AuthoredId: "bfe1a848-097d-0d94-38ef-71786154a4d9"
+    Name: "Sir Crazy"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterDopey"
+  value:
+  {
+    AuthoredId: "09c2092a-dacf-1dc4-a980-dfc2576b1474"
+    Name: "Grand Master Dopey"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_The_Bitter"
+  value:
+  {
+    AuthoredId: "de41714a-87f3-cd24-39e7-67ba4cd79b64"
+    Name: "The Bitter"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressMinty"
+  value:
+  {
+    AuthoredId: "d4d0e319-444e-a5e4-3955-7c4953bd871f"
+    Name: "Mistress Minty"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterSalty"
+  value:
+  {
+    AuthoredId: "9482e6e3-6d98-ebe4-5be3-0feecdcdaa54"
+    Name: "Grand Master Salty"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiIcey"
+  value:
+  {
+    AuthoredId: "f7916dca-2f8f-9064-7a77-488da92ccb72"
+    Name: "Senpai Icey"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressRaspberry"
+  value:
+  {
+    AuthoredId: "0e654ad2-2397-de74-0bdc-db5b3cfbf20d"
+    Name: "Mistress Rasperry"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_Butterscotch"
+  value:
+  {
+    AuthoredId: "aa8cf8f0-5a5d-90e4-18a1-ed9f0d255d2e"
+    Name: "Butterscotch"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_Malted"
+  value:
+  {
+    AuthoredId: "5429290f-9ff3-17f4-793f-d82e6dddfb92"
+    Name: "Malted"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiBlackberry"
+  value:
+  {
+    AuthoredId: "6e8eae99-6fd8-8ba4-5be7-976762f91794"
+    Name: "Senpai Blackberry"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionaryBadass"
+  value:
+  {
+    AuthoredId: "0436b15b-fd84-14b4-dbc6-4d7214377cda"
+    Name: "Legionary  Badass"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Speedy"
+  value:
+  {
+    AuthoredId: "3bebcc05-a901-61f4-e876-685f748bddbd"
+    Name: "Speedy"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_The_Deep_Fried"
+  value:
+  {
+    AuthoredId: "00c5f526-b687-42b4-9b82-8631d4c77cd0"
+    Name: "The Deep Fried"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Angry"
+  value:
+  {
+    AuthoredId: "9497b58e-fe66-d477-1b54-40b55383f6d2"
+    Name: "Angry"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_The_Quick"
+  value:
+  {
+    AuthoredId: "5a9fe36c-4b42-f964-48ed-16011c21da3a"
+    Name: "The Quick"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionBlackberry"
+  value:
+  {
+    AuthoredId: "78da8f48-af25-be24-4a40-5adaddbadfb8"
+    Name: "Centurion Blackberry"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressMoldy"
+  value:
+  {
+    AuthoredId: "fb7c6ccc-7750-7fb4-684e-559a0f3d661f"
+    Name: "Mistress Moldy"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirHotButtered"
+  value:
+  {
+    AuthoredId: "380a6daf-e82c-4794-cabb-c290325efb93"
+    Name: "Sir Hot Buttered"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_Caramelized"
+  value:
+  {
+    AuthoredId: "b9736786-57d2-4164-2ac3-13d2625edf14"
+    Name: "Caramelized"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_Bashful"
+  value:
+  {
+    AuthoredId: "4a009654-8a2a-e324-4a1e-90c7defffbf2"
+    Name: "Vanilla"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Rocky"
+  value:
+  {
+    AuthoredId: "66b64d77-fd6f-a48a-5932-935ca54c0b51"
+    Name: "Rocky"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_Slapper"
+  value:
+  {
+    AuthoredId: "afe7b80b-2506-ed24-f93f-97d54b631688"
+    Name: "Slapper"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_Sour"
+  value:
+  {
+    AuthoredId: "7eea43a1-79d2-fad4-389e-86dc26ad1669"
+    Name: "Sour"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_The_Bitter"
+  value:
+  {
+    AuthoredId: "f5862cbe-6d14-32e4-3a96-05affb5e106c"
+    Name: "The Bitter"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressHappy"
+  value:
+  {
+    AuthoredId: "8451b2b5-e32d-6aa4-08bc-55b72b8f57bd"
+    Name: "Mistress Happy"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressDrizzled"
+  value:
+  {
+    AuthoredId: "adc7b9b7-9b65-9894-bb98-f456ba011cc1"
+    Name: "Mistress Drizzled"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_The_Bashful"
+  value:
+  {
+    AuthoredId: "189c44bf-bf98-8144-ba81-e8d3e7dd160e"
+    Name: "The Bashful"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionaryPrechewed"
+  value:
+  {
+    AuthoredId: "470fab04-cb65-88d4-2bda-50a8c5594a38"
+    Name: "Legionary Prechewed"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirSpicy"
+  value:
+  {
+    AuthoredId: "6b765551-c822-e3b4-7b1a-464b0ed8c862"
+    Name: "Sir Spicy"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterBlueberry"
+  value:
+  {
+    AuthoredId: "6bca1765-b608-5764-3be0-23837581fd9d"
+    Name: "Grand Master Blueberry"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionarySingleServing"
+  value:
+  {
+    AuthoredId: "3bab7a60-797c-ec54-f863-222e7fd7657b"
+    Name: "Senpai Single Serving"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionFried"
+  value:
+  {
+    AuthoredId: "6f37ba8d-faf9-2524-e974-9106b7238e4f"
+    Name: "Centurion Fried"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressMango"
+  value:
+  {
+    AuthoredId: "3b5a23d3-8a66-10e4-0bed-cbd7ae7b68cb"
+    Name: "Mistress Mango"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirIcey"
+  value:
+  {
+    AuthoredId: "59f954eb-90fb-1b44-8a3b-d105766fe79a"
+    Name: "Sir Icey"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionaryGrouchy"
+  value:
+  {
+    AuthoredId: "60882bb1-8a47-d564-98c6-703f5ea03177"
+    Name: "Legionary Grouchy"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_Pie"
+  value:
+  {
+    AuthoredId: "f3d2d4db-8273-2db4-49d3-22459c790832"
+    Name: "Pie"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressLimon"
+  value:
+  {
+    AuthoredId: "a1c6a2e3-8759-7594-a981-5537abbb8a08"
+    Name: "Mistress Limon"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionarySalty"
+  value:
+  {
+    AuthoredId: "b373356f-b696-67a4-b889-1e626281035c"
+    Name: "Legionary Salty"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_Flakey"
+  value:
+  {
+    AuthoredId: "e8b9398b-5e3f-c834-6ba3-63d7e80e0f19"
+    Name: "Flakey"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiBoiled"
+  value:
+  {
+    AuthoredId: "894eee1a-e115-15d4-286f-f34bc0b238cc"
+    Name: "Senpai Boiled"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionaryRootBeer"
+  value:
+  {
+    AuthoredId: "c979ea38-2e5f-5074-382a-1bb051a3b7e4"
+    Name: "Legionary Root Beer"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_The_Salted"
+  value:
+  {
+    AuthoredId: "1fa89c70-7ca5-3f34-d9d2-20c02109d418"
+    Name: "The Salted"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_Cake"
+  value:
+  {
+    AuthoredId: "0a605b7f-0d1c-6d14-68ba-3ac6152e7b3b"
+    Name: "Cake"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Sugary"
+  value:
+  {
+    AuthoredId: "d6117426-3d2f-a434-6a70-d050c0d31796"
+    Name: "Sugary"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressFruity"
+  value:
+  {
+    AuthoredId: "c538b368-32c1-0124-697c-efc09abaedd5"
+    Name: "Mistress Fruity"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_The_Creamy"
+  value:
+  {
+    AuthoredId: "9f4b3dfd-9ecb-b604-ba2e-8b7f98aa5cb2"
+    Name: "The Creamy"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionCreamy"
+  value:
+  {
+    AuthoredId: "a310d781-cff8-2a44-cb25-f7ebe3d1805e"
+    Name: "Centurion Creamy"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiDopey"
+  value:
+  {
+    AuthoredId: "ff07762d-7694-5184-4824-3a2b41895226"
+    Name: "Senpai Dopey"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionPrechewed"
+  value:
+  {
+    AuthoredId: "2703bf57-8112-bf44-7a97-41a8d307ced5"
+    Name: "Centurion Prechewed"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_The_Powdered"
+  value:
+  {
+    AuthoredId: "83352d6b-bdc5-b3b4-b957-59d2632cf801"
+    Name: "The Powdered"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirCrusty"
+  value:
+  {
+    AuthoredId: "e01597e6-00b8-b6a4-3a3e-0befe707e3bf"
+    Name: "Sir Crusty"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionSingleServing"
+  value:
+  {
+    AuthoredId: "9e14733e-7923-6714-5812-b6ee4545f98d"
+    Name: "Centurion Single Serving"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_Of_Gummiway"
+  value:
+  {
+    AuthoredId: "4d462c84-bd7d-a984-b951-fb6a73c4cefd"
+    Name: "Of Gummiway"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiSalty"
+  value:
+  {
+    AuthoredId: "a13d9ad9-b283-1d44-3b3b-b999bac35d5e"
+    Name: "Senpai Salty"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiChocolatey"
+  value:
+  {
+    AuthoredId: "b7cd9583-4306-77f4-6a8e-8f8dca83fdac"
+    Name: "Senpai Chocolatey"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionaryButtered"
+  value:
+  {
+    AuthoredId: "06d4a824-5f11-68e4-1bcb-a6716bc3a678"
+    Name: "Legionary Buttered"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Fizzy"
+  value:
+  {
+    AuthoredId: "e255a82f-bb9e-b418-f86e-4919360a95b5"
+    Name: "Fizzy"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressQuick"
+  value:
+  {
+    AuthoredId: "6fde9fa2-41ef-77d4-0a72-349c72fae8b7"
+    Name: "Mistress Quick"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterCaramel"
+  value:
+  {
+    AuthoredId: "63c6e658-ef2e-f684-49e5-de59fcd59508"
+    Name: "Grand Master Caramel"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionarySprinkled"
+  value:
+  {
+    AuthoredId: "0c09a546-1cc5-eeb4-3884-50506538e226"
+    Name: "Legionary Sprinkled"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_The_Chocolatey"
+  value:
+  {
+    AuthoredId: "e9b0276f-65a7-e874-7a3d-2be22ca00288"
+    Name: "The Chocolatey"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_The_Deep_Fried"
+  value:
+  {
+    AuthoredId: "cb210cd7-c255-a814-0aae-930eb13cb1cb"
+    Name: "The Deep Fried"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_The_Plump"
+  value:
+  {
+    AuthoredId: "88c4240d-31b4-2f34-b8f8-b6decc1ceeb4"
+    Name: "The Plump"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_Runner"
+  value:
+  {
+    AuthoredId: "3f54189c-805c-d554-d8ec-2ebbf10463a2"
+    Name: "Runner"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_Coco"
+  value:
+  {
+    AuthoredId: "5de014c5-def5-1944-99e8-1c0c2089ae3d"
+    Name: "Coco"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionQuick"
+  value:
+  {
+    AuthoredId: "6a307ebb-c1d5-45d4-08fa-238203ad9705"
+    Name: "Centurion Quick"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterCaramelized"
+  value:
+  {
+    AuthoredId: "5f375e8f-9984-1744-8aa0-8d1808337f90"
+    Name: "Grand Master Caramelized"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionMinty"
+  value:
+  {
+    AuthoredId: "a6310264-fe6e-90b4-991e-a5790f3f4675"
+    Name: "Centurion Minty"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_The_Grouchy"
+  value:
+  {
+    AuthoredId: "bdc9dead-21de-3614-780c-f35d693142b8"
+    Name: "The Grouchy"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_CandyCoated"
+  value:
+  {
+    AuthoredId: "64017d6d-d525-d994-0b0e-56f2228bde33"
+    Name: "Candy Coated"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_The_Deep_Fried"
+  value:
+  {
+    AuthoredId: "88e4f91e-e4ab-2874-dbc0-7440fda9a99a"
+    Name: "The Deep Fried"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionarySour"
+  value:
+  {
+    AuthoredId: "975d75a0-e850-2794-ca59-d620819cd6bf"
+    Name: "Legionary Sour"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirChewy"
+  value:
+  {
+    AuthoredId: "32ff01dc-7c72-0394-487a-7249e1a29a5a"
+    Name: "Sir Chewy"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_Of_Popland"
+  value:
+  {
+    AuthoredId: "913df874-833e-df94-2adc-add1805dc8fc"
+    Name: "Of Popland"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionaryFresh"
+  value:
+  {
+    AuthoredId: "ab1940fd-673c-42e4-eaef-0d43aa288197"
+    Name: "Legionary Fresh"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_The_Single_Serving"
+  value:
+  {
+    AuthoredId: "68772196-3b27-c774-ebad-978c55bd1264"
+    Name: "The Single Serving"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionaryMoldy"
+  value:
+  {
+    AuthoredId: "b8e6f3d5-6643-8fc4-494e-a8d4d9cc0ede"
+    Name: "Legionary Moldy"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_Of_Fudgeland"
+  value:
+  {
+    AuthoredId: "accf6d11-e301-ad04-7abf-c8f02826cce0"
+    Name: "Of Fudgeland"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterFlakey"
+  value:
+  {
+    AuthoredId: "a1c5b412-6992-2e14-2bd8-be12933a2434"
+    Name: "Grand Master Flakey"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_The_Minty"
+  value:
+  {
+    AuthoredId: "f136730a-1a62-c184-4b3d-26ce99aed3d2"
+    Name: "The Minty"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionaryChopped"
+  value:
+  {
+    AuthoredId: "02956951-bb2a-aa24-5854-7de0686817cb"
+    Name: "Legionary Chopped"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Cherry"
+  value:
+  {
+    AuthoredId: "94bc2e32-37ef-eb04-7ab9-38d9ebedaf0b"
+    Name: "Cherry"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressSnozzberry"
+  value:
+  {
+    AuthoredId: "4ecbbee6-6323-f734-9932-83ddf3ca34e2"
+    Name: "Mistress Snozzberry"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionaryLifeSized"
+  value:
+  {
+    AuthoredId: "b85f44fc-2380-8b14-8ae9-87a71c87785e"
+    Name: "Legionary Life Sized"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressBiteSized"
+  value:
+  {
+    AuthoredId: "ae353323-0108-57d4-dbba-f7b19ebfb6f8"
+    Name: "Mistress Bite Sized"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Caramel"
+  value:
+  {
+    AuthoredId: "3b892611-f180-6494-fab3-3c9ba3fa3c92"
+    Name: "Caramel"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiCheesy"
+  value:
+  {
+    AuthoredId: "86306d8f-78ff-9594-2aa8-f9635c0b5b51"
+    Name: "Senpai Cheesy"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirCandied"
+  value:
+  {
+    AuthoredId: "398333a6-ce2b-b0f4-ea05-a427ec64fb70"
+    Name: "Sir Candied"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionHappy"
+  value:
+  {
+    AuthoredId: "c7a85d66-f07f-bbc4-d9c7-e63a35086326"
+    Name: "Centurion Happy"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_Of_Sourway"
+  value:
+  {
+    AuthoredId: "5a23f080-1486-1174-6b5e-e72ccc9664bc"
+    Name: "Of Sourway"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionGlazed"
+  value:
+  {
+    AuthoredId: "df2a8b54-c399-9c44-5a10-7f5ae6429a63"
+    Name: "Centurion Glazed"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Peanut"
+  value:
+  {
+    AuthoredId: "0ce77cbf-11d5-441e-6a92-7ed9cbf6220b"
+    Name: "Peanut"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionaryCrazy"
+  value:
+  {
+    AuthoredId: "0f5d8d8a-8ecf-86e4-0ab0-a59b6163b167"
+    Name: "Legionary Crazy"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressButterscotch"
+  value:
+  {
+    AuthoredId: "44f8bc85-737c-7aa4-7a3b-c318c5f18019"
+    Name: "Mistress Butterscotch"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiMoldy"
+  value:
+  {
+    AuthoredId: "e15d5c97-a503-7794-793c-9b00edf6a4d5"
+    Name: "Senpai Moldy"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Melon"
+  value:
+  {
+    AuthoredId: "119b045a-3457-3744-db3f-01e6dd68d9c4"
+    Name: "Melon"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionMango"
+  value:
+  {
+    AuthoredId: "48d6536a-8fd2-1894-7989-0c69e8f9681b"
+    Name: "Centurion Mango"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_Last_Slapper"
+  value:
+  {
+    AuthoredId: "58ada2fc-cfa0-bc34-f827-c76653a46b6e"
+    Name: "Slapper"
+    Position: 1
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiGreenApple"
+  value:
+  {
+    AuthoredId: "ec9cdddc-0bc2-4bc4-0978-c4511a022388"
+    Name: "Senpai Green Apple"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_MistressGrumpy"
+  value:
+  {
+    AuthoredId: "64f87637-15f7-b654-a891-848a1ae2fe7a"
+    Name: "Mistress Grumpy"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_Of_Sugarville"
+  value:
+  {
+    AuthoredId: "90a52f6c-e799-d7c4-ca49-77e709ca0094"
+    Name: "Of Sugarville"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirCreamy"
+  value:
+  {
+    AuthoredId: "7d3cee78-bae3-14c4-3b5d-838c08c93c81"
+    Name: "Sir Creamy"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_GrandMasterSpeedy"
+  value:
+  {
+    AuthoredId: "4d5a702b-5ab6-f4a4-f82a-3d484df59fb6"
+    Name: "Grand Master Speedy"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionChopped"
+  value:
+  {
+    AuthoredId: "dd4c4ac7-1fc5-e034-ea92-c8d60fc547f2"
+    Name: "Centurion Chopped"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_The_Boiled"
+  value:
+  {
+    AuthoredId: "ae0d1cf1-60d1-af84-ebe0-af56bf8b28b8"
+    Name: "The Boiled"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_Last_Soup"
+  value:
+  {
+    AuthoredId: "a410ec8a-adf6-644b-bb9d-ed284285a5e9"
+    Name: "Soup"
+    Position: 1
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_The_Candy_Coated"
+  value:
+  {
+    AuthoredId: "0c6028c3-6e2f-5934-6be2-92fccdc36ff1"
+    Name: "The Candy Coated"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_The_Happy"
+  value:
+  {
+    AuthoredId: "e86d910c-4451-a354-f940-7b4dfc6ddb9e"
+    Name: "The Happy"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_BoloPunch"
+  value:
+  {
+    AuthoredId: "20b17074-1bae-feb4-08e6-403d7a7661b9"
+    Name: "Bolo Punch"
+    Position: 1
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirButtered"
+  value:
+  {
+    AuthoredId: "798a8f75-b667-d2c4-d9fe-bdf1b88b741c"
+    Name: "Sir Buttered"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_SirChocolatey"
+  value:
+  {
+    AuthoredId: "599f4c72-a29c-d774-bbaa-d821a4a6feb2"
+    Name: "Sir Chocolatey"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_Pop"
+  value:
+  {
+    AuthoredId: "ca7a0077-7043-5034-5acd-594ab5589cf7"
+    Name: "Pop"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Grumpy"
+  value:
+  {
+    AuthoredId: "4ce33a69-21b5-ffd4-e86a-27454b7c73e8"
+    Name: "Grumpy"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_MasterBaker"
+  value:
+  {
+    AuthoredId: "8fd76f7c-88d3-7d24-0bf3-59e97b8f526e"
+    Name: "Master Baker"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_Soup"
+  value:
+  {
+    AuthoredId: "a90bf804-19ef-2a64-58a1-f897280981ed"
+    Name: "Soup"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_Plump"
+  value:
+  {
+    AuthoredId: "8021f1b8-4d99-0a74-6a77-aa1b7be90f8c"
+    Name: "Plump"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_The_Melted"
+  value:
+  {
+    AuthoredId: "0abcbef5-b159-ee84-681e-9200c6dc5241"
+    Name: "The Melted"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiCrunchy"
+  value:
+  {
+    AuthoredId: "d57129a4-168f-6034-8b30-0e18bd941202"
+    Name: "Senpai Crunchy"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_The_Carameized"
+  value:
+  {
+    AuthoredId: "280bfa3c-61f1-5ff4-5b18-4c0b51ddef32"
+    Name: "The Carameized"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_Last_The_Chopped"
+  value:
+  {
+    AuthoredId: "478e2d6e-4dce-c694-f8db-65274042ff73"
+    Name: "The Chopped"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionaryQuick"
+  value:
+  {
+    AuthoredId: "ab3d89a4-39b6-0ca4-2add-371d9d13e87a"
+    Name: "Legionary Quick"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_Runner"
+  value:
+  {
+    AuthoredId: "4ad3c053-4679-bb04-fa0b-7fd8641e543d"
+    Name: "Runner"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_BoxerPuncher"
+  value:
+  {
+    AuthoredId: "f586b1e0-c1e8-5e74-3b0f-4e68b9d3632e"
+    Name: "Boxer-Puncher"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiSquishy"
+  value:
+  {
+    AuthoredId: "cf74a319-bd8a-0394-88e5-63b013113c18"
+    Name: "Senpai Squishy"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionaryCandyCoated"
+  value:
+  {
+    AuthoredId: "f8a68aae-8ecb-c0f4-a92f-f59ac5e28feb"
+    Name: "Legionary Candy Coated"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionCrusty"
+  value:
+  {
+    AuthoredId: "d1fc61b5-b43a-4b44-59e6-fb7756f6d7d7"
+    Name: "Centurion Crusty"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_LegionarySpicy"
+  value:
+  {
+    AuthoredId: "16352d20-761b-e734-a921-0d61c32fc912"
+    Name: "Legionary Spicy"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_Block"
+  value:
+  {
+    AuthoredId: "ea15e579-2cab-c0b4-ba31-37c2021d79f3"
+    Name: "Block"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_The_Flakey"
+  value:
+  {
+    AuthoredId: "6dd2da17-9ad2-46d4-4a2f-241eebe56e2f"
+    Name: "The Flakey"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_The_Glazed"
+  value:
+  {
+    AuthoredId: "1505c53b-0b4e-7f34-49c4-a3a51faaf035"
+    Name: "The Glazed"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Nutty"
+  value:
+  {
+    AuthoredId: "03790d5a-8824-643d-2b57-212ea737b6ec"
+    Name: "Nutty"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_Slugger"
+  value:
+  {
+    AuthoredId: "e60a25ac-6c8c-e8a4-c956-4aad56599a73"
+    Name: "Slugger"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_OverhandRight"
+  value:
+  {
+    AuthoredId: "6b752b26-3dd9-19b4-fa9c-ddfc8ca93f59"
+    Name: "Overhand Right"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Common_First_Crazy"
+  value:
+  {
+    AuthoredId: "5dbe53c5-408b-d49b-e89e-af1a20f92185"
+    Name: "Crazy"
+    Position: 0
+    Quality: 1
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_First_Cherry"
+  value:
+  {
+    AuthoredId: "220f07b1-3ec4-52e4-2ab7-4e7f0305358b"
+    Name: "Cherry"
+    Position: 0
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_First_CenturionOrange"
+  value:
+  {
+    AuthoredId: "68ff1a5b-1c38-26f4-38ce-5f96b3b4f23c"
+    Name: "Centurion Orange"
+    Position: 0
+    Quality: 4
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Epic_Last_The_Quick"
+  value:
+  {
+    AuthoredId: "36e36d20-1f8d-b534-78c0-c9d3349dd8a7"
+    Name: "The Quick"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Rare_First_SenpaiSprinkled"
+  value:
+  {
+    AuthoredId: "f009bcd7-4d3f-4824-483e-22544c722aa9"
+    Name: "Senpai Sprinkled"
+    Position: 0
+    Quality: 3
+    Probability: 1
+  }
+}
+fighternames:
+{
+  key: "FighterName_Uncommon_Last_The_Very_Tasty"
+  value:
+  {
+    AuthoredId: "d3f98ead-69e5-4f64-ab89-4514825c9d63"
+    Name: "The Very Tasty"
+    Position: 1
+    Quality: 2
+    Probability: 1
+  }
+}

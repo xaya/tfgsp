@@ -291,6 +291,8 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
      e.g. choose one's faction and create characters in a single move.  */
   TryXayaPlayerUpdate (name, mv["a"]);
 
+  /* We perform tutorial update, simply setting ftuestate to the new variable*/
+  TryTFTutorialUpdate (name, mv["tu"]);
 
   /* If there is no account (after potentially updating/initialising it),
      then let's not try to process any more updates.  This explicitly
@@ -312,6 +314,61 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
       << " has " << paidToDev << " paid-to-dev and "
       << burnt << " burnt CHI satoshi left";
 }
+
+  void
+  MoveProcessor::MaybeUpdateFTUEState (const std::string& name,
+                                   const Json::Value& init)
+  {
+    if (!init.isObject ())
+      return;
+
+    auto a = xayaplayers.GetByName (name);
+    CHECK (a != nullptr);
+
+    const auto& ftuestateVal = init["ftuestate"];
+    if (!ftuestateVal.isString ())
+      {
+        LOG (WARNING)
+            << "Name update does not specify ftuestate: " << init;
+        return;
+      }
+      
+      
+    const FTUEState ftuestate = FTUEStateFromString (ftuestateVal.asString ());
+    
+    switch (ftuestate)
+    {
+      case FTUEState::Invalid:
+        LOG (WARNING) << "Invalid ftuestate specified for account: " << init;
+        return;
+
+      default:
+        break;
+    }    
+    
+    const FTUEState ftuestateCurrent = a->GetFTUEState ();
+    
+    int s1val = static_cast<int>(ftuestate);
+    int s2val = static_cast<int>(ftuestateCurrent);
+    
+    if(s1val <= s2val)
+    {
+        LOG (WARNING) << "Ftuestate name update can only update forward: " << init;
+        return;        
+    }
+    
+    if (init.size () != 1)
+    {
+        LOG (WARNING) << "Ftuestate name update has extra fields: " << init;
+        return;
+    }
+
+    a->SetFTUEState (ftuestate);
+    LOG (INFO)
+        << "Setting account " << name << " to ftuestate "
+        << FTUEStateToString (ftuestate);
+  }
+
 
   void
   MoveProcessor::MaybeInitXayaPlayer (const std::string& name,
@@ -357,6 +414,16 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
         << "Initialised account " << name << " to faction "
         << PlayerRoleToString (role);
   }
+  
+  void
+  MoveProcessor::TryTFTutorialUpdate (const std::string& name,
+                                   const Json::Value& upd)
+  {
+    if (!upd.isObject ())
+      return;
+
+    MaybeUpdateFTUEState (name, upd["t"]);
+  }   
 
   void
   MoveProcessor::TryXayaPlayerUpdate (const std::string& name,

@@ -1,0 +1,76 @@
+/*
+    GSP for the TF blockchain game
+    Copyright (C) 2020  Autonomous Worlds Ltd
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+syntax = "proto2";
+option cc_enable_arenas = true;
+
+package pxd.proto;
+
+message AuthoredSweetenerRewardChoice
+{
+  /*d*/
+  optional string Description = 1;
+      
+  /*r*/
+  optional string RewardsTableId = 2; 
+
+  /*rc*/
+  optional uint32 BaseRollCount = 3;   
+  
+  /*at*/
+  optional string ArmorRewardsTableId = 4; 
+
+  /*ar*/
+  optional uint32 ArmorRollCount = 5;   
+
+  /*mt*/
+  optional string MoveRewardsTableId = 6; 
+
+  /*mr*/
+  optional uint32 MoveRollCount = 7; 
+
+  /*c*/
+  map<string, uint32> RequiredCandy = 8;    
+}
+
+message SweetenerBlueprint
+{
+  /*Id*/
+  optional string AuthoredId = 1;
+    
+  /*n*/
+  optional string Name = 2;
+  
+  /*d*/
+  optional string Description = 3;  
+  
+  /*p*/
+  optional uint32 Price = 4;
+
+  /*du*/
+  optional uint32 Duration = 5;
+
+  /*c*/
+  optional uint32 CookCost = 6;
+  
+  /*s*/
+  optional uint32 RequiredSweetness = 7;  
+
+  /*r*/
+  repeated AuthoredSweetenerRewardChoice RewardChoices = 8;   
+}

@@ -1,0 +1,84 @@
+goodies:
+{
+  key: "Goodie_PressureCooker_1"
+  value:
+  {
+    AuthoredId: "ca3378db-cd54-e514-7ae8-23705781bb9d"
+    Name: "Rusty Pressure Cooker"
+    Description: "Speed up your next 3 Cooks!"
+    Price: 100
+    GoodyType: 1
+    Uses: 3
+    ReductionPercent: 0.8
+  }
+}
+goodies:
+{
+  key: "Goodie_PressureCooker_2"
+  value:
+  {
+    AuthoredId: "de8529bb-e9e4-f764-3b93-64032254f105"
+    Name: "Slightly Used Pressure Coker"
+    Description: "Speed up your next 6 Cooks!"
+    Price: 175
+    GoodyType: 1
+    Uses: 6
+    ReductionPercent: 0.65
+  }
+}
+goodies:
+{
+  key: "Goodie_Espresso_1"
+  value:
+  {
+    AuthoredId: "339fa37e-d9be-0944-d990-9daff7017d91"
+    Name: "Single Shot Espresso"
+    Description: "Speed up your next 3 Expeditions!"
+    Price: 100
+    GoodyType: 2
+    Uses: 3
+    ReductionPercent: 0.8
+  }
+}
+goodies:
+{
+  key: "Goodie_Espresso_2"
+  value:
+  {
+    AuthoredId: "086433a2-1899-3d74-5b96-4127d7114011"
+    Name: "Double Shot Espresso"
+    Description: "Speed up your next 6 Expeditions!"
+    Price: 175
+    GoodyType: 2
+    Uses: 6
+    ReductionPercent: 0.65
+  }
+}
+goodies:
+{
+  key: "Goodie_Espresso_3"
+  value:
+  {
+    AuthoredId: "05451c32-ba50-4154-39a2-e7e20fcc3786"
+    Name: "Triple Shot Espresso"
+    Description: "Speed up your next 12 Expeditions!"
+    Price: 300
+    GoodyType: 2
+    Uses: 12
+    ReductionPercent: 0.5
+  }
+}
+goodies:
+{
+  key: "Goodie_PressureCooker_3"
+  value:
+  {
+    AuthoredId: "695bdc7d-e01a-17d4-a8a1-10c714c7da67"
+    Name: "Pristine Pressure Cooker"
+    Description: "Speed up your next 12 Cooks!"
+    Price: 300
+    GoodyType: 1
+    Uses: 12
+    ReductionPercent: 0.5
+  }
+}

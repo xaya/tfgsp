@@ -21,37 +21,44 @@ option cc_enable_arenas = true;
 
 package pxd.proto;
 
-/**
- * General data associated to an xaya name account.
- */
-message XayaPlayer
+message TournamentBlueprint
 {
-  optional uint32 notused = 1;
+  /*Id*/
+  optional string AuthoredId = 1;
     
-  /**
-   * Role of the XAYA name in relation to the game
-   */
-  optional uint32 role = 2;
+  /*n*/
+  optional string Name = 2;
   
-  /**
-   * vCHI based value
-   */ 
-  optional uint64 balance = 3;
+  /*d*/
+  optional uint32 Duration = 3;  
   
-  /**
-   * Balance of vCHI minted through the burnsale, which corresponds to
-   * the balance that will be carried over to the full game.
-   */
-  optional uint64 burnsale_balance = 4;  
+  /*tc*/
+  optional uint32 TeamCount = 4;
+
+  /*ts*/
+  optional uint32 TeamSize = 5;
+
+  /*mis*/
+  optional uint32 MinSweetness = 6; 
   
-  /**
-   * The XAYA name itself
-   */
-  optional string xayaname = 5;  
+  /*mas*/
+  optional uint32 MaxSweetness = 7;
+
+  /*mrq*/
+  optional uint32 MaxRewardQuality = 8; 
+
+  /*brt*/
+  optional string BaseRewardsTableId = 9;  
+
+  /*brc*/
+  optional uint32 BaseRollCount = 10; 
+
+  /*wrt*/
+  optional string WinnerRewardsTableId = 11;
+
+  /*wrc*/
+  optional uint32 WinnerRollCount = 12;    
   
- 
-  /**
-   * Current tutorial state
-   */
-  optional uint32 ftuestate = 6; 
+  /*jc*/
+  optional uint32 JoinCost = 13;    
 }

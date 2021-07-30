@@ -173,6 +173,33 @@ TEST_F (XayaPlayersUpdateTests, Initialisation)
   EXPECT_EQ (a->GetRole (), PlayerRole::PLAYER);
 }
 
+TEST_F (XayaPlayersUpdateTests, FTUEstateUpdateTest)
+{
+  Process (R"([
+    {"name": "domob", "move": {"a": {"x": 42, "init": {"role": "p"}}}},
+    {"name": "domob", "move": {"tu": {"t": {"ftuestate": "t12"}}}},
+  ])");
+
+  auto a = xayaplayers.GetByName ("domob");
+  ASSERT_TRUE (a != nullptr);
+  EXPECT_EQ (a->GetRole (), PlayerRole::PLAYER);
+  EXPECT_EQ (a->GetFTUEState (), FTUEState::FirstTournament);
+}
+
+TEST_F (XayaPlayersUpdateTests, FTUEstateUpdateForwardOnlyTest)
+{
+  Process (R"([
+    {"name": "domob", "move": {"a": {"x": 42, "init": {"role": "p"}}}},
+    {"name": "domob", "move": {"tu": {"t": {"ftuestate": "t3"}}}},
+    {"name": "domob", "move": {"tu": {"t": {"ftuestate": "t1"}}}},
+  ])");
+
+  auto a = xayaplayers.GetByName ("domob");
+  ASSERT_TRUE (a != nullptr);
+  EXPECT_EQ (a->GetRole (), PlayerRole::PLAYER);
+  EXPECT_EQ (a->GetFTUEState (), FTUEState::CookFirstRecipe);
+}
+
 TEST_F (XayaPlayersUpdateTests, InvalidInitialisation)
 {
   EXPECT_DEATH (Process (R"([

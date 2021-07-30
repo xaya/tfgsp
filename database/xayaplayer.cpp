@@ -23,7 +23,7 @@ namespace pxd
 
 XayaPlayer::XayaPlayer (Database& d, const std::string& n)
   : db(d), name(n), tracker(db.TrackHandle ("xayaplayer", n)),
-    role(PlayerRole::INVALID), dirtyFields(true)
+    role(PlayerRole::INVALID), ftuestate(FTUEState::Intro), dirtyFields(true)
 {
   VLOG (1) << "Created instance for newly initialised account " << name;
   data.SetToDefault ();
@@ -37,6 +37,7 @@ XayaPlayer::XayaPlayer (Database& d, const Database::Result<XayaPlayerResult>& r
 
   role = GetNullablePlayerRoleFromColumn (res);
   data = res.GetProto<XayaPlayerResult::proto> ();
+  ftuestate = GetFTUEStateFromColumn (res);
 
   VLOG (1) << "Created account instance for " << name << " from database";
 }
@@ -54,13 +55,14 @@ XayaPlayer::~XayaPlayer ()
 
   auto stmt = db.Prepare (R"(
     INSERT OR REPLACE INTO `xayaplayers`
-      (`name`, `role`, `proto`)
-      VALUES (?1, ?2, ?3)
+      (`name`, `role`, `proto`, `ftuestate`)
+      VALUES (?1, ?2, ?3, ?4)
   )");
 
   stmt.Bind (1, name);
   BindPlayerRoleParameter (stmt, 2, role);
   stmt.BindProto (3, data);
+  BindFTUEStateParameter (stmt, 4, ftuestate);
 
   stmt.Execute ();
 }
@@ -74,6 +76,14 @@ const bool XayaPlayer::GetIsMine ()
 std::string XayaPlayer::SendCHI (std::string address, Amount amount)
 {
     return "";
+}
+
+void
+BindFTUEStateParameter (Database::Statement& stmt, const unsigned ind,
+                      const FTUEState f)
+{
+  stmt.Bind (ind, static_cast<int64_t> (f));
+  return;
 }
 
 void
@@ -96,6 +106,50 @@ BindPlayerRoleParameter (Database::Statement& stmt, const unsigned ind,
     default:
       LOG (FATAL)
           << "Binding invalid faction to parameter: " << static_cast<int> (f);
+    }
+}
+
+std::string
+FTUEStateToString (const FTUEState f)
+{
+  switch (f)
+    {
+    case FTUEState::Intro:
+      return "t0";
+    case FTUEState::FirstRecipe:
+      return "t1";
+    case FTUEState::CookFirstRecipe:
+      return "t3";
+    case FTUEState::CookingFirstRecipe:
+      return "t4";
+    case FTUEState::FirstExpedition:
+      return "t5";
+    case FTUEState::JoinFirstExpedition:
+      return "t6";  
+    case FTUEState::FirstExpeditionPending:
+      return "t7";  
+    case FTUEState::ResolveFirstExpedition:
+      return "t8";  
+    case FTUEState::SecondRecipe:
+      return "t9";  
+    case FTUEState::CookSecondRecipe:
+      return "t10";  
+    case FTUEState::CookingSecondRecipe:
+      return "t11";  
+    case FTUEState::FirstTournament:
+      return "t12";  
+    case FTUEState::GoToFirstTournament:
+      return "t13";  
+    case FTUEState::JoinFirstTournament:
+      return "t14";  
+    case FTUEState::FirstTournamentPending:
+      return "t15";  
+    case FTUEState::ResolveFirstTournament:
+      return "t16";  
+    case FTUEState::Completed:
+      return "t17";        
+    default:
+      LOG (FATAL) << "Invalid FTUEState: " << static_cast<int> (f);
     }
 }
 
@@ -132,6 +186,55 @@ XayaPlayer::SetRole (const PlayerRole f)
   dirtyFields = true;
 }
 
+void
+XayaPlayer::SetFTUEState(const FTUEState f)
+{
+  ftuestate = f;
+  dirtyFields = true;
+}
+
+FTUEState
+FTUEStateFromString (const std::string& str)
+{
+  if (str == "t0")
+    return FTUEState::Intro;
+  if (str == "t1")
+    return FTUEState::FirstRecipe;
+  if (str == "t3")
+    return FTUEState::CookFirstRecipe;
+  if (str == "t4")
+    return FTUEState::CookingFirstRecipe;
+  if (str == "t5")
+    return FTUEState::FirstExpedition;
+  if (str == "t6")
+    return FTUEState::JoinFirstExpedition;
+  if (str == "t7")
+    return FTUEState::FirstExpeditionPending;
+  if (str == "t8")
+    return FTUEState::ResolveFirstExpedition;
+  if (str == "t9")
+    return FTUEState::SecondRecipe;
+  if (str == "t10")
+    return FTUEState::CookSecondRecipe;
+  if (str == "t11")
+    return FTUEState::CookingSecondRecipe;
+  if (str == "t12")
+    return FTUEState::FirstTournament;
+  if (str == "t13")
+    return FTUEState::GoToFirstTournament;
+  if (str == "t14")
+    return FTUEState::JoinFirstTournament;
+  if (str == "t15")
+    return FTUEState::FirstTournamentPending;
+  if (str == "t16")
+    return FTUEState::ResolveFirstTournament;
+  if (str == "t17")
+    return FTUEState::Completed;
+
+  LOG (WARNING) << "String is not a valid ftuestate: " << str;
+  return FTUEState::Invalid;
+}
+
 PlayerRole
 PlayerRoleFromString (const std::string& str)
 {
@@ -152,12 +255,12 @@ PlayerRoleFromString (const std::string& str)
   LOG (WARNING) << "String is not a valid faction: " << str;
   return PlayerRole::INVALID;
 }
-  
+ 
 const bool XayaPlayer::HasRole (PlayerRole role)
 {
     return true;
-}    
-
+} 
+ 
 const bool XayaPlayer::GrantRole (PlayerRole role)
 {
   return true;

@@ -1,0 +1,468 @@
+fightermoveblueprints:
+{
+  key: "Move_Rare_Blocking_CandiedShell"
+  value:
+  {
+    AuthoredId: "41416afb-0d72-f9b4-ba30-f089b713500f"
+    Name: "Candied Shell"
+    CandyType: "d6478df9-c705-98c4-ebb6-2ffab7dd798b"
+    Quality: 3
+    MoveType: 4
+  }
+}
+fightermoveblueprints:
+{
+  key: "Move_Common_Tricky_PuckerSucker"
+  value:
+  {
+    AuthoredId: "29d559bb-41a7-9f14-5bf8-605da8166943"
+    Name: "Pucker Sucker"
+    CandyType: "524c8f4f-cb50-ea04-dafd-e192f30c7656"
+    Quality: 1
+    MoveType: 2
+  }
+}
+fightermoveblueprints:
+{
+  key: "Move_Common_Tricky_SugarySweep"
+  value:
+  {
+    AuthoredId: "bd27fe1c-ce9a-f524-c887-61f9e4d5088b"
+    Name: "Sugary Sweep"
+    CandyType: "3d47dfc5-ce51-9c54-68f1-6819b251e6c7"
+    Quality: 1
+    MoveType: 2
+  }
+}
+fightermoveblueprints:
+{
+  key: "Move_Common_Blocking_SugarShield"
+  value:
+  {
+    AuthoredId: "73eb61fc-70a9-25a4-ba01-0ecaa0d547c5"
+    Name: "Sugar Shield"
+    CandyType: "8aac4645-29cf-fe04-59c0-415508b0432e"
+    Quality: 1
+    MoveType: 4
+  }
+}
+fightermoveblueprints:
+{
+  key: "Move_Silver_Epic_Blocking_TarnishingKneeDrop"
+  value:
+  {
+    AuthoredId: "4dbb297f-6a80-ca44-a94f-3ea9ed3311e8"
+    Name: "Tarnising Knee Drop"
+    CandyType: "08847311-c629-a154-5958-13e8f1d77f88"
+    Quality: 4
+    MoveType: 4
+  }
+}
+fightermoveblueprints:
+{
+  key: "Move_Silver_Epic_Heavy_SilverKnuckles"
+  value:
+  {
+    AuthoredId: "e55a3d69-9fb4-5194-4812-c2f85e887aca"
+    Name: "Silver Knuckles"
+    CandyType: "321c2a65-64b1-8344-2915-85562e2ad7ec"
+    Quality: 4
+    MoveType: 0
+  }
+}
+fightermoveblueprints:
+{
+  key: "Move_Bronze_Epic_Blocking_BouncingBarrage"
+  value:
+  {
+    AuthoredId: "8e4753b5-c739-aaf4-ab79-4d333a69cae6"
+    Name: "Bouncing Barrage"
+    CandyType: "a2c2697c-d738-c004-4b32-d800921bab06"
+    Quality: 4
+    MoveType: 4
+  }
+}
+fightermoveblueprints:
+{
+  key: "Move_Uncommon_Distance_ChillingBlow"
+  value:
+  {
+    AuthoredId: "86bd4f81-e96b-9864-78b5-5fc51fbff6a4"
+    Name: "Chilling Blow"
+    CandyType: "63a8ea74-65ee-c024-b8f0-87e173258257"
+    Quality: 2
+    MoveType: 3
+  }
+}
+fightermoveblueprints:
+{
+  key: "Move_Rare_Heavy_ViciousJawbreaker"
+  value:
+  {
+    AuthoredId: "aa7d8565-99e1-84f4-49d2-8925c2602a7b"
+    Name: "Vicious Jawbreaker"
+    CandyType: "4d85b9b7-5d8b-db24-a85a-8df9fa935cb9"
+    Quality: 3
+    MoveType: 0
+  }
+}
+fightermoveblueprints:
+{
+  key: "Move_Common_Speedy_One Thousand Tiny Slices"
+  value:
+  {
+    AuthoredId: "628ebc0b-bb19-ee64-68b8-2f66f4b92720"
+    Name: "One Thousand Tiny Slices"
+    CandyType: "12ea78d4-e0f3-e5b4-1882-04787fa86d15"
+    Quality: 1
+    MoveType: 1
+  }
+}
+fightermoveblueprints:
+{
+  key: "Move_Bronze_Epic_Tricky_ExplosiveJawbreaker"
+  value:
+  {
+    AuthoredId: "61d8b3ec-9a01-0e64-fb45-27d2b858e332"
+    Name: "Explosive Jawbreaker"
+    CandyType: "aa0cb18d-5681-5504-09d7-4db06bf7a4d8"
+    Quality: 4
+    MoveType: 0
+  }
+}
+fightermoveblueprints:
+{
+  key: "Move_Bronze_Epic_Tricky_BarfingBlow"
+  value:
+  {
+    AuthoredId: "b96f1ff8-66d5-f244-79fd-260735d4c3d7"
+    Name: "Barfing Blow"
+    CandyType: "48ea4c49-79dd-6514-6b8b-f87fd6d8a330"
+    Quality: 4
+    MoveType: 2
+  }
+}
+fightermoveblueprints:
+{
+  key: "Move_Rare_Heavy_BlackoutShot"
+  value:
+  {
+    AuthoredId: "e16531a7-33fd-a3e4-69fd-ff10eba65cb7"
+    Name: "Blackout Shot"
+    CandyType: "7ff63ec3-352c-6ea4-98ad-55c4f2fb375c"
+    Quality: 3
+    MoveType: 0
+  }
+}
+fightermoveblueprints:
+{
+  key: "Move_Uncommon_Distance_CinnamonBlast"
+  value:
+  {
+    AuthoredId: "e201f964-8949-9d74-fbee-4ee8786284ca"
+    Name: "Cinnamon Blast"
+    CandyType: "1983b3b7-4a9e-8f14-b981-c94c32d7648b"
+    Quality: 2
+    MoveType: 3
+  }
+}
+fightermoveblueprints:
+{
+  key: "Move_Rare_Blocking_BerryBounce"
+  value:
+  {
+    AuthoredId: "2c94f949-a10e-2524-2827-6588982ce0b1"
+    Name: "Berry Bounce"
+    CandyType: "af509c01-933e-ce14-49c3-106081e16d75"
+    Quality: 3
+    MoveType: 4
+  }
+}
+fightermoveblueprints:
+{
+  key: "Move_Uncommon_Tricky_FloatLikeAButterCream"
+  value:
+  {
+    AuthoredId: "fa6144f9-ad49-8124-386f-351a7f1ab546"
+    Name: "Float Like a Butter Cream"
+    CandyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1"
+    Quality: 2
+    MoveType: 2
+  }
+}
+fightermoveblueprints:
+{
+  key: "Move_Uncommon_Blocking_ChewyAbsorption"
+  value:
+  {
+    AuthoredId: "431900a2-54d4-df34-d9f7-6a4608fecfaa"
+    Name: "Chewy Absorption"
+    CandyType: "2aae625b-a8b1-8ef4-ba8f-32a45702f9af"
+    Quality: 2
+    MoveType: 4
+  }
+}
+fightermoveblueprints:
+{
+  key: "Move_Common_Speedy_CocoChaos"
+  value:
+  {
+    AuthoredId: "1d1dec74-ca35-0cc4-d930-164786a9dd81"
+    Name: "Coco Chaos"
+    CandyType: "7ddba6f2-b08a-f954-4a97-eae6af175005"
+    Quality: 1
+    MoveType: 1
+  }
+}
+fightermoveblueprints:
+{
+  key: "Move_Common_Distance_GetOverHere"
+  value:
+  {
+    AuthoredId: "2c555752-8a84-58f4-395e-6460b7864069"
+    Name: "Get Over Here!"
+    CandyType: "4e343f68-1aaa-0e84-7bab-eae458b68264"
+    Quality: 1
+    MoveType: 3
+  }
+}
+fightermoveblueprints:
+{
+  key: "Move_Common_Distance_BubbleTrouble"
+  value:
+  {
+    AuthoredId: "a9d69fc0-a1b8-ae24-cbd7-249760200211"
+    Name: "Bubble Trouble"
+    CandyType: "87040ddf-f0cb-f894-dbbd-a4f266cae4e7"
+    Quality: 1
+    MoveType: 3
+  }
+}
+fightermoveblueprints:
+{
+  key: "Move_Gold_Epic_Tricky_GildedTripper"
+  value:
+  {
+    AuthoredId: "34a115db-3153-aff4-9a46-97700634f1fb"
+    Name: "Gilded Tripper"
+    CandyType: "8898194e-ac52-f624-a830-176655bb43cd"
+    Quality: 4
+    MoveType: 2
+  }
+}
+fightermoveblueprints:
+{
+  key: "Move_Common_Heavy_PopRockPop"
+  value:
+  {
+    AuthoredId: "9fd0b9ef-2e7d-d344-8926-69f1fab99f65"
+    Name: "Pop Rock Pop"
+    CandyType: "16e0b307-2b40-4584-294c-dee505e47827"
+    Quality: 1
+    MoveType: 0
+  }
+}
+fightermoveblueprints:
+{
+  key: "Move_Uncommon_Speedy_ComeOverHereAndSlipOnIt"
+  value:
+  {
+    AuthoredId: "b1bd32de-88b2-1204-7b2e-0680677d78c4"
+    Name: "Come Over Here and Slip on it"
+    CandyType: "5a087336-6c2d-a684-1b72-a86d6ff6931f"
+    Quality: 2
+    MoveType: 1
+  }
+}
+fightermoveblueprints:
+{
+  key: "Move_Rare_Tricky_ToffeeTripper"
+  value:
+  {
+    AuthoredId: "2569d967-c676-8b44-cbdf-d514e4c5c73d"
+    Name: "Toffee Tripper"
+    CandyType: "230bc5ac-6ab7-a6d4-7a66-fc06a0e0e38d"
+    Quality: 3
+    MoveType: 2
+  }
+}
+fightermoveblueprints:
+{
+  key: "Move_Common_Speedy_RightOnTheButton"
+  value:
+  {
+    AuthoredId: "c28e13b4-cb1f-6ea4-680f-91010a400e10"
+    Name: "Right on the Button"
+    CandyType: "f6025c1b-55e8-da24-d96f-0ecebf74c436"
+    Quality: 1
+    MoveType: 1
+  }
+}
+fightermoveblueprints:
+{
+  key: "Move_Gold_Epic_Distance_GoldRush"
+  value:
+  {
+    AuthoredId: "c6770789-4a1f-7f24-f921-c4dc66c2697a"
+    Name: "Gold Rush"
+    CandyType: "47b8a853-791a-1424-1ba9-4adaf4a3f4a5"
+    Quality: 4
+    MoveType: 3
+  }
+}
+fightermoveblueprints:
+{
+  key: "Move_Uncommon_Heavy_ChocoCrunch"
+  value:
+  {
+    AuthoredId: "9f0df0ed-13a6-84c4-781d-9dbf9741c66e"
+    Name: "Choco Crunch"
+    CandyType: "40067d7d-6651-cbc4-c8ed-785d73e9ab57"
+    Quality: 2
+    MoveType: 0
+  }
+}
+fightermoveblueprints:
+{
+  key: "Move_Silver_Epic_Speedy_QuicksilverSlice"
+  value:
+  {
+    AuthoredId: "1a67cc79-b97a-4624-ca67-36c9fcbee970"
+    Name: "Quicksilver Slice"
+    CandyType: "bbeb0e31-3775-a864-1952-082233cf7b89"
+    Quality: 4
+    MoveType: 1
+  }
+}
+fightermoveblueprints:
+{
+  key: "Move_Common_Blocking_GumDropKick"
+  value:
+  {
+    AuthoredId: "0090580c-04ef-9d84-e883-32f52c977b98"
+    Name: "Gum Drop Kick"
+    CandyType: "c2774273-0cd4-2494-fa02-76cffe1ef1ef"
+    Quality: 1
+    MoveType: 4
+  }
+}
+fightermoveblueprints:
+{
+  key: "Move_Gold_Epic_Heavy_GoldenShowerOfChips"
+  value:
+  {
+    AuthoredId: "92f7b745-c1ff-3cd4-f9cf-0fe0dafb5536"
+    Name: "Golden Shower of Chips"
+    CandyType: "f6c3b895-6488-1b74-a9b0-664027a683e2"
+    Quality: 4
+    MoveType: 0
+  }
+}
+fightermoveblueprints:
+{
+  key: "Move_Common_Heavy_CandiedKnuckles"
+  value:
+  {
+    AuthoredId: "86b323c2-b2fd-2494-ab5e-bc3514bc92d8"
+    Name: "Candied Knuckles"
+    CandyType: "934dae05-689f-30e4-5804-d497aee0b47c"
+    Quality: 1
+    MoveType: 0
+  }
+}
+fightermoveblueprints:
+{
+  key: "Move_Rare_Distance_LimonShuriken"
+  value:
+  {
+    AuthoredId: "55e05ece-a3f6-a924-3833-2222a0eee6a3"
+    Name: "Limon Shuriken"
+    CandyType: "e5afded6-705a-2034-7b1c-556ac877fb0f"
+    Quality: 3
+    MoveType: 3
+  }
+}
+fightermoveblueprints:
+{
+  key: "Move_Silver_Epic_Tricky_ConductiveCoating"
+  value:
+  {
+    AuthoredId: "bbf71f26-78f5-5014-5b4b-a1c3866cb75b"
+    Name: "Conductive Coat"
+    CandyType: "0ee1131a-b8e4-05c4-9896-3690ebf8563a"
+    Quality: 4
+    MoveType: 2
+  }
+}
+fightermoveblueprints:
+{
+  key: "Move_Common_Speedy_IcingOnTheCake"
+  value:
+  {
+    AuthoredId: "1e47a8e0-acfd-1244-0b7d-539d62429060"
+    Name: "Icing on the Cake"
+    CandyType: "f9c0a4d2-f049-29a4-eb1e-2269de35798e"
+    Quality: 1
+    MoveType: 1
+  }
+}
+fightermoveblueprints:
+{
+  key: "Move_Rare_Speedy_SugarRush"
+  value:
+  {
+    AuthoredId: "ad6d5d28-08b4-4304-6b49-11f8f5f9ff1c"
+    Name: "Sugar Rush"
+    CandyType: "8ac3d9f0-2a3e-b724-6a96-ce73b5ee215c"
+    Quality: 3
+    MoveType: 1
+  }
+}
+fightermoveblueprints:
+{
+  key: "Move_Gold_Epic_Blocking_GildedBonds"
+  value:
+  {
+    AuthoredId: "01b34a91-37d8-29d4-09cb-2d515f51e315"
+    Name: "Gilded Bonds"
+    CandyType: "52ea4044-e203-16d4-c90f-8b685ed5e9c9"
+    Quality: 4
+    MoveType: 4
+  }
+}
+fightermoveblueprints:
+{
+  key: "Move_Bronze_Epic_Speedy_SugaryRush"
+  value:
+  {
+    AuthoredId: "3e76f2fa-072c-5654-dac9-c9b0e4e1643a"
+    Name: "Super Sugary Rush"
+    CandyType: "8932caea-da2e-6384-58ec-749624e213c9"
+    Quality: 4
+    MoveType: 1
+  }
+}
+fightermoveblueprints:
+{
+  key: "Move_Bronze_Epic_Blocking_HeavyGumdropKick"
+  value:
+  {
+    AuthoredId: "55cafe03-4a58-0f44-6a27-f9fc6fce881a"
+    Name: "Heavy Gumdrop Kick"
+    CandyType: "8f896243-a6de-1b54-68a3-0df72e8688e4"
+    Quality: 4
+    MoveType: 4
+  }
+}
+fightermoveblueprints:
+{
+  key: "Move_Uncommon_Tricky_KickInTheBeans"
+  value:
+  {
+    AuthoredId: "b889835e-1cd6-d3d4-f9b4-dd1989f49dac"
+    Name: "Kick in the Beans"
+    CandyType: "9b70e722-0442-2924-092c-93efc1d92975"
+    Quality: 2
+    MoveType: 2
+  }
+}

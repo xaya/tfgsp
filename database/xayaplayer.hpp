@@ -46,6 +46,31 @@ enum class PlayerRole : int8_t
 };
 
 /**
+ * Tutorial advencement stage of the player
+ */
+enum class FTUEState : int8_t
+{
+    Intro = 0,
+    FirstRecipe = 1,
+    CookFirstRecipe = 3,
+    CookingFirstRecipe = 4,
+    FirstExpedition = 5,
+    JoinFirstExpedition = 6,
+    FirstExpeditionPending = 7,
+    ResolveFirstExpedition = 8,
+    SecondRecipe = 9,
+    CookSecondRecipe = 10,
+    CookingSecondRecipe = 11,
+    FirstTournament = 12,
+    GoToFirstTournament = 13,
+    JoinFirstTournament = 14,
+    FirstTournamentPending = 15,
+    ResolveFirstTournament = 16,
+    Completed = 17,
+    Invalid = 18
+};
+
+/**
  * A database result that includes a "role" column.
  */
 struct ResultWithRole : public Database::ResultType
@@ -80,6 +105,7 @@ struct XayaPlayerResult : public ResultWithRole
 {
   RESULT_COLUMN (std::string, name, 1);
   RESULT_COLUMN (pxd::proto::XayaPlayer, proto, 2);
+  RESULT_COLUMN (int64_t, ftuestate, 3);
 };
 
 
@@ -89,6 +115,13 @@ struct XayaPlayerResult : public ResultWithRole
  */
 std::string PlayerRoleToString (PlayerRole f);
 
+
+/**
+ * Converts the tutorial enumerator to a string.  This is used for logging and other
+ * messages, as well as in the JSON format of game states.
+ */
+std::string FTUEStateToString (FTUEState f);
+
 /**
  * Parses a faction value from a string.  Returns INVALID if the string does
  * not represent any of the real factions.
@@ -96,10 +129,21 @@ std::string PlayerRoleToString (PlayerRole f);
 PlayerRole PlayerRoleFromString (const std::string& str);
 
 /**
+ * Parses a ftustate value from a string.
+ */
+FTUEState FTUEStateFromString (const std::string& str);
+
+/**
  * Binds a faction value to a statement parameter.  If f is Faction::INVALID,
  * then a NULL will be bound instead.
  */
 void BindPlayerRoleParameter (Database::Statement& stmt, unsigned ind, PlayerRole f);
+
+/**
+ * Binds a faction value to a statement parameter.  If f is Faction::INVALID,
+ * then a NULL will be bound instead.
+ */
+void BindFTUEStateParameter (Database::Statement& stmt, unsigned ind, FTUEState f);
 
 /**
  * Wrapper class around the state of one Xaya account (name) in the database.
@@ -121,6 +165,9 @@ private:
 
   /** The role of this account.  May be INVALID if not yet initialised.  */
   PlayerRole role;
+  
+  /** The tutorial state of this account. Always starts as Intro*/
+  FTUEState ftuestate;  
 
   /** General proto data.  */
   LazyProto<proto::XayaPlayer> data;
@@ -155,6 +202,7 @@ public:
   void operator= (const XayaPlayer&) = delete;
 
   void SetRole (PlayerRole f);
+  void SetFTUEState (FTUEState f);
 
   const std::string&
   GetName () const
@@ -167,6 +215,12 @@ public:
   {
     return role;
   }
+  
+  FTUEState
+  GetFTUEState () const
+  {
+    return ftuestate;
+  }  
 
   const bool
   GetIsMine ();
@@ -176,7 +230,7 @@ public:
   
   const bool
   HasRole (PlayerRole role); 
-
+  
   const bool
   GrantRole (PlayerRole role);  
 

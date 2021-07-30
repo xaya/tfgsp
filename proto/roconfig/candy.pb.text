@@ -1,0 +1,549 @@
+candies:
+{
+  key: "Common_Gumdrop"
+  value:
+  {
+    AuthoredId: "c2774273-0cd4-2494-fa02-76cffe1ef1ef"
+    Name: "Gumdrop"
+  }
+}
+candies:
+{
+  key: "Common_Candy Button"
+  value:
+  {
+    AuthoredId: "f6025c1b-55e8-da24-d96f-0ecebf74c436"
+    Name: "Candy Button"
+  }
+}
+candies:
+{
+  key: "Uncommon_Marshmallow"
+  value:
+  {
+    AuthoredId: "2aae625b-a8b1-8ef4-ba8f-32a45702f9af"
+    Name: "Marshmallow"
+  }
+}
+candies:
+{
+  key: "Epic_Bronze Mint Patty"
+  value:
+  {
+    AuthoredId: "1f089286-ff92-dcc4-b85c-7ebf28d2cc4f"
+    Name: "Bronzed Mint Patty"
+  }
+}
+candies:
+{
+  key: "Epic_Silver Icing"
+  value:
+  {
+    AuthoredId: "0ee1131a-b8e4-05c4-9896-3690ebf8563a"
+    Name: "Silver Icing"
+  }
+}
+candies:
+{
+  key: "Epic_Silver Fruit Slices"
+  value:
+  {
+    AuthoredId: "bbeb0e31-3775-a864-1952-082233cf7b89"
+    Name: "Silver Fruit Slice"
+  }
+}
+candies:
+{
+  key: "Epic_Silver Jelly Beans"
+  value:
+  {
+    AuthoredId: "92954ab6-fe54-4a64-d942-feca64e9e931"
+    Name: "Silver Jelly Beans"
+  }
+}
+candies:
+{
+  key: "Epic_Silver Peppermint"
+  value:
+  {
+    AuthoredId: "5b187f8e-d5ff-36d4-7b56-8be9cce004c8"
+    Name: "Silver Peppermint"
+  }
+}
+candies:
+{
+  key: "Uncommon_Jelly Bean"
+  value:
+  {
+    AuthoredId: "9b70e722-0442-2924-092c-93efc1d92975"
+    Name: "Jelly Bean"
+  }
+}
+candies:
+{
+  key: "Common_Fizzy Powder"
+  value:
+  {
+    AuthoredId: "16e0b307-2b40-4584-294c-dee505e47827"
+    Name: "Fizzy Powder"
+  }
+}
+candies:
+{
+  key: "Epic_Gold Candy Ribbon"
+  value:
+  {
+    AuthoredId: "47b8a853-791a-1424-1ba9-4adaf4a3f4a5"
+    Name: "Golden Candy Ribbon"
+  }
+}
+candies:
+{
+  key: "Epic_Bronze Icing"
+  value:
+  {
+    AuthoredId: "8aa0e6a7-0b45-3404-9b39-dc4a4300a87f"
+    Name: "Bronzed Icing"
+  }
+}
+candies:
+{
+  key: "Epic_Bronze Gummy Bear"
+  value:
+  {
+    AuthoredId: "a2c2697c-d738-c004-4b32-d800921bab06"
+    Name: "Bronzed Gummy Bear"
+  }
+}
+candies:
+{
+  key: "Epic_Gold Giant Chocolate Chip"
+  value:
+  {
+    AuthoredId: "f6c3b895-6488-1b74-a9b0-664027a683e2"
+    Name: "Golden Giant Chocolate Chip"
+  }
+}
+candies:
+{
+  key: "Rare_Mint Patty"
+  value:
+  {
+    AuthoredId: "9ff884ab-efcb-0af4-5acd-976fea43b3a3"
+    Name: "Mint Patty"
+  }
+}
+candies:
+{
+  key: "Rare_Gummi Bear"
+  value:
+  {
+    AuthoredId: "af509c01-933e-ce14-49c3-106081e16d75"
+    Name: "Gummi Bear"
+  }
+}
+candies:
+{
+  key: "Rare_Mint Stick"
+  value:
+  {
+    AuthoredId: "33d499a1-9dee-dfd4-7843-c743a6131dcf"
+    Name: "Mint Stick"
+  }
+}
+candies:
+{
+  key: "Epic_Gold Circus Peanuts"
+  value:
+  {
+    AuthoredId: "0947de60-3149-c2d4-dad0-d4e67db681b6"
+    Name: "Golden Circus Peanuts"
+  }
+}
+candies:
+{
+  key: "Epic_Gold Toffee Chunk"
+  value:
+  {
+    AuthoredId: "8898194e-ac52-f624-a830-176655bb43cd"
+    Name: "Golden Toffee Chunk"
+  }
+}
+candies:
+{
+  key: "Common_Fruit Slice"
+  value:
+  {
+    AuthoredId: "12ea78d4-e0f3-e5b4-1882-04787fa86d15"
+    Name: "Fruit Slice"
+  }
+}
+candies:
+{
+  key: "Epic_Bronze Gum Drop"
+  value:
+  {
+    AuthoredId: "8f896243-a6de-1b54-68a3-0df72e8688e4"
+    Name: "Bronzed Gum Drop"
+  }
+}
+candies:
+{
+  key: "Epic_Gold Gum Ball"
+  value:
+  {
+    AuthoredId: "a1af5095-bfbc-1a84-7862-9b246dc29d81"
+    Name: "Golden Gum Ball"
+  }
+}
+candies:
+{
+  key: "Common_Gumball"
+  value:
+  {
+    AuthoredId: "87040ddf-f0cb-f894-dbbd-a4f266cae4e7"
+    Name: "Gumball"
+  }
+}
+candies:
+{
+  key: "Rare_Circus Peanuts"
+  value:
+  {
+    AuthoredId: "1525c955-d3c0-9f84-69fb-cf98837f4f85"
+    Name: "Circus Peanuts"
+  }
+}
+candies:
+{
+  key: "Rare_Licorice Piece"
+  value:
+  {
+    AuthoredId: "7ff63ec3-352c-6ea4-98ad-55c4f2fb375c"
+    Name: "Licorice Piece"
+  }
+}
+candies:
+{
+  key: "Epic_Silver Hard Candy"
+  value:
+  {
+    AuthoredId: "3b01bcce-f26c-66c4-68a5-80ab4d67f28c"
+    Name: "Silver Hard Candy"
+  }
+}
+candies:
+{
+  key: "Uncommon_Chocolate Nut"
+  value:
+  {
+    AuthoredId: "40067d7d-6651-cbc4-c8ed-785d73e9ab57"
+    Name: "Chocolate Nut"
+  }
+}
+candies:
+{
+  key: "Uncommon_Peppermint"
+  value:
+  {
+    AuthoredId: "63a8ea74-65ee-c024-b8f0-87e173258257"
+    Name: "Peppermint"
+  }
+}
+candies:
+{
+  key: "Epic_Gold Non Pareil"
+  value:
+  {
+    AuthoredId: "b4e362bb-2634-7df4-39a6-71b358368a6d"
+    Name: "Golden Non Pareil"
+  }
+}
+candies:
+{
+  key: "Rare_Candy Ribbon"
+  value:
+  {
+    AuthoredId: "e5afded6-705a-2034-7b1c-556ac877fb0f"
+    Name: "Candy Ribbon"
+  }
+}
+candies:
+{
+  key: "Epic_Bronze Candy Corn"
+  value:
+  {
+    AuthoredId: "8932caea-da2e-6384-58ec-749624e213c9"
+    Name: "Bronzed Candy Corn"
+  }
+}
+candies:
+{
+  key: "Epic_Silver Candy Cane"
+  value:
+  {
+    AuthoredId: "499a8021-eaea-c7d4-aa1c-bb6e55cd300c"
+    Name: "Silver Candy Cane"
+  }
+}
+candies:
+{
+  key: "Common_Icing"
+  value:
+  {
+    AuthoredId: "f9c0a4d2-f049-29a4-eb1e-2269de35798e"
+    Name: "Icing"
+  }
+}
+candies:
+{
+  key: "Rare_Peanut Butter Cup"
+  value:
+  {
+    AuthoredId: "28089a53-62ac-2044-1964-29f2f31d8a33"
+    Name: "Peanut Butter Cup"
+  }
+}
+candies:
+{
+  key: "Epic_Silver Licorice Piece"
+  value:
+  {
+    AuthoredId: "eeeca33e-5c80-9ec4-eb83-46e4b7daf04b"
+    Name: "Silver Licorice Piece"
+  }
+}
+candies:
+{
+  key: "Common_Chocolate Chip"
+  value:
+  {
+    AuthoredId: "7ddba6f2-b08a-f954-4a97-eae6af175005"
+    Name: "Chocolate Chip"
+  }
+}
+candies:
+{
+  key: "Common_Sugar Glaze"
+  value:
+  {
+    AuthoredId: "3d47dfc5-ce51-9c54-68f1-6819b251e6c7"
+    Name: "Sugar Glaze"
+  }
+}
+candies:
+{
+  key: "Common_Ring Pop"
+  value:
+  {
+    AuthoredId: "934dae05-689f-30e4-5804-d497aee0b47c"
+    Name: "Ring Pop"
+  }
+}
+candies:
+{
+  key: "Rare_Jawbreaker"
+  value:
+  {
+    AuthoredId: "4d85b9b7-5d8b-db24-a85a-8df9fa935cb9"
+    Name: "Jaw Breaker"
+  }
+}
+candies:
+{
+  key: "Rare_Toffee Chunk"
+  value:
+  {
+    AuthoredId: "230bc5ac-6ab7-a6d4-7a66-fc06a0e0e38d"
+    Name: "Toffee Chunk"
+  }
+}
+candies:
+{
+  key: "Epic_Silver MInt Stick"
+  value:
+  {
+    AuthoredId: "f7668430-bfc1-71f4-29b8-f36c7d6905d5"
+    Name: "Silver Mint Stick"
+  }
+}
+candies:
+{
+  key: "Rare_Hard Candy"
+  value:
+  {
+    AuthoredId: "d6478df9-c705-98c4-ebb6-2ffab7dd798b"
+    Name: "Hard Candy"
+  }
+}
+candies:
+{
+  key: "Uncommon_Cinnamon Ball"
+  value:
+  {
+    AuthoredId: "1983b3b7-4a9e-8f14-b981-c94c32d7648b"
+    Name: "Cinnamon Ball"
+  }
+}
+candies:
+{
+  key: "Epic_Gold Hard Candy"
+  value:
+  {
+    AuthoredId: "52ea4044-e203-16d4-c90f-8b685ed5e9c9"
+    Name: "Golden Hard Candy"
+  }
+}
+candies:
+{
+  key: "Common_Nonpareil"
+  value:
+  {
+    AuthoredId: "8aac4645-29cf-fe04-59c0-415508b0432e"
+    Name: "Nonpareil"
+  }
+}
+candies:
+{
+  key: "Rare_Candy Corn"
+  value:
+  {
+    AuthoredId: "8ac3d9f0-2a3e-b724-6a96-ce73b5ee215c"
+    Name: "Candy Corn"
+  }
+}
+candies:
+{
+  key: "Epic_Gold Icing"
+  value:
+  {
+    AuthoredId: "57674941-fe8c-5b24-0b69-16fb1d22ee62"
+    Name: "Golden Icing"
+  }
+}
+candies:
+{
+  key: "Rare_Candy Loops"
+  value:
+  {
+    AuthoredId: "9c64b7e4-0458-65c4-9b79-5cc35e847f9c"
+    Name: "Fruity Candy Loops"
+  }
+}
+candies:
+{
+  key: "Uncommon_Banana Chew"
+  value:
+  {
+    AuthoredId: "5a087336-6c2d-a684-1b72-a86d6ff6931f"
+    Name: "Banana Chew"
+  }
+}
+candies:
+{
+  key: "Epic_Bronze Jelly Bean"
+  value:
+  {
+    AuthoredId: "48ea4c49-79dd-6514-6b8b-f87fd6d8a330"
+    Name: "Bronzed Jelly Bean"
+  }
+}
+candies:
+{
+  key: "Epic_Bronze Jawbreaker"
+  value:
+  {
+    AuthoredId: "aa0cb18d-5681-5504-09d7-4db06bf7a4d8"
+    Name: "Bronzed Jawbreaker"
+  }
+}
+candies:
+{
+  key: "Epic_Silver Gum Drop"
+  value:
+  {
+    AuthoredId: "08847311-c629-a154-5958-13e8f1d77f88"
+    Name: "Silver Gum Drop"
+  }
+}
+candies:
+{
+  key: "Uncommon_Cotton Candy"
+  value:
+  {
+    AuthoredId: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1"
+    Name: "Cotton Candy"
+  }
+}
+candies:
+{
+  key: "Epic_Gold Jelly Bean"
+  value:
+  {
+    AuthoredId: "2f765969-c607-d4a4-0b9c-72d3cce7fbec"
+    Name: "Golden Jelly Bean"
+  }
+}
+candies:
+{
+  key: "Epic_Silver Ring Pop"
+  value:
+  {
+    AuthoredId: "321c2a65-64b1-8344-2915-85562e2ad7ec"
+    Name: "Silver Ring Pop"
+  }
+}
+candies:
+{
+  key: "Rare_Giant Chocolate Chip"
+  value:
+  {
+    AuthoredId: "86b5fac0-4ec1-09e4-6ab7-96d3fd13dd04"
+    Name: "Giant Chocolate Chip"
+  }
+}
+candies:
+{
+  key: "Common_Licorice Lace"
+  value:
+  {
+    AuthoredId: "524c8f4f-cb50-ea04-dafd-e192f30c7656"
+    Name: "Licorice Lace"
+  }
+}
+candies:
+{
+  key: "Epic_Gold Chocolate Bar"
+  value:
+  {
+    AuthoredId: "8898cfa3-1512-22e4-0b9f-c6e220f315b5"
+    Name: "Golden Chocolate Bar"
+  }
+}
+candies:
+{
+  key: "Epic_Bronze Gum Ball"
+  value:
+  {
+    AuthoredId: "dd29bd35-bb51-8d94-4913-8ca943d062f1"
+    Name: "Bronzed Gum Ball"
+  }
+}
+candies:
+{
+  key: "Common_Candy Cane"
+  value:
+  {
+    AuthoredId: "4e343f68-1aaa-0e84-7bab-eae458b68264"
+    Name: "Candy Cane"
+  }
+}
+candies:
+{
+  key: "Uncommon_Rock Candy"
+  value:
+  {
+    AuthoredId: "7ea89b0d-7070-d3e4-a86f-c0e75c0e4ff5"
+    Name: "Rock Candy"
+  }
+}

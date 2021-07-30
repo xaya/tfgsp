@@ -1,0 +1,2494 @@
+recepies:
+{
+  key: "Recipe_Rare_CommanderLourdesofLimon"
+  value:
+  {
+    AuthoredId: "1082e384-a607-f834-9ab3-d089c215d31a"
+    AnimationId: "f33c74e6-f1b4-6ca4-bb5a-cf6edc77cab5"
+    Armor: {candyType: "12ea78d4-e0f3-e5b4-1882-04787fa86d15" armorType: 4}
+    Armor: {candyType: "12ea78d4-e0f3-e5b4-1882-04787fa86d15" armorType: 5}
+    Armor: {candyType: "12ea78d4-e0f3-e5b4-1882-04787fa86d15" armorType: 6}
+    Armor: {candyType: "12ea78d4-e0f3-e5b4-1882-04787fa86d15" armorType: 7}
+    Name: "Commander Lourdes of Limon"
+    Duration: 50
+    FighterName: "Lady Lourdes of Limon"
+    FighterType: "2522657f-c73f-23c4-da7d-3934d135265b"
+    Moves: "55e05ece-a3f6-a924-3833-2222a0eee6a3"
+    Moves: "55e05ece-a3f6-a924-3833-2222a0eee6a3"
+    Moves: "55e05ece-a3f6-a924-3833-2222a0eee6a3"
+    Moves: "55e05ece-a3f6-a924-3833-2222a0eee6a3"
+    Moves: "73eb61fc-70a9-25a4-ba01-0ecaa0d547c5"
+    Moves: "73eb61fc-70a9-25a4-ba01-0ecaa0d547c5"
+    Moves: "b1bd32de-88b2-1204-7b2e-0680677d78c4"
+    Quality: 3
+    IsAccountBound: false
+    RequiredCandy: {candyType: "9c64b7e4-0458-65c4-9b79-5cc35e847f9c" amount: 50}
+    RequiredCandy: {candyType: "d6478df9-c705-98c4-ebb6-2ffab7dd798b" amount: 30}
+    RequiredCandy: {candyType: "9b70e722-0442-2924-092c-93efc1d92975" amount: 50}
+    RequiredCandy: {candyType: "7ea89b0d-7070-d3e4-a86f-c0e75c0e4ff5" amount: 30}
+    RequiredCandy: {candyType: "12ea78d4-e0f3-e5b4-1882-04787fa86d15" amount: 40}
+    RequiredFighterQuality: 1
+  }
+}
+recepies:
+{
+  key: "Recipe_Rare_CommanderBettyTheBlueberry"
+  value:
+  {
+    AuthoredId: "7b7d8898-7f58-0334-0bad-825dc87a6638"
+    AnimationId: "938e1ab9-a85b-5444-7bd6-f8862ace8b16"
+    Armor: {candyType: "e5afded6-705a-2034-7b1c-556ac877fb0f" armorType: 11}
+    Armor: {candyType: "e5afded6-705a-2034-7b1c-556ac877fb0f" armorType: 12}
+    Armor: {candyType: "e5afded6-705a-2034-7b1c-556ac877fb0f" armorType: 13}
+    Armor: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" armorType: 8}
+    Armor: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" armorType: 9}
+    Name: "Commander Betty The Blueberry"
+    Duration: 50
+    FighterName: "Lady Betty The Blueberry"
+    FighterType: "85f361b8-e55d-0244-1a98-26bffa0a18a2"
+    Moves: "55e05ece-a3f6-a924-3833-2222a0eee6a3"
+    Moves: "55e05ece-a3f6-a924-3833-2222a0eee6a3"
+    Moves: "a9d69fc0-a1b8-ae24-cbd7-249760200211"
+    Moves: "2c555752-8a84-58f4-395e-6460b7864069"
+    Moves: "b1bd32de-88b2-1204-7b2e-0680677d78c4"
+    Moves: "aa7d8565-99e1-84f4-49d2-8925c2602a7b"
+    Moves: "73eb61fc-70a9-25a4-ba01-0ecaa0d547c5"
+    Quality: 3
+    IsAccountBound: false
+    RequiredCandy: {candyType: "e5afded6-705a-2034-7b1c-556ac877fb0f" amount: 50}
+    RequiredCandy: {candyType: "af509c01-933e-ce14-49c3-106081e16d75" amount: 30}
+    RequiredCandy: {candyType: "9b70e722-0442-2924-092c-93efc1d92975" amount: 50}
+    RequiredCandy: {candyType: "7ea89b0d-7070-d3e4-a86f-c0e75c0e4ff5" amount: 30}
+    RequiredCandy: {candyType: "12ea78d4-e0f3-e5b4-1882-04787fa86d15" amount: 40}
+    RequiredFighterQuality: 1
+  }
+}
+recepies:
+{
+  key: "Recipe_InvestorReward_Silver"
+  value:
+  {
+    AuthoredId: "546b51df-fb58-8c84-ebd3-43efb2d13334"
+    AnimationId: "3afdf3ed-bea4-1c14-faac-159412578c0f"
+    Armor: {candyType: "321c2a65-64b1-8344-2915-85562e2ad7ec" armorType: 1}
+    Armor: {candyType: "321c2a65-64b1-8344-2915-85562e2ad7ec" armorType: 2}
+    Armor: {candyType: "321c2a65-64b1-8344-2915-85562e2ad7ec" armorType: 3}
+    Armor: {candyType: "bbeb0e31-3775-a864-1952-082233cf7b89" armorType: 4}
+    Armor: {candyType: "bbeb0e31-3775-a864-1952-082233cf7b89" armorType: 5}
+    Armor: {candyType: "bbeb0e31-3775-a864-1952-082233cf7b89" armorType: 6}
+    Armor: {candyType: "bbeb0e31-3775-a864-1952-082233cf7b89" armorType: 7}
+    Armor: {candyType: "0ee1131a-b8e4-05c4-9896-3690ebf8563a" armorType: 8}
+    Armor: {candyType: "0ee1131a-b8e4-05c4-9896-3690ebf8563a" armorType: 9}
+    Armor: {candyType: "0ee1131a-b8e4-05c4-9896-3690ebf8563a" armorType: 10}
+    Armor: {candyType: "eeeca33e-5c80-9ec4-eb83-46e4b7daf04b" armorType: 11}
+    Armor: {candyType: "eeeca33e-5c80-9ec4-eb83-46e4b7daf04b" armorType: 12}
+    Armor: {candyType: "eeeca33e-5c80-9ec4-eb83-46e4b7daf04b" armorType: 13}
+    Armor: {candyType: "08847311-c629-a154-5958-13e8f1d77f88" armorType: 14}
+    Armor: {candyType: "08847311-c629-a154-5958-13e8f1d77f88" armorType: 16}
+    Armor: {candyType: "08847311-c629-a154-5958-13e8f1d77f88" armorType: 15}
+    Armor: {candyType: "08847311-c629-a154-5958-13e8f1d77f88" armorType: 17}
+    Armor: {candyType: "0ee1131a-b8e4-05c4-9896-3690ebf8563a" armorType: 18}
+    Name: "Recipe_InvestorReward_Silver"
+    Duration: 20
+    FighterName: "Daniel Gum the Silver"
+    FighterType: "a672e1da-a87d-2a54-4918-cafb72b02aec"
+    Moves: "4dbb297f-6a80-ca44-a94f-3ea9ed3311e8"
+    Moves: "e55a3d69-9fb4-5194-4812-c2f85e887aca"
+    Moves: "1a67cc79-b97a-4624-ca67-36c9fcbee970"
+    Moves: "bbf71f26-78f5-5014-5b4b-a1c3866cb75b"
+    Moves: "8e4753b5-c739-aaf4-ab79-4d333a69cae6"
+    Moves: "55cafe03-4a58-0f44-6a27-f9fc6fce881a"
+    Moves: "3e76f2fa-072c-5654-dac9-c9b0e4e1643a"
+    Moves: "b96f1ff8-66d5-f244-79fd-260735d4c3d7"
+    Moves: "61d8b3ec-9a01-0e64-fb45-27d2b858e332"
+    Quality: 4
+    IsAccountBound: true
+    RequiredFighterQuality: 0
+  }
+}
+recepies:
+{
+  key: "Recipe_Epic_BiteTyson"
+  value:
+  {
+    AuthoredId: "c481aeee-d1a1-01c4-7aca-92d0edcddf18"
+    AnimationId: "a7629ff3-c1ef-e664-3a9c-bd27cb332abd"
+    Armor: {candyType: "321c2a65-64b1-8344-2915-85562e2ad7ec" armorType: 1}
+    Armor: {candyType: "321c2a65-64b1-8344-2915-85562e2ad7ec" armorType: 2}
+    Armor: {candyType: "321c2a65-64b1-8344-2915-85562e2ad7ec" armorType: 3}
+    Armor: {candyType: "8ac3d9f0-2a3e-b724-6a96-ce73b5ee215c" armorType: 4}
+    Armor: {candyType: "8ac3d9f0-2a3e-b724-6a96-ce73b5ee215c" armorType: 5}
+    Armor: {candyType: "8ac3d9f0-2a3e-b724-6a96-ce73b5ee215c" armorType: 6}
+    Armor: {candyType: "8ac3d9f0-2a3e-b724-6a96-ce73b5ee215c" armorType: 7}
+    Armor: {candyType: "9b70e722-0442-2924-092c-93efc1d92975" armorType: 8}
+    Armor: {candyType: "9b70e722-0442-2924-092c-93efc1d92975" armorType: 9}
+    Armor: {candyType: "9b70e722-0442-2924-092c-93efc1d92975" armorType: 10}
+    Armor: {candyType: "9b70e722-0442-2924-092c-93efc1d92975" armorType: 18}
+    Armor: {candyType: "1983b3b7-4a9e-8f14-b981-c94c32d7648b" armorType: 11}
+    Armor: {candyType: "1983b3b7-4a9e-8f14-b981-c94c32d7648b" armorType: 12}
+    Armor: {candyType: "1983b3b7-4a9e-8f14-b981-c94c32d7648b" armorType: 13}
+    Armor: {candyType: "8aac4645-29cf-fe04-59c0-415508b0432e" armorType: 14}
+    Armor: {candyType: "8aac4645-29cf-fe04-59c0-415508b0432e" armorType: 15}
+    Armor: {candyType: "8aac4645-29cf-fe04-59c0-415508b0432e" armorType: 16}
+    Armor: {candyType: "8aac4645-29cf-fe04-59c0-415508b0432e" armorType: 17}
+    Name: "Bite Tyson"
+    Duration: 100
+    FighterName: "Bite Tyson"
+    FighterType: "2522657f-c73f-23c4-da7d-3934d135265b"
+    Moves: "92f7b745-c1ff-3cd4-f9cf-0fe0dafb5536"
+    Moves: "92f7b745-c1ff-3cd4-f9cf-0fe0dafb5536"
+    Moves: "e16531a7-33fd-a3e4-69fd-ff10eba65cb7"
+    Moves: "aa7d8565-99e1-84f4-49d2-8925c2602a7b"
+    Moves: "fa6144f9-ad49-8124-386f-351a7f1ab546"
+    Moves: "fa6144f9-ad49-8124-386f-351a7f1ab546"
+    Moves: "c28e13b4-cb1f-6ea4-680f-91010a400e10"
+    Moves: "86b323c2-b2fd-2494-ab5e-bc3514bc92d8"
+    Moves: "01b34a91-37d8-29d4-09cb-2d515f51e315"
+    Quality: 4
+    IsAccountBound: false
+    RequiredCandy: {candyType: "321c2a65-64b1-8344-2915-85562e2ad7ec" amount: 50}
+    RequiredCandy: {candyType: "08847311-c629-a154-5958-13e8f1d77f88" amount: 30}
+    RequiredCandy: {candyType: "52ea4044-e203-16d4-c90f-8b685ed5e9c9" amount: 25}
+    RequiredCandy: {candyType: "9ff884ab-efcb-0af4-5acd-976fea43b3a3" amount: 30}
+    RequiredCandy: {candyType: "934dae05-689f-30e4-5804-d497aee0b47c" amount: 75}
+    RequiredCandy: {candyType: "16e0b307-2b40-4584-294c-dee505e47827" amount: 50}
+    RequiredCandy: {candyType: "63a8ea74-65ee-c024-b8f0-87e173258257" amount: 25}
+    RequiredCandy: {candyType: "40067d7d-6651-cbc4-c8ed-785d73e9ab57" amount: 50}
+    RequiredFighterQuality: 2
+  }
+}
+recepies:
+{
+  key: "Recipe_Rare_CommanderBlancheofFluff"
+  value:
+  {
+    AuthoredId: "4aba4145-0370-3484-1b2b-d416df6138ee"
+    AnimationId: "05633498-ace9-de14-c939-9435a6343d0f"
+    Armor: {candyType: "230bc5ac-6ab7-a6d4-7a66-fc06a0e0e38d" armorType: 10}
+    Armor: {candyType: "230bc5ac-6ab7-a6d4-7a66-fc06a0e0e38d" armorType: 18}
+    Armor: {candyType: "2aae625b-a8b1-8ef4-ba8f-32a45702f9af" armorType: 14}
+    Armor: {candyType: "2aae625b-a8b1-8ef4-ba8f-32a45702f9af" armorType: 15}
+    Name: "Commander Blanche of Fluff"
+    Duration: 50
+    FighterName: "Lady Blanche of Fluff"
+    FighterType: "a672e1da-a87d-2a54-4918-cafb72b02aec"
+    Moves: "55e05ece-a3f6-a924-3833-2222a0eee6a3"
+    Moves: "2c555752-8a84-58f4-395e-6460b7864069"
+    Moves: "a9d69fc0-a1b8-ae24-cbd7-249760200211"
+    Moves: "a9d69fc0-a1b8-ae24-cbd7-249760200211"
+    Moves: "9f0df0ed-13a6-84c4-781d-9dbf9741c66e"
+    Moves: "9fd0b9ef-2e7d-d344-8926-69f1fab99f65"
+    Moves: "1e47a8e0-acfd-1244-0b7d-539d62429060"
+    Quality: 3
+    IsAccountBound: false
+    RequiredCandy: {candyType: "230bc5ac-6ab7-a6d4-7a66-fc06a0e0e38d" amount: 50}
+    RequiredCandy: {candyType: "af509c01-933e-ce14-49c3-106081e16d75" amount: 30}
+    RequiredCandy: {candyType: "2aae625b-a8b1-8ef4-ba8f-32a45702f9af" amount: 50}
+    RequiredCandy: {candyType: "63a8ea74-65ee-c024-b8f0-87e173258257" amount: 30}
+    RequiredCandy: {candyType: "3d47dfc5-ce51-9c54-68f1-6819b251e6c7" amount: 40}
+    RequiredFighterQuality: 1
+  }
+}
+recepies:
+{
+  key: "Recipe_Rare_CaptainSammyTheChewy"
+  value:
+  {
+    AuthoredId: "8c4b6099-b736-16a4-eb8b-25eaaac1a0c3"
+    AnimationId: "938e1ab9-a85b-5444-7bd6-f8862ace8b16"
+    Armor: {candyType: "5a087336-6c2d-a684-1b72-a86d6ff6931f" armorType: 4}
+    Armor: {candyType: "5a087336-6c2d-a684-1b72-a86d6ff6931f" armorType: 5}
+    Armor: {candyType: "5a087336-6c2d-a684-1b72-a86d6ff6931f" armorType: 6}
+    Armor: {candyType: "5a087336-6c2d-a684-1b72-a86d6ff6931f" armorType: 7}
+    Name: "Captain Sammy The Chewy"
+    Duration: 50
+    FighterName: "Lord Sammy The Chewy"
+    FighterType: "a672e1da-a87d-2a54-4918-cafb72b02aec"
+    Moves: "e16531a7-33fd-a3e4-69fd-ff10eba65cb7"
+    Moves: "e16531a7-33fd-a3e4-69fd-ff10eba65cb7"
+    Moves: "aa7d8565-99e1-84f4-49d2-8925c2602a7b"
+    Moves: "73eb61fc-70a9-25a4-ba01-0ecaa0d547c5"
+    Moves: "431900a2-54d4-df34-d9f7-6a4608fecfaa"
+    Moves: "fa6144f9-ad49-8124-386f-351a7f1ab546"
+    Moves: "c28e13b4-cb1f-6ea4-680f-91010a400e10"
+    Quality: 3
+    IsAccountBound: false
+    RequiredCandy: {candyType: "d6478df9-c705-98c4-ebb6-2ffab7dd798b" amount: 50}
+    RequiredCandy: {candyType: "af509c01-933e-ce14-49c3-106081e16d75" amount: 30}
+    RequiredCandy: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" amount: 50}
+    RequiredCandy: {candyType: "63a8ea74-65ee-c024-b8f0-87e173258257" amount: 30}
+    RequiredCandy: {candyType: "934dae05-689f-30e4-5804-d497aee0b47c" amount: 40}
+    RequiredFighterQuality: 1
+  }
+}
+recepies:
+{
+  key: "Recipe_Epic_HoneyBunny"
+  value:
+  {
+    AuthoredId: "f0d9f776-2d8e-1e04-da62-fb62623b7d2e"
+    AnimationId: "02ddcd6e-e441-73f4-e874-399531dc4708"
+    Armor: {candyType: "934dae05-689f-30e4-5804-d497aee0b47c" armorType: 1}
+    Armor: {candyType: "934dae05-689f-30e4-5804-d497aee0b47c" armorType: 2}
+    Armor: {candyType: "934dae05-689f-30e4-5804-d497aee0b47c" armorType: 3}
+    Armor: {candyType: "f6025c1b-55e8-da24-d96f-0ecebf74c436" armorType: 4}
+    Armor: {candyType: "f6025c1b-55e8-da24-d96f-0ecebf74c436" armorType: 5}
+    Armor: {candyType: "f6025c1b-55e8-da24-d96f-0ecebf74c436" armorType: 6}
+    Armor: {candyType: "f6025c1b-55e8-da24-d96f-0ecebf74c436" armorType: 7}
+    Armor: {candyType: "0ee1131a-b8e4-05c4-9896-3690ebf8563a" armorType: 8}
+    Armor: {candyType: "0ee1131a-b8e4-05c4-9896-3690ebf8563a" armorType: 9}
+    Armor: {candyType: "0ee1131a-b8e4-05c4-9896-3690ebf8563a" armorType: 10}
+    Armor: {candyType: "0ee1131a-b8e4-05c4-9896-3690ebf8563a" armorType: 18}
+    Armor: {candyType: "63a8ea74-65ee-c024-b8f0-87e173258257" armorType: 11}
+    Armor: {candyType: "63a8ea74-65ee-c024-b8f0-87e173258257" armorType: 12}
+    Armor: {candyType: "63a8ea74-65ee-c024-b8f0-87e173258257" armorType: 13}
+    Armor: {candyType: "2aae625b-a8b1-8ef4-ba8f-32a45702f9af" armorType: 14}
+    Armor: {candyType: "2aae625b-a8b1-8ef4-ba8f-32a45702f9af" armorType: 15}
+    Armor: {candyType: "2aae625b-a8b1-8ef4-ba8f-32a45702f9af" armorType: 16}
+    Armor: {candyType: "2aae625b-a8b1-8ef4-ba8f-32a45702f9af" armorType: 17}
+    Name: "Honey Bunny"
+    Duration: 100
+    FighterName: "Honey Bunny"
+    FighterType: "a672e1da-a87d-2a54-4918-cafb72b02aec"
+    Moves: "bbf71f26-78f5-5014-5b4b-a1c3866cb75b"
+    Moves: "bbf71f26-78f5-5014-5b4b-a1c3866cb75b"
+    Moves: "b96f1ff8-66d5-f244-79fd-260735d4c3d7"
+    Moves: "29d559bb-41a7-9f14-5bf8-605da8166943"
+    Moves: "34a115db-3153-aff4-9a46-97700634f1fb"
+    Moves: "1d1dec74-ca35-0cc4-d930-164786a9dd81"
+    Moves: "1e47a8e0-acfd-1244-0b7d-539d62429060"
+    Moves: "a9d69fc0-a1b8-ae24-cbd7-249760200211"
+    Moves: "55e05ece-a3f6-a924-3833-2222a0eee6a3"
+    Quality: 4
+    IsAccountBound: false
+    RequiredCandy: {candyType: "0ee1131a-b8e4-05c4-9896-3690ebf8563a" amount: 50}
+    RequiredCandy: {candyType: "1f089286-ff92-dcc4-b85c-7ebf28d2cc4f" amount: 30}
+    RequiredCandy: {candyType: "8aa0e6a7-0b45-3404-9b39-dc4a4300a87f" amount: 25}
+    RequiredCandy: {candyType: "230bc5ac-6ab7-a6d4-7a66-fc06a0e0e38d" amount: 30}
+    RequiredCandy: {candyType: "40067d7d-6651-cbc4-c8ed-785d73e9ab57" amount: 75}
+    RequiredCandy: {candyType: "2aae625b-a8b1-8ef4-ba8f-32a45702f9af" amount: 50}
+    RequiredCandy: {candyType: "3d47dfc5-ce51-9c54-68f1-6819b251e6c7" amount: 25}
+    RequiredCandy: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" amount: 50}
+    RequiredFighterQuality: 2
+  }
+}
+recepies:
+{
+  key: "Recipe_Epic_FloydFruitleather"
+  value:
+  {
+    AuthoredId: "b192f393-c1ac-3364-a8a0-dd5582933e66"
+    AnimationId: "a170f9f3-f97b-8eb4-49c0-c99a916e55d7"
+    Armor: {candyType: "f6c3b895-6488-1b74-a9b0-664027a683e2" armorType: 1}
+    Armor: {candyType: "f6c3b895-6488-1b74-a9b0-664027a683e2" armorType: 2}
+    Armor: {candyType: "f6c3b895-6488-1b74-a9b0-664027a683e2" armorType: 3}
+    Armor: {candyType: "12ea78d4-e0f3-e5b4-1882-04787fa86d15" armorType: 4}
+    Armor: {candyType: "12ea78d4-e0f3-e5b4-1882-04787fa86d15" armorType: 5}
+    Armor: {candyType: "12ea78d4-e0f3-e5b4-1882-04787fa86d15" armorType: 6}
+    Armor: {candyType: "12ea78d4-e0f3-e5b4-1882-04787fa86d15" armorType: 7}
+    Armor: {candyType: "8898194e-ac52-f624-a830-176655bb43cd" armorType: 8}
+    Armor: {candyType: "8898194e-ac52-f624-a830-176655bb43cd" armorType: 9}
+    Armor: {candyType: "8898194e-ac52-f624-a830-176655bb43cd" armorType: 10}
+    Armor: {candyType: "8898194e-ac52-f624-a830-176655bb43cd" armorType: 18}
+    Armor: {candyType: "e5afded6-705a-2034-7b1c-556ac877fb0f" armorType: 11}
+    Armor: {candyType: "e5afded6-705a-2034-7b1c-556ac877fb0f" armorType: 12}
+    Armor: {candyType: "e5afded6-705a-2034-7b1c-556ac877fb0f" armorType: 13}
+    Armor: {candyType: "c2774273-0cd4-2494-fa02-76cffe1ef1ef" armorType: 14}
+    Armor: {candyType: "c2774273-0cd4-2494-fa02-76cffe1ef1ef" armorType: 15}
+    Armor: {candyType: "c2774273-0cd4-2494-fa02-76cffe1ef1ef" armorType: 16}
+    Armor: {candyType: "c2774273-0cd4-2494-fa02-76cffe1ef1ef" armorType: 17}
+    Name: "Floyd Fruitleather"
+    Duration: 100
+    FighterName: "Floyd Fruitleather"
+    FighterType: "2522657f-c73f-23c4-da7d-3934d135265b"
+    Moves: "34a115db-3153-aff4-9a46-97700634f1fb"
+    Moves: "34a115db-3153-aff4-9a46-97700634f1fb"
+    Moves: "b96f1ff8-66d5-f244-79fd-260735d4c3d7"
+    Moves: "61d8b3ec-9a01-0e64-fb45-27d2b858e332"
+    Moves: "29d559bb-41a7-9f14-5bf8-605da8166943"
+    Moves: "b1bd32de-88b2-1204-7b2e-0680677d78c4"
+    Moves: "a9d69fc0-a1b8-ae24-cbd7-249760200211"
+    Moves: "0090580c-04ef-9d84-e883-32f52c977b98"
+    Moves: "73eb61fc-70a9-25a4-ba01-0ecaa0d547c5"
+    Quality: 4
+    IsAccountBound: false
+    RequiredCandy: {candyType: "8898194e-ac52-f624-a830-176655bb43cd" amount: 50}
+    RequiredCandy: {candyType: "bbeb0e31-3775-a864-1952-082233cf7b89" amount: 30}
+    RequiredCandy: {candyType: "48ea4c49-79dd-6514-6b8b-f87fd6d8a330" amount: 25}
+    RequiredCandy: {candyType: "9c64b7e4-0458-65c4-9b79-5cc35e847f9c" amount: 30}
+    RequiredCandy: {candyType: "5a087336-6c2d-a684-1b72-a86d6ff6931f" amount: 75}
+    RequiredCandy: {candyType: "9b70e722-0442-2924-092c-93efc1d92975" amount: 50}
+    RequiredCandy: {candyType: "12ea78d4-e0f3-e5b4-1882-04787fa86d15" amount: 25}
+    RequiredCandy: {candyType: "f9c0a4d2-f049-29a4-eb1e-2269de35798e" amount: 50}
+    RequiredFighterQuality: 2
+  }
+}
+recepies:
+{
+  key: "Recipe_Rare_CaptainScottLemonpie"
+  value:
+  {
+    AuthoredId: "fda69e34-c1cb-2664-4ba1-d943713218c5"
+    AnimationId: "27448f34-ca08-99b4-1b63-fd4b227e6af4"
+    Armor: {candyType: "16e0b307-2b40-4584-294c-dee505e47827" armorType: 1}
+    Armor: {candyType: "16e0b307-2b40-4584-294c-dee505e47827" armorType: 2}
+    Armor: {candyType: "16e0b307-2b40-4584-294c-dee505e47827" armorType: 3}
+    Name: "Captain Scott Lemonpie"
+    Duration: 50
+    FighterName: "Lord Scott Lemonpie"
+    FighterType: "4c2d03be-70bf-9294-c8d5-0a8e2d8d0677"
+    Moves: "aa7d8565-99e1-84f4-49d2-8925c2602a7b"
+    Moves: "9f0df0ed-13a6-84c4-781d-9dbf9741c66e"
+    Moves: "9f0df0ed-13a6-84c4-781d-9dbf9741c66e"
+    Moves: "55e05ece-a3f6-a924-3833-2222a0eee6a3"
+    Moves: "a9d69fc0-a1b8-ae24-cbd7-249760200211"
+    Moves: "86b323c2-b2fd-2494-ab5e-bc3514bc92d8"
+    Moves: "9fd0b9ef-2e7d-d344-8926-69f1fab99f65"
+    Quality: 3
+    IsAccountBound: false
+    RequiredCandy: {candyType: "4d85b9b7-5d8b-db24-a85a-8df9fa935cb9" amount: 50}
+    RequiredCandy: {candyType: "230bc5ac-6ab7-a6d4-7a66-fc06a0e0e38d" amount: 30}
+    RequiredCandy: {candyType: "9b70e722-0442-2924-092c-93efc1d92975" amount: 50}
+    RequiredCandy: {candyType: "40067d7d-6651-cbc4-c8ed-785d73e9ab57" amount: 30}
+    RequiredCandy: {candyType: "f6025c1b-55e8-da24-d96f-0ecebf74c436" amount: 35}
+    RequiredFighterQuality: 1
+  }
+}
+recepies:
+{
+  key: "Recipe_Epic_ClariceGummi"
+  value:
+  {
+    AuthoredId: "30a597d1-31e7-3474-4b15-d7ff87f384f8"
+    AnimationId: "c6e3c59b-4415-52b4-8b34-1593bbc26634"
+    Armor: {candyType: "f6c3b895-6488-1b74-a9b0-664027a683e2" armorType: 1}
+    Armor: {candyType: "f6c3b895-6488-1b74-a9b0-664027a683e2" armorType: 2}
+    Armor: {candyType: "f6c3b895-6488-1b74-a9b0-664027a683e2" armorType: 3}
+    Armor: {candyType: "7ff63ec3-352c-6ea4-98ad-55c4f2fb375c" armorType: 4}
+    Armor: {candyType: "7ff63ec3-352c-6ea4-98ad-55c4f2fb375c" armorType: 5}
+    Armor: {candyType: "7ff63ec3-352c-6ea4-98ad-55c4f2fb375c" armorType: 6}
+    Armor: {candyType: "7ff63ec3-352c-6ea4-98ad-55c4f2fb375c" armorType: 7}
+    Armor: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" armorType: 8}
+    Armor: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" armorType: 9}
+    Armor: {candyType: "7ff63ec3-352c-6ea4-98ad-55c4f2fb375c" armorType: 10}
+    Armor: {candyType: "7ff63ec3-352c-6ea4-98ad-55c4f2fb375c" armorType: 18}
+    Armor: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" armorType: 11}
+    Armor: {candyType: "7ff63ec3-352c-6ea4-98ad-55c4f2fb375c" armorType: 12}
+    Armor: {candyType: "7ff63ec3-352c-6ea4-98ad-55c4f2fb375c" armorType: 13}
+    Armor: {candyType: "47b8a853-791a-1424-1ba9-4adaf4a3f4a5" armorType: 14}
+    Armor: {candyType: "47b8a853-791a-1424-1ba9-4adaf4a3f4a5" armorType: 15}
+    Armor: {candyType: "47b8a853-791a-1424-1ba9-4adaf4a3f4a5" armorType: 16}
+    Armor: {candyType: "47b8a853-791a-1424-1ba9-4adaf4a3f4a5" armorType: 17}
+    Name: "Clarice Gummi"
+    Duration: 100
+    FighterName: "Clarice Gummi"
+    FighterType: "c160f7ad-c775-8614-abe2-8ef74e54401f"
+    Moves: "c6770789-4a1f-7f24-f921-c4dc66c2697a"
+    Moves: "c6770789-4a1f-7f24-f921-c4dc66c2697a"
+    Moves: "55e05ece-a3f6-a924-3833-2222a0eee6a3"
+    Moves: "2c555752-8a84-58f4-395e-6460b7864069"
+    Moves: "29d559bb-41a7-9f14-5bf8-605da8166943"
+    Moves: "61d8b3ec-9a01-0e64-fb45-27d2b858e332"
+    Moves: "73eb61fc-70a9-25a4-ba01-0ecaa0d547c5"
+    Moves: "a9d69fc0-a1b8-ae24-cbd7-249760200211"
+    Moves: "e201f964-8949-9d74-fbee-4ee8786284ca"
+    Quality: 4
+    IsAccountBound: false
+    RequiredCandy: {candyType: "47b8a853-791a-1424-1ba9-4adaf4a3f4a5" amount: 50}
+    RequiredCandy: {candyType: "8f896243-a6de-1b54-68a3-0df72e8688e4" amount: 30}
+    RequiredCandy: {candyType: "a2c2697c-d738-c004-4b32-d800921bab06" amount: 25}
+    RequiredCandy: {candyType: "af509c01-933e-ce14-49c3-106081e16d75" amount: 30}
+    RequiredCandy: {candyType: "5a087336-6c2d-a684-1b72-a86d6ff6931f" amount: 75}
+    RequiredCandy: {candyType: "63a8ea74-65ee-c024-b8f0-87e173258257" amount: 50}
+    RequiredCandy: {candyType: "c2774273-0cd4-2494-fa02-76cffe1ef1ef" amount: 25}
+    RequiredCandy: {candyType: "16e0b307-2b40-4584-294c-dee505e47827" amount: 50}
+    RequiredFighterQuality: 2
+  }
+}
+recepies:
+{
+  key: "Recipe_Rare_CommanderTabithaThePowdered"
+  value:
+  {
+    AuthoredId: "ef33f366-41a4-5924-19bf-af4ea20ca7df"
+    AnimationId: "d35a9d1c-2223-c404-c840-c0218f9b147d"
+    Armor: {candyType: "16e0b307-2b40-4584-294c-dee505e47827" armorType: 2}
+    Armor: {candyType: "16e0b307-2b40-4584-294c-dee505e47827" armorType: 3}
+    Armor: {candyType: "16e0b307-2b40-4584-294c-dee505e47827" armorType: 13}
+    Armor: {candyType: "63a8ea74-65ee-c024-b8f0-87e173258257" armorType: 12}
+    Name: "Commander Tabitha The Powdered"
+    Duration: 50
+    FighterName: "Lady Tabitha The Powdered"
+    FighterType: "4c2d03be-70bf-9294-c8d5-0a8e2d8d0677"
+    Moves: "ad6d5d28-08b4-4304-6b49-11f8f5f9ff1c"
+    Moves: "ad6d5d28-08b4-4304-6b49-11f8f5f9ff1c"
+    Moves: "ad6d5d28-08b4-4304-6b49-11f8f5f9ff1c"
+    Moves: "628ebc0b-bb19-ee64-68b8-2f66f4b92720"
+    Moves: "fa6144f9-ad49-8124-386f-351a7f1ab546"
+    Moves: "fa6144f9-ad49-8124-386f-351a7f1ab546"
+    Moves: "c28e13b4-cb1f-6ea4-680f-91010a400e10"
+    Quality: 3
+    IsAccountBound: false
+    RequiredCandy: {candyType: "9ff884ab-efcb-0af4-5acd-976fea43b3a3" amount: 50}
+    RequiredCandy: {candyType: "86b5fac0-4ec1-09e4-6ab7-96d3fd13dd04" amount: 30}
+    RequiredCandy: {candyType: "63a8ea74-65ee-c024-b8f0-87e173258257" amount: 50}
+    RequiredCandy: {candyType: "7ea89b0d-7070-d3e4-a86f-c0e75c0e4ff5" amount: 30}
+    RequiredCandy: {candyType: "16e0b307-2b40-4584-294c-dee505e47827" amount: 40}
+    RequiredFighterQuality: 1
+  }
+}
+recepies:
+{
+  key: "Recipe_Epic_KitKatCarter"
+  value:
+  {
+    AuthoredId: "9d7d627c-8627-b934-6b2a-f645d96447ea"
+    AnimationId: "f33c74e6-f1b4-6ca4-bb5a-cf6edc77cab5"
+    Armor: {candyType: "321c2a65-64b1-8344-2915-85562e2ad7ec" armorType: 1}
+    Armor: {candyType: "321c2a65-64b1-8344-2915-85562e2ad7ec" armorType: 2}
+    Armor: {candyType: "321c2a65-64b1-8344-2915-85562e2ad7ec" armorType: 3}
+    Armor: {candyType: "f6025c1b-55e8-da24-d96f-0ecebf74c436" armorType: 4}
+    Armor: {candyType: "f6025c1b-55e8-da24-d96f-0ecebf74c436" armorType: 5}
+    Armor: {candyType: "f6025c1b-55e8-da24-d96f-0ecebf74c436" armorType: 6}
+    Armor: {candyType: "f6025c1b-55e8-da24-d96f-0ecebf74c436" armorType: 7}
+    Armor: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" armorType: 8}
+    Armor: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" armorType: 9}
+    Armor: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" armorType: 10}
+    Armor: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" armorType: 18}
+    Armor: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" armorType: 11}
+    Armor: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" armorType: 12}
+    Armor: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" armorType: 13}
+    Armor: {candyType: "d6478df9-c705-98c4-ebb6-2ffab7dd798b" armorType: 14}
+    Armor: {candyType: "d6478df9-c705-98c4-ebb6-2ffab7dd798b" armorType: 15}
+    Armor: {candyType: "08847311-c629-a154-5958-13e8f1d77f88" armorType: 16}
+    Armor: {candyType: "08847311-c629-a154-5958-13e8f1d77f88" armorType: 17}
+    Name: "Kit Kat Carter"
+    Duration: 100
+    FighterName: "Kit Kat Carter"
+    FighterType: "a672e1da-a87d-2a54-4918-cafb72b02aec"
+    Moves: "e55a3d69-9fb4-5194-4812-c2f85e887aca"
+    Moves: "e55a3d69-9fb4-5194-4812-c2f85e887aca"
+    Moves: "aa7d8565-99e1-84f4-49d2-8925c2602a7b"
+    Moves: "9f0df0ed-13a6-84c4-781d-9dbf9741c66e"
+    Moves: "9fd0b9ef-2e7d-d344-8926-69f1fab99f65"
+    Moves: "fa6144f9-ad49-8124-386f-351a7f1ab546"
+    Moves: "c28e13b4-cb1f-6ea4-680f-91010a400e10"
+    Moves: "431900a2-54d4-df34-d9f7-6a4608fecfaa"
+    Moves: "01b34a91-37d8-29d4-09cb-2d515f51e315"
+    Quality: 4
+    IsAccountBound: false
+    RequiredCandy: {candyType: "321c2a65-64b1-8344-2915-85562e2ad7ec" amount: 50}
+    RequiredCandy: {candyType: "8898cfa3-1512-22e4-0b9f-c6e220f315b5" amount: 30}
+    RequiredCandy: {candyType: "8932caea-da2e-6384-58ec-749624e213c9" amount: 25}
+    RequiredCandy: {candyType: "28089a53-62ac-2044-1964-29f2f31d8a33" amount: 30}
+    RequiredCandy: {candyType: "40067d7d-6651-cbc4-c8ed-785d73e9ab57" amount: 75}
+    RequiredCandy: {candyType: "2aae625b-a8b1-8ef4-ba8f-32a45702f9af" amount: 50}
+    RequiredCandy: {candyType: "f9c0a4d2-f049-29a4-eb1e-2269de35798e" amount: 25}
+    RequiredCandy: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" amount: 50}
+    RequiredFighterQuality: 2
+  }
+}
+recepies:
+{
+  key: "Recipe_Epic_RoloRousey"
+  value:
+  {
+    AuthoredId: "b4efa30e-0d76-5a04-b8fb-0a5c7b02d4a3"
+    AnimationId: "938e1ab9-a85b-5444-7bd6-f8862ace8b16"
+    Armor: {candyType: "aa0cb18d-5681-5504-09d7-4db06bf7a4d8" armorType: 1}
+    Armor: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" armorType: 2}
+    Armor: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" armorType: 3}
+    Armor: {candyType: "7ff63ec3-352c-6ea4-98ad-55c4f2fb375c" armorType: 4}
+    Armor: {candyType: "7ff63ec3-352c-6ea4-98ad-55c4f2fb375c" armorType: 5}
+    Armor: {candyType: "7ff63ec3-352c-6ea4-98ad-55c4f2fb375c" armorType: 6}
+    Armor: {candyType: "7ff63ec3-352c-6ea4-98ad-55c4f2fb375c" armorType: 7}
+    Armor: {candyType: "7ff63ec3-352c-6ea4-98ad-55c4f2fb375c" armorType: 8}
+    Armor: {candyType: "7ff63ec3-352c-6ea4-98ad-55c4f2fb375c" armorType: 9}
+    Armor: {candyType: "7ff63ec3-352c-6ea4-98ad-55c4f2fb375c" armorType: 10}
+    Armor: {candyType: "7ff63ec3-352c-6ea4-98ad-55c4f2fb375c" armorType: 18}
+    Armor: {candyType: "63a8ea74-65ee-c024-b8f0-87e173258257" armorType: 11}
+    Armor: {candyType: "63a8ea74-65ee-c024-b8f0-87e173258257" armorType: 12}
+    Armor: {candyType: "63a8ea74-65ee-c024-b8f0-87e173258257" armorType: 13}
+    Armor: {candyType: "a2c2697c-d738-c004-4b32-d800921bab06" armorType: 14}
+    Armor: {candyType: "a2c2697c-d738-c004-4b32-d800921bab06" armorType: 15}
+    Armor: {candyType: "a2c2697c-d738-c004-4b32-d800921bab06" armorType: 16}
+    Armor: {candyType: "a2c2697c-d738-c004-4b32-d800921bab06" armorType: 17}
+    Name: "Rolo Rousey"
+    Duration: 100
+    FighterName: "Rolo Rousey"
+    FighterType: "c160f7ad-c775-8614-abe2-8ef74e54401f"
+    Moves: "8e4753b5-c739-aaf4-ab79-4d333a69cae6"
+    Moves: "8e4753b5-c739-aaf4-ab79-4d333a69cae6"
+    Moves: "55cafe03-4a58-0f44-6a27-f9fc6fce881a"
+    Moves: "73eb61fc-70a9-25a4-ba01-0ecaa0d547c5"
+    Moves: "431900a2-54d4-df34-d9f7-6a4608fecfaa"
+    Moves: "bd27fe1c-ce9a-f524-c887-61f9e4d5088b"
+    Moves: "c28e13b4-cb1f-6ea4-680f-91010a400e10"
+    Moves: "86bd4f81-e96b-9864-78b5-5fc51fbff6a4"
+    Moves: "e55a3d69-9fb4-5194-4812-c2f85e887aca"
+    Quality: 4
+    IsAccountBound: false
+    RequiredCandy: {candyType: "a2c2697c-d738-c004-4b32-d800921bab06" amount: 50}
+    RequiredCandy: {candyType: "48ea4c49-79dd-6514-6b8b-f87fd6d8a330" amount: 30}
+    RequiredCandy: {candyType: "aa0cb18d-5681-5504-09d7-4db06bf7a4d8" amount: 25}
+    RequiredCandy: {candyType: "d6478df9-c705-98c4-ebb6-2ffab7dd798b" amount: 30}
+    RequiredCandy: {candyType: "f9c0a4d2-f049-29a4-eb1e-2269de35798e" amount: 75}
+    RequiredCandy: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" amount: 50}
+    RequiredCandy: {candyType: "5a087336-6c2d-a684-1b72-a86d6ff6931f" amount: 25}
+    RequiredCandy: {candyType: "934dae05-689f-30e4-5804-d497aee0b47c" amount: 50}
+    RequiredFighterQuality: 2
+  }
+}
+recepies:
+{
+  key: "Recipe_Rare_CaptainJasonTheButtery"
+  value:
+  {
+    AuthoredId: "502693b2-3dd5-a204-197d-39031869f194"
+    AnimationId: "a170f9f3-f97b-8eb4-49c0-c99a916e55d7"
+    Armor: {candyType: "4d85b9b7-5d8b-db24-a85a-8df9fa935cb9" armorType: 1}
+    Armor: {candyType: "4d85b9b7-5d8b-db24-a85a-8df9fa935cb9" armorType: 2}
+    Armor: {candyType: "4d85b9b7-5d8b-db24-a85a-8df9fa935cb9" armorType: 3}
+    Name: "Captain Jason The Buttery"
+    Duration: 50
+    FighterName: "Lord Jason The Buttery"
+    FighterType: "4c2d03be-70bf-9294-c8d5-0a8e2d8d0677"
+    Moves: "2569d967-c676-8b44-cbdf-d514e4c5c73d"
+    Moves: "2569d967-c676-8b44-cbdf-d514e4c5c73d"
+    Moves: "2569d967-c676-8b44-cbdf-d514e4c5c73d"
+    Moves: "2569d967-c676-8b44-cbdf-d514e4c5c73d"
+    Moves: "fa6144f9-ad49-8124-386f-351a7f1ab546"
+    Moves: "fa6144f9-ad49-8124-386f-351a7f1ab546"
+    Moves: "c28e13b4-cb1f-6ea4-680f-91010a400e10"
+    Quality: 3
+    IsAccountBound: false
+    RequiredCandy: {candyType: "4d85b9b7-5d8b-db24-a85a-8df9fa935cb9" amount: 45}
+    RequiredCandy: {candyType: "86b5fac0-4ec1-09e4-6ab7-96d3fd13dd04" amount: 30}
+    RequiredCandy: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" amount: 50}
+    RequiredCandy: {candyType: "1983b3b7-4a9e-8f14-b981-c94c32d7648b" amount: 30}
+    RequiredCandy: {candyType: "524c8f4f-cb50-ea04-dafd-e192f30c7656" amount: 35}
+    RequiredFighterQuality: 1
+  }
+}
+recepies:
+{
+  key: "Recipe_Rare_CommanderAubreyTheBrulee-Brawler"
+  value:
+  {
+    AuthoredId: "60f3f548-20ca-7a64-6ad3-054d654e24a2"
+    AnimationId: "27448f34-ca08-99b4-1b63-fd4b227e6af4"
+    Armor: {candyType: "230bc5ac-6ab7-a6d4-7a66-fc06a0e0e38d" armorType: 8}
+    Armor: {candyType: "230bc5ac-6ab7-a6d4-7a66-fc06a0e0e38d" armorType: 9}
+    Armor: {candyType: "c2774273-0cd4-2494-fa02-76cffe1ef1ef" armorType: 14}
+    Armor: {candyType: "c2774273-0cd4-2494-fa02-76cffe1ef1ef" armorType: 15}
+    Name: "Commander Aubrey The Brulee-Brawler"
+    Duration: 50
+    FighterName: "Lady Aubrey The Brulee-Brawler"
+    FighterType: "2522657f-c73f-23c4-da7d-3934d135265b"
+    Moves: "29d559bb-41a7-9f14-5bf8-605da8166943"
+    Moves: "29d559bb-41a7-9f14-5bf8-605da8166943"
+    Moves: "29d559bb-41a7-9f14-5bf8-605da8166943"
+    Moves: "b889835e-1cd6-d3d4-f9b4-dd1989f49dac"
+    Moves: "fa6144f9-ad49-8124-386f-351a7f1ab546"
+    Moves: "1d1dec74-ca35-0cc4-d930-164786a9dd81"
+    Moves: "bd27fe1c-ce9a-f524-c887-61f9e4d5088b"
+    Quality: 3
+    IsAccountBound: false
+    RequiredCandy: {candyType: "230bc5ac-6ab7-a6d4-7a66-fc06a0e0e38d" amount: 50}
+    RequiredCandy: {candyType: "28089a53-62ac-2044-1964-29f2f31d8a33" amount: 30}
+    RequiredCandy: {candyType: "2aae625b-a8b1-8ef4-ba8f-32a45702f9af" amount: 50}
+    RequiredCandy: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" amount: 30}
+    RequiredCandy: {candyType: "f9c0a4d2-f049-29a4-eb1e-2269de35798e" amount: 44}
+    RequiredFighterQuality: 1
+  }
+}
+recepies:
+{
+  key: "Recipe_Rare_CaptainChrisGummiBear"
+  value:
+  {
+    AuthoredId: "db1606dd-112d-7a34-db0b-8923900c8ac7"
+    AnimationId: "a91a62fa-8d65-6234-d91b-a0ad0d9388e3"
+    Armor: {candyType: "af509c01-933e-ce14-49c3-106081e16d75" armorType: 18}
+    Armor: {candyType: "af509c01-933e-ce14-49c3-106081e16d75" armorType: 10}
+    Armor: {candyType: "af509c01-933e-ce14-49c3-106081e16d75" armorType: 16}
+    Armor: {candyType: "af509c01-933e-ce14-49c3-106081e16d75" armorType: 17}
+    Name: "Captain Chris Gummi Bear"
+    Duration: 50
+    FighterName: "Lord Chris Gummi Bear"
+    FighterType: "c160f7ad-c775-8614-abe2-8ef74e54401f"
+    Moves: "e16531a7-33fd-a3e4-69fd-ff10eba65cb7"
+    Moves: "e16531a7-33fd-a3e4-69fd-ff10eba65cb7"
+    Moves: "e16531a7-33fd-a3e4-69fd-ff10eba65cb7"
+    Moves: "9f0df0ed-13a6-84c4-781d-9dbf9741c66e"
+    Moves: "29d559bb-41a7-9f14-5bf8-605da8166943"
+    Moves: "2c555752-8a84-58f4-395e-6460b7864069"
+    Moves: "431900a2-54d4-df34-d9f7-6a4608fecfaa"
+    Quality: 3
+    IsAccountBound: false
+    RequiredCandy: {candyType: "af509c01-933e-ce14-49c3-106081e16d75" amount: 50}
+    RequiredCandy: {candyType: "9c64b7e4-0458-65c4-9b79-5cc35e847f9c" amount: 30}
+    RequiredCandy: {candyType: "1983b3b7-4a9e-8f14-b981-c94c32d7648b" amount: 50}
+    RequiredCandy: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" amount: 30}
+    RequiredCandy: {candyType: "f6025c1b-55e8-da24-d96f-0ecebf74c436" amount: 40}
+    RequiredFighterQuality: 1
+  }
+}
+recepies:
+{
+  key: "Recipe_Epic_JellyHolm"
+  value:
+  {
+    AuthoredId: "390c2aa8-6b27-9a04-c820-835a0d178686"
+    AnimationId: "5fce85e9-51f9-d7b4-db81-ef141439db00"
+    Armor: {candyType: "4d85b9b7-5d8b-db24-a85a-8df9fa935cb9" armorType: 1}
+    Armor: {candyType: "4d85b9b7-5d8b-db24-a85a-8df9fa935cb9" armorType: 2}
+    Armor: {candyType: "4d85b9b7-5d8b-db24-a85a-8df9fa935cb9" armorType: 3}
+    Armor: {candyType: "f6025c1b-55e8-da24-d96f-0ecebf74c436" armorType: 4}
+    Armor: {candyType: "f6025c1b-55e8-da24-d96f-0ecebf74c436" armorType: 5}
+    Armor: {candyType: "f6025c1b-55e8-da24-d96f-0ecebf74c436" armorType: 6}
+    Armor: {candyType: "f6025c1b-55e8-da24-d96f-0ecebf74c436" armorType: 7}
+    Armor: {candyType: "48ea4c49-79dd-6514-6b8b-f87fd6d8a330" armorType: 8}
+    Armor: {candyType: "48ea4c49-79dd-6514-6b8b-f87fd6d8a330" armorType: 9}
+    Armor: {candyType: "48ea4c49-79dd-6514-6b8b-f87fd6d8a330" armorType: 10}
+    Armor: {candyType: "48ea4c49-79dd-6514-6b8b-f87fd6d8a330" armorType: 18}
+    Armor: {candyType: "63a8ea74-65ee-c024-b8f0-87e173258257" armorType: 11}
+    Armor: {candyType: "63a8ea74-65ee-c024-b8f0-87e173258257" armorType: 12}
+    Armor: {candyType: "63a8ea74-65ee-c024-b8f0-87e173258257" armorType: 13}
+    Armor: {candyType: "d6478df9-c705-98c4-ebb6-2ffab7dd798b" armorType: 14}
+    Armor: {candyType: "d6478df9-c705-98c4-ebb6-2ffab7dd798b" armorType: 15}
+    Armor: {candyType: "d6478df9-c705-98c4-ebb6-2ffab7dd798b" armorType: 16}
+    Armor: {candyType: "d6478df9-c705-98c4-ebb6-2ffab7dd798b" armorType: 17}
+    Name: "Jelly Holm"
+    Duration: 100
+    FighterName: "Jelly Holm"
+    FighterType: "a672e1da-a87d-2a54-4918-cafb72b02aec"
+    Moves: "b96f1ff8-66d5-f244-79fd-260735d4c3d7"
+    Moves: "b96f1ff8-66d5-f244-79fd-260735d4c3d7"
+    Moves: "61d8b3ec-9a01-0e64-fb45-27d2b858e332"
+    Moves: "29d559bb-41a7-9f14-5bf8-605da8166943"
+    Moves: "bbf71f26-78f5-5014-5b4b-a1c3866cb75b"
+    Moves: "86bd4f81-e96b-9864-78b5-5fc51fbff6a4"
+    Moves: "e201f964-8949-9d74-fbee-4ee8786284ca"
+    Moves: "bd27fe1c-ce9a-f524-c887-61f9e4d5088b"
+    Moves: "73eb61fc-70a9-25a4-ba01-0ecaa0d547c5"
+    Quality: 4
+    IsAccountBound: false
+    RequiredCandy: {candyType: "48ea4c49-79dd-6514-6b8b-f87fd6d8a330" amount: 50}
+    RequiredCandy: {candyType: "dd29bd35-bb51-8d94-4913-8ca943d062f1" amount: 30}
+    RequiredCandy: {candyType: "92954ab6-fe54-4a64-d942-feca64e9e931" amount: 25}
+    RequiredCandy: {candyType: "af509c01-933e-ce14-49c3-106081e16d75" amount: 30}
+    RequiredCandy: {candyType: "9b70e722-0442-2924-092c-93efc1d92975" amount: 75}
+    RequiredCandy: {candyType: "2aae625b-a8b1-8ef4-ba8f-32a45702f9af" amount: 50}
+    RequiredCandy: {candyType: "f9c0a4d2-f049-29a4-eb1e-2269de35798e" amount: 25}
+    RequiredCandy: {candyType: "3d47dfc5-ce51-9c54-68f1-6819b251e6c7" amount: 50}
+    RequiredFighterQuality: 2
+  }
+}
+recepies:
+{
+  key: "Recipe_Rare_CaptainTommyPandan"
+  value:
+  {
+    AuthoredId: "275d1b18-22e6-fcf4-2919-b28bc1da9060"
+    AnimationId: "c6e3c59b-4415-52b4-8b34-1593bbc26634"
+    Armor: {candyType: "8ac3d9f0-2a3e-b724-6a96-ce73b5ee215c" armorType: 4}
+    Armor: {candyType: "8ac3d9f0-2a3e-b724-6a96-ce73b5ee215c" armorType: 5}
+    Armor: {candyType: "8ac3d9f0-2a3e-b724-6a96-ce73b5ee215c" armorType: 6}
+    Armor: {candyType: "8ac3d9f0-2a3e-b724-6a96-ce73b5ee215c" armorType: 7}
+    Name: "Captain Tommy Pandan"
+    Duration: 50
+    FighterName: "Lord Tommy Pandan"
+    FighterType: "c160f7ad-c775-8614-abe2-8ef74e54401f"
+    Moves: "2c94f949-a10e-2524-2827-6588982ce0b1"
+    Moves: "2c94f949-a10e-2524-2827-6588982ce0b1"
+    Moves: "0090580c-04ef-9d84-e883-32f52c977b98"
+    Moves: "73eb61fc-70a9-25a4-ba01-0ecaa0d547c5"
+    Moves: "86b323c2-b2fd-2494-ab5e-bc3514bc92d8"
+    Moves: "e201f964-8949-9d74-fbee-4ee8786284ca"
+    Moves: "c28e13b4-cb1f-6ea4-680f-91010a400e10"
+    Quality: 3
+    IsAccountBound: false
+    RequiredCandy: {candyType: "8ac3d9f0-2a3e-b724-6a96-ce73b5ee215c" amount: 50}
+    RequiredCandy: {candyType: "9c64b7e4-0458-65c4-9b79-5cc35e847f9c" amount: 30}
+    RequiredCandy: {candyType: "40067d7d-6651-cbc4-c8ed-785d73e9ab57" amount: 50}
+    RequiredCandy: {candyType: "63a8ea74-65ee-c024-b8f0-87e173258257" amount: 30}
+    RequiredCandy: {candyType: "f6025c1b-55e8-da24-d96f-0ecebf74c436" amount: 38}
+    RequiredFighterQuality: 1
+  }
+}
+recepies:
+{
+  key: "Recipe_Rare_CaptainLeifTheLemony"
+  value:
+  {
+    AuthoredId: "a889e1d9-c337-dff4-3aae-7701b6e48aeb"
+    AnimationId: "97c2c3da-93c7-a0d4-1967-eeba13396cce"
+    Armor: {candyType: "524c8f4f-cb50-ea04-dafd-e192f30c7656" armorType: 18}
+    Armor: {candyType: "524c8f4f-cb50-ea04-dafd-e192f30c7656" armorType: 10}
+    Armor: {candyType: "524c8f4f-cb50-ea04-dafd-e192f30c7656" armorType: 8}
+    Armor: {candyType: "524c8f4f-cb50-ea04-dafd-e192f30c7656" armorType: 9}
+    Name: "Captain Leif The Lemony"
+    Duration: 50
+    FighterName: "Lord Leif The Lemony"
+    FighterType: "2522657f-c73f-23c4-da7d-3934d135265b"
+    Moves: "2c94f949-a10e-2524-2827-6588982ce0b1"
+    Moves: "2c94f949-a10e-2524-2827-6588982ce0b1"
+    Moves: "431900a2-54d4-df34-d9f7-6a4608fecfaa"
+    Moves: "73eb61fc-70a9-25a4-ba01-0ecaa0d547c5"
+    Moves: "a9d69fc0-a1b8-ae24-cbd7-249760200211"
+    Moves: "29d559bb-41a7-9f14-5bf8-605da8166943"
+    Moves: "9fd0b9ef-2e7d-d344-8926-69f1fab99f65"
+    Quality: 3
+    IsAccountBound: false
+    RequiredCandy: {candyType: "af509c01-933e-ce14-49c3-106081e16d75" amount: 52}
+    RequiredCandy: {candyType: "28089a53-62ac-2044-1964-29f2f31d8a33" amount: 30}
+    RequiredCandy: {candyType: "63a8ea74-65ee-c024-b8f0-87e173258257" amount: 45}
+    RequiredCandy: {candyType: "7ea89b0d-7070-d3e4-a86f-c0e75c0e4ff5" amount: 30}
+    RequiredCandy: {candyType: "3d47dfc5-ce51-9c54-68f1-6819b251e6c7" amount: 40}
+    RequiredFighterQuality: 1
+  }
+}
+recepies:
+{
+  key: "Recipe_Epic_LicoriceDuran"
+  value:
+  {
+    AuthoredId: "c4c807ca-431a-9184-da8e-2c9993d1bba0"
+    AnimationId: "b0877d2a-71db-7374-8a8b-8044f7a8a52a"
+    Armor: {candyType: "16e0b307-2b40-4584-294c-dee505e47827" armorType: 1}
+    Armor: {candyType: "16e0b307-2b40-4584-294c-dee505e47827" armorType: 2}
+    Armor: {candyType: "16e0b307-2b40-4584-294c-dee505e47827" armorType: 3}
+    Armor: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" armorType: 4}
+    Armor: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" armorType: 5}
+    Armor: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" armorType: 6}
+    Armor: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" armorType: 7}
+    Armor: {candyType: "0ee1131a-b8e4-05c4-9896-3690ebf8563a" armorType: 8}
+    Armor: {candyType: "0ee1131a-b8e4-05c4-9896-3690ebf8563a" armorType: 9}
+    Armor: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" armorType: 10}
+    Armor: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" armorType: 18}
+    Armor: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" armorType: 11}
+    Armor: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" armorType: 12}
+    Armor: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" armorType: 13}
+    Armor: {candyType: "08847311-c629-a154-5958-13e8f1d77f88" armorType: 14}
+    Armor: {candyType: "08847311-c629-a154-5958-13e8f1d77f88" armorType: 15}
+    Armor: {candyType: "08847311-c629-a154-5958-13e8f1d77f88" armorType: 16}
+    Armor: {candyType: "08847311-c629-a154-5958-13e8f1d77f88" armorType: 17}
+    Name: "Licorice Duran"
+    Duration: 100
+    FighterName: "Licorice Duran"
+    FighterType: "a672e1da-a87d-2a54-4918-cafb72b02aec"
+    Moves: "4dbb297f-6a80-ca44-a94f-3ea9ed3311e8"
+    Moves: "4dbb297f-6a80-ca44-a94f-3ea9ed3311e8"
+    Moves: "55cafe03-4a58-0f44-6a27-f9fc6fce881a"
+    Moves: "8e4753b5-c739-aaf4-ab79-4d333a69cae6"
+    Moves: "73eb61fc-70a9-25a4-ba01-0ecaa0d547c5"
+    Moves: "9f0df0ed-13a6-84c4-781d-9dbf9741c66e"
+    Moves: "86b323c2-b2fd-2494-ab5e-bc3514bc92d8"
+    Moves: "c28e13b4-cb1f-6ea4-680f-91010a400e10"
+    Moves: "fa6144f9-ad49-8124-386f-351a7f1ab546"
+    Quality: 4
+    IsAccountBound: false
+    RequiredCandy: {candyType: "08847311-c629-a154-5958-13e8f1d77f88" amount: 50}
+    RequiredCandy: {candyType: "8aa0e6a7-0b45-3404-9b39-dc4a4300a87f" amount: 30}
+    RequiredCandy: {candyType: "eeeca33e-5c80-9ec4-eb83-46e4b7daf04b" amount: 25}
+    RequiredCandy: {candyType: "7ff63ec3-352c-6ea4-98ad-55c4f2fb375c" amount: 30}
+    RequiredCandy: {candyType: "1983b3b7-4a9e-8f14-b981-c94c32d7648b" amount: 75}
+    RequiredCandy: {candyType: "5a087336-6c2d-a684-1b72-a86d6ff6931f" amount: 50}
+    RequiredCandy: {candyType: "f9c0a4d2-f049-29a4-eb1e-2269de35798e" amount: 25}
+    RequiredCandy: {candyType: "524c8f4f-cb50-ea04-dafd-e192f30c7656" amount: 50}
+    RequiredFighterQuality: 2
+  }
+}
+recepies:
+{
+  key: "Recipe_Rare_CaptainPaulCandydish"
+  value:
+  {
+    AuthoredId: "7938f8c7-2d20-19c4-9be9-b05fd663f44f"
+    AnimationId: "5fce85e9-51f9-d7b4-db81-ef141439db00"
+    Armor: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" armorType: 10}
+    Armor: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" armorType: 18}
+    Armor: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" armorType: 8}
+    Armor: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" armorType: 9}
+    Name: "Captain Paul Candydish"
+    Duration: 50
+    FighterName: "Lord Paul Candydish"
+    FighterType: "2522657f-c73f-23c4-da7d-3934d135265b"
+    Moves: "55e05ece-a3f6-a924-3833-2222a0eee6a3"
+    Moves: "86bd4f81-e96b-9864-78b5-5fc51fbff6a4"
+    Moves: "86bd4f81-e96b-9864-78b5-5fc51fbff6a4"
+    Moves: "86bd4f81-e96b-9864-78b5-5fc51fbff6a4"
+    Moves: "431900a2-54d4-df34-d9f7-6a4608fecfaa"
+    Moves: "34a115db-3153-aff4-9a46-97700634f1fb"
+    Moves: "c28e13b4-cb1f-6ea4-680f-91010a400e10"
+    Quality: 3
+    IsAccountBound: false
+    RequiredCandy: {candyType: "d6478df9-c705-98c4-ebb6-2ffab7dd798b" amount: 50}
+    RequiredCandy: {candyType: "7ff63ec3-352c-6ea4-98ad-55c4f2fb375c" amount: 30}
+    RequiredCandy: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" amount: 50}
+    RequiredCandy: {candyType: "1983b3b7-4a9e-8f14-b981-c94c32d7648b" amount: 30}
+    RequiredCandy: {candyType: "16e0b307-2b40-4584-294c-dee505e47827" amount: 45}
+    RequiredFighterQuality: 1
+  }
+}
+recepies:
+{
+  key: "Recipe_Epic_SugarRayChocolaton"
+  value:
+  {
+    AuthoredId: "3f5314d7-0755-ab64-8a9c-589d3158de7a"
+    AnimationId: "05633498-ace9-de14-c939-9435a6343d0f"
+    Armor: {candyType: "16e0b307-2b40-4584-294c-dee505e47827" armorType: 1}
+    Armor: {candyType: "16e0b307-2b40-4584-294c-dee505e47827" armorType: 2}
+    Armor: {candyType: "16e0b307-2b40-4584-294c-dee505e47827" armorType: 3}
+    Armor: {candyType: "f6025c1b-55e8-da24-d96f-0ecebf74c436" armorType: 4}
+    Armor: {candyType: "f6025c1b-55e8-da24-d96f-0ecebf74c436" armorType: 5}
+    Armor: {candyType: "f6025c1b-55e8-da24-d96f-0ecebf74c436" armorType: 6}
+    Armor: {candyType: "f6025c1b-55e8-da24-d96f-0ecebf74c436" armorType: 7}
+    Armor: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" armorType: 8}
+    Armor: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" armorType: 9}
+    Armor: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" armorType: 10}
+    Armor: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" armorType: 18}
+    Armor: {candyType: "2f765969-c607-d4a4-0b9c-72d3cce7fbec" armorType: 11}
+    Armor: {candyType: "2f765969-c607-d4a4-0b9c-72d3cce7fbec" armorType: 12}
+    Armor: {candyType: "2f765969-c607-d4a4-0b9c-72d3cce7fbec" armorType: 13}
+    Armor: {candyType: "d6478df9-c705-98c4-ebb6-2ffab7dd798b" armorType: 14}
+    Armor: {candyType: "d6478df9-c705-98c4-ebb6-2ffab7dd798b" armorType: 15}
+    Armor: {candyType: "47b8a853-791a-1424-1ba9-4adaf4a3f4a5" armorType: 16}
+    Armor: {candyType: "47b8a853-791a-1424-1ba9-4adaf4a3f4a5" armorType: 17}
+    Name: "Sugar Ray Chocolaton"
+    Duration: 100
+    FighterName: "Sugar Ray Chocolaton"
+    FighterType: "85f361b8-e55d-0244-1a98-26bffa0a18a2"
+    Moves: "1d1dec74-ca35-0cc4-d930-164786a9dd81"
+    Moves: "1d1dec74-ca35-0cc4-d930-164786a9dd81"
+    Moves: "1d1dec74-ca35-0cc4-d930-164786a9dd81"
+    Moves: "3e76f2fa-072c-5654-dac9-c9b0e4e1643a"
+    Moves: "ad6d5d28-08b4-4304-6b49-11f8f5f9ff1c"
+    Moves: "e201f964-8949-9d74-fbee-4ee8786284ca"
+    Moves: "86bd4f81-e96b-9864-78b5-5fc51fbff6a4"
+    Moves: "431900a2-54d4-df34-d9f7-6a4608fecfaa"
+    Moves: "9fd0b9ef-2e7d-d344-8926-69f1fab99f65"
+    Quality: 4
+    IsAccountBound: false
+    RequiredCandy: {candyType: "2f765969-c607-d4a4-0b9c-72d3cce7fbec" amount: 50}
+    RequiredCandy: {candyType: "499a8021-eaea-c7d4-aa1c-bb6e55cd300c" amount: 30}
+    RequiredCandy: {candyType: "8aa0e6a7-0b45-3404-9b39-dc4a4300a87f" amount: 25}
+    RequiredCandy: {candyType: "1525c955-d3c0-9f84-69fb-cf98837f4f85" amount: 30}
+    RequiredCandy: {candyType: "f9c0a4d2-f049-29a4-eb1e-2269de35798e" amount: 75}
+    RequiredCandy: {candyType: "9b70e722-0442-2924-092c-93efc1d92975" amount: 50}
+    RequiredCandy: {candyType: "63a8ea74-65ee-c024-b8f0-87e173258257" amount: 25}
+    RequiredCandy: {candyType: "934dae05-689f-30e4-5804-d497aee0b47c" amount: 50}
+    RequiredFighterQuality: 2
+  }
+}
+recepies:
+{
+  key: "Recipe_Rare_CaptainChristianTheFrosted"
+  value:
+  {
+    AuthoredId: "b68f5a1f-8bfd-36d4-6ac4-f9ccc5f3acf6"
+    AnimationId: "a2a185e5-4543-6814-d88d-d078a0e38521"
+    Armor: {candyType: "3d47dfc5-ce51-9c54-68f1-6819b251e6c7" armorType: 10}
+    Armor: {candyType: "3d47dfc5-ce51-9c54-68f1-6819b251e6c7" armorType: 18}
+    Armor: {candyType: "3d47dfc5-ce51-9c54-68f1-6819b251e6c7" armorType: 8}
+    Armor: {candyType: "3d47dfc5-ce51-9c54-68f1-6819b251e6c7" armorType: 9}
+    Name: "Captain Christian The Frosted"
+    Duration: 50
+    FighterName: "Lord Christian The Frosted"
+    FighterType: "85f361b8-e55d-0244-1a98-26bffa0a18a2"
+    Moves: "41416afb-0d72-f9b4-ba30-f089b713500f"
+    Moves: "41416afb-0d72-f9b4-ba30-f089b713500f"
+    Moves: "73eb61fc-70a9-25a4-ba01-0ecaa0d547c5"
+    Moves: "73eb61fc-70a9-25a4-ba01-0ecaa0d547c5"
+    Moves: "86bd4f81-e96b-9864-78b5-5fc51fbff6a4"
+    Moves: "1d1dec74-ca35-0cc4-d930-164786a9dd81"
+    Moves: "628ebc0b-bb19-ee64-68b8-2f66f4b92720"
+    Quality: 3
+    IsAccountBound: false
+    RequiredCandy: {candyType: "33d499a1-9dee-dfd4-7843-c743a6131dcf" amount: 50}
+    RequiredCandy: {candyType: "af509c01-933e-ce14-49c3-106081e16d75" amount: 30}
+    RequiredCandy: {candyType: "5a087336-6c2d-a684-1b72-a86d6ff6931f" amount: 50}
+    RequiredCandy: {candyType: "40067d7d-6651-cbc4-c8ed-785d73e9ab57" amount: 30}
+    RequiredCandy: {candyType: "f9c0a4d2-f049-29a4-eb1e-2269de35798e" amount: 40}
+    RequiredFighterQuality: 1
+  }
+}
+recepies:
+{
+  key: "Recipe_Rare_CommanderEricaofFruitville"
+  value:
+  {
+    AuthoredId: "80ede00d-10fd-10c4-baaa-045acaeedc22"
+    AnimationId: "c6e3c59b-4415-52b4-8b34-1593bbc26634"
+    Armor: {candyType: "12ea78d4-e0f3-e5b4-1882-04787fa86d15" armorType: 4}
+    Armor: {candyType: "12ea78d4-e0f3-e5b4-1882-04787fa86d15" armorType: 5}
+    Armor: {candyType: "d6478df9-c705-98c4-ebb6-2ffab7dd798b" armorType: 16}
+    Armor: {candyType: "d6478df9-c705-98c4-ebb6-2ffab7dd798b" armorType: 17}
+    Name: "Commander Erica of Fruitville"
+    Duration: 50
+    FighterName: "Lady Erica of Fruitville"
+    FighterType: "2522657f-c73f-23c4-da7d-3934d135265b"
+    Moves: "e16531a7-33fd-a3e4-69fd-ff10eba65cb7"
+    Moves: "aa7d8565-99e1-84f4-49d2-8925c2602a7b"
+    Moves: "e16531a7-33fd-a3e4-69fd-ff10eba65cb7"
+    Moves: "aa7d8565-99e1-84f4-49d2-8925c2602a7b"
+    Moves: "86b323c2-b2fd-2494-ab5e-bc3514bc92d8"
+    Moves: "73eb61fc-70a9-25a4-ba01-0ecaa0d547c5"
+    Moves: "0090580c-04ef-9d84-e883-32f52c977b98"
+    Quality: 3
+    IsAccountBound: false
+    RequiredCandy: {candyType: "d6478df9-c705-98c4-ebb6-2ffab7dd798b" amount: 50}
+    RequiredCandy: {candyType: "9c64b7e4-0458-65c4-9b79-5cc35e847f9c" amount: 30}
+    RequiredCandy: {candyType: "5a087336-6c2d-a684-1b72-a86d6ff6931f" amount: 50}
+    RequiredCandy: {candyType: "9b70e722-0442-2924-092c-93efc1d92975" amount: 30}
+    RequiredCandy: {candyType: "12ea78d4-e0f3-e5b4-1882-04787fa86d15" amount: 40}
+    RequiredFighterQuality: 1
+  }
+}
+recepies:
+{
+  key: "Recipe_Rare_CommanderKristyTheCrusted"
+  value:
+  {
+    AuthoredId: "6d88afa9-a489-d6b4-b84c-5ae9b5762055"
+    AnimationId: "0c2cdea6-ff22-b124-da21-882987b1707a"
+    Armor: {candyType: "230bc5ac-6ab7-a6d4-7a66-fc06a0e0e38d" armorType: 18}
+    Armor: {candyType: "230bc5ac-6ab7-a6d4-7a66-fc06a0e0e38d" armorType: 10}
+    Armor: {candyType: "230bc5ac-6ab7-a6d4-7a66-fc06a0e0e38d" armorType: 8}
+    Armor: {candyType: "230bc5ac-6ab7-a6d4-7a66-fc06a0e0e38d" armorType: 9}
+    Name: "Commander Kristy The Crusted"
+    Duration: 50
+    FighterName: "Lady Kristy The Crusted"
+    FighterType: "a672e1da-a87d-2a54-4918-cafb72b02aec"
+    Moves: "e16531a7-33fd-a3e4-69fd-ff10eba65cb7"
+    Moves: "e16531a7-33fd-a3e4-69fd-ff10eba65cb7"
+    Moves: "e16531a7-33fd-a3e4-69fd-ff10eba65cb7"
+    Moves: "aa7d8565-99e1-84f4-49d2-8925c2602a7b"
+    Moves: "fa6144f9-ad49-8124-386f-351a7f1ab546"
+    Moves: "fa6144f9-ad49-8124-386f-351a7f1ab546"
+    Moves: "c28e13b4-cb1f-6ea4-680f-91010a400e10"
+    Quality: 3
+    IsAccountBound: false
+    RequiredCandy: {candyType: "1525c955-d3c0-9f84-69fb-cf98837f4f85" amount: 50}
+    RequiredCandy: {candyType: "230bc5ac-6ab7-a6d4-7a66-fc06a0e0e38d" amount: 30}
+    RequiredCandy: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" amount: 50}
+    RequiredCandy: {candyType: "9b70e722-0442-2924-092c-93efc1d92975" amount: 30}
+    RequiredCandy: {candyType: "f9c0a4d2-f049-29a4-eb1e-2269de35798e" amount: 40}
+    RequiredFighterQuality: 1
+  }
+}
+recepies:
+{
+  key: "Recipe_Rare_CaptainGrahamTheSnacktastic"
+  value:
+  {
+    AuthoredId: "28e2a7ea-e606-37d4-4b77-33069ba87bc8"
+    AnimationId: "c6e3c59b-4415-52b4-8b34-1593bbc26634"
+    Armor: {candyType: "40067d7d-6651-cbc4-c8ed-785d73e9ab57" armorType: 1}
+    Armor: {candyType: "40067d7d-6651-cbc4-c8ed-785d73e9ab57" armorType: 2}
+    Armor: {candyType: "40067d7d-6651-cbc4-c8ed-785d73e9ab57" armorType: 3}
+    Name: "Captain Graham the Snacktastic"
+    Duration: 50
+    FighterName: "Lord Graham the Snacktastic"
+    FighterType: "85f361b8-e55d-0244-1a98-26bffa0a18a2"
+    Moves: "55e05ece-a3f6-a924-3833-2222a0eee6a3"
+    Moves: "86bd4f81-e96b-9864-78b5-5fc51fbff6a4"
+    Moves: "e201f964-8949-9d74-fbee-4ee8786284ca"
+    Moves: "e201f964-8949-9d74-fbee-4ee8786284ca"
+    Moves: "fa6144f9-ad49-8124-386f-351a7f1ab546"
+    Moves: "b1bd32de-88b2-1204-7b2e-0680677d78c4"
+    Moves: "73eb61fc-70a9-25a4-ba01-0ecaa0d547c5"
+    Quality: 3
+    IsAccountBound: false
+    RequiredCandy: {candyType: "7ff63ec3-352c-6ea4-98ad-55c4f2fb375c" amount: 50}
+    RequiredCandy: {candyType: "9c64b7e4-0458-65c4-9b79-5cc35e847f9c" amount: 30}
+    RequiredCandy: {candyType: "5a087336-6c2d-a684-1b72-a86d6ff6931f" amount: 50}
+    RequiredCandy: {candyType: "40067d7d-6651-cbc4-c8ed-785d73e9ab57" amount: 30}
+    RequiredCandy: {candyType: "4e343f68-1aaa-0e84-7bab-eae458b68264" amount: 40}
+    RequiredFighterQuality: 1
+  }
+}
+recepies:
+{
+  key: "Recipe_Rare_CommanderEmmaTheJawbreaker"
+  value:
+  {
+    AuthoredId: "fae112f6-dba3-e154-78bf-154ec2f3f94b"
+    AnimationId: "a170f9f3-f97b-8eb4-49c0-c99a916e55d7"
+    Armor: {candyType: "4d85b9b7-5d8b-db24-a85a-8df9fa935cb9" armorType: 1}
+    Armor: {candyType: "934dae05-689f-30e4-5804-d497aee0b47c" armorType: 2}
+    Armor: {candyType: "934dae05-689f-30e4-5804-d497aee0b47c" armorType: 3}
+    Armor: {candyType: "1983b3b7-4a9e-8f14-b981-c94c32d7648b" armorType: 11}
+    Name: "Commander Emma The Jawbreaker"
+    Duration: 50
+    FighterName: "Lady Emma The Jawbreaker"
+    FighterType: "4c2d03be-70bf-9294-c8d5-0a8e2d8d0677"
+    Moves: "aa7d8565-99e1-84f4-49d2-8925c2602a7b"
+    Moves: "aa7d8565-99e1-84f4-49d2-8925c2602a7b"
+    Moves: "86b323c2-b2fd-2494-ab5e-bc3514bc92d8"
+    Moves: "9fd0b9ef-2e7d-d344-8926-69f1fab99f65"
+    Moves: "9f0df0ed-13a6-84c4-781d-9dbf9741c66e"
+    Moves: "9f0df0ed-13a6-84c4-781d-9dbf9741c66e"
+    Moves: "73eb61fc-70a9-25a4-ba01-0ecaa0d547c5"
+    Quality: 3
+    IsAccountBound: false
+    RequiredCandy: {candyType: "4d85b9b7-5d8b-db24-a85a-8df9fa935cb9" amount: 50}
+    RequiredCandy: {candyType: "d6478df9-c705-98c4-ebb6-2ffab7dd798b" amount: 30}
+    RequiredCandy: {candyType: "7ea89b0d-7070-d3e4-a86f-c0e75c0e4ff5" amount: 50}
+    RequiredCandy: {candyType: "1983b3b7-4a9e-8f14-b981-c94c32d7648b" amount: 30}
+    RequiredCandy: {candyType: "4e343f68-1aaa-0e84-7bab-eae458b68264" amount: 40}
+    RequiredFighterQuality: 1
+  }
+}
+recepies:
+{
+  key: "Recipe_Rare_CaptainEricTheBitter"
+  value:
+  {
+    AuthoredId: "8bc478cc-d85e-2d84-28f3-1781f582319f"
+    AnimationId: "0c2cdea6-ff22-b124-da21-882987b1707a"
+    Armor: {candyType: "87040ddf-f0cb-f894-dbbd-a4f266cae4e7" armorType: 12}
+    Armor: {candyType: "87040ddf-f0cb-f894-dbbd-a4f266cae4e7" armorType: 13}
+    Armor: {candyType: "87040ddf-f0cb-f894-dbbd-a4f266cae4e7" armorType: 11}
+    Name: "Captain Eric The Bitter"
+    Duration: 50
+    FighterName: "Lord Eric The Bitter"
+    FighterType: "a672e1da-a87d-2a54-4918-cafb72b02aec"
+    Moves: "0090580c-04ef-9d84-e883-32f52c977b98"
+    Moves: "0090580c-04ef-9d84-e883-32f52c977b98"
+    Moves: "73eb61fc-70a9-25a4-ba01-0ecaa0d547c5"
+    Moves: "73eb61fc-70a9-25a4-ba01-0ecaa0d547c5"
+    Moves: "86bd4f81-e96b-9864-78b5-5fc51fbff6a4"
+    Moves: "e201f964-8949-9d74-fbee-4ee8786284ca"
+    Moves: "9f0df0ed-13a6-84c4-781d-9dbf9741c66e"
+    Quality: 3
+    IsAccountBound: false
+    RequiredCandy: {candyType: "230bc5ac-6ab7-a6d4-7a66-fc06a0e0e38d" amount: 50}
+    RequiredCandy: {candyType: "1525c955-d3c0-9f84-69fb-cf98837f4f85" amount: 30}
+    RequiredCandy: {candyType: "9b70e722-0442-2924-092c-93efc1d92975" amount: 50}
+    RequiredCandy: {candyType: "2aae625b-a8b1-8ef4-ba8f-32a45702f9af" amount: 30}
+    RequiredCandy: {candyType: "f9c0a4d2-f049-29a4-eb1e-2269de35798e" amount: 40}
+    RequiredFighterQuality: 1
+  }
+}
+recepies:
+{
+  key: "Recipe_InvestorReward_Gold"
+  value:
+  {
+    AuthoredId: "0ef5f6fd-4dbf-14a4-9b00-04f71e34feb7"
+    AnimationId: "b0877d2a-71db-7374-8a8b-8044f7a8a52a"
+    Armor: {candyType: "f6c3b895-6488-1b74-a9b0-664027a683e2" armorType: 1}
+    Armor: {candyType: "f6c3b895-6488-1b74-a9b0-664027a683e2" armorType: 2}
+    Armor: {candyType: "f6c3b895-6488-1b74-a9b0-664027a683e2" armorType: 3}
+    Armor: {candyType: "52ea4044-e203-16d4-c90f-8b685ed5e9c9" armorType: 4}
+    Armor: {candyType: "52ea4044-e203-16d4-c90f-8b685ed5e9c9" armorType: 5}
+    Armor: {candyType: "52ea4044-e203-16d4-c90f-8b685ed5e9c9" armorType: 6}
+    Armor: {candyType: "52ea4044-e203-16d4-c90f-8b685ed5e9c9" armorType: 7}
+    Armor: {candyType: "8898194e-ac52-f624-a830-176655bb43cd" armorType: 8}
+    Armor: {candyType: "8898194e-ac52-f624-a830-176655bb43cd" armorType: 9}
+    Armor: {candyType: "8898194e-ac52-f624-a830-176655bb43cd" armorType: 10}
+    Armor: {candyType: "2f765969-c607-d4a4-0b9c-72d3cce7fbec" armorType: 11}
+    Armor: {candyType: "2f765969-c607-d4a4-0b9c-72d3cce7fbec" armorType: 12}
+    Armor: {candyType: "2f765969-c607-d4a4-0b9c-72d3cce7fbec" armorType: 13}
+    Armor: {candyType: "47b8a853-791a-1424-1ba9-4adaf4a3f4a5" armorType: 14}
+    Armor: {candyType: "47b8a853-791a-1424-1ba9-4adaf4a3f4a5" armorType: 16}
+    Armor: {candyType: "47b8a853-791a-1424-1ba9-4adaf4a3f4a5" armorType: 15}
+    Armor: {candyType: "47b8a853-791a-1424-1ba9-4adaf4a3f4a5" armorType: 17}
+    Armor: {candyType: "8898194e-ac52-f624-a830-176655bb43cd" armorType: 18}
+    Name: "Recipe_InvestorReward_Gold"
+    Duration: 20
+    FighterName: "Sterling Golden Chip"
+    FighterType: "2522657f-c73f-23c4-da7d-3934d135265b"
+    Moves: "01b34a91-37d8-29d4-09cb-2d515f51e315"
+    Moves: "c6770789-4a1f-7f24-f921-c4dc66c2697a"
+    Moves: "92f7b745-c1ff-3cd4-f9cf-0fe0dafb5536"
+    Moves: "34a115db-3153-aff4-9a46-97700634f1fb"
+    Moves: "4dbb297f-6a80-ca44-a94f-3ea9ed3311e8"
+    Moves: "e55a3d69-9fb4-5194-4812-c2f85e887aca"
+    Moves: "1a67cc79-b97a-4624-ca67-36c9fcbee970"
+    Moves: "bbf71f26-78f5-5014-5b4b-a1c3866cb75b"
+    Moves: "61d8b3ec-9a01-0e64-fb45-27d2b858e332"
+    Quality: 4
+    IsAccountBound: true
+    RequiredFighterQuality: 0
+  }
+}
+recepies:
+{
+  key: "Recipe_Rare_CaptainRollieSnackwell"
+  value:
+  {
+    AuthoredId: "dfd860da-2127-60e4-8b46-39bfffb57245"
+    AnimationId: "05633498-ace9-de14-c939-9435a6343d0f"
+    Armor: {candyType: "12ea78d4-e0f3-e5b4-1882-04787fa86d15" armorType: 4}
+    Armor: {candyType: "12ea78d4-e0f3-e5b4-1882-04787fa86d15" armorType: 5}
+    Armor: {candyType: "12ea78d4-e0f3-e5b4-1882-04787fa86d15" armorType: 6}
+    Armor: {candyType: "12ea78d4-e0f3-e5b4-1882-04787fa86d15" armorType: 7}
+    Name: "Captain Rollie Snackwell"
+    Duration: 50
+    FighterName: "Lord Rollie Snackwell"
+    FighterType: "c160f7ad-c775-8614-abe2-8ef74e54401f"
+    Moves: "ad6d5d28-08b4-4304-6b49-11f8f5f9ff1c"
+    Moves: "aa7d8565-99e1-84f4-49d2-8925c2602a7b"
+    Moves: "1a67cc79-b97a-4624-ca67-36c9fcbee970"
+    Moves: "aa7d8565-99e1-84f4-49d2-8925c2602a7b"
+    Moves: "1d1dec74-ca35-0cc4-d930-164786a9dd81"
+    Moves: "86b323c2-b2fd-2494-ab5e-bc3514bc92d8"
+    Moves: "2c94f949-a10e-2524-2827-6588982ce0b1"
+    Quality: 3
+    IsAccountBound: false
+    RequiredCandy: {candyType: "28089a53-62ac-2044-1964-29f2f31d8a33" amount: 50}
+    RequiredCandy: {candyType: "d6478df9-c705-98c4-ebb6-2ffab7dd798b" amount: 30}
+    RequiredCandy: {candyType: "9b70e722-0442-2924-092c-93efc1d92975" amount: 50}
+    RequiredCandy: {candyType: "63a8ea74-65ee-c024-b8f0-87e173258257" amount: 30}
+    RequiredCandy: {candyType: "87040ddf-f0cb-f894-dbbd-a4f266cae4e7" amount: 35}
+    RequiredFighterQuality: 1
+  }
+}
+recepies:
+{
+  key: "Recipe_Rare_CommanderCharlotteTheHoney-Striker"
+  value:
+  {
+    AuthoredId: "99f7eaf3-67c6-30d4-5a3d-4a2a18bb75f7"
+    AnimationId: "5fce85e9-51f9-d7b4-db81-ef141439db00"
+    Armor: {candyType: "1983b3b7-4a9e-8f14-b981-c94c32d7648b" armorType: 11}
+    Armor: {candyType: "1983b3b7-4a9e-8f14-b981-c94c32d7648b" armorType: 12}
+    Armor: {candyType: "1983b3b7-4a9e-8f14-b981-c94c32d7648b" armorType: 13}
+    Name: "Commander Charlotte The Honey-Striker"
+    Duration: 50
+    FighterName: "Lady Charlotte The Honey-Striker"
+    FighterType: "c160f7ad-c775-8614-abe2-8ef74e54401f"
+    Moves: "2569d967-c676-8b44-cbdf-d514e4c5c73d"
+    Moves: "2569d967-c676-8b44-cbdf-d514e4c5c73d"
+    Moves: "ad6d5d28-08b4-4304-6b49-11f8f5f9ff1c"
+    Moves: "ad6d5d28-08b4-4304-6b49-11f8f5f9ff1c"
+    Moves: "86bd4f81-e96b-9864-78b5-5fc51fbff6a4"
+    Moves: "a9d69fc0-a1b8-ae24-cbd7-249760200211"
+    Moves: "73eb61fc-70a9-25a4-ba01-0ecaa0d547c5"
+    Quality: 3
+    IsAccountBound: false
+    RequiredCandy: {candyType: "28089a53-62ac-2044-1964-29f2f31d8a33" amount: 50}
+    RequiredCandy: {candyType: "230bc5ac-6ab7-a6d4-7a66-fc06a0e0e38d" amount: 30}
+    RequiredCandy: {candyType: "1983b3b7-4a9e-8f14-b981-c94c32d7648b" amount: 50}
+    RequiredCandy: {candyType: "63a8ea74-65ee-c024-b8f0-87e173258257" amount: 30}
+    RequiredCandy: {candyType: "934dae05-689f-30e4-5804-d497aee0b47c" amount: 40}
+    RequiredFighterQuality: 1
+  }
+}
+recepies:
+{
+  key: "Recipe_Rare_CommanderDesireeDelight"
+  value:
+  {
+    AuthoredId: "9a2c04f2-cd9c-e484-daca-d4e4a6b5b9b8"
+    AnimationId: "97c2c3da-93c7-a0d4-1967-eeba13396cce"
+    Armor: {candyType: "af509c01-933e-ce14-49c3-106081e16d75" armorType: 16}
+    Armor: {candyType: "af509c01-933e-ce14-49c3-106081e16d75" armorType: 17}
+    Armor: {candyType: "1983b3b7-4a9e-8f14-b981-c94c32d7648b" armorType: 14}
+    Armor: {candyType: "1983b3b7-4a9e-8f14-b981-c94c32d7648b" armorType: 15}
+    Name: "Commander Desiree Delight"
+    Duration: 50
+    FighterName: "Lady Desiree Delight"
+    FighterType: "2522657f-c73f-23c4-da7d-3934d135265b"
+    Moves: "e16531a7-33fd-a3e4-69fd-ff10eba65cb7"
+    Moves: "aa7d8565-99e1-84f4-49d2-8925c2602a7b"
+    Moves: "86b323c2-b2fd-2494-ab5e-bc3514bc92d8"
+    Moves: "9fd0b9ef-2e7d-d344-8926-69f1fab99f65"
+    Moves: "431900a2-54d4-df34-d9f7-6a4608fecfaa"
+    Moves: "1d1dec74-ca35-0cc4-d930-164786a9dd81"
+    Moves: "1e47a8e0-acfd-1244-0b7d-539d62429060"
+    Quality: 3
+    IsAccountBound: false
+    RequiredCandy: {candyType: "af509c01-933e-ce14-49c3-106081e16d75" amount: 50}
+    RequiredCandy: {candyType: "9c64b7e4-0458-65c4-9b79-5cc35e847f9c" amount: 30}
+    RequiredCandy: {candyType: "1983b3b7-4a9e-8f14-b981-c94c32d7648b" amount: 50}
+    RequiredCandy: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" amount: 30}
+    RequiredCandy: {candyType: "f9c0a4d2-f049-29a4-eb1e-2269de35798e" amount: 40}
+    RequiredFighterQuality: 1
+  }
+}
+recepies:
+{
+  key: "Recipe_Rare_CaptainFrankTheCrunchy"
+  value:
+  {
+    AuthoredId: "c28bd52c-abf1-eff4-da81-6a47f7bd79a9"
+    AnimationId: "a7629ff3-c1ef-e664-3a9c-bd27cb332abd"
+    Armor: {candyType: "4d85b9b7-5d8b-db24-a85a-8df9fa935cb9" armorType: 1}
+    Armor: {candyType: "4d85b9b7-5d8b-db24-a85a-8df9fa935cb9" armorType: 2}
+    Armor: {candyType: "4d85b9b7-5d8b-db24-a85a-8df9fa935cb9" armorType: 3}
+    Armor: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" armorType: 10}
+    Name: "Captain Frank The Crunchy"
+    Duration: 50
+    FighterName: "Lord Frank The Crunchy"
+    FighterType: "c160f7ad-c775-8614-abe2-8ef74e54401f"
+    Moves: "ad6d5d28-08b4-4304-6b49-11f8f5f9ff1c"
+    Moves: "ad6d5d28-08b4-4304-6b49-11f8f5f9ff1c"
+    Moves: "1e47a8e0-acfd-1244-0b7d-539d62429060"
+    Moves: "bd27fe1c-ce9a-f524-c887-61f9e4d5088b"
+    Moves: "bd27fe1c-ce9a-f524-c887-61f9e4d5088b"
+    Moves: "86bd4f81-e96b-9864-78b5-5fc51fbff6a4"
+    Moves: "a9d69fc0-a1b8-ae24-cbd7-249760200211"
+    Quality: 3
+    IsAccountBound: false
+    RequiredCandy: {candyType: "4d85b9b7-5d8b-db24-a85a-8df9fa935cb9" amount: 50}
+    RequiredCandy: {candyType: "e5afded6-705a-2034-7b1c-556ac877fb0f" amount: 30}
+    RequiredCandy: {candyType: "1983b3b7-4a9e-8f14-b981-c94c32d7648b" amount: 50}
+    RequiredCandy: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" amount: 30}
+    RequiredCandy: {candyType: "87040ddf-f0cb-f894-dbbd-a4f266cae4e7" amount: 40}
+    RequiredFighterQuality: 1
+  }
+}
+recepies:
+{
+  key: "Recipe_Rare_CaptainScottyBiscotti"
+  value:
+  {
+    AuthoredId: "4b90dbd5-e6d3-69c4-8b8d-1327bf8381af"
+    AnimationId: "a2a185e5-4543-6814-d88d-d078a0e38521"
+    Armor: {candyType: "af509c01-933e-ce14-49c3-106081e16d75" armorType: 16}
+    Armor: {candyType: "af509c01-933e-ce14-49c3-106081e16d75" armorType: 15}
+    Armor: {candyType: "af509c01-933e-ce14-49c3-106081e16d75" armorType: 15}
+    Armor: {candyType: "af509c01-933e-ce14-49c3-106081e16d75" armorType: 14}
+    Name: "Captain Scotty Biscotti"
+    Duration: 50
+    FighterName: "Lord Scotty Biscotti"
+    FighterType: "4c2d03be-70bf-9294-c8d5-0a8e2d8d0677"
+    Moves: "55e05ece-a3f6-a924-3833-2222a0eee6a3"
+    Moves: "86bd4f81-e96b-9864-78b5-5fc51fbff6a4"
+    Moves: "e201f964-8949-9d74-fbee-4ee8786284ca"
+    Moves: "a9d69fc0-a1b8-ae24-cbd7-249760200211"
+    Moves: "2c555752-8a84-58f4-395e-6460b7864069"
+    Moves: "b889835e-1cd6-d3d4-f9b4-dd1989f49dac"
+    Moves: "628ebc0b-bb19-ee64-68b8-2f66f4b92720"
+    Quality: 3
+    IsAccountBound: false
+    RequiredCandy: {candyType: "86b5fac0-4ec1-09e4-6ab7-96d3fd13dd04" amount: 50}
+    RequiredCandy: {candyType: "1525c955-d3c0-9f84-69fb-cf98837f4f85" amount: 30}
+    RequiredCandy: {candyType: "63a8ea74-65ee-c024-b8f0-87e173258257" amount: 50}
+    RequiredCandy: {candyType: "2aae625b-a8b1-8ef4-ba8f-32a45702f9af" amount: 30}
+    RequiredCandy: {candyType: "f6025c1b-55e8-da24-d96f-0ecebf74c436" amount: 42}
+    RequiredFighterQuality: 1
+  }
+}
+recepies:
+{
+  key: "Recipe_Rare_CommanderJillianofGummiland"
+  value:
+  {
+    AuthoredId: "63da609a-1938-3524-08ac-879fea5cce55"
+    AnimationId: "a7629ff3-c1ef-e664-3a9c-bd27cb332abd"
+    Armor: {candyType: "af509c01-933e-ce14-49c3-106081e16d75" armorType: 14}
+    Armor: {candyType: "af509c01-933e-ce14-49c3-106081e16d75" armorType: 15}
+    Armor: {candyType: "af509c01-933e-ce14-49c3-106081e16d75" armorType: 16}
+    Armor: {candyType: "af509c01-933e-ce14-49c3-106081e16d75" armorType: 17}
+    Name: "Lady Jillian of Gummiland"
+    Duration: 50
+    FighterName: "Lady Jillian of Gummiland"
+    FighterType: "c160f7ad-c775-8614-abe2-8ef74e54401f"
+    Moves: "ad6d5d28-08b4-4304-6b49-11f8f5f9ff1c"
+    Moves: "2569d967-c676-8b44-cbdf-d514e4c5c73d"
+    Moves: "ad6d5d28-08b4-4304-6b49-11f8f5f9ff1c"
+    Moves: "2569d967-c676-8b44-cbdf-d514e4c5c73d"
+    Moves: "86b323c2-b2fd-2494-ab5e-bc3514bc92d8"
+    Moves: "9fd0b9ef-2e7d-d344-8926-69f1fab99f65"
+    Moves: "9fd0b9ef-2e7d-d344-8926-69f1fab99f65"
+    Quality: 3
+    IsAccountBound: false
+    RequiredCandy: {candyType: "af509c01-933e-ce14-49c3-106081e16d75" amount: 50}
+    RequiredCandy: {candyType: "9c64b7e4-0458-65c4-9b79-5cc35e847f9c" amount: 30}
+    RequiredCandy: {candyType: "9b70e722-0442-2924-092c-93efc1d92975" amount: 50}
+    RequiredCandy: {candyType: "5a087336-6c2d-a684-1b72-a86d6ff6931f" amount: 30}
+    RequiredCandy: {candyType: "87040ddf-f0cb-f894-dbbd-a4f266cae4e7" amount: 50}
+    RequiredFighterQuality: 1
+  }
+}
+recepies:
+{
+  key: "Recipe_Epic_OscarDeLaCola"
+  value:
+  {
+    AuthoredId: "ec86d547-e1d0-6324-bb20-e0a20e116fb2"
+    AnimationId: "64732638-e355-d5c4-aa2d-e28c3db4aa72"
+    Armor: {candyType: "321c2a65-64b1-8344-2915-85562e2ad7ec" armorType: 1}
+    Armor: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" armorType: 2}
+    Armor: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" armorType: 3}
+    Armor: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" armorType: 4}
+    Armor: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" armorType: 5}
+    Armor: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" armorType: 6}
+    Armor: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" armorType: 7}
+    Armor: {candyType: "0ee1131a-b8e4-05c4-9896-3690ebf8563a" armorType: 8}
+    Armor: {candyType: "0ee1131a-b8e4-05c4-9896-3690ebf8563a" armorType: 9}
+    Armor: {candyType: "0ee1131a-b8e4-05c4-9896-3690ebf8563a" armorType: 10}
+    Armor: {candyType: "0ee1131a-b8e4-05c4-9896-3690ebf8563a" armorType: 18}
+    Armor: {candyType: "63a8ea74-65ee-c024-b8f0-87e173258257" armorType: 11}
+    Armor: {candyType: "63a8ea74-65ee-c024-b8f0-87e173258257" armorType: 12}
+    Armor: {candyType: "63a8ea74-65ee-c024-b8f0-87e173258257" armorType: 13}
+    Armor: {candyType: "d6478df9-c705-98c4-ebb6-2ffab7dd798b" armorType: 14}
+    Armor: {candyType: "d6478df9-c705-98c4-ebb6-2ffab7dd798b" armorType: 15}
+    Armor: {candyType: "d6478df9-c705-98c4-ebb6-2ffab7dd798b" armorType: 16}
+    Armor: {candyType: "d6478df9-c705-98c4-ebb6-2ffab7dd798b" armorType: 17}
+    Name: "Oscar De La Cola"
+    Duration: 100
+    FighterName: "Oscar De La Cola"
+    FighterType: "4c2d03be-70bf-9294-c8d5-0a8e2d8d0677"
+    Moves: "e201f964-8949-9d74-fbee-4ee8786284ca"
+    Moves: "e201f964-8949-9d74-fbee-4ee8786284ca"
+    Moves: "86bd4f81-e96b-9864-78b5-5fc51fbff6a4"
+    Moves: "2c555752-8a84-58f4-395e-6460b7864069"
+    Moves: "a9d69fc0-a1b8-ae24-cbd7-249760200211"
+    Moves: "628ebc0b-bb19-ee64-68b8-2f66f4b92720"
+    Moves: "c28e13b4-cb1f-6ea4-680f-91010a400e10"
+    Moves: "73eb61fc-70a9-25a4-ba01-0ecaa0d547c5"
+    Moves: "431900a2-54d4-df34-d9f7-6a4608fecfaa"
+    Quality: 4
+    IsAccountBound: false
+    RequiredCandy: {candyType: "0ee1131a-b8e4-05c4-9896-3690ebf8563a" amount: 50}
+    RequiredCandy: {candyType: "48ea4c49-79dd-6514-6b8b-f87fd6d8a330" amount: 30}
+    RequiredCandy: {candyType: "aa0cb18d-5681-5504-09d7-4db06bf7a4d8" amount: 25}
+    RequiredCandy: {candyType: "d6478df9-c705-98c4-ebb6-2ffab7dd798b" amount: 30}
+    RequiredCandy: {candyType: "f6025c1b-55e8-da24-d96f-0ecebf74c436" amount: 75}
+    RequiredCandy: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" amount: 50}
+    RequiredCandy: {candyType: "63a8ea74-65ee-c024-b8f0-87e173258257" amount: 25}
+    RequiredCandy: {candyType: "934dae05-689f-30e4-5804-d497aee0b47c" amount: 50}
+    RequiredFighterQuality: 2
+  }
+}
+recepies:
+{
+  key: "Recipe_Rare_CommanderCortniSugarbowl"
+  value:
+  {
+    AuthoredId: "8f8425e7-cab0-0b14-1874-5072afe7d0b5"
+    AnimationId: "917e27ec-19ff-3d04-69f6-c596456816e6"
+    Armor: {candyType: "3d47dfc5-ce51-9c54-68f1-6819b251e6c7" armorType: 10}
+    Armor: {candyType: "3d47dfc5-ce51-9c54-68f1-6819b251e6c7" armorType: 18}
+    Armor: {candyType: "3d47dfc5-ce51-9c54-68f1-6819b251e6c7" armorType: 8}
+    Armor: {candyType: "3d47dfc5-ce51-9c54-68f1-6819b251e6c7" armorType: 9}
+    Name: "Commander Cortni Sugarbowl"
+    Duration: 50
+    FighterName: "Lady Cortni Sugarbowl"
+    FighterType: "a672e1da-a87d-2a54-4918-cafb72b02aec"
+    Moves: "41416afb-0d72-f9b4-ba30-f089b713500f"
+    Moves: "41416afb-0d72-f9b4-ba30-f089b713500f"
+    Moves: "2c94f949-a10e-2524-2827-6588982ce0b1"
+    Moves: "2c94f949-a10e-2524-2827-6588982ce0b1"
+    Moves: "431900a2-54d4-df34-d9f7-6a4608fecfaa"
+    Moves: "86b323c2-b2fd-2494-ab5e-bc3514bc92d8"
+    Moves: "29d559bb-41a7-9f14-5bf8-605da8166943"
+    Quality: 3
+    IsAccountBound: false
+    RequiredCandy: {candyType: "d6478df9-c705-98c4-ebb6-2ffab7dd798b" amount: 50}
+    RequiredCandy: {candyType: "8ac3d9f0-2a3e-b724-6a96-ce73b5ee215c" amount: 30}
+    RequiredCandy: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" amount: 50}
+    RequiredCandy: {candyType: "2aae625b-a8b1-8ef4-ba8f-32a45702f9af" amount: 30}
+    RequiredCandy: {candyType: "3d47dfc5-ce51-9c54-68f1-6819b251e6c7" amount: 40}
+    RequiredFighterQuality: 1
+  }
+}
+recepies:
+{
+  key: "Recipe_Rare_CommanderErikaEverlasting"
+  value:
+  {
+    AuthoredId: "83bdccb0-abc7-3264-8994-4d1700458a07"
+    AnimationId: "2831df30-e1a2-dcf4-2a9a-0c91ac4ea310"
+    Armor: {candyType: "4d85b9b7-5d8b-db24-a85a-8df9fa935cb9" armorType: 1}
+    Armor: {candyType: "4d85b9b7-5d8b-db24-a85a-8df9fa935cb9" armorType: 2}
+    Armor: {candyType: "4d85b9b7-5d8b-db24-a85a-8df9fa935cb9" armorType: 3}
+    Armor: {candyType: "7ff63ec3-352c-6ea4-98ad-55c4f2fb375c" armorType: 11}
+    Name: "Commander Erika Everlasting"
+    Duration: 50
+    FighterName: "Lady Erika Everlasting"
+    FighterType: "c160f7ad-c775-8614-abe2-8ef74e54401f"
+    Moves: "ad6d5d28-08b4-4304-6b49-11f8f5f9ff1c"
+    Moves: "2569d967-c676-8b44-cbdf-d514e4c5c73d"
+    Moves: "b1bd32de-88b2-1204-7b2e-0680677d78c4"
+    Moves: "b889835e-1cd6-d3d4-f9b4-dd1989f49dac"
+    Moves: "1d1dec74-ca35-0cc4-d930-164786a9dd81"
+    Moves: "1e47a8e0-acfd-1244-0b7d-539d62429060"
+    Moves: "bd27fe1c-ce9a-f524-c887-61f9e4d5088b"
+    Quality: 3
+    IsAccountBound: false
+    RequiredCandy: {candyType: "4d85b9b7-5d8b-db24-a85a-8df9fa935cb9" amount: 50}
+    RequiredCandy: {candyType: "7ff63ec3-352c-6ea4-98ad-55c4f2fb375c" amount: 30}
+    RequiredCandy: {candyType: "1983b3b7-4a9e-8f14-b981-c94c32d7648b" amount: 50}
+    RequiredCandy: {candyType: "7ea89b0d-7070-d3e4-a86f-c0e75c0e4ff5" amount: 30}
+    RequiredCandy: {candyType: "4e343f68-1aaa-0e84-7bab-eae458b68264" amount: 40}
+    RequiredFighterQuality: 1
+  }
+}
+recepies:
+{
+  key: "Recipe_Rare_CaptainKrisofMarshmallow"
+  value:
+  {
+    AuthoredId: "c229b9d2-8e0f-8644-7b09-1b6ba6247026"
+    AnimationId: "64732638-e355-d5c4-aa2d-e28c3db4aa72"
+    Armor: {candyType: "8aac4645-29cf-fe04-59c0-415508b0432e" armorType: 14}
+    Armor: {candyType: "8aac4645-29cf-fe04-59c0-415508b0432e" armorType: 15}
+    Armor: {candyType: "8aac4645-29cf-fe04-59c0-415508b0432e" armorType: 17}
+    Armor: {candyType: "8aac4645-29cf-fe04-59c0-415508b0432e" armorType: 16}
+    Name: "Captain Kris of Marshmallow"
+    Duration: 50
+    FighterName: "Lord Kris of Marshmallow"
+    FighterType: "2522657f-c73f-23c4-da7d-3934d135265b"
+    Moves: "55e05ece-a3f6-a924-3833-2222a0eee6a3"
+    Moves: "55e05ece-a3f6-a924-3833-2222a0eee6a3"
+    Moves: "e201f964-8949-9d74-fbee-4ee8786284ca"
+    Moves: "e201f964-8949-9d74-fbee-4ee8786284ca"
+    Moves: "a9d69fc0-a1b8-ae24-cbd7-249760200211"
+    Moves: "2c555752-8a84-58f4-395e-6460b7864069"
+    Moves: "c28e13b4-cb1f-6ea4-680f-91010a400e10"
+    Quality: 3
+    IsAccountBound: false
+    RequiredCandy: {candyType: "d6478df9-c705-98c4-ebb6-2ffab7dd798b" amount: 50}
+    RequiredCandy: {candyType: "8ac3d9f0-2a3e-b724-6a96-ce73b5ee215c" amount: 30}
+    RequiredCandy: {candyType: "2aae625b-a8b1-8ef4-ba8f-32a45702f9af" amount: 50}
+    RequiredCandy: {candyType: "9b70e722-0442-2924-092c-93efc1d92975" amount: 25}
+    RequiredCandy: {candyType: "f6025c1b-55e8-da24-d96f-0ecebf74c436" amount: 45}
+    RequiredFighterQuality: 1
+  }
+}
+recepies:
+{
+  key: "Recipe_Rare_CaptainDaveCookieCrust"
+  value:
+  {
+    AuthoredId: "27f47d35-c2d3-c004-9a36-5253005559c2"
+    AnimationId: "f33c74e6-f1b4-6ca4-bb5a-cf6edc77cab5"
+    Armor: {candyType: "4e343f68-1aaa-0e84-7bab-eae458b68264" armorType: 11}
+    Armor: {candyType: "4e343f68-1aaa-0e84-7bab-eae458b68264" armorType: 12}
+    Armor: {candyType: "4e343f68-1aaa-0e84-7bab-eae458b68264" armorType: 13}
+    Name: "Captain Dave Cookie-Crust"
+    Duration: 50
+    FighterName: "Lord Dave Cookie-Crust"
+    FighterType: "4c2d03be-70bf-9294-c8d5-0a8e2d8d0677"
+    Moves: "2c94f949-a10e-2524-2827-6588982ce0b1"
+    Moves: "2c94f949-a10e-2524-2827-6588982ce0b1"
+    Moves: "431900a2-54d4-df34-d9f7-6a4608fecfaa"
+    Moves: "431900a2-54d4-df34-d9f7-6a4608fecfaa"
+    Moves: "0090580c-04ef-9d84-e883-32f52c977b98"
+    Moves: "628ebc0b-bb19-ee64-68b8-2f66f4b92720"
+    Moves: "b889835e-1cd6-d3d4-f9b4-dd1989f49dac"
+    Quality: 3
+    IsAccountBound: false
+    RequiredCandy: {candyType: "9ff884ab-efcb-0af4-5acd-976fea43b3a3" amount: 50}
+    RequiredCandy: {candyType: "86b5fac0-4ec1-09e4-6ab7-96d3fd13dd04" amount: 30}
+    RequiredCandy: {candyType: "63a8ea74-65ee-c024-b8f0-87e173258257" amount: 50}
+    RequiredCandy: {candyType: "7ea89b0d-7070-d3e4-a86f-c0e75c0e4ff5" amount: 30}
+    RequiredCandy: {candyType: "8aac4645-29cf-fe04-59c0-415508b0432e" amount: 40}
+    RequiredFighterQuality: 1
+  }
+}
+recepies:
+{
+  key: "Recipe_Rare_CaptainGeordieTheSour"
+  value:
+  {
+    AuthoredId: "fe9ec873-e4b8-0714-2be0-a3c2c547f9ad"
+    AnimationId: "2831df30-e1a2-dcf4-2a9a-0c91ac4ea310"
+    Armor: {candyType: "934dae05-689f-30e4-5804-d497aee0b47c" armorType: 1}
+    Armor: {candyType: "16e0b307-2b40-4584-294c-dee505e47827" armorType: 2}
+    Armor: {candyType: "16e0b307-2b40-4584-294c-dee505e47827" armorType: 3}
+    Name: "Captain Geordie The Sour"
+    Duration: 50
+    FighterName: "Lord Geordie The Sour"
+    FighterType: "a672e1da-a87d-2a54-4918-cafb72b02aec"
+    Moves: "b96f1ff8-66d5-f244-79fd-260735d4c3d7"
+    Moves: "61d8b3ec-9a01-0e64-fb45-27d2b858e332"
+    Moves: "29d559bb-41a7-9f14-5bf8-605da8166943"
+    Moves: "29d559bb-41a7-9f14-5bf8-605da8166943"
+    Moves: "2569d967-c676-8b44-cbdf-d514e4c5c73d"
+    Moves: "fa6144f9-ad49-8124-386f-351a7f1ab546"
+    Moves: "a9d69fc0-a1b8-ae24-cbd7-249760200211"
+    Quality: 3
+    IsAccountBound: false
+    RequiredCandy: {candyType: "1525c955-d3c0-9f84-69fb-cf98837f4f85" amount: 50}
+    RequiredCandy: {candyType: "af509c01-933e-ce14-49c3-106081e16d75" amount: 30}
+    RequiredCandy: {candyType: "7ea89b0d-7070-d3e4-a86f-c0e75c0e4ff5" amount: 50}
+    RequiredCandy: {candyType: "9b70e722-0442-2924-092c-93efc1d92975" amount: 30}
+    RequiredCandy: {candyType: "16e0b307-2b40-4584-294c-dee505e47827" amount: 40}
+    RequiredFighterQuality: 1
+  }
+}
+recepies:
+{
+  key: "Recipe_InvestorReward_Bronze"
+  value:
+  {
+    AuthoredId: "b5850520-cb42-d804-d887-38e4577f62a6"
+    AnimationId: "471eee2f-e6ad-a694-58de-bdee5a379096"
+    Armor: {candyType: "aa0cb18d-5681-5504-09d7-4db06bf7a4d8" armorType: 1}
+    Armor: {candyType: "aa0cb18d-5681-5504-09d7-4db06bf7a4d8" armorType: 2}
+    Armor: {candyType: "aa0cb18d-5681-5504-09d7-4db06bf7a4d8" armorType: 3}
+    Armor: {candyType: "8932caea-da2e-6384-58ec-749624e213c9" armorType: 4}
+    Armor: {candyType: "8932caea-da2e-6384-58ec-749624e213c9" armorType: 5}
+    Armor: {candyType: "8932caea-da2e-6384-58ec-749624e213c9" armorType: 6}
+    Armor: {candyType: "8932caea-da2e-6384-58ec-749624e213c9" armorType: 7}
+    Armor: {candyType: "48ea4c49-79dd-6514-6b8b-f87fd6d8a330" armorType: 8}
+    Armor: {candyType: "48ea4c49-79dd-6514-6b8b-f87fd6d8a330" armorType: 9}
+    Armor: {candyType: "48ea4c49-79dd-6514-6b8b-f87fd6d8a330" armorType: 10}
+    Armor: {candyType: "8f896243-a6de-1b54-68a3-0df72e8688e4" armorType: 11}
+    Armor: {candyType: "8f896243-a6de-1b54-68a3-0df72e8688e4" armorType: 12}
+    Armor: {candyType: "8f896243-a6de-1b54-68a3-0df72e8688e4" armorType: 13}
+    Armor: {candyType: "a2c2697c-d738-c004-4b32-d800921bab06" armorType: 14}
+    Armor: {candyType: "a2c2697c-d738-c004-4b32-d800921bab06" armorType: 16}
+    Armor: {candyType: "a2c2697c-d738-c004-4b32-d800921bab06" armorType: 15}
+    Armor: {candyType: "a2c2697c-d738-c004-4b32-d800921bab06" armorType: 17}
+    Armor: {candyType: "48ea4c49-79dd-6514-6b8b-f87fd6d8a330" armorType: 18}
+    Name: "Recipe_InvestorReward_Bronze"
+    Duration: 20
+    FighterName: "Luke Saltwater the Bronzed"
+    FighterType: "c160f7ad-c775-8614-abe2-8ef74e54401f"
+    Moves: "8e4753b5-c739-aaf4-ab79-4d333a69cae6"
+    Moves: "55cafe03-4a58-0f44-6a27-f9fc6fce881a"
+    Moves: "3e76f2fa-072c-5654-dac9-c9b0e4e1643a"
+    Moves: "b96f1ff8-66d5-f244-79fd-260735d4c3d7"
+    Moves: "61d8b3ec-9a01-0e64-fb45-27d2b858e332"
+    Moves: "e55a3d69-9fb4-5194-4812-c2f85e887aca"
+    Moves: "1a67cc79-b97a-4624-ca67-36c9fcbee970"
+    Moves: "bbf71f26-78f5-5014-5b4b-a1c3866cb75b"
+    Moves: "92f7b745-c1ff-3cd4-f9cf-0fe0dafb5536"
+    Quality: 4
+    IsAccountBound: false
+    RequiredFighterQuality: 0
+  }
+}
+recepies:
+{
+  key: "Recipe_Rare_CaptainVicofBlowingBubbles"
+  value:
+  {
+    AuthoredId: "223de3eb-e192-0854-d800-6f9f2fa8e28b"
+    AnimationId: "ed324300-aa2c-0c04-4b75-2d0eae3780f4"
+    Armor: {candyType: "230bc5ac-6ab7-a6d4-7a66-fc06a0e0e38d" armorType: 17}
+    Armor: {candyType: "230bc5ac-6ab7-a6d4-7a66-fc06a0e0e38d" armorType: 10}
+    Armor: {candyType: "230bc5ac-6ab7-a6d4-7a66-fc06a0e0e38d" armorType: 8}
+    Armor: {candyType: "230bc5ac-6ab7-a6d4-7a66-fc06a0e0e38d" armorType: 9}
+    Name: "Captain Vic of Blowing Bubbles"
+    Duration: 50
+    FighterName: "Lord Vic of Blowing Bubbles"
+    FighterType: "c160f7ad-c775-8614-abe2-8ef74e54401f"
+    Moves: "41416afb-0d72-f9b4-ba30-f089b713500f"
+    Moves: "41416afb-0d72-f9b4-ba30-f089b713500f"
+    Moves: "2c94f949-a10e-2524-2827-6588982ce0b1"
+    Moves: "73eb61fc-70a9-25a4-ba01-0ecaa0d547c5"
+    Moves: "fa6144f9-ad49-8124-386f-351a7f1ab546"
+    Moves: "fa6144f9-ad49-8124-386f-351a7f1ab546"
+    Moves: "c28e13b4-cb1f-6ea4-680f-91010a400e10"
+    Quality: 3
+    IsAccountBound: false
+    RequiredCandy: {candyType: "230bc5ac-6ab7-a6d4-7a66-fc06a0e0e38d" amount: 50}
+    RequiredCandy: {candyType: "9c64b7e4-0458-65c4-9b79-5cc35e847f9c" amount: 30}
+    RequiredCandy: {candyType: "5a087336-6c2d-a684-1b72-a86d6ff6931f" amount: 50}
+    RequiredCandy: {candyType: "9b70e722-0442-2924-092c-93efc1d92975" amount: 30}
+    RequiredCandy: {candyType: "f6025c1b-55e8-da24-d96f-0ecebf74c436" amount: 42}
+    RequiredFighterQuality: 1
+  }
+}
+recepies:
+{
+  key: "Recipe_Epic_VladimirCrunchko"
+  value:
+  {
+    AuthoredId: "c1e9a4e1-cf55-6084-8bf2-778678387353"
+    AnimationId: "27448f34-ca08-99b4-1b63-fd4b227e6af4"
+    Armor: {candyType: "7ff63ec3-352c-6ea4-98ad-55c4f2fb375c" armorType: 1}
+    Armor: {candyType: "f6c3b895-6488-1b74-a9b0-664027a683e2" armorType: 2}
+    Armor: {candyType: "f6c3b895-6488-1b74-a9b0-664027a683e2" armorType: 3}
+    Armor: {candyType: "f6025c1b-55e8-da24-d96f-0ecebf74c436" armorType: 4}
+    Armor: {candyType: "f6025c1b-55e8-da24-d96f-0ecebf74c436" armorType: 5}
+    Armor: {candyType: "f6025c1b-55e8-da24-d96f-0ecebf74c436" armorType: 6}
+    Armor: {candyType: "f6025c1b-55e8-da24-d96f-0ecebf74c436" armorType: 7}
+    Armor: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" armorType: 8}
+    Armor: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" armorType: 9}
+    Armor: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" armorType: 10}
+    Armor: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" armorType: 18}
+    Armor: {candyType: "63a8ea74-65ee-c024-b8f0-87e173258257" armorType: 11}
+    Armor: {candyType: "63a8ea74-65ee-c024-b8f0-87e173258257" armorType: 12}
+    Armor: {candyType: "63a8ea74-65ee-c024-b8f0-87e173258257" armorType: 13}
+    Armor: {candyType: "47b8a853-791a-1424-1ba9-4adaf4a3f4a5" armorType: 14}
+    Armor: {candyType: "47b8a853-791a-1424-1ba9-4adaf4a3f4a5" armorType: 15}
+    Armor: {candyType: "47b8a853-791a-1424-1ba9-4adaf4a3f4a5" armorType: 16}
+    Armor: {candyType: "47b8a853-791a-1424-1ba9-4adaf4a3f4a5" armorType: 17}
+    Name: "Vladimir Crunchko"
+    Duration: 100
+    FighterName: "Vladimir Crunchko"
+    FighterType: "4c2d03be-70bf-9294-c8d5-0a8e2d8d0677"
+    Moves: "c6770789-4a1f-7f24-f921-c4dc66c2697a"
+    Moves: "c6770789-4a1f-7f24-f921-c4dc66c2697a"
+    Moves: "2c555752-8a84-58f4-395e-6460b7864069"
+    Moves: "55e05ece-a3f6-a924-3833-2222a0eee6a3"
+    Moves: "e201f964-8949-9d74-fbee-4ee8786284ca"
+    Moves: "01b34a91-37d8-29d4-09cb-2d515f51e315"
+    Moves: "431900a2-54d4-df34-d9f7-6a4608fecfaa"
+    Moves: "c28e13b4-cb1f-6ea4-680f-91010a400e10"
+    Moves: "aa7d8565-99e1-84f4-49d2-8925c2602a7b"
+    Quality: 4
+    IsAccountBound: false
+    RequiredCandy: {candyType: "47b8a853-791a-1424-1ba9-4adaf4a3f4a5" amount: 50}
+    RequiredCandy: {candyType: "0ee1131a-b8e4-05c4-9896-3690ebf8563a" amount: 30}
+    RequiredCandy: {candyType: "aa0cb18d-5681-5504-09d7-4db06bf7a4d8" amount: 25}
+    RequiredCandy: {candyType: "d6478df9-c705-98c4-ebb6-2ffab7dd798b" amount: 30}
+    RequiredCandy: {candyType: "f6025c1b-55e8-da24-d96f-0ecebf74c436" amount: 75}
+    RequiredCandy: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" amount: 50}
+    RequiredCandy: {candyType: "63a8ea74-65ee-c024-b8f0-87e173258257" amount: 25}
+    RequiredCandy: {candyType: "934dae05-689f-30e4-5804-d497aee0b47c" amount: 50}
+    RequiredFighterQuality: 2
+  }
+}
+recepies:
+{
+  key: "Recipe_Rare_CommanderWhitneyofBrownie"
+  value:
+  {
+    AuthoredId: "8f67d790-fc5b-0604-ab52-6292a829a6fc"
+    AnimationId: "d35a9d1c-2223-c404-c840-c0218f9b147d"
+    Armor: {candyType: "8aac4645-29cf-fe04-59c0-415508b0432e" armorType: 1}
+    Armor: {candyType: "8aac4645-29cf-fe04-59c0-415508b0432e" armorType: 2}
+    Armor: {candyType: "8aac4645-29cf-fe04-59c0-415508b0432e" armorType: 2}
+    Armor: {candyType: "8aac4645-29cf-fe04-59c0-415508b0432e" armorType: 2}
+    Name: "Commander Whitney of Brownie"
+    Duration: 50
+    FighterName: "Lady Whitney of Brownie"
+    FighterType: "85f361b8-e55d-0244-1a98-26bffa0a18a2"
+    Moves: "55e05ece-a3f6-a924-3833-2222a0eee6a3"
+    Moves: "a9d69fc0-a1b8-ae24-cbd7-249760200211"
+    Moves: "a9d69fc0-a1b8-ae24-cbd7-249760200211"
+    Moves: "2c555752-8a84-58f4-395e-6460b7864069"
+    Moves: "e201f964-8949-9d74-fbee-4ee8786284ca"
+    Moves: "ad6d5d28-08b4-4304-6b49-11f8f5f9ff1c"
+    Moves: "86b323c2-b2fd-2494-ab5e-bc3514bc92d8"
+    Quality: 3
+    IsAccountBound: false
+    RequiredCandy: {candyType: "33d499a1-9dee-dfd4-7843-c743a6131dcf" amount: 50}
+    RequiredCandy: {candyType: "86b5fac0-4ec1-09e4-6ab7-96d3fd13dd04" amount: 30}
+    RequiredCandy: {candyType: "40067d7d-6651-cbc4-c8ed-785d73e9ab57" amount: 50}
+    RequiredCandy: {candyType: "2aae625b-a8b1-8ef4-ba8f-32a45702f9af" amount: 30}
+    RequiredCandy: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" amount: 40}
+    RequiredFighterQuality: 1
+  }
+}
+recepies:
+{
+  key: "Recipe_Rare_CommanderSandyTheCandy"
+  value:
+  {
+    AuthoredId: "ba49d448-4c02-1fe4-4b20-a43f623e0d8f"
+    AnimationId: "a2a185e5-4543-6814-d88d-d078a0e38521"
+    Armor: {candyType: "d6478df9-c705-98c4-ebb6-2ffab7dd798b" armorType: 14}
+    Armor: {candyType: "d6478df9-c705-98c4-ebb6-2ffab7dd798b" armorType: 15}
+    Armor: {candyType: "f6025c1b-55e8-da24-d96f-0ecebf74c436" armorType: 7}
+    Armor: {candyType: "f6025c1b-55e8-da24-d96f-0ecebf74c436" armorType: 6}
+    Name: "Commander Sandy The Candy"
+    Duration: 50
+    FighterName: "Lady Sandy The Candy"
+    FighterType: "2522657f-c73f-23c4-da7d-3934d135265b"
+    Moves: "29d559bb-41a7-9f14-5bf8-605da8166943"
+    Moves: "29d559bb-41a7-9f14-5bf8-605da8166943"
+    Moves: "ad6d5d28-08b4-4304-6b49-11f8f5f9ff1c"
+    Moves: "ad6d5d28-08b4-4304-6b49-11f8f5f9ff1c"
+    Moves: "aa7d8565-99e1-84f4-49d2-8925c2602a7b"
+    Moves: "e16531a7-33fd-a3e4-69fd-ff10eba65cb7"
+    Moves: "55e05ece-a3f6-a924-3833-2222a0eee6a3"
+    Quality: 3
+    IsAccountBound: false
+    RequiredCandy: {candyType: "d6478df9-c705-98c4-ebb6-2ffab7dd798b" amount: 50}
+    RequiredCandy: {candyType: "9c64b7e4-0458-65c4-9b79-5cc35e847f9c" amount: 30}
+    RequiredCandy: {candyType: "7ea89b0d-7070-d3e4-a86f-c0e75c0e4ff5" amount: 50}
+    RequiredCandy: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" amount: 30}
+    RequiredCandy: {candyType: "f6025c1b-55e8-da24-d96f-0ecebf74c436" amount: 40}
+    RequiredFighterQuality: 1
+  }
+}
+recepies:
+{
+  key: "Recipe_Rare_CommanderHeatherTheCreamy"
+  value:
+  {
+    AuthoredId: "9c89ab1e-b043-6134-a86f-89a986e4e8c0"
+    AnimationId: "2831df30-e1a2-dcf4-2a9a-0c91ac4ea310"
+    Armor: {candyType: "2aae625b-a8b1-8ef4-ba8f-32a45702f9af" armorType: 14}
+    Armor: {candyType: "2aae625b-a8b1-8ef4-ba8f-32a45702f9af" armorType: 15}
+    Armor: {candyType: "2aae625b-a8b1-8ef4-ba8f-32a45702f9af" armorType: 17}
+    Armor: {candyType: "2aae625b-a8b1-8ef4-ba8f-32a45702f9af" armorType: 16}
+    Name: "Commander Heather The Creamy"
+    Duration: 50
+    FighterName: "Lady Heather The Creamy"
+    FighterType: "85f361b8-e55d-0244-1a98-26bffa0a18a2"
+    Moves: "29d559bb-41a7-9f14-5bf8-605da8166943"
+    Moves: "29d559bb-41a7-9f14-5bf8-605da8166943"
+    Moves: "b96f1ff8-66d5-f244-79fd-260735d4c3d7"
+    Moves: "bd27fe1c-ce9a-f524-c887-61f9e4d5088b"
+    Moves: "b1bd32de-88b2-1204-7b2e-0680677d78c4"
+    Moves: "2c94f949-a10e-2524-2827-6588982ce0b1"
+    Moves: "41416afb-0d72-f9b4-ba30-f089b713500f"
+    Quality: 3
+    IsAccountBound: false
+    RequiredCandy: {candyType: "28089a53-62ac-2044-1964-29f2f31d8a33" amount: 50}
+    RequiredCandy: {candyType: "1525c955-d3c0-9f84-69fb-cf98837f4f85" amount: 30}
+    RequiredCandy: {candyType: "2aae625b-a8b1-8ef4-ba8f-32a45702f9af" amount: 50}
+    RequiredCandy: {candyType: "63a8ea74-65ee-c024-b8f0-87e173258257" amount: 30}
+    RequiredCandy: {candyType: "f9c0a4d2-f049-29a4-eb1e-2269de35798e" amount: 40}
+    RequiredFighterQuality: 1
+  }
+}
+recepies:
+{
+  key: "Recipe_Rare_CaptainVoodooofCupcakes"
+  value:
+  {
+    AuthoredId: "c6cabeb5-60f6-7c34-fb09-c7e24971ff3b"
+    AnimationId: "05633498-ace9-de14-c939-9435a6343d0f"
+    Armor: {candyType: "7ff63ec3-352c-6ea4-98ad-55c4f2fb375c" armorType: 2}
+    Armor: {candyType: "7ff63ec3-352c-6ea4-98ad-55c4f2fb375c" armorType: 3}
+    Armor: {candyType: "7ff63ec3-352c-6ea4-98ad-55c4f2fb375c" armorType: 4}
+    Armor: {candyType: "7ff63ec3-352c-6ea4-98ad-55c4f2fb375c" armorType: 5}
+    Name: "Captain Voodoo of Cupcakes"
+    Duration: 50
+    FighterName: "Lord Voodoo of Cupcakes"
+    FighterType: "85f361b8-e55d-0244-1a98-26bffa0a18a2"
+    Moves: "61d8b3ec-9a01-0e64-fb45-27d2b858e332"
+    Moves: "b96f1ff8-66d5-f244-79fd-260735d4c3d7"
+    Moves: "b889835e-1cd6-d3d4-f9b4-dd1989f49dac"
+    Moves: "b889835e-1cd6-d3d4-f9b4-dd1989f49dac"
+    Moves: "29d559bb-41a7-9f14-5bf8-605da8166943"
+    Moves: "29d559bb-41a7-9f14-5bf8-605da8166943"
+    Moves: "73eb61fc-70a9-25a4-ba01-0ecaa0d547c5"
+    Quality: 3
+    IsAccountBound: false
+    RequiredCandy: {candyType: "7ff63ec3-352c-6ea4-98ad-55c4f2fb375c" amount: 50}
+    RequiredCandy: {candyType: "8ac3d9f0-2a3e-b724-6a96-ce73b5ee215c" amount: 30}
+    RequiredCandy: {candyType: "5a087336-6c2d-a684-1b72-a86d6ff6931f" amount: 50}
+    RequiredCandy: {candyType: "d6478df9-c705-98c4-ebb6-2ffab7dd798b" amount: 30}
+    RequiredCandy: {candyType: "f6025c1b-55e8-da24-d96f-0ecebf74c436" amount: 38}
+    RequiredFighterQuality: 1
+  }
+}
+recepies:
+{
+  key: "Recipe_Epic_JoanofChocolateBark"
+  value:
+  {
+    AuthoredId: "40f97352-9e9e-39d4-a830-6672d1ed46f6"
+    AnimationId: "97c2c3da-93c7-a0d4-1967-eeba13396cce"
+    Armor: {candyType: "aa0cb18d-5681-5504-09d7-4db06bf7a4d8" armorType: 1}
+    Armor: {candyType: "aa0cb18d-5681-5504-09d7-4db06bf7a4d8" armorType: 2}
+    Armor: {candyType: "aa0cb18d-5681-5504-09d7-4db06bf7a4d8" armorType: 3}
+    Armor: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" armorType: 4}
+    Armor: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" armorType: 5}
+    Armor: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" armorType: 6}
+    Armor: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" armorType: 7}
+    Armor: {candyType: "3d47dfc5-ce51-9c54-68f1-6819b251e6c7" armorType: 8}
+    Armor: {candyType: "3d47dfc5-ce51-9c54-68f1-6819b251e6c7" armorType: 9}
+    Armor: {candyType: "3d47dfc5-ce51-9c54-68f1-6819b251e6c7" armorType: 10}
+    Armor: {candyType: "3d47dfc5-ce51-9c54-68f1-6819b251e6c7" armorType: 18}
+    Armor: {candyType: "63a8ea74-65ee-c024-b8f0-87e173258257" armorType: 11}
+    Armor: {candyType: "63a8ea74-65ee-c024-b8f0-87e173258257" armorType: 12}
+    Armor: {candyType: "63a8ea74-65ee-c024-b8f0-87e173258257" armorType: 13}
+    Armor: {candyType: "2aae625b-a8b1-8ef4-ba8f-32a45702f9af" armorType: 14}
+    Armor: {candyType: "2aae625b-a8b1-8ef4-ba8f-32a45702f9af" armorType: 15}
+    Armor: {candyType: "2aae625b-a8b1-8ef4-ba8f-32a45702f9af" armorType: 16}
+    Armor: {candyType: "2aae625b-a8b1-8ef4-ba8f-32a45702f9af" armorType: 17}
+    Name: "Joan of Chocolate Bark"
+    Duration: 100
+    FighterName: "Joan of Chocolate Bark"
+    FighterType: "2522657f-c73f-23c4-da7d-3934d135265b"
+    Moves: "61d8b3ec-9a01-0e64-fb45-27d2b858e332"
+    Moves: "61d8b3ec-9a01-0e64-fb45-27d2b858e332"
+    Moves: "b96f1ff8-66d5-f244-79fd-260735d4c3d7"
+    Moves: "29d559bb-41a7-9f14-5bf8-605da8166943"
+    Moves: "34a115db-3153-aff4-9a46-97700634f1fb"
+    Moves: "b889835e-1cd6-d3d4-f9b4-dd1989f49dac"
+    Moves: "b1bd32de-88b2-1204-7b2e-0680677d78c4"
+    Moves: "0090580c-04ef-9d84-e883-32f52c977b98"
+    Moves: "9f0df0ed-13a6-84c4-781d-9dbf9741c66e"
+    Quality: 4
+    IsAccountBound: false
+    RequiredCandy: {candyType: "aa0cb18d-5681-5504-09d7-4db06bf7a4d8" amount: 50}
+    RequiredCandy: {candyType: "f6c3b895-6488-1b74-a9b0-664027a683e2" amount: 30}
+    RequiredCandy: {candyType: "1525c955-d3c0-9f84-69fb-cf98837f4f85" amount: 25}
+    RequiredCandy: {candyType: "40067d7d-6651-cbc4-c8ed-785d73e9ab57" amount: 30}
+    RequiredCandy: {candyType: "2aae625b-a8b1-8ef4-ba8f-32a45702f9af" amount: 75}
+    RequiredCandy: {candyType: "f9c0a4d2-f049-29a4-eb1e-2269de35798e" amount: 50}
+    RequiredCandy: {candyType: "230bc5ac-6ab7-a6d4-7a66-fc06a0e0e38d" amount: 25}
+    RequiredCandy: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" amount: 50}
+    RequiredFighterQuality: 2
+  }
+}
+recepies:
+{
+  key: "Recipe_Rare_CaptainPatrickTheChef"
+  value:
+  {
+    AuthoredId: "db8bf7c2-c569-8314-2a80-d9ffb6f1601b"
+    AnimationId: "917e27ec-19ff-3d04-69f6-c596456816e6"
+    Armor: {candyType: "9b70e722-0442-2924-092c-93efc1d92975" armorType: 18}
+    Armor: {candyType: "9b70e722-0442-2924-092c-93efc1d92975" armorType: 10}
+    Armor: {candyType: "9b70e722-0442-2924-092c-93efc1d92975" armorType: 9}
+    Armor: {candyType: "9b70e722-0442-2924-092c-93efc1d92975" armorType: 8}
+    Name: "Captain Patrick The Chef"
+    Duration: 50
+    FighterName: "Lord Patrick The Chef"
+    FighterType: "a672e1da-a87d-2a54-4918-cafb72b02aec"
+    Moves: "bbf71f26-78f5-5014-5b4b-a1c3866cb75b"
+    Moves: "bbf71f26-78f5-5014-5b4b-a1c3866cb75b"
+    Moves: "29d559bb-41a7-9f14-5bf8-605da8166943"
+    Moves: "29d559bb-41a7-9f14-5bf8-605da8166943"
+    Moves: "431900a2-54d4-df34-d9f7-6a4608fecfaa"
+    Moves: "86bd4f81-e96b-9864-78b5-5fc51fbff6a4"
+    Moves: "9f0df0ed-13a6-84c4-781d-9dbf9741c66e"
+    Quality: 3
+    IsAccountBound: false
+    RequiredCandy: {candyType: "230bc5ac-6ab7-a6d4-7a66-fc06a0e0e38d" amount: 50}
+    RequiredCandy: {candyType: "33d499a1-9dee-dfd4-7843-c743a6131dcf" amount: 30}
+    RequiredCandy: {candyType: "7ea89b0d-7070-d3e4-a86f-c0e75c0e4ff5" amount: 50}
+    RequiredCandy: {candyType: "40067d7d-6651-cbc4-c8ed-785d73e9ab57" amount: 30}
+    RequiredCandy: {candyType: "f6025c1b-55e8-da24-d96f-0ecebf74c436" amount: 42}
+    RequiredFighterQuality: 1
+  }
+}
+recepies:
+{
+  key: "Recipe_Rare_CommanderKrissyCocoCrunch"
+  value:
+  {
+    AuthoredId: "2729a029-a53e-7b34-38c7-2c6ebe932c94"
+    AnimationId: "02ddcd6e-e441-73f4-e874-399531dc4708"
+    Armor: {candyType: "40067d7d-6651-cbc4-c8ed-785d73e9ab57" armorType: 1}
+    Armor: {candyType: "40067d7d-6651-cbc4-c8ed-785d73e9ab57" armorType: 2}
+    Armor: {candyType: "40067d7d-6651-cbc4-c8ed-785d73e9ab57" armorType: 3}
+    Armor: {candyType: "63a8ea74-65ee-c024-b8f0-87e173258257" armorType: 11}
+    Name: "Commander Krissy Coco Crunch"
+    Duration: 50
+    FighterName: "Lady Krissy Coco Crunch"
+    FighterType: "85f361b8-e55d-0244-1a98-26bffa0a18a2"
+    Moves: "aa7d8565-99e1-84f4-49d2-8925c2602a7b"
+    Moves: "aa7d8565-99e1-84f4-49d2-8925c2602a7b"
+    Moves: "9f0df0ed-13a6-84c4-781d-9dbf9741c66e"
+    Moves: "9f0df0ed-13a6-84c4-781d-9dbf9741c66e"
+    Moves: "9f0df0ed-13a6-84c4-781d-9dbf9741c66e"
+    Moves: "1d1dec74-ca35-0cc4-d930-164786a9dd81"
+    Moves: "1d1dec74-ca35-0cc4-d930-164786a9dd81"
+    Quality: 3
+    IsAccountBound: false
+    RequiredCandy: {candyType: "86b5fac0-4ec1-09e4-6ab7-96d3fd13dd04" amount: 50}
+    RequiredCandy: {candyType: "28089a53-62ac-2044-1964-29f2f31d8a33" amount: 30}
+    RequiredCandy: {candyType: "40067d7d-6651-cbc4-c8ed-785d73e9ab57" amount: 50}
+    RequiredCandy: {candyType: "63a8ea74-65ee-c024-b8f0-87e173258257" amount: 30}
+    RequiredCandy: {candyType: "f6025c1b-55e8-da24-d96f-0ecebf74c436" amount: 40}
+    RequiredFighterQuality: 1
+  }
+}
+recepies:
+{
+  key: "Recipe_Rare_CommanderSuziTheGlazed"
+  value:
+  {
+    AuthoredId: "175cd684-0079-c1b4-89b7-6bca7288f50d"
+    AnimationId: "ed324300-aa2c-0c04-4b75-2d0eae3780f4"
+    Armor: {candyType: "3d47dfc5-ce51-9c54-68f1-6819b251e6c7" armorType: 10}
+    Armor: {candyType: "3d47dfc5-ce51-9c54-68f1-6819b251e6c7" armorType: 18}
+    Armor: {candyType: "3d47dfc5-ce51-9c54-68f1-6819b251e6c7" armorType: 8}
+    Armor: {candyType: "3d47dfc5-ce51-9c54-68f1-6819b251e6c7" armorType: 9}
+    Name: "Commander Suzi the Glazed"
+    Duration: 50
+    FighterName: "Lady Suzi the Glazed"
+    FighterType: "85f361b8-e55d-0244-1a98-26bffa0a18a2"
+    Moves: "92f7b745-c1ff-3cd4-f9cf-0fe0dafb5536"
+    Moves: "92f7b745-c1ff-3cd4-f9cf-0fe0dafb5536"
+    Moves: "e16531a7-33fd-a3e4-69fd-ff10eba65cb7"
+    Moves: "aa7d8565-99e1-84f4-49d2-8925c2602a7b"
+    Moves: "fa6144f9-ad49-8124-386f-351a7f1ab546"
+    Moves: "fa6144f9-ad49-8124-386f-351a7f1ab546"
+    Moves: "c28e13b4-cb1f-6ea4-680f-91010a400e10"
+    Quality: 3
+    IsAccountBound: false
+    RequiredCandy: {candyType: "e5afded6-705a-2034-7b1c-556ac877fb0f" amount: 50}
+    RequiredCandy: {candyType: "33d499a1-9dee-dfd4-7843-c743a6131dcf" amount: 30}
+    RequiredCandy: {candyType: "5a087336-6c2d-a684-1b72-a86d6ff6931f" amount: 50}
+    RequiredCandy: {candyType: "40067d7d-6651-cbc4-c8ed-785d73e9ab57" amount: 30}
+    RequiredCandy: {candyType: "3d47dfc5-ce51-9c54-68f1-6819b251e6c7" amount: 40}
+    RequiredFighterQuality: 1
+  }
+}
+recepies:
+{
+  key: "Recipe_Rare_CaptainAlexTheSweet"
+  value:
+  {
+    AuthoredId: "34026945-900a-8d14-98b6-0af2354f22ac"
+    AnimationId: "ed324300-aa2c-0c04-4b75-2d0eae3780f4"
+    Armor: {candyType: "e5afded6-705a-2034-7b1c-556ac877fb0f" armorType: 11}
+    Armor: {candyType: "e5afded6-705a-2034-7b1c-556ac877fb0f" armorType: 12}
+    Armor: {candyType: "e5afded6-705a-2034-7b1c-556ac877fb0f" armorType: 13}
+    Armor: {candyType: "7ff63ec3-352c-6ea4-98ad-55c4f2fb375c" armorType: 1}
+    Name: "Captain Alex The Sweet"
+    Duration: 50
+    FighterName: "Lord Alex The Sweet"
+    FighterType: "85f361b8-e55d-0244-1a98-26bffa0a18a2"
+    Moves: "ad6d5d28-08b4-4304-6b49-11f8f5f9ff1c"
+    Moves: "ad6d5d28-08b4-4304-6b49-11f8f5f9ff1c"
+    Moves: "2569d967-c676-8b44-cbdf-d514e4c5c73d"
+    Moves: "2569d967-c676-8b44-cbdf-d514e4c5c73d"
+    Moves: "1d1dec74-ca35-0cc4-d930-164786a9dd81"
+    Moves: "73eb61fc-70a9-25a4-ba01-0ecaa0d547c5"
+    Moves: "73eb61fc-70a9-25a4-ba01-0ecaa0d547c5"
+    Quality: 3
+    IsAccountBound: false
+    RequiredCandy: {candyType: "e5afded6-705a-2034-7b1c-556ac877fb0f" amount: 50}
+    RequiredCandy: {candyType: "d6478df9-c705-98c4-ebb6-2ffab7dd798b" amount: 30}
+    RequiredCandy: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" amount: 50}
+    RequiredCandy: {candyType: "2aae625b-a8b1-8ef4-ba8f-32a45702f9af" amount: 30}
+    RequiredCandy: {candyType: "f6025c1b-55e8-da24-d96f-0ecebf74c436" amount: 40}
+    RequiredFighterQuality: 1
+  }
+}
+recepies:
+{
+  key: "Recipe_Epic_BazookaLee"
+  value:
+  {
+    AuthoredId: "edc99c4e-6e95-5ae4-ea8c-e6071cd8635a"
+    AnimationId: "7294e11a-f8b2-9d34-5854-fee4535f1aaa"
+    Armor: {candyType: "16e0b307-2b40-4584-294c-dee505e47827" armorType: 1}
+    Armor: {candyType: "16e0b307-2b40-4584-294c-dee505e47827" armorType: 2}
+    Armor: {candyType: "12ea78d4-e0f3-e5b4-1882-04787fa86d15" armorType: 3}
+    Armor: {candyType: "bbeb0e31-3775-a864-1952-082233cf7b89" armorType: 4}
+    Armor: {candyType: "bbeb0e31-3775-a864-1952-082233cf7b89" armorType: 5}
+    Armor: {candyType: "bbeb0e31-3775-a864-1952-082233cf7b89" armorType: 6}
+    Armor: {candyType: "bbeb0e31-3775-a864-1952-082233cf7b89" armorType: 7}
+    Armor: {candyType: "230bc5ac-6ab7-a6d4-7a66-fc06a0e0e38d" armorType: 8}
+    Armor: {candyType: "230bc5ac-6ab7-a6d4-7a66-fc06a0e0e38d" armorType: 9}
+    Armor: {candyType: "230bc5ac-6ab7-a6d4-7a66-fc06a0e0e38d" armorType: 10}
+    Armor: {candyType: "230bc5ac-6ab7-a6d4-7a66-fc06a0e0e38d" armorType: 18}
+    Armor: {candyType: "e5afded6-705a-2034-7b1c-556ac877fb0f" armorType: 11}
+    Armor: {candyType: "e5afded6-705a-2034-7b1c-556ac877fb0f" armorType: 12}
+    Armor: {candyType: "e5afded6-705a-2034-7b1c-556ac877fb0f" armorType: 13}
+    Armor: {candyType: "2aae625b-a8b1-8ef4-ba8f-32a45702f9af" armorType: 14}
+    Armor: {candyType: "2aae625b-a8b1-8ef4-ba8f-32a45702f9af" armorType: 15}
+    Armor: {candyType: "2aae625b-a8b1-8ef4-ba8f-32a45702f9af" armorType: 16}
+    Armor: {candyType: "2aae625b-a8b1-8ef4-ba8f-32a45702f9af" armorType: 17}
+    Name: "Bazooka Lee"
+    Duration: 100
+    FighterName: "Bazooka Lee"
+    FighterType: "85f361b8-e55d-0244-1a98-26bffa0a18a2"
+    Moves: "1a67cc79-b97a-4624-ca67-36c9fcbee970"
+    Moves: "1a67cc79-b97a-4624-ca67-36c9fcbee970"
+    Moves: "ad6d5d28-08b4-4304-6b49-11f8f5f9ff1c"
+    Moves: "2569d967-c676-8b44-cbdf-d514e4c5c73d"
+    Moves: "e201f964-8949-9d74-fbee-4ee8786284ca"
+    Moves: "86bd4f81-e96b-9864-78b5-5fc51fbff6a4"
+    Moves: "9fd0b9ef-2e7d-d344-8926-69f1fab99f65"
+    Moves: "628ebc0b-bb19-ee64-68b8-2f66f4b92720"
+    Moves: "bd27fe1c-ce9a-f524-c887-61f9e4d5088b"
+    Quality: 4
+    IsAccountBound: false
+    RequiredCandy: {candyType: "bbeb0e31-3775-a864-1952-082233cf7b89" amount: 50}
+    RequiredCandy: {candyType: "a1af5095-bfbc-1a84-7862-9b246dc29d81" amount: 30}
+    RequiredCandy: {candyType: "8932caea-da2e-6384-58ec-749624e213c9" amount: 25}
+    RequiredCandy: {candyType: "e5afded6-705a-2034-7b1c-556ac877fb0f" amount: 30}
+    RequiredCandy: {candyType: "524c8f4f-cb50-ea04-dafd-e192f30c7656" amount: 75}
+    RequiredCandy: {candyType: "63a8ea74-65ee-c024-b8f0-87e173258257" amount: 50}
+    RequiredCandy: {candyType: "2aae625b-a8b1-8ef4-ba8f-32a45702f9af" amount: 25}
+    RequiredCandy: {candyType: "12ea78d4-e0f3-e5b4-1882-04787fa86d15" amount: 50}
+    RequiredFighterQuality: 2
+  }
+}
+recepies:
+{
+  key: "Recipe_Rare_CommanderSophiaTheSalted"
+  value:
+  {
+    AuthoredId: "83acee4a-712c-b714-9887-36e6da3b8579"
+    AnimationId: "a91a62fa-8d65-6234-d91b-a0ad0d9388e3"
+    Armor: {candyType: "1983b3b7-4a9e-8f14-b981-c94c32d7648b" armorType: 11}
+    Armor: {candyType: "1983b3b7-4a9e-8f14-b981-c94c32d7648b" armorType: 12}
+    Armor: {candyType: "1983b3b7-4a9e-8f14-b981-c94c32d7648b" armorType: 13}
+    Armor: {candyType: "7ff63ec3-352c-6ea4-98ad-55c4f2fb375c" armorType: 1}
+    Name: "Commander Sophia The Salted"
+    Duration: 50
+    FighterName: "Lady Sophia The Salted"
+    FighterType: "2522657f-c73f-23c4-da7d-3934d135265b"
+    Moves: "41416afb-0d72-f9b4-ba30-f089b713500f"
+    Moves: "41416afb-0d72-f9b4-ba30-f089b713500f"
+    Moves: "431900a2-54d4-df34-d9f7-6a4608fecfaa"
+    Moves: "431900a2-54d4-df34-d9f7-6a4608fecfaa"
+    Moves: "0090580c-04ef-9d84-e883-32f52c977b98"
+    Moves: "73eb61fc-70a9-25a4-ba01-0ecaa0d547c5"
+    Moves: "73eb61fc-70a9-25a4-ba01-0ecaa0d547c5"
+    Quality: 3
+    IsAccountBound: false
+    RequiredCandy: {candyType: "9c64b7e4-0458-65c4-9b79-5cc35e847f9c" amount: 50}
+    RequiredCandy: {candyType: "28089a53-62ac-2044-1964-29f2f31d8a33" amount: 30}
+    RequiredCandy: {candyType: "1983b3b7-4a9e-8f14-b981-c94c32d7648b" amount: 50}
+    RequiredCandy: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" amount: 30}
+    RequiredCandy: {candyType: "524c8f4f-cb50-ea04-dafd-e192f30c7656" amount: 40}
+    RequiredFighterQuality: 1
+  }
+}
+recepies:
+{
+  key: "Recipe_Common_FirstRecipe"
+  value:
+  {
+    AuthoredId: "5864a19b-c8c0-2d34-eaef-9455af0baf2c"
+    AnimationId: "938e1ab9-a85b-5444-7bd6-f8862ace8b16"
+    Armor: {candyType: "f9c0a4d2-f049-29a4-eb1e-2269de35798e" armorType: 8}
+    Armor: {candyType: "f9c0a4d2-f049-29a4-eb1e-2269de35798e" armorType: 9}
+    Name: "First Recipe"
+    Duration: 1
+    FighterName: "Sour Gummi Brawler"
+    FighterType: "c160f7ad-c775-8614-abe2-8ef74e54401f"
+    Moves: "86b323c2-b2fd-2494-ab5e-bc3514bc92d8"
+    Moves: "0090580c-04ef-9d84-e883-32f52c977b98"
+    Quality: 1
+    IsAccountBound: true
+    RequiredCandy: {candyType: "c2774273-0cd4-2494-fa02-76cffe1ef1ef" amount: 1}
+    RequiredCandy: {candyType: "f9c0a4d2-f049-29a4-eb1e-2269de35798e" amount: 1}
+    RequiredFighterQuality: 0
+  }
+}
+recepies:
+{
+  key: "Recipe_Rare_CommanderDonnaTheChocolatey"
+  value:
+  {
+    AuthoredId: "fb87ff21-f4d6-d564-2956-e250d2cb2409"
+    AnimationId: "64732638-e355-d5c4-aa2d-e28c3db4aa72"
+    Armor: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" armorType: 2}
+    Armor: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" armorType: 3}
+    Armor: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" armorType: 4}
+    Armor: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" armorType: 5}
+    Name: "Commander Donna The Chocolatey"
+    Duration: 50
+    FighterName: "Lady Donna The Chocolatey"
+    FighterType: "a672e1da-a87d-2a54-4918-cafb72b02aec"
+    Moves: "41416afb-0d72-f9b4-ba30-f089b713500f"
+    Moves: "41416afb-0d72-f9b4-ba30-f089b713500f"
+    Moves: "431900a2-54d4-df34-d9f7-6a4608fecfaa"
+    Moves: "431900a2-54d4-df34-d9f7-6a4608fecfaa"
+    Moves: "0090580c-04ef-9d84-e883-32f52c977b98"
+    Moves: "86b323c2-b2fd-2494-ab5e-bc3514bc92d8"
+    Moves: "9fd0b9ef-2e7d-d344-8926-69f1fab99f65"
+    Quality: 3
+    IsAccountBound: false
+    RequiredCandy: {candyType: "86b5fac0-4ec1-09e4-6ab7-96d3fd13dd04" amount: 50}
+    RequiredCandy: {candyType: "28089a53-62ac-2044-1964-29f2f31d8a33" amount: 30}
+    RequiredCandy: {candyType: "40067d7d-6651-cbc4-c8ed-785d73e9ab57" amount: 50}
+    RequiredCandy: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" amount: 30}
+    RequiredCandy: {candyType: "f9c0a4d2-f049-29a4-eb1e-2269de35798e" amount: 40}
+    RequiredFighterQuality: 1
+  }
+}
+recepies:
+{
+  key: "Recipe_Epic_AbbaCazaba"
+  value:
+  {
+    AuthoredId: "f13487ec-4bf1-7ec4-e9d6-fd043f9842d8"
+    AnimationId: "4fca9718-5e62-8924-7a58-790c249fbc7f"
+    Armor: {candyType: "7ff63ec3-352c-6ea4-98ad-55c4f2fb375c" armorType: 1}
+    Armor: {candyType: "7ff63ec3-352c-6ea4-98ad-55c4f2fb375c" armorType: 2}
+    Armor: {candyType: "7ff63ec3-352c-6ea4-98ad-55c4f2fb375c" armorType: 3}
+    Armor: {candyType: "7ff63ec3-352c-6ea4-98ad-55c4f2fb375c" armorType: 4}
+    Armor: {candyType: "7ff63ec3-352c-6ea4-98ad-55c4f2fb375c" armorType: 5}
+    Armor: {candyType: "7ff63ec3-352c-6ea4-98ad-55c4f2fb375c" armorType: 6}
+    Armor: {candyType: "7ff63ec3-352c-6ea4-98ad-55c4f2fb375c" armorType: 7}
+    Armor: {candyType: "0ee1131a-b8e4-05c4-9896-3690ebf8563a" armorType: 8}
+    Armor: {candyType: "0ee1131a-b8e4-05c4-9896-3690ebf8563a" armorType: 9}
+    Armor: {candyType: "0ee1131a-b8e4-05c4-9896-3690ebf8563a" armorType: 10}
+    Armor: {candyType: "0ee1131a-b8e4-05c4-9896-3690ebf8563a" armorType: 18}
+    Armor: {candyType: "7ff63ec3-352c-6ea4-98ad-55c4f2fb375c" armorType: 11}
+    Armor: {candyType: "7ff63ec3-352c-6ea4-98ad-55c4f2fb375c" armorType: 12}
+    Armor: {candyType: "7ff63ec3-352c-6ea4-98ad-55c4f2fb375c" armorType: 13}
+    Armor: {candyType: "7ff63ec3-352c-6ea4-98ad-55c4f2fb375c" armorType: 14}
+    Armor: {candyType: "7ff63ec3-352c-6ea4-98ad-55c4f2fb375c" armorType: 15}
+    Armor: {candyType: "7ff63ec3-352c-6ea4-98ad-55c4f2fb375c" armorType: 16}
+    Armor: {candyType: "7ff63ec3-352c-6ea4-98ad-55c4f2fb375c" armorType: 17}
+    Name: "Abba Cazaba"
+    Duration: 100
+    FighterName: "Abba Cazaba"
+    FighterType: "a672e1da-a87d-2a54-4918-cafb72b02aec"
+    Moves: "bbf71f26-78f5-5014-5b4b-a1c3866cb75b"
+    Moves: "bbf71f26-78f5-5014-5b4b-a1c3866cb75b"
+    Moves: "e16531a7-33fd-a3e4-69fd-ff10eba65cb7"
+    Moves: "aa7d8565-99e1-84f4-49d2-8925c2602a7b"
+    Moves: "b96f1ff8-66d5-f244-79fd-260735d4c3d7"
+    Moves: "b1bd32de-88b2-1204-7b2e-0680677d78c4"
+    Moves: "86bd4f81-e96b-9864-78b5-5fc51fbff6a4"
+    Moves: "29d559bb-41a7-9f14-5bf8-605da8166943"
+    Moves: "73eb61fc-70a9-25a4-ba01-0ecaa0d547c5"
+    Quality: 4
+    IsAccountBound: false
+    RequiredCandy: {candyType: "0ee1131a-b8e4-05c4-9896-3690ebf8563a" amount: 50}
+    RequiredCandy: {candyType: "48ea4c49-79dd-6514-6b8b-f87fd6d8a330" amount: 30}
+    RequiredCandy: {candyType: "a2c2697c-d738-c004-4b32-d800921bab06" amount: 25}
+    RequiredCandy: {candyType: "1525c955-d3c0-9f84-69fb-cf98837f4f85" amount: 30}
+    RequiredCandy: {candyType: "f9c0a4d2-f049-29a4-eb1e-2269de35798e" amount: 75}
+    RequiredCandy: {candyType: "5a087336-6c2d-a684-1b72-a86d6ff6931f" amount: 50}
+    RequiredCandy: {candyType: "9b70e722-0442-2924-092c-93efc1d92975" amount: 25}
+    RequiredCandy: {candyType: "8aac4645-29cf-fe04-59c0-415508b0432e" amount: 50}
+    RequiredFighterQuality: 2
+  }
+}
+recepies:
+{
+  key: "Recipe_Epic_MuhammadCandi"
+  value:
+  {
+    AuthoredId: "b5bb8cce-20bf-f5a4-3a51-694c37b8f9b9"
+    AnimationId: "917e27ec-19ff-3d04-69f6-c596456816e6"
+    Armor: {candyType: "f6c3b895-6488-1b74-a9b0-664027a683e2" armorType: 1}
+    Armor: {candyType: "f6c3b895-6488-1b74-a9b0-664027a683e2" armorType: 2}
+    Armor: {candyType: "f6c3b895-6488-1b74-a9b0-664027a683e2" armorType: 3}
+    Armor: {candyType: "f6025c1b-55e8-da24-d96f-0ecebf74c436" armorType: 4}
+    Armor: {candyType: "f6025c1b-55e8-da24-d96f-0ecebf74c436" armorType: 5}
+    Armor: {candyType: "f6025c1b-55e8-da24-d96f-0ecebf74c436" armorType: 6}
+    Armor: {candyType: "f6025c1b-55e8-da24-d96f-0ecebf74c436" armorType: 7}
+    Armor: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" armorType: 8}
+    Armor: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" armorType: 9}
+    Armor: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" armorType: 10}
+    Armor: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" armorType: 18}
+    Armor: {candyType: "63a8ea74-65ee-c024-b8f0-87e173258257" armorType: 11}
+    Armor: {candyType: "63a8ea74-65ee-c024-b8f0-87e173258257" armorType: 12}
+    Armor: {candyType: "63a8ea74-65ee-c024-b8f0-87e173258257" armorType: 13}
+    Armor: {candyType: "d6478df9-c705-98c4-ebb6-2ffab7dd798b" armorType: 14}
+    Armor: {candyType: "d6478df9-c705-98c4-ebb6-2ffab7dd798b" armorType: 15}
+    Armor: {candyType: "d6478df9-c705-98c4-ebb6-2ffab7dd798b" armorType: 16}
+    Armor: {candyType: "d6478df9-c705-98c4-ebb6-2ffab7dd798b" armorType: 17}
+    Name: "Muhammad Candi"
+    Duration: 100
+    FighterName: "Muhammad Candi"
+    FighterType: "2522657f-c73f-23c4-da7d-3934d135265b"
+    Moves: "92f7b745-c1ff-3cd4-f9cf-0fe0dafb5536"
+    Moves: "92f7b745-c1ff-3cd4-f9cf-0fe0dafb5536"
+    Moves: "e16531a7-33fd-a3e4-69fd-ff10eba65cb7"
+    Moves: "aa7d8565-99e1-84f4-49d2-8925c2602a7b"
+    Moves: "fa6144f9-ad49-8124-386f-351a7f1ab546"
+    Moves: "fa6144f9-ad49-8124-386f-351a7f1ab546"
+    Moves: "c28e13b4-cb1f-6ea4-680f-91010a400e10"
+    Moves: "86b323c2-b2fd-2494-ab5e-bc3514bc92d8"
+    Moves: "01b34a91-37d8-29d4-09cb-2d515f51e315"
+    Quality: 4
+    IsAccountBound: false
+    RequiredCandy: {candyType: "f6c3b895-6488-1b74-a9b0-664027a683e2" amount: 50}
+    RequiredCandy: {candyType: "0ee1131a-b8e4-05c4-9896-3690ebf8563a" amount: 30}
+    RequiredCandy: {candyType: "aa0cb18d-5681-5504-09d7-4db06bf7a4d8" amount: 25}
+    RequiredCandy: {candyType: "d6478df9-c705-98c4-ebb6-2ffab7dd798b" amount: 30}
+    RequiredCandy: {candyType: "f6025c1b-55e8-da24-d96f-0ecebf74c436" amount: 75}
+    RequiredCandy: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" amount: 50}
+    RequiredCandy: {candyType: "63a8ea74-65ee-c024-b8f0-87e173258257" amount: 25}
+    RequiredCandy: {candyType: "934dae05-689f-30e4-5804-d497aee0b47c" amount: 50}
+    RequiredFighterQuality: 2
+  }
+}
+recepies:
+{
+  key: "Recipe_Epic_CoffyCoffee"
+  value:
+  {
+    AuthoredId: "7c922dce-d72d-2544-fbc3-7abb2a12c92e"
+    AnimationId: "0c2cdea6-ff22-b124-da21-882987b1707a"
+    Armor: {candyType: "321c2a65-64b1-8344-2915-85562e2ad7ec" armorType: 1}
+    Armor: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" armorType: 2}
+    Armor: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" armorType: 3}
+    Armor: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" armorType: 4}
+    Armor: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" armorType: 5}
+    Armor: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" armorType: 6}
+    Armor: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" armorType: 7}
+    Armor: {candyType: "7ff63ec3-352c-6ea4-98ad-55c4f2fb375c" armorType: 8}
+    Armor: {candyType: "7ff63ec3-352c-6ea4-98ad-55c4f2fb375c" armorType: 9}
+    Armor: {candyType: "48ea4c49-79dd-6514-6b8b-f87fd6d8a330" armorType: 10}
+    Armor: {candyType: "aa0cb18d-5681-5504-09d7-4db06bf7a4d8" armorType: 18}
+    Armor: {candyType: "8f896243-a6de-1b54-68a3-0df72e8688e4" armorType: 11}
+    Armor: {candyType: "8f896243-a6de-1b54-68a3-0df72e8688e4" armorType: 12}
+    Armor: {candyType: "8f896243-a6de-1b54-68a3-0df72e8688e4" armorType: 13}
+    Armor: {candyType: "7ff63ec3-352c-6ea4-98ad-55c4f2fb375c" armorType: 14}
+    Armor: {candyType: "7ff63ec3-352c-6ea4-98ad-55c4f2fb375c" armorType: 15}
+    Armor: {candyType: "7ff63ec3-352c-6ea4-98ad-55c4f2fb375c" armorType: 16}
+    Armor: {candyType: "7ff63ec3-352c-6ea4-98ad-55c4f2fb375c" armorType: 17}
+    Name: "Coffy Coffee"
+    Duration: 100
+    FighterName: "Coffy Coffee"
+    FighterType: "85f361b8-e55d-0244-1a98-26bffa0a18a2"
+    Moves: "55cafe03-4a58-0f44-6a27-f9fc6fce881a"
+    Moves: "55cafe03-4a58-0f44-6a27-f9fc6fce881a"
+    Moves: "2c94f949-a10e-2524-2827-6588982ce0b1"
+    Moves: "41416afb-0d72-f9b4-ba30-f089b713500f"
+    Moves: "431900a2-54d4-df34-d9f7-6a4608fecfaa"
+    Moves: "9f0df0ed-13a6-84c4-781d-9dbf9741c66e"
+    Moves: "86b323c2-b2fd-2494-ab5e-bc3514bc92d8"
+    Moves: "9fd0b9ef-2e7d-d344-8926-69f1fab99f65"
+    Moves: "2569d967-c676-8b44-cbdf-d514e4c5c73d"
+    Quality: 4
+    IsAccountBound: false
+    RequiredCandy: {candyType: "8f896243-a6de-1b54-68a3-0df72e8688e4" amount: 50}
+    RequiredCandy: {candyType: "8898194e-ac52-f624-a830-176655bb43cd" amount: 30}
+    RequiredCandy: {candyType: "f7668430-bfc1-71f4-29b8-f36c7d6905d5" amount: 25}
+    RequiredCandy: {candyType: "28089a53-62ac-2044-1964-29f2f31d8a33" amount: 30}
+    RequiredCandy: {candyType: "2aae625b-a8b1-8ef4-ba8f-32a45702f9af" amount: 75}
+    RequiredCandy: {candyType: "9b70e722-0442-2924-092c-93efc1d92975" amount: 50}
+    RequiredCandy: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" amount: 25}
+    RequiredCandy: {candyType: "8aac4645-29cf-fe04-59c0-415508b0432e" amount: 50}
+    RequiredFighterQuality: 2
+  }
+}
+recepies:
+{
+  key: "Recipe_Common_SecondRecipe"
+  value:
+  {
+    AuthoredId: "ba0121ba-e8a6-7e64-9bc1-71dfeca27daa"
+    AnimationId: "97c2c3da-93c7-a0d4-1967-eeba13396cce"
+    Armor: {candyType: "16e0b307-2b40-4584-294c-dee505e47827" armorType: 1}
+    Armor: {candyType: "4e343f68-1aaa-0e84-7bab-eae458b68264" armorType: 11}
+    Name: "Second Recipe"
+    Duration: 1
+    FighterName: "Caramel Kicker"
+    FighterType: "85f361b8-e55d-0244-1a98-26bffa0a18a2"
+    Moves: "2c555752-8a84-58f4-395e-6460b7864069"
+    Moves: "0090580c-04ef-9d84-e883-32f52c977b98"
+    Quality: 1
+    IsAccountBound: true
+    RequiredCandy: {candyType: "4e343f68-1aaa-0e84-7bab-eae458b68264" amount: 1}
+    RequiredCandy: {candyType: "16e0b307-2b40-4584-294c-dee505e47827" amount: 1}
+    RequiredFighterQuality: 0
+  }
+}
+recepies:
+{
+  key: "Recipe_Epic_MieshaTaste"
+  value:
+  {
+    AuthoredId: "5124cf4a-b08e-2dd4-6809-ed15f73ae685"
+    AnimationId: "d35a9d1c-2223-c404-c840-c0218f9b147d"
+    Armor: {candyType: "499a8021-eaea-c7d4-aa1c-bb6e55cd300c" armorType: 1}
+    Armor: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" armorType: 2}
+    Armor: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" armorType: 3}
+    Armor: {candyType: "f6025c1b-55e8-da24-d96f-0ecebf74c436" armorType: 4}
+    Armor: {candyType: "f6025c1b-55e8-da24-d96f-0ecebf74c436" armorType: 5}
+    Armor: {candyType: "f6025c1b-55e8-da24-d96f-0ecebf74c436" armorType: 6}
+    Armor: {candyType: "f6025c1b-55e8-da24-d96f-0ecebf74c436" armorType: 7}
+    Armor: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" armorType: 8}
+    Armor: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" armorType: 9}
+    Armor: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" armorType: 10}
+    Armor: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" armorType: 18}
+    Armor: {candyType: "eeeca33e-5c80-9ec4-eb83-46e4b7daf04b" armorType: 11}
+    Armor: {candyType: "eeeca33e-5c80-9ec4-eb83-46e4b7daf04b" armorType: 12}
+    Armor: {candyType: "eeeca33e-5c80-9ec4-eb83-46e4b7daf04b" armorType: 13}
+    Armor: {candyType: "08847311-c629-a154-5958-13e8f1d77f88" armorType: 14}
+    Armor: {candyType: "08847311-c629-a154-5958-13e8f1d77f88" armorType: 15}
+    Armor: {candyType: "c2774273-0cd4-2494-fa02-76cffe1ef1ef" armorType: 16}
+    Armor: {candyType: "c2774273-0cd4-2494-fa02-76cffe1ef1ef" armorType: 17}
+    Name: "Miesha Taste"
+    Duration: 100
+    FighterName: "Miesha Taste"
+    FighterType: "4c2d03be-70bf-9294-c8d5-0a8e2d8d0677"
+    Moves: "55e05ece-a3f6-a924-3833-2222a0eee6a3"
+    Moves: "55e05ece-a3f6-a924-3833-2222a0eee6a3"
+    Moves: "86bd4f81-e96b-9864-78b5-5fc51fbff6a4"
+    Moves: "e201f964-8949-9d74-fbee-4ee8786284ca"
+    Moves: "c6770789-4a1f-7f24-f921-c4dc66c2697a"
+    Moves: "29d559bb-41a7-9f14-5bf8-605da8166943"
+    Moves: "b1bd32de-88b2-1204-7b2e-0680677d78c4"
+    Moves: "41416afb-0d72-f9b4-ba30-f089b713500f"
+    Moves: "29d559bb-41a7-9f14-5bf8-605da8166943"
+    Quality: 4
+    IsAccountBound: false
+    RequiredCandy: {candyType: "eeeca33e-5c80-9ec4-eb83-46e4b7daf04b" amount: 50}
+    RequiredCandy: {candyType: "8932caea-da2e-6384-58ec-749624e213c9" amount: 30}
+    RequiredCandy: {candyType: "b4e362bb-2634-7df4-39a6-71b358368a6d" amount: 25}
+    RequiredCandy: {candyType: "9ff884ab-efcb-0af4-5acd-976fea43b3a3" amount: 30}
+    RequiredCandy: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" amount: 75}
+    RequiredCandy: {candyType: "63a8ea74-65ee-c024-b8f0-87e173258257" amount: 50}
+    RequiredCandy: {candyType: "3d47dfc5-ce51-9c54-68f1-6819b251e6c7" amount: 25}
+    RequiredCandy: {candyType: "12ea78d4-e0f3-e5b4-1882-04787fa86d15" amount: 50}
+    RequiredFighterQuality: 2
+  }
+}
+recepies:
+{
+  key: "Recipe_Epic_ZenobiaNabbout"
+  value:
+  {
+    AuthoredId: "df921272-743b-5f14-1a81-710a1b97d72e"
+    AnimationId: "471eee2f-e6ad-a694-58de-bdee5a379096"
+    Armor: {candyType: "4d85b9b7-5d8b-db24-a85a-8df9fa935cb9" armorType: 1}
+    Armor: {candyType: "4d85b9b7-5d8b-db24-a85a-8df9fa935cb9" armorType: 2}
+    Armor: {candyType: "4d85b9b7-5d8b-db24-a85a-8df9fa935cb9" armorType: 3}
+    Armor: {candyType: "8932caea-da2e-6384-58ec-749624e213c9" armorType: 4}
+    Armor: {candyType: "8932caea-da2e-6384-58ec-749624e213c9" armorType: 5}
+    Armor: {candyType: "8932caea-da2e-6384-58ec-749624e213c9" armorType: 6}
+    Armor: {candyType: "8932caea-da2e-6384-58ec-749624e213c9" armorType: 7}
+    Armor: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" armorType: 8}
+    Armor: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" armorType: 9}
+    Armor: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" armorType: 10}
+    Armor: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" armorType: 18}
+    Armor: {candyType: "8f896243-a6de-1b54-68a3-0df72e8688e4" armorType: 11}
+    Armor: {candyType: "63a8ea74-65ee-c024-b8f0-87e173258257" armorType: 12}
+    Armor: {candyType: "63a8ea74-65ee-c024-b8f0-87e173258257" armorType: 13}
+    Armor: {candyType: "d6478df9-c705-98c4-ebb6-2ffab7dd798b" armorType: 14}
+    Armor: {candyType: "d6478df9-c705-98c4-ebb6-2ffab7dd798b" armorType: 15}
+    Armor: {candyType: "a2c2697c-d738-c004-4b32-d800921bab06" armorType: 16}
+    Armor: {candyType: "a2c2697c-d738-c004-4b32-d800921bab06" armorType: 17}
+    Name: "Zenobia Nabbout"
+    Duration: 100
+    FighterName: "Zenobia Nabbout"
+    FighterType: "85f361b8-e55d-0244-1a98-26bffa0a18a2"
+    Moves: "92f7b745-c1ff-3cd4-f9cf-0fe0dafb5536"
+    Moves: "92f7b745-c1ff-3cd4-f9cf-0fe0dafb5536"
+    Moves: "e16531a7-33fd-a3e4-69fd-ff10eba65cb7"
+    Moves: "aa7d8565-99e1-84f4-49d2-8925c2602a7b"
+    Moves: "fa6144f9-ad49-8124-386f-351a7f1ab546"
+    Moves: "fa6144f9-ad49-8124-386f-351a7f1ab546"
+    Moves: "c28e13b4-cb1f-6ea4-680f-91010a400e10"
+    Moves: "86b323c2-b2fd-2494-ab5e-bc3514bc92d8"
+    Moves: "01b34a91-37d8-29d4-09cb-2d515f51e315"
+    Quality: 4
+    IsAccountBound: false
+    RequiredCandy: {candyType: "f6c3b895-6488-1b74-a9b0-664027a683e2" amount: 50}
+    RequiredCandy: {candyType: "0ee1131a-b8e4-05c4-9896-3690ebf8563a" amount: 30}
+    RequiredCandy: {candyType: "aa0cb18d-5681-5504-09d7-4db06bf7a4d8" amount: 25}
+    RequiredCandy: {candyType: "d6478df9-c705-98c4-ebb6-2ffab7dd798b" amount: 30}
+    RequiredCandy: {candyType: "f6025c1b-55e8-da24-d96f-0ecebf74c436" amount: 75}
+    RequiredCandy: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" amount: 50}
+    RequiredCandy: {candyType: "63a8ea74-65ee-c024-b8f0-87e173258257" amount: 25}
+    RequiredCandy: {candyType: "934dae05-689f-30e4-5804-d497aee0b47c" amount: 50}
+    RequiredFighterQuality: 2
+  }
+}
+recepies:
+{
+  key: "Recipe_Epic_PockyMarciano"
+  value:
+  {
+    AuthoredId: "cf363926-b8c5-8294-099a-5fd770749258"
+    AnimationId: "a91a62fa-8d65-6234-d91b-a0ad0d9388e3"
+    Armor: {candyType: "4d85b9b7-5d8b-db24-a85a-8df9fa935cb9" armorType: 1}
+    Armor: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" armorType: 2}
+    Armor: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" armorType: 3}
+    Armor: {candyType: "52ea4044-e203-16d4-c90f-8b685ed5e9c9" armorType: 4}
+    Armor: {candyType: "52ea4044-e203-16d4-c90f-8b685ed5e9c9" armorType: 5}
+    Armor: {candyType: "52ea4044-e203-16d4-c90f-8b685ed5e9c9" armorType: 6}
+    Armor: {candyType: "52ea4044-e203-16d4-c90f-8b685ed5e9c9" armorType: 7}
+    Armor: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" armorType: 8}
+    Armor: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" armorType: 9}
+    Armor: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" armorType: 10}
+    Armor: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" armorType: 18}
+    Armor: {candyType: "2f765969-c607-d4a4-0b9c-72d3cce7fbec" armorType: 11}
+    Armor: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" armorType: 12}
+    Armor: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" armorType: 13}
+    Armor: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" armorType: 14}
+    Armor: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" armorType: 15}
+    Armor: {candyType: "d6478df9-c705-98c4-ebb6-2ffab7dd798b" armorType: 16}
+    Armor: {candyType: "d6478df9-c705-98c4-ebb6-2ffab7dd798b" armorType: 17}
+    Name: "Pocky Marciano"
+    Duration: 100
+    FighterName: "Pocky Marciano"
+    FighterType: "c160f7ad-c775-8614-abe2-8ef74e54401f"
+    Moves: "01b34a91-37d8-29d4-09cb-2d515f51e315"
+    Moves: "01b34a91-37d8-29d4-09cb-2d515f51e315"
+    Moves: "0090580c-04ef-9d84-e883-32f52c977b98"
+    Moves: "8e4753b5-c739-aaf4-ab79-4d333a69cae6"
+    Moves: "431900a2-54d4-df34-d9f7-6a4608fecfaa"
+    Moves: "9fd0b9ef-2e7d-d344-8926-69f1fab99f65"
+    Moves: "86b323c2-b2fd-2494-ab5e-bc3514bc92d8"
+    Moves: "bd27fe1c-ce9a-f524-c887-61f9e4d5088b"
+    Moves: "29d559bb-41a7-9f14-5bf8-605da8166943"
+    Quality: 4
+    IsAccountBound: false
+    RequiredCandy: {candyType: "52ea4044-e203-16d4-c90f-8b685ed5e9c9" amount: 50}
+    RequiredCandy: {candyType: "bbeb0e31-3775-a864-1952-082233cf7b89" amount: 30}
+    RequiredCandy: {candyType: "a2c2697c-d738-c004-4b32-d800921bab06" amount: 25}
+    RequiredCandy: {candyType: "d6478df9-c705-98c4-ebb6-2ffab7dd798b" amount: 30}
+    RequiredCandy: {candyType: "87040ddf-f0cb-f894-dbbd-a4f266cae4e7" amount: 75}
+    RequiredCandy: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" amount: 50}
+    RequiredCandy: {candyType: "63a8ea74-65ee-c024-b8f0-87e173258257" amount: 25}
+    RequiredCandy: {candyType: "12ea78d4-e0f3-e5b4-1882-04787fa86d15" amount: 50}
+    RequiredFighterQuality: 2
+  }
+}
+recepies:
+{
+  key: "Recipe_Epic_QueenBoudiccaNofork"
+  value:
+  {
+    AuthoredId: "71a69f03-1e74-0ed4-6994-54b900eb0cc9"
+    AnimationId: "3afdf3ed-bea4-1c14-faac-159412578c0f"
+    Armor: {candyType: "f6c3b895-6488-1b74-a9b0-664027a683e2" armorType: 1}
+    Armor: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" armorType: 2}
+    Armor: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" armorType: 3}
+    Armor: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" armorType: 4}
+    Armor: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" armorType: 5}
+    Armor: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" armorType: 6}
+    Armor: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" armorType: 7}
+    Armor: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" armorType: 8}
+    Armor: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" armorType: 9}
+    Armor: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" armorType: 10}
+    Armor: {candyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" armorType: 18}
+    Armor: {candyType: "2f765969-c607-d4a4-0b9c-72d3cce7fbec" armorType: 11}
+    Armor: {candyType: "2f765969-c607-d4a4-0b9c-72d3cce7fbec" armorType: 12}
+    Armor: {candyType: "2f765969-c607-d4a4-0b9c-72d3cce7fbec" armorType: 13}
+    Armor: {candyType: "47b8a853-791a-1424-1ba9-4adaf4a3f4a5" armorType: 14}
+    Armor: {candyType: "47b8a853-791a-1424-1ba9-4adaf4a3f4a5" armorType: 15}
+    Armor: {candyType: "d6478df9-c705-98c4-ebb6-2ffab7dd798b" armorType: 16}
+    Armor: {candyType: "d6478df9-c705-98c4-ebb6-2ffab7dd798b" armorType: 17}
+    Name: "Queen Boudicca Nofork"
+    Duration: 100
+    FighterName: "Queen Boudicca Nofork"
+    FighterType: "85f361b8-e55d-0244-1a98-26bffa0a18a2"
+    Moves: "3e76f2fa-072c-5654-dac9-c9b0e4e1643a"
+    Moves: "3e76f2fa-072c-5654-dac9-c9b0e4e1643a"
+    Moves: "1d1dec74-ca35-0cc4-d930-164786a9dd81"
+    Moves: "1e47a8e0-acfd-1244-0b7d-539d62429060"
+    Moves: "b889835e-1cd6-d3d4-f9b4-dd1989f49dac"
+    Moves: "b96f1ff8-66d5-f244-79fd-260735d4c3d7"
+    Moves: "2c555752-8a84-58f4-395e-6460b7864069"
+    Moves: "a9d69fc0-a1b8-ae24-cbd7-249760200211"
+    Moves: "73eb61fc-70a9-25a4-ba01-0ecaa0d547c5"
+    Quality: 4
+    IsAccountBound: false
+    RequiredCandy: {candyType: "2f765969-c607-d4a4-0b9c-72d3cce7fbec" amount: 50}
+    RequiredCandy: {candyType: "0ee1131a-b8e4-05c4-9896-3690ebf8563a" amount: 30}
+    RequiredCandy: {candyType: "a2c2697c-d738-c004-4b32-d800921bab06" amount: 25}
+    RequiredCandy: {candyType: "d6478df9-c705-98c4-ebb6-2ffab7dd798b" amount: 30}
+    RequiredCandy: {candyType: "f6025c1b-55e8-da24-d96f-0ecebf74c436" amount: 75}
+    RequiredCandy: {candyType: "40067d7d-6651-cbc4-c8ed-785d73e9ab57" amount: 50}
+    RequiredCandy: {candyType: "63a8ea74-65ee-c024-b8f0-87e173258257" amount: 25}
+    RequiredCandy: {candyType: "c2774273-0cd4-2494-fa02-76cffe1ef1ef" amount: 50}
+    RequiredFighterQuality: 2
+  }
+}
+recepies:
+{
+  key: "Recipe_Uncommon_ThirdRecipe"
+  value:
+  {
+    AuthoredId: "1bbc7d99-7fce-24a4-c9a3-dfaf4b744efa"
+    AnimationId: "ed324300-aa2c-0c04-4b75-2d0eae3780f4"
+    Armor: {candyType: "8aac4645-29cf-fe04-59c0-415508b0432e" armorType: 16}
+    Armor: {candyType: "8aac4645-29cf-fe04-59c0-415508b0432e" armorType: 17}
+    Armor: {candyType: "3d47dfc5-ce51-9c54-68f1-6819b251e6c7" armorType: 10}
+    Name: "Chocolate Cutie Pie"
+    Duration: 5
+    FighterName: "Chocolate Cutie Pie"
+    FighterType: "a672e1da-a87d-2a54-4918-cafb72b02aec"
+    Moves: "a9d69fc0-a1b8-ae24-cbd7-249760200211"
+    Moves: "73eb61fc-70a9-25a4-ba01-0ecaa0d547c5"
+    Moves: "1e47a8e0-acfd-1244-0b7d-539d62429060"
+    Moves: "c28e13b4-cb1f-6ea4-680f-91010a400e10"
+    Quality: 2
+    IsAccountBound: false
+    RequiredCandy: {candyType: "f9c0a4d2-f049-29a4-eb1e-2269de35798e" amount: 20}
+    RequiredCandy: {candyType: "7ddba6f2-b08a-f954-4a97-eae6af175005" amount: 25}
+    RequiredCandy: {candyType: "8aac4645-29cf-fe04-59c0-415508b0432e" amount: 15}
+    RequiredCandy: {candyType: "3d47dfc5-ce51-9c54-68f1-6819b251e6c7" amount: 20}
+    RequiredFighterQuality: 0
+  }
+}

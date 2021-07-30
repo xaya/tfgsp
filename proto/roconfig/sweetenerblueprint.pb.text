@@ -1,0 +1,144 @@
+sweetenerblueprints:
+{
+  key: "Sweetener_R5"
+  value:
+  {
+    AuthoredId: "a5d19aba-ba28-01d4-e8a7-77ba3481288e"
+    Name: "Sweetener: Salty Sweet"
+    Description: "Sweeten one of your Salty Sweet Treats! "
+    Price: 50
+    Duration: 100
+    CookCost: 15
+    RequiredSweetness: 5
+    RewardChoices: {Description: "ThisRecipewillgranttheTreat1extraMoveofeithertheHeavy BlockingorDistanceTypes uptoUncommonQuality.Alsohasachancetoadd/replaceArmorandTrick uptoUncommonQuality." RewardsTableId: "808db761-05dc-a2f4-6a31-210551e2cb5a" BaseRollCount: 1 ArmorRewardsTableId: "0f3cb80c-c70c-1234-8a1b-1d349037a0c7" ArmorRollCount: 1 MoveRewardsTableId: "2913144c-50ad-ccf4-ebdc-fb5d2286b88c" MoveRollCount: 1 RequiredCandy: {key: "7ea89b0d-7070-d3e4-a86f-c0e75c0e4ff5" value: 6} RequiredCandy: {key: "63a8ea74-65ee-c024-b8f0-87e173258257" value: 4} RequiredCandy: {key: "2aae625b-a8b1-8ef4-ba8f-32a45702f9af" value: 8} RequiredCandy: {key: "f6025c1b-55e8-da24-d96f-0ecebf74c436" value: 6} RequiredCandy: {key: "4e343f68-1aaa-0e84-7bab-eae458b68264" value: 6}}
+    RewardChoices: {Description: "ThisRecipewillgranttheTreat1extraMoveofeithertheHeavy SpeedyorTrickyTypes uptoUncommonQuality.Alsohasachancetoadd/replaceArmorandTrick uptoUncommonQuality." RewardsTableId: "808db761-05dc-a2f4-6a31-210551e2cb5a" BaseRollCount: 1 ArmorRewardsTableId: "0f3cb80c-c70c-1234-8a1b-1d349037a0c7" ArmorRollCount: 1 MoveRewardsTableId: "94f80543-5661-ff84-8860-1e9b222d6c48" MoveRollCount: 1 RequiredCandy: {key: "12ea78d4-e0f3-e5b4-1882-04787fa86d15" value: 14} RequiredCandy: {key: "9b70e722-0442-2924-092c-93efc1d92975" value: 6} RequiredCandy: {key: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" value: 5} RequiredCandy: {key: "1983b3b7-4a9e-8f14-b981-c94c32d7648b" value: 5}}
+  }
+}
+sweetenerblueprints:
+{
+  key: "Sweetener_R6"
+  value:
+  {
+    AuthoredId: "36adece2-8ed9-3114-db6e-24fa8c494fa5"
+    Name: "Sweetener: Artificially Sweet"
+    Description: "Sweeten one of your Artificially Sweet Treats! "
+    Price: 50
+    Duration: 100
+    CookCost: 15
+    RequiredSweetness: 6
+    RewardChoices: {Description: "ThisRecipewillgranttheTreat1extraMoveofeithertheHeavy BlockingorDistanceTypes uptoUncommonQuality.Alsohasachancetoadd/replaceArmorandTrick uptoUncommonQuality." RewardsTableId: "808db761-05dc-a2f4-6a31-210551e2cb5a" BaseRollCount: 1 ArmorRewardsTableId: "0f3cb80c-c70c-1234-8a1b-1d349037a0c7" ArmorRollCount: 1 MoveRewardsTableId: "2913144c-50ad-ccf4-ebdc-fb5d2286b88c" MoveRollCount: 1 RequiredCandy: {key: "5a087336-6c2d-a684-1b72-a86d6ff6931f" value: 10} RequiredCandy: {key: "40067d7d-6651-cbc4-c8ed-785d73e9ab57" value: 7} RequiredCandy: {key: "87040ddf-f0cb-f894-dbbd-a4f266cae4e7" value: 13}}
+    RewardChoices: {Description: "ThisRecipewillgranttheTreat1extraMoveofeithertheHeavy SpeedyorTrickyTypes uptoUncommonQuality.Alsohasachancetoadd/replaceArmorandTrick uptoUncommonQuality." RewardsTableId: "808db761-05dc-a2f4-6a31-210551e2cb5a" BaseRollCount: 1 ArmorRewardsTableId: "0f3cb80c-c70c-1234-8a1b-1d349037a0c7" ArmorRollCount: 1 MoveRewardsTableId: "94f80543-5661-ff84-8860-1e9b222d6c48" MoveRollCount: 1 RequiredCandy: {key: "1983b3b7-4a9e-8f14-b981-c94c32d7648b" value: 12} RequiredCandy: {key: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" value: 8} RequiredCandy: {key: "9b70e722-0442-2924-092c-93efc1d92975" value: 4} RequiredCandy: {key: "12ea78d4-e0f3-e5b4-1882-04787fa86d15" value: 6}}
+  }
+}
+sweetenerblueprints:
+{
+  key: "Sweetener_R7"
+  value:
+  {
+    AuthoredId: "c5b8cd6d-59ae-8f24-7891-d8948de941b0"
+    Name: "Sweetener: Sticky Sweet"
+    Description: "Sweeten one of your Sticky Sweet Treats!"
+    Price: 50
+    Duration: 100
+    CookCost: 15
+    RequiredSweetness: 7
+    RewardChoices: {Description: "ThisRecipewillgranttheTreat1extraMoveofeithertheHeavy BlockingorDistanceTypes uptoRareQuality.Alsohasachancetoadd/replaceArmor uptoRareQuality andTrick uptoUncommonQuality." RewardsTableId: "808db761-05dc-a2f4-6a31-210551e2cb5a" BaseRollCount: 1 ArmorRewardsTableId: "f2092146-706b-09f4-a80b-64aabe5ff4a6" ArmorRollCount: 1 MoveRewardsTableId: "b1fc13b2-84e3-e3b4-a904-371d21b0bd2c" MoveRollCount: 1 RequiredCandy: {key: "8ac3d9f0-2a3e-b724-6a96-ce73b5ee215c" value: 5} RequiredCandy: {key: "9c64b7e4-0458-65c4-9b79-5cc35e847f9c" value: 10} RequiredCandy: {key: "4e343f68-1aaa-0e84-7bab-eae458b68264" value: 15} RequiredCandy: {key: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" value: 10}}
+    RewardChoices: {Description: "ThisRecipewillgranttheTreat1extraMoveofeithertheHeavyorSpeedyTypes uptoRareQuality.Alsohasachancetoadd/replaceArmor uptoUncommonQuality andTrick uptoRareQuality." RewardsTableId: "3577d41a-18bc-8f74-392c-579c129e9181" BaseRollCount: 1 ArmorRewardsTableId: "0f3cb80c-c70c-1234-8a1b-1d349037a0c7" ArmorRollCount: 1 MoveRewardsTableId: "e03a72e4-d6e6-e0b4-4936-a09848309399" MoveRollCount: 1 RequiredCandy: {key: "e5afded6-705a-2034-7b1c-556ac877fb0f" value: 13} RequiredCandy: {key: "1525c955-d3c0-9f84-69fb-cf98837f4f85" value: 7} RequiredCandy: {key: "7ddba6f2-b08a-f954-4a97-eae6af175005" value: 12} RequiredCandy: {key: "16e0b307-2b40-4584-294c-dee505e47827" value: 4} RequiredCandy: {key: "9b70e722-0442-2924-092c-93efc1d92975" value: 4}}
+  }
+}
+sweetenerblueprints:
+{
+  key: "Sweetener_R8"
+  value:
+  {
+    AuthoredId: "633d5927-9d0e-d3a4-b954-3a8f146aa792"
+    Name: "Sweetener: Sugary Sweet"
+    Description: "Sweeten one of your Sugary Sweet Treats!"
+    Price: 50
+    Duration: 100
+    CookCost: 15
+    RequiredSweetness: 8
+    RewardChoices: {Description: "ThisRecipewillgranttheTreat1extraMoveofeithertheHeavy BlockingorDistanceTypes uptoRareQuality.Alsohasachancetoadd/replaceArmor uptoRareQuality andTrick uptoRareQuality." RewardsTableId: "3577d41a-18bc-8f74-392c-579c129e9181" BaseRollCount: 1 ArmorRewardsTableId: "f2092146-706b-09f4-a80b-64aabe5ff4a6" ArmorRollCount: 1 MoveRewardsTableId: "b1fc13b2-84e3-e3b4-a904-371d21b0bd2c" MoveRollCount: 1 RequiredCandy: {key: "86b5fac0-4ec1-09e4-6ab7-96d3fd13dd04" value: 22} RequiredCandy: {key: "2aae625b-a8b1-8ef4-ba8f-32a45702f9af" value: 8} RequiredCandy: {key: "f6025c1b-55e8-da24-d96f-0ecebf74c436" value: 10}}
+    RewardChoices: {Description: "ThisRecipewillgranttheTreat1extraMoveofeithertheHeavyorSpeedyTypes uptoRareQuality.Alsohasachancetoadd/replaceArmor uptoRareQuality andTrick uptoRareQuality." RewardsTableId: "3577d41a-18bc-8f74-392c-579c129e9181" BaseRollCount: 1 ArmorRewardsTableId: "f2092146-706b-09f4-a80b-64aabe5ff4a6" ArmorRollCount: 1 MoveRewardsTableId: "e03a72e4-d6e6-e0b4-4936-a09848309399" MoveRollCount: 1 RequiredCandy: {key: "af509c01-933e-ce14-49c3-106081e16d75" value: 6} RequiredCandy: {key: "87040ddf-f0cb-f894-dbbd-a4f266cae4e7" value: 14} RequiredCandy: {key: "c2774273-0cd4-2494-fa02-76cffe1ef1ef" value: 7} RequiredCandy: {key: "63a8ea74-65ee-c024-b8f0-87e173258257" value: 13}}
+  }
+}
+sweetenerblueprints:
+{
+  key: "Sweetener_R9"
+  value:
+  {
+    AuthoredId: "d2ae2cf3-90d3-e6a4-383f-042d902e87b6"
+    Name: "Sweetener: Pretty Sweet"
+    Description: "Sweeten one of your Sweetie Pie Treats!"
+    Price: 50
+    Duration: 100
+    CookCost: 15
+    RequiredSweetness: 9
+    RewardChoices: {Description: "ThisRecipewillgranttheTreat1extraMoveofanyMoveType uptoEpicQuality.Alsohasachancetoadd/replaceArmor uptoEpicQuality andTrick uptoRareQuality." RewardsTableId: "3577d41a-18bc-8f74-392c-579c129e9181" BaseRollCount: 1 ArmorRewardsTableId: "b057b0af-c4d9-0464-98cf-0303f0baf359" ArmorRollCount: 1 MoveRewardsTableId: "f6655962-a4bc-4f14-985b-79dd68f61103" MoveRollCount: 1 RequiredCandy: {key: "8932caea-da2e-6384-58ec-749624e213c9" value: 12} RequiredCandy: {key: "aa0cb18d-5681-5504-09d7-4db06bf7a4d8" value: 4} RequiredCandy: {key: "7ff63ec3-352c-6ea4-98ad-55c4f2fb375c" value: 4} RequiredCandy: {key: "7ea89b0d-7070-d3e4-a86f-c0e75c0e4ff5" value: 16} RequiredCandy: {key: "524c8f4f-cb50-ea04-dafd-e192f30c7656" value: 14}}
+    RewardChoices: {Description: "ThisRecipewillgranttheTreat1extraMoveofanyMoveType uptoEpicQuality.Alsohasachancetoadd/replaceArmor uptoRareQuality andTrick uptoEpicQuality." RewardsTableId: "fc0c2504-a2ec-e364-093d-5fca84205e2d" BaseRollCount: 1 ArmorRewardsTableId: "f2092146-706b-09f4-a80b-64aabe5ff4a6" ArmorRollCount: 1 MoveRewardsTableId: "5c6f7ec8-7032-73a4-28d9-ce67b51c9db6" MoveRollCount: 1 RequiredCandy: {key: "08847311-c629-a154-5958-13e8f1d77f88" value: 6} RequiredCandy: {key: "f7668430-bfc1-71f4-29b8-f36c7d6905d5" value: 8} RequiredCandy: {key: "9ff884ab-efcb-0af4-5acd-976fea43b3a3" value: 21} RequiredCandy: {key: "5a087336-6c2d-a684-1b72-a86d6ff6931f" value: 12} RequiredCandy: {key: "8aac4645-29cf-fe04-59c0-415508b0432e" value: 3}}
+  }
+}
+sweetenerblueprints:
+{
+  key: "Sweetener_R2"
+  value:
+  {
+    AuthoredId: "d596403b-b76f-52c4-6956-4bfd55231de0"
+    Name: "Sweetener: Bittersweet"
+    Description: "Sweeten one of your Bittersweet Treats!"
+    Price: 50
+    Duration: 20
+    CookCost: 15
+    RequiredSweetness: 2
+    RewardChoices: {Description: "ThisRecipewillgranttheTreat1extraMoveofeithertheBlocking Distance orHeavyTypes uptoCommonQuality." RewardsTableId: "1290674d-4fa7-07c4-3987-14262876f209" BaseRollCount: 1 ArmorRewardsTableId: "1290674d-4fa7-07c4-3987-14262876f209" ArmorRollCount: 1 MoveRewardsTableId: "70c75ebc-7d57-f124-6bc4-d0b7b7ff3d37" MoveRollCount: 1 RequiredCandy: {key: "f6025c1b-55e8-da24-d96f-0ecebf74c436"  value: 5} RequiredCandy: {key: "7ddba6f2-b08a-f954-4a97-eae6af175005" value: 5} RequiredCandy: {key: "c2774273-0cd4-2494-fa02-76cffe1ef1ef" value: 5} RequiredCandy: {key: "3d47dfc5-ce51-9c54-68f1-6819b251e6c7" value: 5}}
+    RewardChoices: {Description: "ThisRecipewillgranttheTreat1extraMoveofeithertheSpeedyorTrickyTypes uptoCommonQuality." RewardsTableId: "1290674d-4fa7-07c4-3987-14262876f209" BaseRollCount: 1 ArmorRewardsTableId: "1290674d-4fa7-07c4-3987-14262876f209" ArmorRollCount: 1 MoveRewardsTableId: "30d9967d-8618-7254-3bff-46e09e717719" MoveRollCount: 1 RequiredCandy: {key: "12ea78d4-e0f3-e5b4-1882-04787fa86d15" value: 10} RequiredCandy: {key: "f9c0a4d2-f049-29a4-eb1e-2269de35798e" value: 10}}
+  }
+}
+sweetenerblueprints:
+{
+  key: "Sweetener_R3"
+  value:
+  {
+    AuthoredId: "7e48a714-d191-0884-abd5-ec350a925a63"
+    Name: "Sweetener: Semi Sweet"
+    Description: "Sweeten one of your Semi Sweet Treats!"
+    Price: 50
+    Duration: 50
+    CookCost: 15
+    RequiredSweetness: 3
+    RewardChoices: {Description: "ThisRecipewillgranttheTreat1extraMoveofeithertheBlocking Distance orHeavyTypes uptoCommonQuality." RewardsTableId: "1290674d-4fa7-07c4-3987-14262876f209" BaseRollCount: 1 ArmorRewardsTableId: "1290674d-4fa7-07c4-3987-14262876f209" ArmorRollCount: 1 MoveRewardsTableId: "70c75ebc-7d57-f124-6bc4-d0b7b7ff3d37" MoveRollCount: 1 RequiredCandy: {key: "f6025c1b-55e8-da24-d96f-0ecebf74c436" value: 10} RequiredCandy: {key: "c2774273-0cd4-2494-fa02-76cffe1ef1ef" value: 5} RequiredCandy: {key: "4e343f68-1aaa-0e84-7bab-eae458b68264" value: 5}}
+    RewardChoices: {Description: "ThisRecipewillgranttheTreat1extraMoveofeithertheSpeedyorTrickyTypes uptoCommonQuality." RewardsTableId: "1290674d-4fa7-07c4-3987-14262876f209" BaseRollCount: 1 ArmorRewardsTableId: "1290674d-4fa7-07c4-3987-14262876f209" ArmorRollCount: 1 MoveRewardsTableId: "30d9967d-8618-7254-3bff-46e09e717719" MoveRollCount: 1 RequiredCandy: {key: "934dae05-689f-30e4-5804-d497aee0b47c" value: 15} RequiredCandy: {key: "524c8f4f-cb50-ea04-dafd-e192f30c7656" value: 5}}
+  }
+}
+sweetenerblueprints:
+{
+  key: "Sweetener_R4"
+  value:
+  {
+    AuthoredId: "14915002-83dd-83d4-e987-6cdf4ca3673b"
+    Name: "Sweetener: Sweet and Sour"
+    Description: "Sweeten one of your Sweet and Sour Treats!"
+    Price: 50
+    Duration: 100
+    CookCost: 15
+    RequiredSweetness: 4
+    RewardChoices: {Description: "ThisRecipewillgranttheTreat1extraMoveofeithertheHeavy BlockingorDistanceTypes uptoUncommonQuality.Alsohasachancetoadd/replaceArmorandTrick uptoCommonQuality." RewardsTableId: "87d8fe8d-231a-6234-3af6-a9246f364e17" BaseRollCount: 1 ArmorRewardsTableId: "f38319c2-1e6a-97d4-8976-5ecf1aee51ee" ArmorRollCount: 1 MoveRewardsTableId: "2913144c-50ad-ccf4-ebdc-fb5d2286b88c" MoveRollCount: 1 RequiredCandy: {key: "f6025c1b-55e8-da24-d96f-0ecebf74c436" value: 15} RequiredCandy: {key: "7ddba6f2-b08a-f954-4a97-eae6af175005" value: 10} RequiredCandy: {key:"4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" value: 5}}
+    RewardChoices: {Description: "ThisRecipewillgranttheTreat1extraMoveofeithertheSpeedyorTrickyTypes uptoUncommonQuality.Alsohasachancetoadd/replaceArmorandTrick uptoCommonQuality." RewardsTableId: "87d8fe8d-231a-6234-3af6-a9246f364e17" BaseRollCount: 1 ArmorRewardsTableId: "f38319c2-1e6a-97d4-8976-5ecf1aee51ee" ArmorRollCount: 1 MoveRewardsTableId: "94f80543-5661-ff84-8860-1e9b222d6c48" MoveRollCount: 1 RequiredCandy: {key: "5a087336-6c2d-a684-1b72-a86d6ff6931f" value: 2} RequiredCandy: {key: "934dae05-689f-30e4-5804-d497aee0b47c" value: 3} RequiredCandy: {key: "8aac4645-29cf-fe04-59c0-415508b0432e" value: 10} RequiredCandy: {key: "16e0b307-2b40-4584-294c-dee505e47827" value: 5}}
+  }
+}
+sweetenerblueprints:
+{
+  key: "Sweetener_R10"
+  value:
+  {
+    AuthoredId: "20334892-5075-d1f4-99da-602f74bd92b1"
+    Name: "Sweetener: Super Sweet"
+    Description: "Sweeten one of your Super Sweet Treats!"
+    Price: 50
+    Duration: 100
+    CookCost: 15
+    RequiredSweetness: 10
+    RewardChoices: {Description: "ThisRecipewillgranttheTreat1extraMoveofanyMoveType uptoEpicQuality.Alsohasachancetoadd/replaceArmor uptoEpicQuality andTrick uptoEpicQuality." RewardsTableId: "fc0c2504-a2ec-e364-093d-5fca84205e2d" BaseRollCount: 1 ArmorRewardsTableId: "b057b0af-c4d9-0464-98cf-0303f0baf359" ArmorRollCount: 1 MoveRewardsTableId: "d07c3481-691a-71e4-990e-9b5739afcff1" MoveRollCount: 1 RequiredCandy: {key: "47b8a853-791a-1424-1ba9-4adaf4a3f4a5" value: 10}RequiredCandy: { key: "2f765969-c607-d4a4-0b9c-72d3cce7fbec" value: 6}RequiredCandy: { key: "8aa0e6a7-0b45-3404-9b39-dc4a4300a87f" value: 12}RequiredCandy: { key: "af509c01-933e-ce14-49c3-106081e16d75" value: 8}RequiredCandy: { key: "3d47dfc5-ce51-9c54-68f1-6819b251e6c7" value: 14}RequiredCandy: { key: "f6025c1b-55e8-da24-d96f-0ecebf74c436" value: 1}}
+    RewardChoices: {Description: "ThisRecipewillgranttheTreat1extraMoveofanyMoveType uptoEpicQuality.Alsohasachancetoadd/replaceArmor uptoEpicQuality andTrick uptoEpicQuality." RewardsTableId: "fc0c2504-a2ec-e364-093d-5fca84205e2d" BaseRollCount: 1 ArmorRewardsTableId: "b057b0af-c4d9-0464-98cf-0303f0baf359" ArmorRollCount: 1 MoveRewardsTableId: "d07c3481-691a-71e4-990e-9b5739afcff1" MoveRollCount: 1 RequiredCandy: {key: "a2c2697c-d738-c004-4b32-d800921bab06" value: 6} RequiredCandy: {key: "0ee1131a-b8e4-05c4-9896-3690ebf8563a" value: 3} RequiredCandy: {key: "12ea78d4-e0f3-e5b4-1882-04787fa86d15" value: 21} RequiredCandy: {key: "28089a53-62ac-2044-1964-29f2f31d8a33" value: 4} RequiredCandy: {key: "40067d7d-6651-cbc4-c8ed-785d73e9ab57" value: 16}}
+  }
+}

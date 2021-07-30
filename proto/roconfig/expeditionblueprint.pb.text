@@ -1,0 +1,315 @@
+expeditionblueprints:
+{
+  key: "Expedition_Rank9_ E2"
+  value:
+  {
+    AuthoredId: "5c5c9f0e-4eda-bbe4-ba92-ec3c400d081e"
+    Name: "The Foot of Hard Candy Mountain: The Abandoned City"
+    Duration: 1400
+    MinSweetness: 9
+    MaxSweetness: 10
+    MaxRewardQuality: 4
+    BaseRewardsTableId: "42ffc503-545f-61f4-1b57-e65dee1749e0"
+    BaseRollCount: 10
+  }
+}
+expeditionblueprints:
+{
+  key: "Expedition_Rank4_ E1"
+  value:
+  {
+    AuthoredId: "5edaf5d1-ec6d-7094-a8dd-a344d0650e5c"
+    Name: "The Licorice Forest Deep: Low Hanging Fruit"
+    Duration: 125
+    MinSweetness: 4
+    MaxSweetness: 10
+    MaxRewardQuality: 2
+    BaseRewardsTableId: "bf5e7bbe-2361-80b4-f862-acdfa491c07e"
+    BaseRollCount: 6
+  }
+}
+expeditionblueprints:
+{
+  key: "Expedition_Rank10_ E1"
+  value:
+  {
+    AuthoredId: "aece8a9f-30c0-3aa4-7a9b-5c33fc2e534a"
+    Name: "Hard Candy Mountain: Slow but Steady Ascent"
+    Duration: 2800
+    MinSweetness: 10
+    MaxSweetness: 10
+    MaxRewardQuality: 4
+    BaseRewardsTableId: "45b14a76-3b9c-2014-7bc5-816c7de2f947"
+    BaseRollCount: 10
+  }
+}
+expeditionblueprints:
+{
+  key: "Expedition_Rank7_ E1"
+  value:
+  {
+    AuthoredId: "16457184-f0f1-73e4-183d-e7f8f2d412c2"
+    Name: "Lake Fruity Punch: Scouring the Shore"
+    Duration: 700
+    MinSweetness: 7
+    MaxSweetness: 10
+    MaxRewardQuality: 3
+    BaseRewardsTableId: "1f9dc820-9e7b-0f04-3944-a13ef7236ca0"
+    BaseRollCount: 6
+  }
+}
+expeditionblueprints:
+{
+  key: "Expedition_Rank1_ E2"
+  value:
+  {
+    AuthoredId: "a2512eaa-028a-1f84-6879-eb240ac80a3e"
+    Name: "The Graveyard of the Glazed: Excavation"
+    Duration: 15
+    MinSweetness: 1
+    MaxSweetness: 10
+    MaxRewardQuality: 1
+    BaseRewardsTableId: "8ba8347d-fb20-adf4-ca16-93a8943ddd4f"
+    BaseRollCount: 3
+  }
+}
+expeditionblueprints:
+{
+  key: "Expedition_Rank6_ E1"
+  value:
+  {
+    AuthoredId: "dc498167-f8b7-3164-da5b-776b731a1a6c"
+    Name: "The Marshmallow Hills: Among the Ruins"
+    Duration: 700
+    MinSweetness: 6
+    MaxSweetness: 10
+    MaxRewardQuality: 3
+    BaseRewardsTableId: "a2d81a2a-60e6-f354-6943-40803787242f"
+    BaseRollCount: 5
+  }
+}
+expeditionblueprints:
+{
+  key: "Expedition_Rank9_ E1"
+  value:
+  {
+    AuthoredId: "8928eb04-3ee7-f834-9b5b-8b6f48d04ecf"
+    Name: "The Foot of Hard Candy Mountain: Taking it Slow"
+    Duration: 1400
+    MinSweetness: 9
+    MaxSweetness: 10
+    MaxRewardQuality: 4
+    BaseRewardsTableId: "18bce352-f1f1-c894-5807-0cc4e10c0f1a"
+    BaseRollCount: 10
+  }
+}
+expeditionblueprints:
+{
+  key: "Expedition_1stExpedition"
+  value:
+  {
+    AuthoredId: "c064e7f7-acbf-4f74-fab8-cccd7b2d4004"
+    Name: "A WARRIOR'S FIRST JOURNEY"
+    Duration: 1
+    MinSweetness: 1
+    MaxSweetness: 1
+    MaxRewardQuality: 1
+    BaseRewardsTableId: "c1f4ec37-bb53-fed4-09e0-e19bb5b346bb"
+    BaseRollCount: 1
+  }
+}
+expeditionblueprints:
+{
+  key: "Expedition_Rank8_ E1"
+  value:
+  {
+    AuthoredId: "09b9f6ba-cc74-6ad4-dbe9-86759590d0fc"
+    Name: "The Caramelized Valley: Down into theValley"
+    Duration: 700
+    MinSweetness: 8
+    MaxSweetness: 10
+    MaxRewardQuality: 4
+    BaseRewardsTableId: "42ffc503-545f-61f4-1b57-e65dee1749e0"
+    BaseRollCount: 7
+  }
+}
+expeditionblueprints:
+{
+  key: "Expedition_Rank2_ E2"
+  value:
+  {
+    AuthoredId: "a1387c26-3e1c-4554-e94e-e857643e58ed"
+    Name: "The Fizzy Swamp: Delving the Muck"
+    Duration: 30
+    MinSweetness: 2
+    MaxSweetness: 10
+    MaxRewardQuality: 1
+    BaseRewardsTableId: "8ba8347d-fb20-adf4-ca16-93a8943ddd4f"
+    BaseRollCount: 4
+  }
+}
+expeditionblueprints:
+{
+  key: "Expedition_Rank5_ E1"
+  value:
+  {
+    AuthoredId: "0d9af5ec-b3fd-3de4-2a38-0a954c9f9cba"
+    Name: "The Great Coco River: Scouring the Shore"
+    Duration: 350
+    MinSweetness: 5
+    MaxSweetness: 10
+    MaxRewardQuality: 3
+    BaseRewardsTableId: "1f9dc820-9e7b-0f04-3944-a13ef7236ca0"
+    BaseRollCount: 4
+  }
+}
+expeditionblueprints:
+{
+  key: "Expedition_Rank1_ E1"
+  value:
+  {
+    AuthoredId: "93ad71bb-cd8f-dc24-7885-2c3fd0013245"
+    Name: "The Graveyard of the Glazed: Recon"
+    Duration: 15
+    MinSweetness: 1
+    MaxSweetness: 10
+    MaxRewardQuality: 1
+    BaseRewardsTableId: "7c40dee4-c1f9-c8f4-d923-910133846c78"
+    BaseRollCount: 3
+  }
+}
+expeditionblueprints:
+{
+  key: "Expedition_Rank2_ E1"
+  value:
+  {
+    AuthoredId: "35052272-b4bc-75c4-0ad0-fe122f54b508"
+    Name: "The Fizzy Swamp: Brave the Stench"
+    Duration: 30
+    MinSweetness: 2
+    MaxSweetness: 10
+    MaxRewardQuality: 1
+    BaseRewardsTableId: "7c40dee4-c1f9-c8f4-d923-910133846c78"
+    BaseRollCount: 4
+  }
+}
+expeditionblueprints:
+{
+  key: "Expedition_Rank3_ E1"
+  value:
+  {
+    AuthoredId: "6d7e16b9-1a8f-b134-59a6-fb9865615001"
+    Name: "The Edge of the Licorice Forest: Scouting Ahead"
+    Duration: 60
+    MinSweetness: 3
+    MaxSweetness: 10
+    MaxRewardQuality: 2
+    BaseRewardsTableId: "bf5e7bbe-2361-80b4-f862-acdfa491c07e"
+    BaseRollCount: 4
+  }
+}
+expeditionblueprints:
+{
+  key: "Expedition_Rank3_ E2"
+  value:
+  {
+    AuthoredId: "fbb0edc6-92a9-dc04-5ad7-a19c36843074"
+    Name: "The Edge of the Licorice Forest: Foraging for Glory"
+    Duration: 60
+    MinSweetness: 3
+    MaxSweetness: 10
+    MaxRewardQuality: 2
+    BaseRewardsTableId: "f6151176-251b-6de4-1aee-245999752b5f"
+    BaseRollCount: 4
+  }
+}
+expeditionblueprints:
+{
+  key: "Expedition_Rank4_ E2"
+  value:
+  {
+    AuthoredId: "768a4c69-c928-4a34-1bf2-044d3e5bac33"
+    Name: "The Licorice Forest Deep: Digging for Roots"
+    Duration: 125
+    MinSweetness: 4
+    MaxSweetness: 10
+    MaxRewardQuality: 2
+    BaseRewardsTableId: "f6151176-251b-6de4-1aee-245999752b5f"
+    BaseRollCount: 6
+  }
+}
+expeditionblueprints:
+{
+  key: "Expedition_Rank5_ E2"
+  value:
+  {
+    AuthoredId: "19bbdaff-2ba7-12f4-3a13-989a490aaf86"
+    Name: "The Great Coco River: Wading for Treasures"
+    Duration: 350
+    MinSweetness: 5
+    MaxSweetness: 10
+    MaxRewardQuality: 3
+    BaseRewardsTableId: "74c64b03-c246-7174-bb50-4834e2d2a010"
+    BaseRollCount: 4
+  }
+}
+expeditionblueprints:
+{
+  key: "Expedition_Rank6_ E2"
+  value:
+  {
+    AuthoredId: "f0e675df-3f16-e4b4-f9e2-6b5291a92b0e"
+    Name: "The Marshmallow Hills: Delving the Caves"
+    Duration: 700
+    MinSweetness: 6
+    MaxSweetness: 10
+    MaxRewardQuality: 3
+    BaseRewardsTableId: "74c64b03-c246-7174-bb50-4834e2d2a010"
+    BaseRollCount: 5
+  }
+}
+expeditionblueprints:
+{
+  key: "Expedition_Rank7_ E2"
+  value:
+  {
+    AuthoredId: "c06ccaea-47e5-ec14-bb62-d824095a1bae"
+    Name: "Lake Fruity Punch: The Sunken Town"
+    Duration: 700
+    MinSweetness: 7
+    MaxSweetness: 10
+    MaxRewardQuality: 3
+    BaseRewardsTableId: "a2d81a2a-60e6-f354-6943-40803787242f"
+    BaseRollCount: 6
+  }
+}
+expeditionblueprints:
+{
+  key: "Expedition_Rank8_ E2"
+  value:
+  {
+    AuthoredId: "c088ddf8-2b2e-b9c4-6bb2-52aa1af2584f"
+    Name: "The Caramelized Valley: Under Every Rock"
+    Duration: 700
+    MinSweetness: 8
+    MaxSweetness: 10
+    MaxRewardQuality: 4
+    BaseRewardsTableId: "45b14a76-3b9c-2014-7bc5-816c7de2f947"
+    BaseRollCount: 7
+  }
+}
+expeditionblueprints:
+{
+  key: "Expedition_Rank10_ E2"
+  value:
+  {
+    AuthoredId: "15840d95-57de-86a4-da5e-9ab9dfb89299"
+    Name: "Hard Candy Mountain: The Heart of the Volcano"
+    Duration: 2800
+    MinSweetness: 10
+    MaxSweetness: 10
+    MaxRewardQuality: 4
+    BaseRewardsTableId: "18bce352-f1f1-c894-5807-0cc4e10c0f1a"
+    BaseRollCount: 10
+  }
+}

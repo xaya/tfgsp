@@ -63,6 +63,8 @@ template <>
       res["role"] = PlayerRoleToString (a.GetRole ());
   }
 
+  res["ftuestate"] = FTUEStateToString (a.GetFTUEState ());
+
   return res;
 }
 

@@ -1,0 +1,253 @@
+animations:
+{
+  key: "Animation_Common_Uppercut"
+  value:
+  {
+    AuthoredId: "a170f9f3-f97b-8eb4-49c0-c99a916e55d7"
+    Name: "Uppercut"
+    Quality: 1
+    Clip: "PlayUppercut"
+  }
+}
+animations:
+{
+  key: "Animation_Common_HammerTime"
+  value:
+  {
+    AuthoredId: "05633498-ace9-de14-c939-9435a6343d0f"
+    Name: "Hammer Time"
+    Quality: 1
+    Clip: "PlayHammerTime"
+  }
+}
+animations:
+{
+  key: "Animation_Common_RoundhouseKick"
+  value:
+  {
+    AuthoredId: "97c2c3da-93c7-a0d4-1967-eeba13396cce"
+    Name: "Roundhouse Kick"
+    Quality: 1
+    Clip: "PlayRoundhouseKick"
+  }
+}
+animations:
+{
+  key: "Animation_Epic_DempseyRoll"
+  value:
+  {
+    AuthoredId: "471eee2f-e6ad-a694-58de-bdee5a379096"
+    Name: "Dempsey Roll"
+    Quality: 4
+    Clip: "PlayDempseyRoll"
+  }
+}
+animations:
+{
+  key: "Animation_Common_ElbowStrike"
+  value:
+  {
+    AuthoredId: "938e1ab9-a85b-5444-7bd6-f8862ace8b16"
+    Name: "Elbow Strike"
+    Quality: 1
+    Clip: "PlayElbowStrike"
+  }
+}
+animations:
+{
+  key: "Animation_Uncommon_ThreeQuickSpins"
+  value:
+  {
+    AuthoredId: "ed324300-aa2c-0c04-4b75-2d0eae3780f4"
+    Name: "Three Quick Spins"
+    Quality: 2
+    Clip: "PlayThreeQuickSpins"
+  }
+}
+animations:
+{
+  key: "Animation_Common_RightCross"
+  value:
+  {
+    AuthoredId: "917e27ec-19ff-3d04-69f6-c596456816e6"
+    Name: "Right Cross"
+    Quality: 1
+    Clip: "PlayRightCross"
+  }
+}
+animations:
+{
+  key: "Animation_Common_DoublePunch"
+  value:
+  {
+    AuthoredId: "27448f34-ca08-99b4-1b63-fd4b227e6af4"
+    Name: "Double Punch"
+    Quality: 1
+    Clip: "PlayDoublePunch"
+  }
+}
+animations:
+{
+  key: "Animation_Common_JumpingSidekick"
+  value:
+  {
+    AuthoredId: "5fce85e9-51f9-d7b4-db81-ef141439db00"
+    Name: "Jumping Sidekick"
+    Quality: 1
+    Clip: "PlayJumpingSidekick"
+  }
+}
+animations:
+{
+  key: "Animation_Uncommon_OneTwo"
+  value:
+  {
+    AuthoredId: "a91a62fa-8d65-6234-d91b-a0ad0d9388e3"
+    Name: "One Two"
+    Quality: 2
+    Clip: "PlayOneTwo"
+  }
+}
+animations:
+{
+  key: "Animation_Epic_HulkHogan"
+  value:
+  {
+    AuthoredId: "b0877d2a-71db-7374-8a8b-8044f7a8a52a"
+    Name: "Hulk Poses"
+    Quality: 4
+    Clip: "PlayHulkHogan"
+  }
+}
+animations:
+{
+  key: "Animation_Rare_DropKick"
+  value:
+  {
+    AuthoredId: "2831df30-e1a2-dcf4-2a9a-0c91ac4ea310"
+    Name: "Drop Kick"
+    Quality: 3
+    Clip: "PlayDropKick"
+  }
+}
+animations:
+{
+  key: "Animation_Epic_CraneKick"
+  value:
+  {
+    AuthoredId: "3afdf3ed-bea4-1c14-faac-159412578c0f"
+    Name: "Crane Kick"
+    Quality: 4
+    Clip: "PlayCraneKick"
+  }
+}
+animations:
+{
+  key: "Animation_Rare_BoxingTheEars"
+  value:
+  {
+    AuthoredId: "c6e3c59b-4415-52b4-8b34-1593bbc26634"
+    Name: "Boxing The Ears"
+    Quality: 3
+    Clip: "PlayBoxingYourEars"
+  }
+}
+animations:
+{
+  key: "Animation_Common_ThreeQuickJabs"
+  value:
+  {
+    AuthoredId: "64732638-e355-d5c4-aa2d-e28c3db4aa72"
+    Name: "Three Quick Jabs"
+    Quality: 1
+    Clip: "PlayTrippleJab"
+  }
+}
+animations:
+{
+  key: "Animation_Rare_SlicingChopping"
+  value:
+  {
+    AuthoredId: "02ddcd6e-e441-73f4-e874-399531dc4708"
+    Name: "Slicing Chopping"
+    Quality: 3
+    Clip: "PlaySlicingChopping"
+  }
+}
+animations:
+{
+  key: "Animation_Epic_BruceLeeTaunt"
+  value:
+  {
+    AuthoredId: "7294e11a-f8b2-9d34-5854-fee4535f1aaa"
+    Name: "Bruce Lee Taunt"
+    Quality: 4
+    Clip: "PlayBruceLeeTaunt"
+  }
+}
+animations:
+{
+  key: "Animation_Uncommon_Haymaker"
+  value:
+  {
+    AuthoredId: "a2a185e5-4543-6814-d88d-d078a0e38521"
+    Name: "Haymaker"
+    Quality: 2
+    Clip: "PlayHaymaker"
+  }
+}
+animations:
+{
+  key: "Animation_Epic_Shoryuken"
+  value:
+  {
+    AuthoredId: "4fca9718-5e62-8924-7a58-790c249fbc7f"
+    Name: "Shoryuken"
+    Quality: 4
+    Clip: "PlsyShoryuken"
+  }
+}
+animations:
+{
+  key: "Animation_Rare_SpinningBackhand"
+  value:
+  {
+    AuthoredId: "0c2cdea6-ff22-b124-da21-882987b1707a"
+    Name: "Spinning Backhand"
+    Quality: 3
+    Clip: "PlaySpinningBlow"
+  }
+}
+animations:
+{
+  key: "Animation_Uncommon_WaxOnWaxOff"
+  value:
+  {
+    AuthoredId: "d35a9d1c-2223-c404-c840-c0218f9b147d"
+    Name: "Wax On Wax Off"
+    Quality: 2
+    Clip: "PlayWaxOnWaxOff"
+  }
+}
+animations:
+{
+  key: "Animation_Uncommon_DownwardFistSmash"
+  value:
+  {
+    AuthoredId: "f33c74e6-f1b4-6ca4-bb5a-cf6edc77cab5"
+    Name: "Downward Fist Smash"
+    Quality: 2
+    Clip: "PlayDownward"
+  }
+}
+animations:
+{
+  key: "Animation_Rare_RollingDodges"
+  value:
+  {
+    AuthoredId: "a7629ff3-c1ef-e664-3a9c-bd27cb332abd"
+    Name: "Rolling Dodges"
+    Quality: 3
+    Clip: "PlayRollingDodges"
+  }
+}

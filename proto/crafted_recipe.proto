@@ -21,37 +21,55 @@ option cc_enable_arenas = true;
 
 package pxd.proto;
 
-/**
- * General data associated to an xaya name account.
- */
-message XayaPlayer
+message AuthoredArmor
 {
-  optional uint32 notused = 1;
+  optional string candyType = 1;
     
-  /**
-   * Role of the XAYA name in relation to the game
-   */
-  optional uint32 role = 2;
+  optional uint32 armorType = 2;
+}
+
+message CandyAmount
+{
+  optional string candyType = 1;
+    
+  optional uint64 amount = 2;
+}
+
+message CraftedRecipe
+{
+  /*id*/
+  optional string AuthoredId = 1;
+    
+  /*an*/
+  optional string AnimationId = 2;
   
-  /**
-   * vCHI based value
-   */ 
-  optional uint64 balance = 3;
+  /*a*/
+  repeated AuthoredArmor Armor = 3;
   
-  /**
-   * Balance of vCHI minted through the burnsale, which corresponds to
-   * the balance that will be carried over to the full game.
-   */
-  optional uint64 burnsale_balance = 4;  
+  /*n*/
+  optional string Name = 4;  
   
-  /**
-   * The XAYA name itself
-   */
-  optional string xayaname = 5;  
+  /*d*/
+  optional uint32 Duration = 5;  
   
- 
-  /**
-   * Current tutorial state
-   */
-  optional uint32 ftuestate = 6; 
+  /*fn*/
+  optional string FighterName = 6;   
+  
+  /*f*/
+  optional string FighterType = 7; 
+  
+  /*m*/
+  repeated string Moves = 8; 
+  
+  /*q*/
+  optional uint32 Quality = 9; 
+  
+  /*ab*/
+  optional bool IsAccountBound = 10; 
+  
+  /*rc*/
+  repeated CandyAmount RequiredCandy = 11; 
+  
+  /*r*/
+  optional uint32 RequiredFighterQuality = 12; 
 }

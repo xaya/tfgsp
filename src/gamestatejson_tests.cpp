@@ -90,13 +90,14 @@ TEST_F (XayaPlayersJsonTests, KillsAndFame)
 
   a = tbl.CreateNew ("bar");
   a->SetRole (PlayerRole::ROLEADMIN);
+  a->SetFTUEState (FTUEState::FirstTournament);
   a.reset ();
 
   ExpectStateJson (R"({
     "xayaplayers":
       [
-        {"name": "bar", "role": "r"},
-        {"name": "foo", "role": "p"}
+        {"name": "bar", "role": "r", "ftuestate": "t12"},
+        {"name": "foo", "role": "p", "ftuestate": "t0"}
       ]
   })");
 }

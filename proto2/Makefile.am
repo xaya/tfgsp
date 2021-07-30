@@ -8,7 +8,20 @@ BUILT_SOURCES = \
 
 PROTOS = \
   $(builddir)/../proto/config.proto \
-  $(builddir)/../proto/xaya_player.proto
+  $(builddir)/../proto/activity_rewards.proto \
+  $(builddir)/../proto/animation.proto \
+  $(builddir)/../proto/candy.proto \
+  $(builddir)/../proto/crystal_bundle.proto \
+  $(builddir)/../proto/expedition_blueprint.proto \
+  $(builddir)/../proto/fighter_move_blueprint.proto \
+  $(builddir)/../proto/fighter_name.proto \
+  $(builddir)/../proto/fighter_type.proto \
+  $(builddir)/../proto/goody.proto \
+  $(builddir)/../proto/goody_bundle.proto \
+  $(builddir)/../proto/sweetener_blueprint.proto \
+  $(builddir)/../proto/tournament_blueprint.proto \
+  $(builddir)/../proto/xaya_player.proto \
+  $(builddir)/../proto/crafted_recipe.proto
 
 libpxproto_la_CXXFLAGS = \
   -I$(top_srcdir) \

@@ -2,6 +2,19 @@ noinst_PROGRAMS = roconfig_gen
 
 ROCONFIG_TEXT_PROTOS = \
   roconfig/params.pb.text \
+  roconfig/recepies.pb.text \
+  roconfig/activityrewardstable.pb.text \
+  roconfig/animation.pb.text \
+  roconfig/candy.pb.text \
+  roconfig/crystalbundle.pb.text \
+  roconfig/expeditionblueprint.pb.text \
+  roconfig/fightermoveblueprint.pb.text \
+  roconfig/fightername.pb.text \
+  roconfig/fightertype.pb.text \
+  roconfig/goody.pb.text \
+  roconfig/goodybundle.pb.text \
+  roconfig/sweetenerblueprint.pb.text \
+  roconfig/tournamentblueprint.pb.text \
   roconfig/testnet.pb.text
 
 BUILT_SOURCES = \
@@ -13,6 +26,19 @@ ROCONFIG_TEXT_PROTOS_REGTEST = \
 
 PROTOS = \
   config.proto \
+  crafted_recipe.proto \
+  activity_rewards.proto \
+  animation.proto \
+  candy.proto \
+  crystal_bundle.proto \
+  expedition_blueprint.proto \
+  fighter_move_blueprint.proto \
+  fighter_name.proto \
+  fighter_type.proto \
+  goody.proto \
+  goody_bundle.proto \
+  sweetener_blueprint.proto \
+  tournament_blueprint.proto \
   xaya_player.proto
   
 EXTRA_DIST = \

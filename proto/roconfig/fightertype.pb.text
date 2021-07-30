@@ -1,0 +1,75 @@
+fightertype:
+{
+  key: "RockCandy"
+  value:
+  {
+    AuthoredId: "2522657f-c73f-23c4-da7d-3934d135265b"
+    Name: "Rock Candy"
+    Probability: 20
+    MoveProbabilities: {MoveType: 4 Probability: 30.0 AuthoredId: "22075a8a-a0c6-4400-a962-37a18954596f"}
+    MoveProbabilities: {MoveType: 3 Probability: 20.0 AuthoredId: "5a465b87-c2f5-4430-3b15-66fdb4627c4a"}
+    MoveProbabilities: {MoveType: 0 Probability: 20.0 AuthoredId: "18d0f469-cb7b-d4fc-da6b-dad08eb6f6c4"}
+    MoveProbabilities: {MoveType: 1 Probability: 15.0 AuthoredId: "259e3cfe-fb58-4438-9a99-5aca77db2bad"}
+    MoveProbabilities: {MoveType: 2 Probability: 15.0 AuthoredId: "163c6577-97a3-9490-ab17-4ad07a8be44f"}
+  }
+}
+fightertype:
+{
+  key: "Chocolate"
+  value:
+  {
+    AuthoredId: "a672e1da-a87d-2a54-4918-cafb72b02aec"
+    Name: "Chocolate"
+    Probability: 20
+    MoveProbabilities: {MoveType: 4 Probability: 15.0 AuthoredId: "0f2afa35-971e-f42c-bafa-dbd651bc527b"}
+    MoveProbabilities: {MoveType: 3 Probability: 15.0 AuthoredId: "6ce34d0c-70b1-f47c-d8cc-a81b7dccafa7"}
+    MoveProbabilities: {MoveType: 0 Probability: 30.0 AuthoredId: "26292174-40ee-44c2-3992-a5533add6e42"}
+    MoveProbabilities: {MoveType: 1 Probability: 20.0 AuthoredId: "9d4d5415-f757-648d-1823-881eec8a05ff"}
+    MoveProbabilities: {MoveType: 2 Probability: 20.0 AuthoredId: "e5b829cf-12ab-34a5-9abd-d3038ea3d05d"}
+  }
+}
+fightertype:
+{
+  key: "Gummi"
+  value:
+  {
+    AuthoredId: "c160f7ad-c775-8614-abe2-8ef74e54401f"
+    Name: "Gummi"
+    Probability: 20
+    MoveProbabilities: {MoveType: 4 Probability: 20.0 AuthoredId: "3413e590-74e1-f417-8b38-0f2c366ff092"}
+    MoveProbabilities: {MoveType: 3 Probability: 20.0 AuthoredId: "95f4c3f4-a488-64a9-9a9e-27c77b86b5d1"}
+    MoveProbabilities: {MoveType: 0 Probability: 15.0 AuthoredId: "7fa054ce-bcde-44fb-6b9a-9196fdad00a0"}
+    MoveProbabilities: {MoveType: 1 Probability: 15.0 AuthoredId: "f496e3b5-9ba5-0463-4afe-304db5bb5538"}
+    MoveProbabilities: {MoveType: 2 Probability: 30.0 AuthoredId: "249ad092-4951-a4a4-0bac-0b969fbe578a"}
+  }
+}
+fightertype:
+{
+  key: "Caramel"
+  value:
+  {
+    AuthoredId: "85f361b8-e55d-0244-1a98-26bffa0a18a2"
+    Name: "Caramel"
+    Probability: 20
+    MoveProbabilities: {MoveType: 4 Probability: 15.0 AuthoredId: "6f4cf662-f90a-84c4-d9d7-45196088498d"}
+    MoveProbabilities: {MoveType: 3 Probability: 30.0 AuthoredId: "280c135c-0944-f447-48d5-0c68b459fa89"}
+    MoveProbabilities: {MoveType: 0 Probability: 20.0 AuthoredId: "81563e3d-2b53-9420-cb84-97372b0117d4"}
+    MoveProbabilities: {MoveType: 1 Probability: 20.0 AuthoredId: "b6803b8f-83eb-f432-6962-3e80f3f4f0f5"}
+    MoveProbabilities: {MoveType: 2 Probability: 15.0 AuthoredId: "a8f02adc-2b26-84f2-fb64-c1b1c61a37ee"}
+  }
+}
+fightertype:
+{
+  key: "WhiteChocolate"
+  value:
+  {
+    AuthoredId: "4c2d03be-70bf-9294-c8d5-0a8e2d8d0677"
+    Name: "White Chocolate"
+    Probability: 20
+    MoveProbabilities: {MoveType: 4 Probability: 20.0 AuthoredId: "9d231f48-67ce-5438-4995-a66f61ce7ced"}
+    MoveProbabilities: {MoveType: 3 Probability: 15.0 AuthoredId: "f0a6d240-79cf-b462-ca62-fdfcc9b07003"}
+    MoveProbabilities: {MoveType: 0 Probability: 15.0 AuthoredId: "fd4a78a6-7676-5400-48d2-8b26af64bbb7"}
+    MoveProbabilities: {MoveType: 1 Probability: 30.0 AuthoredId: "faf6cf4d-6926-c43f-c9e9-a0c73746b98e"}
+    MoveProbabilities: {MoveType: 2 Probability: 20.0 AuthoredId: "c18f297a-0076-54e0-eaa7-71ffe38a1278"}
+  }
+}

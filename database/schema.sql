@@ -25,6 +25,10 @@ CREATE TABLE IF NOT EXISTS `xayaplayers` (
   -- The role (as integer corresponding to the role enum in C++).
   -- Can be null for accounts that are not yet initialised.
   `role` INTEGER NULL,
+  
+  -- The FTUEstate (as integer corresponding to the FTUEstate enum in C++).
+  -- Is always Intor on start, as everyone starts from the tutorial.
+  `ftuestate` INTEGER NULL,  
 
   -- Additional data for the account as a serialised Account proto.
   `proto` BLOB NOT NULL

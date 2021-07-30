@@ -21,37 +21,17 @@ option cc_enable_arenas = true;
 
 package pxd.proto;
 
-/**
- * General data associated to an xaya name account.
- */
-message XayaPlayer
+message Animation
 {
-  optional uint32 notused = 1;
+  /*Id*/
+  optional string AuthoredId = 1;
     
-  /**
-   * Role of the XAYA name in relation to the game
-   */
-  optional uint32 role = 2;
+  /*n*/
+  optional string Name = 2;  
   
-  /**
-   * vCHI based value
-   */ 
-  optional uint64 balance = 3;
+  /*q*/
+  optional uint32 Quality = 3;  
   
-  /**
-   * Balance of vCHI minted through the burnsale, which corresponds to
-   * the balance that will be carried over to the full game.
-   */
-  optional uint64 burnsale_balance = 4;  
-  
-  /**
-   * The XAYA name itself
-   */
-  optional string xayaname = 5;  
-  
- 
-  /**
-   * Current tutorial state
-   */
-  optional uint32 ftuestate = 6; 
+  /*c*/
+  optional string Clip = 4;    
 }

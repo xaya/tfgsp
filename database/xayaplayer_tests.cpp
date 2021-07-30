@@ -106,6 +106,10 @@ TEST_F (XayaPlayersTableTests, QueryAll)
   a = tbl.GetFromResult (res);
   EXPECT_EQ (a->GetName (), "uninit");
   EXPECT_EQ (a->GetRole (), PlayerRole::INVALID);
+  
+  EXPECT_EQ (a->GetFTUEState (), FTUEState::Intro);
+  
+  
 
   ASSERT_FALSE (res.Step ());
 }
@@ -116,6 +120,7 @@ TEST_F (XayaPlayersTableTests, QueryInitialised)
   tbl.CreateNew ("uninit");
   auto a = tbl.CreateNew ("bar");
   a->SetRole (PlayerRole::ROLEADMIN);
+  a->SetFTUEState (FTUEState::SecondRecipe);
   a.reset ();
 
   auto res = tbl.QueryInitialised ();
@@ -124,6 +129,7 @@ TEST_F (XayaPlayersTableTests, QueryInitialised)
   a = tbl.GetFromResult (res);
   EXPECT_EQ (a->GetName (), "bar");
   EXPECT_EQ (a->GetRole (), PlayerRole::ROLEADMIN);
+  EXPECT_EQ (a->GetFTUEState (), FTUEState::SecondRecipe);
 
   ASSERT_TRUE (res.Step ());
   a = tbl.GetFromResult (res);

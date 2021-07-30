@@ -158,11 +158,21 @@ private:
    * the given move.
    */
   void MaybeInitXayaPlayer (const std::string& name, const Json::Value& init);
+  
+   /**
+   * Tries to update tutorial state even further on.
+   */
+  void MaybeUpdateFTUEState (const std::string& name, const Json::Value& init); 
 
   /**
    * Tries to handle a move that updates an account.
    */
   void TryXayaPlayerUpdate (const std::string& name, const Json::Value& upd);
+  
+  /**
+   * Tries to set new ftuestate variable for the tutorial
+   */
+  void TryTFTutorialUpdate (const std::string& name, const Json::Value& upd);  
   
   /**
    * Tries to handle a coin (vCHI) transfer / burn operation.  The amount
