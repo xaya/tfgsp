@@ -50,7 +50,7 @@ TEST (RoConfigTests, ChainDependence)
   const RoConfig test(xaya::Chain::TEST);
   const RoConfig regtest(xaya::Chain::REGTEST);
   
-  EXPECT_EQ (main->params ().dev_addr (), "DHy2615XKevE23LVRVZVxGeqxadRGyiFW4");
+  EXPECT_EQ (main->params ().dev_addr (), "CGUpAcjsb6MDktSYg8yRDxDutr7FhWtdWC");
   EXPECT_EQ (test->params ().dev_addr (), "dSFDAWxovUio63hgtfYd3nz3ir61sJRsXn");
   EXPECT_EQ (regtest->params ().dev_addr (), "dHNvNaqcD7XPDnoRjAoyfcMpHRi5upJD7p");
 

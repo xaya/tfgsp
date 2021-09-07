@@ -45,11 +45,11 @@ private:
    * to JSON, and returns a JSON array.
    */
   template <typename T, typename R>
-    Json::Value ResultsAsArray (T& tbl, Database::Result<R> res) const;
+    Json::Value ResultsAsArray(T& tbl, Database::Result<R> res) const;
 
 public:
 
-  explicit GameStateJson (Database& d, const Context& c)
+  explicit GameStateJson(Database& d, const Context& c)
     : db(d), ctx(c)
   {}
 
@@ -60,26 +60,37 @@ public:
   /**
    * Returns the JSON data representing all accounts in the game state.
    */
-  Json::Value XayaPlayers ();  
+  Json::Value XayaPlayers();  
+  
+  /**
+   * Returns the JSON data representing all activities in the game state.
+   */
+  Json::Value Activities();   
+  
+  /**
+   * Returns the JSON data representing all crystal bundle keys available for the game in the game proto
+   */  
+  
+  Json::Value CrystalBundles(); 
   
   /**
    * Returns the JSON data about money supply and burnsale stats.
    */
-  Json::Value MoneySupply ();  
+  Json::Value MoneySupply();  
 
   /**
    * Returns the full game state JSON for the given Database handle.  The full
    * game state as JSON should mainly be used for debugging and testing, not
    * in production.  For that, more targeted RPC results should be used.
    */
-  Json::Value FullState ();
+  Json::Value FullState();
 
   /**
    * Converts a state instance (like a Character or Region) to the corresponding
    * JSON value in the game state.
    */
   template <typename T>
-    Json::Value Convert (const T& val) const;
+    Json::Value Convert(const T& val) const;
     
 
 };

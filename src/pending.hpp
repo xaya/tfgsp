@@ -61,6 +61,16 @@ public:
    */
   void AddCoinTransferBurn (const XayaPlayer& a, const CoinTransferBurn& op);  
   
+   /**
+   * Updates the state for a new crystal bundle purchase.
+   */  
+  void AddCrystalPurchase (const XayaPlayer& a, std::string crystalBundleKey);
+  
+   /**
+   * Updates the state for a new recepie instance bundle
+   */    
+  void AddRecepieCookingInstance (const XayaPlayer& a, int32_t duration); 
+  
   /**
    * Pending state updates associated to an account.
    */
@@ -70,6 +80,16 @@ public:
     /** The combined coin transfer / burn for this account.  */
     std::unique_ptr<CoinTransferBurn> coinOps;
 
+    /** List of crystal purchases, pending to be bought*/
+    std::vector<std::string> crystalpurchace;
+    
+    /** Current crystal balance on the player */
+    Amount balance;    
+
+    /** List of currently pending ongoing operations, which are going
+    to take more then 1 block to finish*/
+    
+    std::vector<proto::OngoinOperation> ongoings;
 
     /**
      * Returns the JSON representation of the pending state.

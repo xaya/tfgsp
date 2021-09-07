@@ -14,13 +14,23 @@ libdatabase_la_LIBADD = \
 libdatabase_la_SOURCES = \
   database.cpp \
   schema.cpp \
+  activity.cpp \
   moneysupply.cpp \
   xayaplayer.cpp \
-  uniquehandles.cpp
+  tournament.cpp \
+  recipe.cpp \
+  fighter.cpp \
+  uniquehandles.cpp \
+  inventory.cpp
 noinst_HEADERS = \
   database.hpp database.tpp \
+  lazyproto.hpp lazyproto.tpp \ 
   schema.hpp \
   amount.hpp \
+  activity.hpp \
+  tournament.hpp \
+  recipe.hpp \
+  fighter.hpp \
   xayaplayer.hpp xayaplayer.tpp \
   moneysupply.hpp \
   uniquehandles.hpp uniquehandles.tpp
@@ -58,7 +68,10 @@ tests_SOURCES = \
   schema_tests.cpp \
   moneysupply_tests.cpp \
   xayaplayer_tests.cpp \
-  uniquehandles_tests.cpp
+  fighter_tests.cpp \
+  uniquehandles_tests.cpp \
+  lazyproto_tests.cpp \
+  inventory_tests.cpp
 
 schema.cpp: schema_head.cpp schema.sql schema_tail.cpp
 	cat $^ >$@

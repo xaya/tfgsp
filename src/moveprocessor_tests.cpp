@@ -168,7 +168,7 @@ TEST_F (XayaPlayersUpdateTests, Initialisation)
     {"name": "domob", "move": {"a": {"x": 42, "init": {"role": "p"}}}}
   ])");
 
-  auto a = xayaplayers.GetByName ("domob");
+  auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
   ASSERT_TRUE (a != nullptr);
   EXPECT_EQ (a->GetRole (), PlayerRole::PLAYER);
 }
@@ -180,7 +180,7 @@ TEST_F (XayaPlayersUpdateTests, FTUEstateUpdateTest)
     {"name": "domob", "move": {"tu": {"t": {"ftuestate": "t12"}}}},
   ])");
 
-  auto a = xayaplayers.GetByName ("domob");
+  auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
   ASSERT_TRUE (a != nullptr);
   EXPECT_EQ (a->GetRole (), PlayerRole::PLAYER);
   EXPECT_EQ (a->GetFTUEState (), FTUEState::FirstTournament);
@@ -194,7 +194,7 @@ TEST_F (XayaPlayersUpdateTests, FTUEstateUpdateForwardOnlyTest)
     {"name": "domob", "move": {"tu": {"t": {"ftuestate": "t1"}}}},
   ])");
 
-  auto a = xayaplayers.GetByName ("domob");
+  auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
   ASSERT_TRUE (a != nullptr);
   EXPECT_EQ (a->GetRole (), PlayerRole::PLAYER);
   EXPECT_EQ (a->GetFTUEState (), FTUEState::CookFirstRecipe);
@@ -212,15 +212,58 @@ TEST_F (XayaPlayersUpdateTests, InvalidInitialisation)
   ])"), "Invalid role value from database");
 }
 
+TEST_F (XayaPlayersUpdateTests, RecepieInstanceSheduleTest)
+{
+  xayaplayers.CreateNew ("domob", ctx.RoConfig())->AddBalance (100);
+  
+  Process (R"([
+    {"name": "domob", "move": {"ca": {"r": {"rid": "5864a19b-c8c0-2d34-eaef-9455af0baf2c", "fid": ""}}}}
+  ])");  
+  
+  auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  ASSERT_TRUE (a != nullptr);
+  EXPECT_EQ (a->GetOngoingsSize (), 1);
+}
+
+TEST_F (XayaPlayersUpdateTests, RecepieInstanceWrongValues)
+{
+  xayaplayers.CreateNew ("domob", ctx.RoConfig())->AddBalance (100);
+  
+  Process (R"([
+    {"name": "domob", "move": {"ca": {"r": {"rid": "5864a19b-0000-2d34-eaef-9455af0baf2c", "fid": ""}}}}
+  ])");  
+  
+  auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  ASSERT_TRUE (a != nullptr);
+  EXPECT_EQ (a->GetOngoingsSize (), 0);
+}
+
+TEST_F (XayaPlayersUpdateTests, RecepieInstanceInsufficientResources)
+{
+  xayaplayers.CreateNew ("domob", ctx.RoConfig())->AddBalance (100);
+
+  Process (R"([
+    {"name": "domob", "move": {"ca": {"r": {"rid": "5864a19b-c8c0-2d34-eaef-9455af0baf2c", "fid": ""}}}}
+  ])");  
+  
+  Process (R"([
+    {"name": "domob", "move": {"ca": {"r": {"rid": "5864a19b-c8c0-2d34-eaef-9455af0baf2c", "fid": ""}}}}
+  ])");    
+  
+  auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  ASSERT_TRUE (a != nullptr);
+  EXPECT_EQ (a->GetOngoingsSize (), 1);
+}
+
 TEST_F (XayaPlayersUpdateTests, InitialisationOfExistingAccount)
 {
-  xayaplayers.CreateNew ("domob")->SetRole(PlayerRole::PLAYER);
+  xayaplayers.CreateNew ("domob", ctx.RoConfig())->SetRole(PlayerRole::PLAYER);
 
   Process (R"([
     {"name": "domob", "move": {"a": {"init": {"role": "f"}}}}
   ])");
 
-  auto a = xayaplayers.GetByName ("domob");
+  auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
   ASSERT_TRUE (a != nullptr);
   EXPECT_EQ (a->GetRole (), PlayerRole::PLAYER);
 }
@@ -240,7 +283,7 @@ protected:
   {
     for (const auto& entry : expected)
       {
-        auto a = xayaplayers.GetByName (entry.first);
+        auto a = xayaplayers.GetByName (entry.first, ctx.RoConfig());
         if (a == nullptr)
           ASSERT_EQ (entry.second, 0);
         else
@@ -252,7 +295,7 @@ protected:
 
 TEST_F (CoinOperationTests, Invalid)
 {
-  xayaplayers.CreateNew ("domob")->AddBalance (100);
+  xayaplayers.CreateNew ("domob", ctx.RoConfig())->AddBalance (100);
 
   Process (R"([
     {"name": "domob", "move": {"vc": 42}},
@@ -279,7 +322,7 @@ TEST_F (CoinOperationTests, Invalid)
 
 TEST_F (CoinOperationTests, ExtraFieldsAreFine)
 {
-  xayaplayers.CreateNew ("domob")->AddBalance (100);
+  xayaplayers.CreateNew ("domob", ctx.RoConfig())->AddBalance (100);
   Process (R"([
     {"name": "domob", "move": {"vc": {"b": 10, "x": "foo"}}}
   ])");
@@ -288,7 +331,7 @@ TEST_F (CoinOperationTests, ExtraFieldsAreFine)
 
 TEST_F (CoinOperationTests, BurnAndTransfer)
 {
-  xayaplayers.CreateNew ("domob")->AddBalance (100);
+  xayaplayers.CreateNew ("domob", ctx.RoConfig())->AddBalance (100);
 
   /* Some of the burns and transfers are invalid.  They should just be ignored,
      without affecting the rest of the operation (valid parts).  */
@@ -317,7 +360,7 @@ TEST_F (CoinOperationTests, BurnAndTransfer)
 
 TEST_F (CoinOperationTests, BurnAll)
 {
-  xayaplayers.CreateNew ("domob")->AddBalance (100);
+  xayaplayers.CreateNew ("domob", ctx.RoConfig())->AddBalance (100);
   Process (R"([
     {"name": "domob", "move": {"vc": {"b": 100}}}
   ])");
@@ -326,7 +369,7 @@ TEST_F (CoinOperationTests, BurnAll)
 
 TEST_F (CoinOperationTests, TransferAll)
 {
-  xayaplayers.CreateNew ("domob")->AddBalance (100);
+  xayaplayers.CreateNew ("domob", ctx.RoConfig())->AddBalance (100);
   Process (R"([
     {"name": "domob", "move": {"vc": {"t": {"other": 100}}}}
   ])");
@@ -335,7 +378,7 @@ TEST_F (CoinOperationTests, TransferAll)
 
 TEST_F (CoinOperationTests, SelfTransfer)
 {
-  xayaplayers.CreateNew ("domob")->AddBalance (100);
+  xayaplayers.CreateNew ("domob", ctx.RoConfig())->AddBalance (100);
   Process (R"([
     {"name": "domob", "move": {"vc": {"t": {"domob": 90, "other": 20}}}}
   ])");
@@ -344,7 +387,7 @@ TEST_F (CoinOperationTests, SelfTransfer)
 
 TEST_F (CoinOperationTests, Minting)
 {
-  xayaplayers.CreateNew ("andy")->SetRole(PlayerRole::PLAYER);
+  xayaplayers.CreateNew ("andy", ctx.RoConfig())->SetRole(PlayerRole::PLAYER);
 
   Process (R"([
     {"name": "domob", "move": {"vc": {"m": {}}}, "burnt": 1000000},
@@ -365,7 +408,7 @@ TEST_F (CoinOperationTests, BurnsaleBalance)
   ])");
 
   ExpectBalances ({{"domob", 990}});
-  EXPECT_EQ (xayaplayers.GetByName ("domob")->GetProto ().burnsale_balance (),
+  EXPECT_EQ (xayaplayers.GetByName ("domob", ctx.RoConfig())->GetProto ().burnsale_balance (),
              1'000);
 }
 
@@ -406,7 +449,7 @@ TEST_F (CoinOperationTests, MintBeforeBurnBeforeTransfer)
 
 TEST_F (CoinOperationTests, TransferOrder)
 {
-  xayaplayers.CreateNew ("domob")->AddBalance (100);
+  xayaplayers.CreateNew ("domob", ctx.RoConfig())->AddBalance (100);
 
   Process (R"([
     {"name": "domob", "move": {"vc":
@@ -422,6 +465,82 @@ TEST_F (CoinOperationTests, TransferOrder)
     {"middle", 99},
     {"z", 0},
   });
+}
+
+TEST_F (CoinOperationTests, PurchaseCrystals)
+{
+  Process (R"([
+    {"name": "domob", "move": {"a": {"x": 42, "init": {"role": "p"}}}}
+  ])");
+  
+  ProcessWithDevPayment (R"([{
+    "name": "domob",
+    "move":
+      {
+        "pc": "T1"
+      }
+  }])", 1 * COIN);
+
+  ExpectBalances ({{"domob", 100}});
+}
+
+TEST_F (CoinOperationTests, PurchaseCrystalsWrongData)
+{
+  Process (R"([
+    {"name": "domob", "move": {"a": {"x": 42, "init": {"role": "p"}}}}
+  ])");
+  
+  ProcessWithDevPayment (R"([{
+    "name": "domob",
+    "move":
+      {
+        "pc": "N8"
+      }
+  }])", 1 * COIN);
+
+  ExpectBalances ({{"domob", 0}});
+}
+
+TEST_F (CoinOperationTests, PurchaseCrystalsInsufficientCoin)
+{
+  Process (R"([
+    {"name": "domob", "move": {"a": {"x": 42, "init": {"role": "p"}}}}
+  ])");
+  
+  ProcessWithDevPayment (R"([{
+    "name": "domob",
+    "move":
+      {
+        "pc": "N8"
+      }
+  }])", 0.25 * COIN);
+
+  ExpectBalances ({{"domob", 0}});
+}
+
+TEST_F (CoinOperationTests, PurchaseCrystalsTwiceInARow)
+{
+  Process (R"([
+    {"name": "domob", "move": {"a": {"x": 42, "init": {"role": "p"}}}}
+  ])");
+  
+  ProcessWithDevPayment (R"([{
+    "name": "domob",
+    "move":
+      {
+        "pc": "T1"
+      }
+  }])", 1 * COIN);
+  
+  ProcessWithDevPayment (R"([{
+    "name": "domob",
+    "move":
+      {
+        "pc": "T1"
+      }
+  }])", 1 * COIN);  
+
+  ExpectBalances ({{"domob", 200}});
 }
 
 /* ************************************************************************** */
@@ -446,7 +565,7 @@ protected:
 TEST_F (GameStartTests, Before)
 {
   ctx.SetHeight (99);
-  xayaplayers.CreateNew ("domob")->AddBalance (100);
+  xayaplayers.CreateNew ("domob", ctx.RoConfig())->AddBalance (100);
 
   Process (R"([
     {"name": "andy", "move": {"vc": {"m": {}}}, "burnt": 1},
@@ -461,7 +580,7 @@ TEST_F (GameStartTests, Before)
     {"andy", 10'000},
   });
 
-  EXPECT_FALSE (xayaplayers.GetByName ("domob")->IsInitialised ());
+  EXPECT_FALSE (xayaplayers.GetByName ("domob", ctx.RoConfig())->IsInitialised ());
 }
 
 TEST_F (GameStartTests, After)
@@ -471,7 +590,7 @@ TEST_F (GameStartTests, After)
     {"name": "domob", "move": {"a": {"init": {"role": "p"}}}}
   ])");
 
-  auto a = xayaplayers.GetByName ("domob");
+  auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
   EXPECT_TRUE (a->IsInitialised ());
   EXPECT_EQ (a->GetRole(), PlayerRole::PLAYER);
 }

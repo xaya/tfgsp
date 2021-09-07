@@ -2,7 +2,7 @@ params:
 {
     # The address configured here (for mainnet) is the premine address of Xaya
     # controlled by the Xaya team.  See also Xaya Core's src/chainparams.cpp.
-    dev_addr: "DHy2615XKevE23LVRVZVxGeqxadRGyiFW4"
+    dev_addr: "CGUpAcjsb6MDktSYg8yRDxDutr7FhWtdWC"
 
     god_mode: false
 
@@ -10,4 +10,66 @@ params:
     burnsale_stages: { amount_sold: 10000000000 price_sat: 20000 }
     burnsale_stages: { amount_sold: 10000000000 price_sat: 50000 }
     burnsale_stages: { amount_sold: 20000000000 price_sat: 100000 }
+    
+    starting_recipes: "5864a19b-c8c0-2d34-eaef-9455af0baf2c"
+  
+    elok_factor: 50
+  
+    alms: 0.15
+  
+    starting_crystals: 0
+  
+    required_candy_per_vove: 20
+  
+    exchange_listing_fee: 10
+  
+    exchange_sale_percentage: 0.04
+  
+    common_recipe_cook_cost: 15
+  
+    uncommon_recipe_cook_cost: 25
+  
+    rare_recipe_cook_cost: 30
+  
+    epic_recipe_cook_cost: 45
+  
+    common_cook_duration: 10
+  
+    uncommon_cook_duration: 20
+  
+    rare_cook_duration: 50
+  
+    epic_cook_duration: 100
+  
+    common_move_count: 3
+  
+    uncommon_move_count: 4
+  
+    rare_move_count: 6
+  
+    epic_move_count: 8
+  
+    max_recipe_inventory_amount: 48
+  
+    max_fighter_inventory_amount: 48
+  
+    deconstruction_blocks: 10
+  
+    deconstruction_return_percent: 0.5  
+    
+    base_prestige: 0
+  
+    prestige_epic_mod: 1300
+  
+    prestige_rare_mod: 1200
+  
+    prestige_uncommon_mod: 1100
+  
+    prestige_common_mod: 1000
+  
+    prestige_total_treats_mod: 100
+  
+    prestige_avg_rating_mod: 1
+  
+    prestige_tournament_performance_mod: 0.5   
 }

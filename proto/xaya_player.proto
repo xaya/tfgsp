@@ -19,6 +19,8 @@
 syntax = "proto2";
 option cc_enable_arenas = true;
 
+import "proto/ongoing.proto";
+
 package pxd.proto;
 
 /**
@@ -49,9 +51,13 @@ message XayaPlayer
    */
   optional string xayaname = 5;  
   
- 
   /**
    * Current tutorial state
    */
   optional uint32 ftuestate = 6; 
+  
+  /**
+   * Stores all operations that takes several blocks to resolve
+   */  
+  repeated OngoinOperation ongoings = 7;
 }

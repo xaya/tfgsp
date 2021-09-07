@@ -16,6 +16,57 @@
 
 -- =============================================================================
 
+-- Data for the activity instances in the game.
+CREATE TABLE IF NOT EXISTS `activities` (
+
+  -- The activity ID, which is assigned based on libxayagame's AutoIds.
+  `id` INTEGER PRIMARY KEY,
+  
+ -- The Xaya name that owns this activity (can be empty).
+  `owner` TEXT NOT NULL,  
+
+  -- Additional data encoded as a Activity protocol buffer, some entries are optional and cab be emptry string/zero/null
+  `proto` BLOB NOT NULL
+);
+
+-- Data for the tournaments instances in the game.
+CREATE TABLE IF NOT EXISTS `tournaments` (
+
+  -- The recipe ID, which is assigned based on libxayagame's AutoIds.
+  `id` INTEGER PRIMARY KEY,
+  
+  -- Additional data encoded as a TournamentBlueprint protocol buffer.
+  `proto` BLOB NOT NULL
+);
+
+-- Data for the recipe instances in the game.
+CREATE TABLE IF NOT EXISTS `recepies` (
+
+  -- The recipe ID, which is assigned based on libxayagame's AutoIds.
+  `id` INTEGER PRIMARY KEY,
+  
+ -- The Xaya name that owns this recepie (and is thus allowed to send
+  -- moves for it).
+  `owner` TEXT NOT NULL,  
+
+  -- Additional data encoded as a CrafterRecipe protocol buffer.
+  `proto` BLOB NOT NULL
+);
+
+-- Data for the fighters in the game.
+CREATE TABLE IF NOT EXISTS `fighters` (
+
+  -- The fighter ID, which is assigned based on libxayagame's AutoIds.
+  `id` INTEGER PRIMARY KEY,
+  
+ -- The Xaya name that owns this fighter (and is thus allowed to send
+  -- moves for it).
+  `owner` TEXT NOT NULL,  
+
+  -- Additional data encoded as a Fighter protocol buffer.
+  `proto` BLOB NOT NULL
+);
+
 -- Data stored for the Xaya players (names) themselves.
 CREATE TABLE IF NOT EXISTS `xayaplayers` (
 
@@ -31,7 +82,13 @@ CREATE TABLE IF NOT EXISTS `xayaplayers` (
   `ftuestate` INTEGER NULL,  
 
   -- Additional data for the account as a serialised Account proto.
-  `proto` BLOB NOT NULL
+  `proto` BLOB NOT NULL,
+  
+  -- Additional data for the inventory as a serialised Inventory proto.
+  `inventory` BLOB NOT NULL, 
+  
+  -- has BASE PRESTIGE on start and later is acculated accoring to all assets player posseses
+  `prestige` INTEGER NULL   
 );
 
 -- =============================================================================

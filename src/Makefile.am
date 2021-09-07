@@ -96,6 +96,7 @@ tests_SOURCES = \
   gamestatejson_tests.cpp \
   jsonutils_tests.cpp \
   logic_tests.cpp \
+  pending_tests.cpp \
   burnsale_tests.cpp \
   moveprocessor_tests.cpp \
   testutils_tests.cpp

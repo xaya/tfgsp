@@ -1,0 +1,58 @@
+/*
+    GSP for the TF blockchain game
+    Copyright (C) 2020  Autonomous Worlds Ltd
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+syntax = "proto2";
+option cc_enable_arenas = true;
+
+import "proto/fighter_move_blueprint.proto";
+import "proto/armor_piece.proto";
+
+package pxd.proto;
+
+message Fighter
+{    
+  /*Reference to the reciped GUID used to create this fighter*/
+  optional string RecipeId = 1;  
+  
+  /*Reference to the Tournament auto incremented table unique ID this fighter currently takes place in*/
+  optional uint32 TournamentInstanceID = 2;    
+  
+  /*FighterType authid used to create this fighter*/
+  optional string FighterTypeId = 3;
+
+  /*Fighters Quality*/
+  optional uint32 Quality = 4;   
+
+  /*Fighters Rating*/
+  optional uint32 Rating = 5;   
+  
+  /*Fighters Sweetness*/
+  optional uint32 Sweetness = 6;    
+  
+  /*Fighters HighestApplied Sweetner*/
+  optional uint32 HighestAppliedSweetener = 7;   
+
+  /*List of fighters moves*/
+  repeated string Moves = 8;  
+  
+  /*List of armor pieces generates from moves and candies*/
+  repeated ArmorPiece ArmorPieces = 9;
+  
+  /*Fighters animation unique GUID*/
+  optional string AnimationID = 10;    
+}

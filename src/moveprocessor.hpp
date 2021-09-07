@@ -87,6 +87,9 @@ protected:
   
   /** MoneySupply database table.  */
   MoneySupply moneySupply;  
+  
+   /** Fighters database table.  */
+  FighterTable fighters;   
 
   explicit BaseMoveProcessor (Database& d, const Context& c);
 
@@ -113,10 +116,38 @@ protected:
    */
   bool ParseCoinTransferBurn (const XayaPlayer& a, const Json::Value& moveObj,
                               CoinTransferBurn& op,
-                              Amount& burntChi);                          
+                              Amount& burntChi);   
 
+  /**
+   * Tries to handle a move that purchases crystals
+   */                       
+  void TryCrystalPurchase (const std::string& name, const Json::Value& mv, Amount& paidToDev);  
 
+  /**
+   * Tries to parse a move that purchases crystals up to the point where actual handling happens
+   * The idea that we can safely use this inside pending parser too to validate everything properly
+   */      
+  bool ParseCrystalPurchase(const Json::Value& mv, std::string& bundleKeyName, Amount& cost, Amount& crystalAmount, const std::string& name, const Amount& paidToDev);
+  
+  /**
+   * Tries to parse a move that sets recepie for cooking
+   */       
+   
+  bool ParseCookRecepie(const XayaPlayer& a, const std::string& name, const Json::Value& recepie, std::map<std::string, pxd::Quantity>& fungibleItemAmountForDeduction, int32_t& cookCost, int32_t& duration);
+  
+  /**
+   * Function checks if fungible item is inside players inventory
+   */  
+  bool InventoryHasItem(const std::string& itemKeyName, const Inventory& inventory, const google::protobuf::uint64 amount);  
+  
 public:
+
+  /** Utility functions to help converting between authID and keyNames.
+   *  Ultimately, we need to get rid of authID, as its seems redundant at
+   *  this point, but need to keep for now to be more consistant with the
+   *  original source */     
+  static std::string GetRecepieKeyNameFromID(const std::string& authID, const Context& ctx);
+  static std::string GetCandyKeyNameFromID(const std::string& authID, const Context& ctx); 
 
   virtual ~BaseMoveProcessor () = default;
 
@@ -159,6 +190,11 @@ private:
    */
   void MaybeInitXayaPlayer (const std::string& name, const Json::Value& init);
   
+  /**
+  * Tries to cook recepie instance, optionally with the fighter attached
+  */  
+  void MaybeCookRecepie (const std::string& name, const Json::Value& recepie);
+  
    /**
    * Tries to update tutorial state even further on.
    */
@@ -175,12 +211,17 @@ private:
   void TryTFTutorialUpdate (const std::string& name, const Json::Value& upd);  
   
   /**
-   * Tries to handle a coin (vCHI) transfer / burn operation.  The amount
+   * Tries to process all kind of cooking actions
+   */
+  void TryCookingAction (const std::string& name, const Json::Value& upd);
+  
+  /**
+   * Tries to handle a coin (Crystal) transfer / burn operation.  The amount
    * of burnt CHI in the move is updated if any is used for minting vCHI.
    */
   void TryCoinOperation (const std::string& name, const Json::Value& mv,
                          Amount& burntChi);   
-
+                
 public:
 
   explicit MoveProcessor (Database& d, xaya::Random& r,

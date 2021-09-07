@@ -21,7 +21,11 @@
 
 #include "database.hpp"
 #include "amount.hpp"
+#include "fighter.hpp"
+#include "tournament.hpp"
+#include "inventory.hpp"
 #include "lazyproto.hpp"
+#include "proto/roconfig.hpp"
 
 #include "proto/xaya_player.pb.h"
 
@@ -30,6 +34,16 @@
 
 namespace pxd
 {
+
+/**
+ * Ongoing operation type which we resolve once its blockcount hits zero
+ */
+enum class OngoingType : int8_t
+{
+  INVALID = 0,
+  COOK_RECIPE = 1
+};
+
 
 /**
  * A player role in the game
@@ -106,6 +120,8 @@ struct XayaPlayerResult : public ResultWithRole
   RESULT_COLUMN (std::string, name, 1);
   RESULT_COLUMN (pxd::proto::XayaPlayer, proto, 2);
   RESULT_COLUMN (int64_t, ftuestate, 3);
+  RESULT_COLUMN (pxd::proto::Inventory, inventory, 4);
+  RESULT_COLUMN (int64_t, prestige, 5);
 };
 
 
@@ -171,6 +187,12 @@ private:
 
   /** General proto data.  */
   LazyProto<proto::XayaPlayer> data;
+  
+  /** The character's inventory.  */
+  Inventory inv;  
+
+  /** Total prestige of this account*/
+  int64_t prestige;
 
   /** Whether or not this is dirty in the fields (like faction).  */
   bool dirtyFields;
@@ -179,13 +201,13 @@ private:
    * Constructs an instance with "default / empty" data for the given name
    * and not-yet-set faction.
    */
-  explicit XayaPlayer (Database& d, const std::string& n);
+  explicit XayaPlayer (Database& d, const std::string& n, const RoConfig& cfg);
 
   /**
    * Constructs an instance based on the given DB result set.  The result
    * set should be constructed by an AccountsTable.
    */
-  explicit XayaPlayer (Database& d, const Database::Result<XayaPlayerResult>& res);
+  explicit XayaPlayer (Database& d, const Database::Result<XayaPlayerResult>& res, const RoConfig& cfg);
 
   friend class XayaPlayersTable;
 
@@ -210,6 +232,12 @@ public:
     return name;
   }
 
+  int64_t
+  GetPresitge () const
+  {
+    return prestige;
+  }
+
   PlayerRole
   GetRole () const
   {
@@ -221,7 +249,7 @@ public:
   {
     return ftuestate;
   }  
-
+  
   const bool
   GetIsMine ();
 
@@ -248,6 +276,11 @@ public:
   {
     return data.Mutable ();
   }
+  
+  uint32_t GetOngoingsSize()
+  {
+      return GetProto().ongoings().size();
+  }
 
   bool
   IsInitialised () const
@@ -267,7 +300,40 @@ public:
   {
     return data.Get ().balance ();
   }
+  
+  const Inventory&
+  GetInventory () const
+  {
+    return inv;
+  }
 
+  Inventory&
+  GetInventory ()
+  {
+    return inv;
+  }
+
+  /*below are functions for ineracting with PROTO static data and player inventory to
+  fetch all kind of differnt intems in posession information*/
+  
+  std::vector<FighterTable::Handle> CollectInventoryFighters(const RoConfig& cfg);
+  std::vector<TournamentTable::Handle> CollectTournaments(const RoConfig& cfg);
+  
+  /*This is calculated every block based on all the different assets 
+  player contains globally for the player name*/
+  
+  void CalculatePrestige(const RoConfig& cfg);
+
+private:
+   
+  /*Helper utility function used in perstige calculations*/
+  float GetFighterPercentageFromQuality(uint32_t quality, std::vector<FighterTable::Handle>& fighters);
+  
+  /*We are not writing those in the database, so we need to create them on each 
+  time we load account or create fresh*/
+    
+  uint32_t recipe_slots;
+  uint32_t roster_slots;
 };
 
 /**
@@ -299,17 +365,17 @@ public:
    * Creates a new entry in the database for the given name.
    * Calling this method for a name that already has an account is an error.
    */
-  Handle CreateNew (const std::string& name);
+  Handle CreateNew (const std::string& name, const RoConfig& cfg);
 
   /**
    * Returns a handle for the instance based on a Database::Result.
    */
-  Handle GetFromResult (const Database::Result<XayaPlayerResult>& res);
+  Handle GetFromResult (const Database::Result<XayaPlayerResult>& res, const RoConfig& cfg);
 
   /**
    * Returns the account with the given name.
    */
-  Handle GetByName (const std::string& name);
+  Handle GetByName (const std::string& name, const RoConfig& cfg);
 
   /**
    * Queries the database for all accounts, including uninitialised ones.

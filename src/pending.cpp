@@ -73,6 +73,31 @@ PendingState::AddCoinTransferBurn (const XayaPlayer& a, const CoinTransferBurn& 
     aState.coinOps->transfers[entry.first] += entry.second;
 }
 
+void
+PendingState::AddCrystalPurchase (const XayaPlayer& a, std::string crystalBundleKey)
+{
+  VLOG (1) << "Adding pending crystal purchase operation for " << a.GetName ();
+
+  auto& aState = GetXayaPlayerState (a);
+  aState.balance = a.GetBalance();
+  aState.crystalpurchace.push_back(crystalBundleKey);
+}
+
+void
+PendingState::AddRecepieCookingInstance (const XayaPlayer& a, int32_t duration)
+{
+  VLOG (1) << "Adding pending recepie cooking operation for name" << a.GetName ();
+
+  auto& aState = GetXayaPlayerState (a);
+  aState.balance = a.GetBalance();
+  
+  proto::OngoinOperation newOp;
+  newOp.set_blocksleft(duration);
+  newOp.set_type((int8_t)pxd::OngoingType::COOK_RECIPE);  
+  
+  aState.ongoings.push_back(newOp);
+}
+
 Json::Value
 PendingState::XayaPlayerState::ToJson () const
 {
@@ -91,6 +116,30 @@ PendingState::XayaPlayerState::ToJson () const
 
       res["coinops"] = coin;
     }
+  
+  if(crystalpurchace.size() > 0)
+  {
+      Json::Value bundles(Json::arrayValue);
+      for(const auto& bundle: crystalpurchace) 
+      {
+          bundles.append(bundle);
+      }  
+
+      res["crystalbundles"] = bundles;   
+      res["balance"] = balance;       
+  }  
+
+  if(ongoings.size() > 0)
+  {
+      Json::Value operations(Json::arrayValue);
+      for(const auto& op: ongoings) 
+      {
+          operations.append((int8_t)op.type());
+      }  
+
+      res["ongoings"] = operations;        
+  }  
+    
   return res;
 }
 
@@ -133,14 +182,14 @@ PendingState::ToJson () const
 void
 PendingStateUpdater::ProcessMove (const Json::Value& moveObj)
 {
-  std::string name;
+  std::string name, bundleKeyCode;
   Json::Value mv;
   Amount paidToDev, burnt;
 
   if (!ExtractMoveBasics (moveObj, name, mv, paidToDev, burnt))
     return;
 
-  auto a = xayaplayers.GetByName (name);
+  auto a = xayaplayers.GetByName (name, ctx.RoConfig ());
   if (a == nullptr)
     {
       /* This is also triggered for moves actually registering an account,
@@ -148,6 +197,10 @@ PendingStateUpdater::ProcessMove (const Json::Value& moveObj)
       VLOG (1)
           << "Account " << name
           << " does not exist, ignoring pending move " << moveObj;
+          
+      LOG (WARNING)
+          << "Account " << name
+          << " does not exist, ignoring pending move " << moveObj;          
       return;
     }
   const bool xayaPlayerInit = a->IsInitialised ();
@@ -156,10 +209,35 @@ PendingStateUpdater::ProcessMove (const Json::Value& moveObj)
   if (ParseCoinTransferBurn (*a, mv, coinOps, burnt))
     state.AddCoinTransferBurn (*a, coinOps);
 
+  /*If we have any recepies trying to submit for cooking, check here*/
+  std::map<std::string, pxd::Quantity> fungibleItemAmountForDeduction;
+  int32_t cookCost = -1;
+  int32_t duration = -1;
+    
+  Json::Value& upd = mv["ca"];
+  if(upd.isObject())
+  {
+    if(ParseCookRecepie(*a, name, upd["r"], fungibleItemAmountForDeduction, cookCost, duration))
+    {
+      state.AddRecepieCookingInstance(*a, duration);
+    }
+  }
+  
+  /*If we have any crystal bundles purchases pending, lets add them here*/
+ 
+  Amount cost = 0;
+  Amount crystalAmount  = 0;
+  
+  if(ParseCrystalPurchase(mv, bundleKeyCode, cost, crystalAmount, name, paidToDev))
+  {
+      state.AddCrystalPurchase(*a, bundleKeyCode);
+  }  
+
   /* Release the account again.  It is not needed anymore, and some of
      the further operations may allocate another Account handle for
      the current name (while it is not allowed to have two active ones
      in parallel).  */
+     
   a.reset ();
 
   /* If the account is not initialised yet, any other action is invalid anyway.
@@ -167,7 +245,6 @@ PendingStateUpdater::ProcessMove (const Json::Value& moveObj)
      ignore this edge case for pending processing.  */
   if (!xayaPlayerInit)
     return;
-
 }
 
 /* ************************************************************************** */

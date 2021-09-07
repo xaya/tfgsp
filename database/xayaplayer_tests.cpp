@@ -19,6 +19,7 @@
 #include "xayaplayer.hpp"
 
 #include "dbtest.hpp"
+#include "proto/roconfig.hpp"
 
 #include <gtest/gtest.h>
 
@@ -33,16 +34,19 @@ class XayaPlayerTests : public DBTestWithSchema
 protected:
 
   XayaPlayersTable tbl;
+  std::unique_ptr<pxd::RoConfig> cfg;
 
   XayaPlayerTests ()
     : tbl(db)
-  {}
+  {
+      cfg = std::make_unique<pxd::RoConfig> (xaya::Chain::REGTEST);
+  }
 
 };
 
 TEST_F (XayaPlayerTests, DefaultData)
 {
-  auto a = tbl.CreateNew ("foobar");
+  auto a = tbl.CreateNew ("foobar", *cfg);
   EXPECT_EQ (a->GetName (), "foobar");
   EXPECT_FALSE (a->IsInitialised ());
   EXPECT_EQ (a->GetRole (), PlayerRole::INVALID);
@@ -51,31 +55,31 @@ TEST_F (XayaPlayerTests, DefaultData)
 
 TEST_F (XayaPlayerTests, UpdateFields)
 {
-  auto a = tbl.CreateNew ("foobar");
+  auto a = tbl.CreateNew ("foobar", *cfg);
   a->SetRole (PlayerRole::PLAYER);
   a.reset ();
 
-  a = tbl.GetByName ("foobar");
+  a = tbl.GetByName ("foobar", *cfg);
   EXPECT_TRUE (a->IsInitialised ());
   EXPECT_EQ (a->GetRole (), PlayerRole::PLAYER);
 }
 
 TEST_F (XayaPlayerTests, UpdateProto)
 {
-  auto a = tbl.CreateNew ("foobar");
+  auto a = tbl.CreateNew ("foobar", *cfg);
   a.reset ();
-  a = tbl.GetByName ("foobar");
+  a = tbl.GetByName ("foobar", *cfg);
   EXPECT_EQ (a->GetName (), "foobar");
 }
 
 TEST_F (XayaPlayerTests, Balance)
 {
-  auto a = tbl.CreateNew ("foobar");
+  auto a = tbl.CreateNew ("foobar", *cfg);
   a->AddBalance (10);
   a->AddBalance (20);
   a.reset ();
 
-  a = tbl.GetByName ("foobar");
+  a = tbl.GetByName ("foobar", *cfg);
   EXPECT_EQ (a->GetBalance (), 30);
   a->AddBalance (-30);
   EXPECT_EQ (a->GetBalance (), 0);
@@ -86,24 +90,24 @@ using XayaPlayersTableTests = XayaPlayerTests;
 
 TEST_F (XayaPlayersTableTests, CreateAlreadyExisting)
 {
-  tbl.CreateNew ("domob");
-  EXPECT_DEATH (tbl.CreateNew ("domob"), "exists already");
+  tbl.CreateNew ("domob", *cfg);
+  EXPECT_DEATH (tbl.CreateNew ("domob", *cfg), "exists already");
 }
 
 TEST_F (XayaPlayersTableTests, QueryAll)
 {
-  tbl.CreateNew ("uninit");
-  tbl.CreateNew ("foo")->SetRole (PlayerRole::PLAYER);
+  tbl.CreateNew ("uninit", *cfg);
+  tbl.CreateNew ("foo", *cfg)->SetRole (PlayerRole::PLAYER);
 
   auto res = tbl.QueryAll ();
 
   ASSERT_TRUE (res.Step ());
-  auto a = tbl.GetFromResult (res);
+  auto a = tbl.GetFromResult (res, *cfg);
   EXPECT_EQ (a->GetName (), "foo");
   EXPECT_EQ (a->GetRole (), PlayerRole::PLAYER);
 
   ASSERT_TRUE (res.Step ());
-  a = tbl.GetFromResult (res);
+  a = tbl.GetFromResult (res, *cfg);
   EXPECT_EQ (a->GetName (), "uninit");
   EXPECT_EQ (a->GetRole (), PlayerRole::INVALID);
   
@@ -116,9 +120,9 @@ TEST_F (XayaPlayersTableTests, QueryAll)
 
 TEST_F (XayaPlayersTableTests, QueryInitialised)
 {
-  tbl.CreateNew ("foo")->SetRole (PlayerRole::PLAYER);
-  tbl.CreateNew ("uninit");
-  auto a = tbl.CreateNew ("bar");
+  tbl.CreateNew ("foo", *cfg)->SetRole (PlayerRole::PLAYER);
+  tbl.CreateNew ("uninit", *cfg);
+  auto a = tbl.CreateNew ("bar", *cfg);
   a->SetRole (PlayerRole::ROLEADMIN);
   a->SetFTUEState (FTUEState::SecondRecipe);
   a.reset ();
@@ -126,13 +130,13 @@ TEST_F (XayaPlayersTableTests, QueryInitialised)
   auto res = tbl.QueryInitialised ();
 
   ASSERT_TRUE (res.Step ());
-  a = tbl.GetFromResult (res);
+  a = tbl.GetFromResult (res, *cfg);
   EXPECT_EQ (a->GetName (), "bar");
   EXPECT_EQ (a->GetRole (), PlayerRole::ROLEADMIN);
   EXPECT_EQ (a->GetFTUEState (), FTUEState::SecondRecipe);
 
   ASSERT_TRUE (res.Step ());
-  a = tbl.GetFromResult (res);
+  a = tbl.GetFromResult (res, *cfg);
   EXPECT_EQ (a->GetName (), "foo");
   EXPECT_EQ (a->GetRole (), PlayerRole::PLAYER);
 
@@ -141,14 +145,62 @@ TEST_F (XayaPlayersTableTests, QueryInitialised)
 
 TEST_F (XayaPlayersTableTests, GetByName)
 {
-  tbl.CreateNew ("foo");
+  tbl.CreateNew ("foo", *cfg);
 
-  auto h = tbl.GetByName ("foo");
+  auto h = tbl.GetByName ("foo", *cfg);
   ASSERT_TRUE (h != nullptr);
   EXPECT_EQ (h->GetName (), "foo");
   EXPECT_FALSE (h->IsInitialised ());
 
-  EXPECT_TRUE (tbl.GetByName ("bar") == nullptr);
+  EXPECT_TRUE (tbl.GetByName ("bar", *cfg) == nullptr);
+}
+
+TEST_F (XayaPlayersTableTests, Inventory)
+{
+  auto h = tbl.CreateNew ("domob", *cfg);
+  h->SetRole( PlayerRole::PLAYER);
+  h->GetInventory ().SetFungibleCount ("candy", 10);
+  h.reset ();
+
+  h = tbl.GetByName ("domob", *cfg);
+  EXPECT_EQ (h->GetInventory ().GetFungibleCount ("candy"), 10);
+  h->GetInventory ().SetFungibleCount ("candy", 0);
+  
+  h->GetInventory ().SetFungibleCount ("Recipe_Common_FirstRecipe", 0);
+  h->GetInventory ().SetFungibleCount ("Common_Gumdrop", 0);
+  h->GetInventory ().SetFungibleCount ("Common_Icing", 0);
+  h.reset ();
+
+  h = tbl.GetByName ("domob", *cfg);
+  EXPECT_TRUE (h->GetInventory ().IsEmpty ());
+  h.reset ();
+}
+
+TEST_F (XayaPlayersTableTests, StartingItems)
+{
+  const RoConfig& cfg2 = *cfg;
+  auto h = tbl.CreateNew ("domob", *cfg);
+  EXPECT_EQ (h->GetInventory ().GetFungibleCount ("Recipe_Common_FirstRecipe"), 1);
+  EXPECT_EQ (h->GetInventory ().GetFungibleCount ("Common_Gumdrop"), 1);
+  EXPECT_EQ (h->GetInventory ().GetFungibleCount ("Common_Icing"), 1);  
+  EXPECT_EQ (h->GetBalance (), cfg2->params().starting_crystals());
+  h.reset ();
+
+  h = tbl.GetByName ("domob", *cfg);
+  EXPECT_EQ (h->GetInventory ().GetFungibleCount ("Recipe_Common_FirstRecipe"), 1);
+  EXPECT_EQ (h->GetInventory ().GetFungibleCount ("Common_Gumdrop"), 1);
+  EXPECT_EQ (h->GetInventory ().GetFungibleCount ("Common_Icing"), 1);
+  EXPECT_EQ (h->GetBalance (), cfg2->params().starting_crystals());
+}
+
+TEST_F (XayaPlayersTableTests, Prestige)
+{
+  const RoConfig& cfg2 = *cfg;
+  auto h = tbl.CreateNew ("domob", *cfg);
+  h.reset ();
+
+  h = tbl.GetByName ("domob", *cfg);
+  EXPECT_EQ (h->GetPresitge(), cfg2->params().base_prestige());
 }
 
 } // anonymous namespace

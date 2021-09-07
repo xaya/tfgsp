@@ -1,0 +1,48 @@
+/*
+    GSP for the TF blockchain game
+    Copyright (C) 2020  Autonomous Worlds Ltd
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+syntax = "proto2";
+option cc_enable_arenas = true;
+
+package pxd.proto;
+
+message Activity
+{
+
+  /* Activity state that comes from the enum. Realistically its either PENDING, RUNNING and COMPLETED
+   * but not yet sure if PENDING is going to be used. Also LISTING seems to be redundant for now */
+  optional uint32 State = 1;
+    
+  /* Starting activiyt block to help tracking its duration */
+  optional uint64 StartBlock = 2;
+
+  /* Total activity duration on block heights */
+  optional uint32 Duration = 3;
+  
+  /* The name of the activity, which sometimes might come from static data texts */
+  optional string Name = 4;  
+  
+  /* XAYA Player name which is the instiator/owner, helps to resolve correct inventory instance */
+  optional string Owner = 5;
+
+  /* If activity is related to any item, lets store its GUID for further use */
+  optional string RelatedItemGUID = 6; 
+
+  /* If activity is related to any item/CLASS, lets store its ID from the database (primary key) for further use */
+  optional uint64 RelatedItemOrClassID = 7;    
+}

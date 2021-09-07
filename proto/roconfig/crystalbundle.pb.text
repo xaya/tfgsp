@@ -5,7 +5,7 @@ crystalbundles:
   {
     AuthoredId: "b73860f9-de7b-b1e4-a993-0f8384889746"
     Quantity: 100
-    CHICost: 28
+    CHICost: 1
   }
 }
 crystalbundles:
@@ -15,7 +15,7 @@ crystalbundles:
   {
     AuthoredId: "8b94c00c-8f7e-aba4-b9f3-08587790c9f2"
     Quantity: 220
-    CHICost: 54
+    CHICost: 2
   }
 }
 crystalbundles:
@@ -25,7 +25,7 @@ crystalbundles:
   {
     AuthoredId: "0cc63ecf-fe20-41f4-cb0b-990951d403e8"
     Quantity: 580
-    CHICost: 121
+    CHICost: 3
   }
 }
 crystalbundles:
@@ -35,7 +35,7 @@ crystalbundles:
   {
     AuthoredId: "59a5e6c2-c212-6a14-79a2-d640c57cf21f"
     Quantity: 1350
-    CHICost: 225
+    CHICost: 4
   }
 }
 crystalbundles:
@@ -45,7 +45,7 @@ crystalbundles:
   {
     AuthoredId: "de198dca-d270-cd64-19c2-14b7734896c8"
     Quantity: 3000
-    CHICost: 417
+    CHICost: 5
   }
 }
 crystalbundles:
@@ -55,6 +55,6 @@ crystalbundles:
   {
     AuthoredId: "5cd0fe1e-1d73-4b44-da15-f6b2bb380593"
     Quantity: 11000
-    CHICost: 1222
+    CHICost: 6
   }
 }

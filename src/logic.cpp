@@ -64,6 +64,113 @@ PXLogic::UpdateState (Database& db, xaya::Random& rnd,
   UpdateState (db, rnd, ctx, blockData);
 }
 
+void PXLogic::ResolveCookingRecepie(std::unique_ptr<XayaPlayer>& a, const std::string receipeAuthID, Database& db, const Context& ctx, xaya::Random& rnd)
+{
+    /* We must check against treat slots once more,
+    because at this point player could have more fighters cooked
+    from the previously running instances*/
+    
+    uint32_t slots = 0; //TODO, get from total player owning fighters   
+  
+    if(slots >= ctx.RoConfig()->params().max_fighter_inventory_amount())
+    {
+        LOG (WARNING) << "Need to revert, not enough slots to host a new fighter for recepie with authid " << receipeAuthID;   
+        
+        std::map<std::string, pxd::Quantity> fungibleItemAmountForDeduction;
+        int32_t cookCost = -1;        
+        
+        const auto& recepiesList = ctx.RoConfig()->recepies();
+        
+        for(const auto& recepie: recepiesList)
+        {
+          if(recepie.second.authoredid() == receipeAuthID)
+          {
+              if(recepie.second.quality() == 0)
+              {
+                  cookCost = ctx.RoConfig()->params().common_recipe_cook_cost();
+              }
+              
+              if(recepie.second.quality() == 1)
+              {
+                  cookCost = ctx.RoConfig()->params().uncommon_recipe_cook_cost();
+              }
+
+              if(recepie.second.quality() == 2)
+              {
+                  cookCost = ctx.RoConfig()->params().rare_recipe_cook_cost();
+              }
+
+              if(recepie.second.quality() == 3)
+              {
+                  cookCost = ctx.RoConfig()->params().epic_recipe_cook_cost();
+              } 
+              
+              for(const auto& candyNeeds: recepie.second.requiredcandy())
+              {
+                std::string candyInventoryName = BaseMoveProcessor::GetCandyKeyNameFromID(candyNeeds.candytype(), ctx);
+                pxd::Quantity quantity = candyNeeds.amount();
+                fungibleItemAmountForDeduction.insert(std::pair<std::string, pxd::Quantity>(candyInventoryName, quantity));              
+              }
+          }
+        }
+        
+        auto& playerInventory = a->GetInventory();
+        for(const auto& itemToDeduct: fungibleItemAmountForDeduction)
+        {
+          playerInventory.AddFungibleCount(itemToDeduct.first, itemToDeduct.second);
+        }
+    
+        a->AddBalance(cookCost); 
+        playerInventory.AddFungibleCount(BaseMoveProcessor::GetRecepieKeyNameFromID(receipeAuthID, ctx), 1);
+    }
+    else
+    {
+        FighterTable fighters(db);
+        auto newFighter = fighters.CreateNew (a->GetName(), receipeAuthID, ctx.RoConfig(), rnd);
+        a->CalculatePrestige(ctx.RoConfig());
+    }    
+    
+}
+
+void PXLogic::TickAndResolveOngoings(Database& db, const Context& ctx, xaya::Random& rnd)
+{
+    LOG (INFO) << "Ticking ongoing operations.";
+    
+    XayaPlayersTable xayaplayers(db);
+    auto res = xayaplayers.QueryAll ();
+
+    bool tryAndStep = res.Step ();
+    while (tryAndStep)
+    {
+      auto a = xayaplayers.GetFromResult (res, ctx.RoConfig ());
+      auto ongoings = a->MutableProto().mutable_ongoings();
+      
+      std::vector<google::protobuf::internal::RepeatedPtrIterator<pxd::proto::OngoinOperation>> forErasing;
+      for (auto it = ongoings->begin(); it != ongoings->end(); it++)
+      {
+          it->set_blocksleft(it->blocksleft() - 1);
+
+          if(it->blocksleft() == 0)
+          {
+              if((pxd::OngoingType)it->type() == pxd::OngoingType::COOK_RECIPE)
+              {
+                LOG (INFO) << "Resolving oingoing operation for pxd::OngoingType::COOK_RECIPE";
+                
+                ResolveCookingRecepie(a, it->itemauthid(), db, ctx, rnd);
+                forErasing.push_back(it);
+              }
+          }          
+      }
+      
+      for(uint32_t t = 0; t < forErasing.size(); t++)
+      {
+          ongoings->erase(forErasing[t]);
+      }
+      
+       tryAndStep = res.Step ();
+    }    
+}
+
 void
 PXLogic::UpdateState (Database& db, xaya::Random& rnd,
                       const Context& ctx, const Json::Value& blockData)
@@ -71,6 +178,11 @@ PXLogic::UpdateState (Database& db, xaya::Random& rnd,
   MoveProcessor mvProc(db, rnd, ctx);
   mvProc.ProcessAdmin (blockData["admin"]);
   mvProc.ProcessAll (blockData["moves"]);
+  
+  /*The first thing we do, is try and resolve all pending ongoing operations
+  from the last block. So if there count is minimal 1, they will guarantee
+  to get solved before any new moves submitted by player */    
+  TickAndResolveOngoings(db, ctx, rnd);
 
 #ifdef ENABLE_SLOW_ASSERTS
   ValidateStateSlow (db, ctx);

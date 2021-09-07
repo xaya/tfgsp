@@ -17,19 +17,59 @@
 */
 
 #include "xayaplayer.hpp"
+#include <math.h>
 
 namespace pxd
 {
 
-XayaPlayer::XayaPlayer (Database& d, const std::string& n)
+XayaPlayer::XayaPlayer (Database& d, const std::string& n, const RoConfig& cfg)
   : db(d), name(n), tracker(db.TrackHandle ("xayaplayer", n)),
     role(PlayerRole::INVALID), ftuestate(FTUEState::Intro), dirtyFields(true)
 {
   VLOG (1) << "Created instance for newly initialised account " << name;
   data.SetToDefault ();
+  
+  /*Probably not needed and is just leftover from original source,
+  but lets transfer administrator name role just in case*/
+  
+  if(name == "tftr")
+  {
+      role = PlayerRole::ADMINISTRATOR;
+  }
+  
+  /*Load configuration values*/ 
+  recipe_slots = cfg->params().max_recipe_inventory_amount();
+  roster_slots = cfg->params().max_fighter_inventory_amount();
+  prestige = cfg->params().base_prestige();
+  
+  /*For the new account, we are supplying initial set of items*/    
+  std::string starting_recepie_guid = cfg->params().starting_recipes(); 
+  
+  for (const auto& recepie :  cfg->recepies())
+  {
+    if(recepie.second.authoredid() == starting_recepie_guid)
+    {
+        inv.SetFungibleCount(recepie.first, 1);
+    
+        for (const auto& candy : recepie.second.requiredcandy())
+        {
+            for (const auto& candyTemplate : cfg->candies())
+            {
+               if(candyTemplate.second.authoredid() == candy.candytype())
+               {
+                  inv.SetFungibleCount(candyTemplate.first, candy.amount());
+               }
+            }
+        }
+    }
+  }
+  
+  AddBalance(cfg->params().starting_crystals());  
+  
+  CalculatePrestige(cfg);
 }
 
-XayaPlayer::XayaPlayer (Database& d, const Database::Result<XayaPlayerResult>& res)
+XayaPlayer::XayaPlayer (Database& d, const Database::Result<XayaPlayerResult>& res, const RoConfig& cfg)
   : db(d), dirtyFields(false)
 {
   name = res.Get<XayaPlayerResult::name> ();
@@ -38,31 +78,41 @@ XayaPlayer::XayaPlayer (Database& d, const Database::Result<XayaPlayerResult>& r
   role = GetNullablePlayerRoleFromColumn (res);
   data = res.GetProto<XayaPlayerResult::proto> ();
   ftuestate = GetFTUEStateFromColumn (res);
+  
+  inv = res.GetProto<XayaPlayerResult::inventory> ();
+  
+  /*Load configuration values*/ 
+  recipe_slots = cfg->params().max_recipe_inventory_amount();
+  roster_slots = cfg->params().max_fighter_inventory_amount();
+  
+  prestige = res.Get<XayaPlayerResult::prestige> ();
 
   VLOG (1) << "Created account instance for " << name << " from database";
 }
 
 XayaPlayer::~XayaPlayer ()
 {
-  if (!dirtyFields && !data.IsDirty ())
-    {
+  if (!dirtyFields && !data.IsDirty () && !inv.IsDirty())
+  {
       VLOG (1) << "Account instance " << name << " is not dirty";
       return;
-    }
+  }
 
   VLOG (1) << "Updating account " << name << " in the database";
   CHECK_GE (GetBalance (), 0);
 
   auto stmt = db.Prepare (R"(
     INSERT OR REPLACE INTO `xayaplayers`
-      (`name`, `role`, `proto`, `ftuestate`)
-      VALUES (?1, ?2, ?3, ?4)
+      (`name`, `role`, `proto`, `ftuestate`, `inventory`, `prestige`)
+      VALUES (?1, ?2, ?3, ?4, ?108, ?5)
   )");
 
   stmt.Bind (1, name);
   BindPlayerRoleParameter (stmt, 2, role);
   stmt.BindProto (3, data);
   BindFTUEStateParameter (stmt, 4, ftuestate);
+  stmt.Bind (5, prestige);
+  stmt.BindProto (108, inv.GetProtoForBinding ());
 
   stmt.Execute ();
 }
@@ -76,6 +126,104 @@ const bool XayaPlayer::GetIsMine ()
 std::string XayaPlayer::SendCHI (std::string address, Amount amount)
 {
     return "";
+}
+
+std::vector<FighterTable::Handle> XayaPlayer::CollectInventoryFighters(const RoConfig& cfg)
+{
+  std::vector<FighterTable::Handle> fighters;
+  
+  FighterTable fightersTable(db);
+  auto res = fightersTable.QueryForOwner (GetName());
+  while (res.Step ())
+  {
+      auto c = fightersTable.GetFromResult (res, cfg);
+      fighters.push_back(std::move(c));
+  }
+  return fighters;
+}
+
+std::vector<TournamentTable::Handle> XayaPlayer::CollectTournaments(const RoConfig& cfg)
+{
+  std::vector<TournamentTable::Handle> tournaments;
+  
+  TournamentTable tournamentsTable(db);
+  auto res = tournamentsTable.QueryAll();
+  while (res.Step ())
+  {
+      auto c = tournamentsTable.GetFromResult (res);
+      tournaments.push_back(std::move(c));
+  }
+  return tournaments;
+}
+
+float XayaPlayer::GetFighterPercentageFromQuality(uint32_t quality, std::vector<FighterTable::Handle>& fighters)
+{
+  float totalFighters = 0;
+  for(const auto& fighter: fighters)
+  {
+     if(fighter.get()->GetProto().quality() == quality)
+     {
+         totalFighters++;
+     }
+  }  
+  
+  return totalFighters / fighters.size();
+}
+
+void
+XayaPlayer::CalculatePrestige(const RoConfig& cfg)
+{
+    std::vector<FighterTable::Handle> fighters = CollectInventoryFighters(cfg);
+    uint32_t totalFighters = fighters.size();
+    
+    if(totalFighters == 0)
+    {
+      prestige = cfg->params().base_prestige();
+      return;
+    }
+    
+    float getPercentageEpic  = GetFighterPercentageFromQuality(4, fighters) * cfg->params().prestige_epic_mod() * log10(totalFighters+1);
+    float getPercentageRare  = GetFighterPercentageFromQuality(3, fighters) * cfg->params().prestige_rare_mod() * log10(totalFighters+1);
+    float getPercentageUncommom  = GetFighterPercentageFromQuality(2, fighters) * cfg->params().prestige_uncommon_mod() * log10(totalFighters+1);
+    float getPercentageCommon  = GetFighterPercentageFromQuality(1, fighters) * cfg->params().prestige_common_mod() * log10(totalFighters+1);
+
+    float fighterAverage = 0;
+    
+    for(const auto& fighter: fighters)
+    {
+        if(fighterAverage == 0)
+        {
+            fighterAverage = fighter.get()->GetProto().rating();
+        }
+        else
+        {
+            fighterAverage = (fighterAverage + fighter.get()->GetProto().rating()) / 2;
+        }
+    }
+    
+    float averageRatingScore =  fighterAverage * cfg->params().prestige_avg_rating_mod() * log10(totalFighters+1);
+    
+    std::vector<TournamentTable::Handle> tournaments = CollectTournaments(cfg);
+    float winCount = 0;
+    
+    //for(const auto& tournament: tournaments)
+    //{
+        //winCount++; //todo
+    //}
+    
+    float totalTournaments = tournaments.size();
+    float winPercent = 0.0f;
+    
+    if(totalTournaments > 0)
+    {
+        winPercent = winCount / totalTournaments * log10(totalTournaments+1); 
+        winPercent *= cfg->params().prestige_tournament_performance_mod();
+    }
+    
+    float winPercentPrestigeMod = winPercent;
+    prestige = (int64_t)(getPercentageEpic + getPercentageRare + getPercentageUncommom + getPercentageCommon + averageRatingScore) * (1 + winPercentPrestigeMod);
+    
+    dirtyFields = true;
 }
 
 void
@@ -281,21 +429,21 @@ XayaPlayer::AddBalance (const Amount val)
 }
 
 XayaPlayersTable::Handle
-XayaPlayersTable::CreateNew (const std::string& name)
+XayaPlayersTable::CreateNew (const std::string& name, const RoConfig& cfg)
 {
-  CHECK (GetByName (name) == nullptr)
+  CHECK (GetByName (name, cfg) == nullptr)
       << "Account for " << name << " exists already";
-  return Handle (new XayaPlayer (db, name));
+  return Handle (new XayaPlayer (db, name, cfg));
 }
 
 XayaPlayersTable::Handle
-XayaPlayersTable::GetFromResult (const Database::Result<XayaPlayerResult>& res)
+XayaPlayersTable::GetFromResult (const Database::Result<XayaPlayerResult>& res, const RoConfig& cfg)
 {
-  return Handle (new XayaPlayer (db, res));
+  return Handle (new XayaPlayer (db, res, cfg));
 }
 
 XayaPlayersTable::Handle
-XayaPlayersTable::GetByName (const std::string& name)
+XayaPlayersTable::GetByName (const std::string& name, const RoConfig& cfg)
 {
   auto stmt = db.Prepare ("SELECT * FROM `xayaplayers` WHERE `name` = ?1");
   stmt.Bind (1, name);
@@ -304,7 +452,7 @@ XayaPlayersTable::GetByName (const std::string& name)
   if (!res.Step ())
     return nullptr;
 
-  auto r = GetFromResult (res);
+  auto r = GetFromResult (res, cfg);
   CHECK (!res.Step ());
   return r;
 }

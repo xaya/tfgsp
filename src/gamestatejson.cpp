@@ -19,6 +19,7 @@
 #include "gamestatejson.hpp"
 
 #include "database/xayaplayer.hpp"
+#include "database/activity.hpp"
 #include "database/moneysupply.hpp"
 
 #include "jsonutils.hpp"
@@ -31,13 +32,13 @@ namespace pxd
     
 template <typename T, typename R>
   Json::Value
-  GameStateJson::ResultsAsArray (T& tbl, Database::Result<R> res) const
+  GameStateJson::ResultsAsArray(T& tbl, Database::Result<R> res) const
 {
   Json::Value arr(Json::arrayValue);
 
   while (res.Step ())
     {
-      const auto h = tbl.GetFromResult (res);
+      const auto h = tbl.GetFromResult (res, ctx.RoConfig ());
       arr.append (Convert (*h));
     }
 
@@ -46,7 +47,39 @@ template <typename T, typename R>
  
 template <>
   Json::Value
-  GameStateJson::Convert<XayaPlayer> (const XayaPlayer& a) const
+  GameStateJson::Convert<ActivityInstance>(const ActivityInstance& activity) const
+{
+  const auto& pb = activity.GetProto ();
+  Json::Value res(Json::objectValue);
+  
+  res["state"] = IntToJson (pb.state());
+  res["start_block"] = IntToJson (pb.startblock());
+  res["duration"] = IntToJson (pb.duration());
+  res["name"] = pb.name();
+  res["owner"] = pb.owner();
+  res["related_item_GUID"] = pb.relateditemguid();
+  res["related_item_or_class_id"] = pb.relateditemorclassid();
+  
+  return res;
+}  
+ 
+template <>
+  Json::Value
+  GameStateJson::Convert<Inventory>(const Inventory& inv) const
+{
+  Json::Value fungible(Json::objectValue);
+  for (const auto& entry : inv.GetFungible ())
+    fungible[entry.first] = IntToJson (entry.second);
+
+  Json::Value res(Json::objectValue);
+  res["fungible"] = fungible;
+
+  return res;
+} 
+ 
+template <>
+  Json::Value
+  GameStateJson::Convert<XayaPlayer>(const XayaPlayer& a) const
 {
   const auto& pb = a.GetProto ();
 
@@ -64,12 +97,14 @@ template <>
   }
 
   res["ftuestate"] = FTUEStateToString (a.GetFTUEState ());
+  
+  res["inventory"] = Convert (a.GetInventory ());
 
   return res;
 }
 
 Json::Value
-GameStateJson::MoneySupply ()
+GameStateJson::MoneySupply()
 {
   const auto& params = ctx.RoConfig ()->params ();
   pxd::MoneySupply ms(db);
@@ -118,41 +153,44 @@ GameStateJson::MoneySupply ()
 }
 
 Json::Value
-GameStateJson::XayaPlayers ()
+GameStateJson::XayaPlayers()
 {
   XayaPlayersTable tbl(db);
   Json::Value res = ResultsAsArray (tbl, tbl.QueryAll ());
+  return res;
+}
 
-  /* Add in also the Cubit balances reserved in open bids.  */
-  //const int reserved = 0;
+Json::Value
+GameStateJson::Activities()
+{
+  ActivityTable tbl(db);
+  Json::Value res = ResultsAsArray (tbl, tbl.QueryAll ());
+
+  return res;
+}
+
+Json::Value
+GameStateJson::CrystalBundles()
+{
+  const auto& bundles = ctx.RoConfig ()->crystalbundles();
+  Json::Value res(Json::arrayValue);
   
-  for (auto& entry : res)
-    {
-      const auto& nmVal = entry["name"];
-      CHECK (nmVal.isString ());
-      
-      //const auto mit = reserved.find (nmVal.asString ());
-      Amount cur;
-     // if (mit == reserved.end ())
-        cur = 0;
-     // else
-        //cur = mit->second;
-
-      auto& bal = entry["balance"];
-      CHECK (bal.isObject ());
-      bal["reserved"] = IntToJson (cur);
-      bal["total"] = IntToJson (cur + bal["available"].asInt64 ());
-    }
+  for (auto& bundle: bundles)
+  {
+      res.append(bundle.first);
+  }
 
   return res;
 }
  
 Json::Value
-GameStateJson::FullState ()
+GameStateJson::FullState()
 {
   Json::Value res(Json::objectValue);
 
   res["xayaplayers"] = XayaPlayers();
+  res["activities"] = Activities();
+  res["crystalbundles"] = CrystalBundles();
 
   return res;
 }  

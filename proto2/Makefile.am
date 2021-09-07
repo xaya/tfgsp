@@ -8,6 +8,9 @@ BUILT_SOURCES = \
 
 PROTOS = \
   $(builddir)/../proto/config.proto \
+  $(builddir)/../proto/activity.proto \
+  $(builddir)/../proto/armor_piece.proto \
+  $(builddir)/../proto/inventory.proto \
   $(builddir)/../proto/activity_rewards.proto \
   $(builddir)/../proto/animation.proto \
   $(builddir)/../proto/candy.proto \
@@ -21,7 +24,9 @@ PROTOS = \
   $(builddir)/../proto/sweetener_blueprint.proto \
   $(builddir)/../proto/tournament_blueprint.proto \
   $(builddir)/../proto/xaya_player.proto \
-  $(builddir)/../proto/crafted_recipe.proto
+  $(builddir)/../proto/crafted_recipe.proto \
+  $(builddir)/../proto/ongoing.proto \
+  $(builddir)/../proto/fighter.proto
 
 libpxproto_la_CXXFLAGS = \
   -I$(top_srcdir) \

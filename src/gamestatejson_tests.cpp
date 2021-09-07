@@ -84,11 +84,11 @@ protected:
 
 TEST_F (XayaPlayersJsonTests, KillsAndFame)
 {
-  auto a = tbl.CreateNew ("foo");
+  auto a = tbl.CreateNew ("foo", ctx.RoConfig());
   a->SetRole (PlayerRole::PLAYER);
   a.reset ();
 
-  a = tbl.CreateNew ("bar");
+  a = tbl.CreateNew ("bar", ctx.RoConfig());
   a->SetRole (PlayerRole::ROLEADMIN);
   a->SetFTUEState (FTUEState::FirstTournament);
   a.reset ();
@@ -104,10 +104,9 @@ TEST_F (XayaPlayersJsonTests, KillsAndFame)
 
 TEST_F (XayaPlayersJsonTests, UninitialisedBalance)
 {
-  tbl.CreateNew ("foo")->SetRole (PlayerRole::PLAYER);
+  tbl.CreateNew ("foo", ctx.RoConfig())->SetRole (PlayerRole::PLAYER);
 
-  auto a = tbl.CreateNew ("bar");
-  a->MutableProto ().set_burnsale_balance (10);
+  auto a = tbl.CreateNew ("bar", ctx.RoConfig());
   a->AddBalance (42);
   a.reset ();
 
@@ -118,18 +117,14 @@ TEST_F (XayaPlayersJsonTests, UninitialisedBalance)
 			"balance" : 
 			{
 				"available" : 42,
-				"reserved" : 0,
-				"total" : 42
 			},
-			"minted" : 10,
+			"minted" : 0,
 			"name" : "bar"
 		},
 		{
 			"balance" : 
 			{
 				"available" : 0,
-				"reserved" : 0,
-				"total" : 0
 			},
 			"minted" : 0,
 			"name" : "foo",

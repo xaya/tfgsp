@@ -24,6 +24,7 @@
 #include "params.hpp"
 
 #include "database/database.hpp"
+#include "database/xayaplayer.hpp"
 
 #include <xayagame/sqlitegame.hpp>
 #include <xayagame/sqlitestorage.hpp>
@@ -76,6 +77,17 @@ class PXLogic : public xaya::SQLiteGame
 {
 
 private:
+
+  /**
+   * When cooking recepie operation reaches 0 blocks, we either
+   * resolve it or reverse, based on cirsumstances */                         
+  static void ResolveCookingRecepie(std::unique_ptr<XayaPlayer>& a, const std::string receipeAuthID, Database& db, const Context& ctx, xaya::Random& rnd);
+
+  /**
+   * For every ongoing operation we reduce its block count by 1
+   * and if it reaches 0, we are sending it for the resolution, and erase from array
+   */     
+  static void TickAndResolveOngoings(Database& db, const Context& ctx, xaya::Random& rnd);
 
   /**
    * Handles the actual logic for the game-state update.  This is extracted

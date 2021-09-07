@@ -19,14 +19,19 @@
 #include "pending.hpp"
 
 #include "jsonutils.hpp"
-#include "protoutils.hpp"
 #include "testutils.hpp"
+#include "forks.hpp"
 
-#include "database/xayaplayers.hpp"
+#include "database/dbtest.hpp"
 
 #include <xayautil/jsonutils.hpp>
 
+#include <gflags/gflags.h>
 #include <gtest/gtest.h>
+
+#include <json/json.h>
+
+#include <string>
 
 namespace pxd
 {
@@ -48,7 +53,7 @@ protected:
 
   PendingStateTests () : xayaplayers(db)
   {}
-
+  
   /**
    * Expects that the current state matches the given one, after parsing
    * the expected state's string as JSON.  The comparison is done in the
@@ -59,6 +64,7 @@ protected:
   {
     const Json::Value actual = state.ToJson ();
     VLOG (1) << "Actual JSON for the pending state:\n" << actual;
+    
     ASSERT_TRUE (PartialJsonEqual (actual, ParseJson (expectedStr)));
   }
 
@@ -75,8 +81,8 @@ TEST_F (PendingStateTests, Empty)
 
 TEST_F (PendingStateTests, Clear)
 {
-  auto a = xayaplayers.CreateNew ("domob");
-  a->SetPlayerRole (PlayerRole::PLAYER);
+  auto a = xayaplayers.CreateNew ("domob", ctx.RoConfig());
+  a->SetRole (PlayerRole::PLAYER);
   CoinTransferBurn coinOp;
   coinOp.minted = 5;
   coinOp.burnt = 10;
@@ -100,7 +106,7 @@ TEST_F (PendingStateTests, Clear)
 
 TEST_F (PendingStateTests, CoinTransferBurn)
 {
-  auto a = xayaplayers.CreateNew ("domob");
+  auto a = xayaplayers.CreateNew ("domob", ctx.RoConfig());
 
   CoinTransferBurn coinOp;
   coinOp.minted = 32;
@@ -141,20 +147,21 @@ TEST_F (PendingStateTests, CoinTransferBurn)
 }
 
 
+
 /* ************************************************************************** */
 
 class PendingStateUpdaterTests : public PendingStateTests
 {
 
+private:
+
+  TestRandom rnd;
+
 protected:
 
   ContextForTesting ctx;
 
-  /** Cost of one character.  */
-  const Amount characterCost;
-
   PendingStateUpdaterTests ()
-    : characterCost(ctx.Config ()->params ().character_cost () * COIN)
   {}
 
   /**
@@ -173,13 +180,12 @@ protected:
     moveObj["move"] = ParseJson (mvStr);
 
     if (paidToDev != 0)
-      moveObj["out"][ctx.Config ()->params ().dev_addr ()]
+      moveObj["out"][ctx.RoConfig ()->params ().dev_addr ()]
           = xaya::ChiAmountToJson (paidToDev);
     if (burntChi != 0)
       moveObj["burnt"] = xaya::ChiAmountToJson (burntChi);
 
-    DynObstacles dyn(db, ctx);
-    PendingStateUpdater updater(db, dyn, state, ctx);
+    PendingStateUpdater updater(db, state, ctx);
     updater.ProcessMove (moveObj);
   }
 
@@ -217,7 +223,7 @@ protected:
 TEST_F (PendingStateUpdaterTests, UninitialisedAndNonExistantAccount)
 {
   /* This verifies that the pending processor is fine with (i.e. does not
-     crash or something like that) non-existant and uninitialised accounts.
+     crash or something like that) non-existant and uninitialised xayaplayers.
      The pending moves (even though they might be valid in some of these cases)
      are not tracked.  */
 
@@ -225,30 +231,16 @@ TEST_F (PendingStateUpdaterTests, UninitialisedAndNonExistantAccount)
     "vc": {"x": 5}
   })");
   Process ("domob", R"({
-    "a": {"init": {"faction": "r"}}
+    "a": {"init": {"role": "p"}}
   })");
 
-  ASSERT_EQ (accounts.GetByName ("domob"), nullptr);
-  accounts.CreateNew ("domob");
-
-  ProcessWithDevPayment ("domob", characterCost, R"({
-    "a": {"init": {"faction": "r"}},
-    "nc": [{}]
-  })");
-
-  ExpectStateJson (R"(
-    {
-      "accounts": [],
-      "characters": [],
-      "newcharacters": []
-    }
-  )");
+  ASSERT_EQ (xayaplayers.GetByName ("domob",  ctx.RoConfig()), nullptr);
 }
 
 TEST_F (PendingStateUpdaterTests, CoinTransferBurn)
 {
-  xayaplayers.CreateNew ("domob")->AddBalance (100);
-  xayaplayers.CreateNew ("andy")->AddBalance (100);
+  xayaplayers.CreateNew ("domob", ctx.RoConfig())->AddBalance (100);
+  xayaplayers.CreateNew ("andy", ctx.RoConfig())->AddBalance (100);
 
   Process ("domob", R"({
     "abc": "foo",
@@ -295,7 +287,7 @@ TEST_F (PendingStateUpdaterTests, CoinTransferBurn)
 
 TEST_F (PendingStateUpdaterTests, Minting)
 {
-  xayaplayers.CreateNew ("domob");
+  xayaplayers.CreateNew ("domob", ctx.RoConfig());
 
   ProcessWithBurn ("domob", COIN, R"({
     "vc": {"m": {}}
@@ -315,6 +307,97 @@ TEST_F (PendingStateUpdaterTests, Minting)
                 "minted": 30000
               }
           }
+        ]
+    }
+  )");
+}
+
+TEST_F (PendingStateUpdaterTests, PurchaseCrystals)
+{
+  xayaplayers.CreateNew ("domob", ctx.RoConfig())->AddBalance (100);
+  
+  ProcessWithDevPayment ("domob", 1 * COIN, R"({
+    "pc": "T1"
+  })");  
+  
+  ExpectStateJson (R"(
+    {
+      "xayaplayers":
+        [
+          {
+            "name": "domob",
+            "crystalbundles": ["T1"]
+          }
+        ]
+    }
+  )");
+}
+
+TEST_F (PendingStateUpdaterTests, SubmitRecepieInstance)
+{
+  auto a = xayaplayers.CreateNew ("testy2", ctx.RoConfig());
+  a->AddBalance(100);
+  a.reset();
+  
+  Process ("testy2", R"({"ca": {"r": {"rid": "5864a19b-c8c0-2d34-eaef-9455af0baf2c", "fid": ""}}})");  
+  
+  ExpectStateJson (R"(
+    {
+      "xayaplayers":
+        [
+          {
+            "name": "testy2",
+            "ongoings": [1]
+          }
+        ]
+    }
+  )");
+}
+
+TEST_F (PendingStateUpdaterTests, SubmitRecepieInstanceMultiple)
+{
+  auto a = xayaplayers.CreateNew ("testy2", ctx.RoConfig());
+  a->AddBalance(100);
+  
+  a->GetInventory().SetFungibleCount("Recipe_Rare_CommanderKrissyCocoCrunch", 1);
+  
+  a->GetInventory().SetFungibleCount("Rare_Giant Chocolate Chip", 50);
+  a->GetInventory().SetFungibleCount("Rare_Peanut Butter Cup", 30);
+  a->GetInventory().SetFungibleCount("Uncommon_Chocolate Nut", 50);
+  a->GetInventory().SetFungibleCount("Uncommon_Peppermint", 30);
+  a->GetInventory().SetFungibleCount("Common_Candy Button", 40);
+  
+  
+  a.reset();
+  
+  Process ("testy2", R"({"ca": {"r": {"rid": "5864a19b-c8c0-2d34-eaef-9455af0baf2c", "fid": ""}}})"); 
+  Process ("testy2", R"({"ca": {"r": {"rid": "2729a029-a53e-7b34-38c7-2c6ebe932c94", "fid": ""}}})");    
+  
+  ExpectStateJson (R"(
+    {
+      "xayaplayers":
+        [
+          {
+            "name": "testy2",
+            "ongoings": [1, 1]
+          }
+        ]
+    }
+  )");
+}
+
+TEST_F (PendingStateUpdaterTests, SubmitRecepieNotExistingInPlayerInventory)
+{
+  auto a = xayaplayers.CreateNew ("testy2", ctx.RoConfig());
+  a->AddBalance(100);
+  a.reset();
+  
+  Process ("testy2", R"({"ca": {"r": {"rid": "175cd684-0079-c1b4-89b7-6bca7288f50d", "fid": ""}}})");  
+  
+  ExpectStateJson (R"(
+    {
+      "xayaplayers":
+        [
         ]
     }
   )");

@@ -32,11 +32,11 @@ namespace pxd
 {
 
 
-/* ************************************************************************** */
+/*************************************************************************** */
 
 BaseMoveProcessor::BaseMoveProcessor (Database& d,
                                       const Context& c)
-  : ctx(c), db(d), xayaplayers(db), moneySupply(db)
+  : ctx(c), db(d), xayaplayers(db), moneySupply(db), fighters(db)
 {}
 
 bool
@@ -73,6 +73,142 @@ BaseMoveProcessor::ExtractMoveBasics (const Json::Value& moveObj,
 
   return true;
 }
+
+bool
+BaseMoveProcessor::ParseCrystalPurchase(const Json::Value& mv, std::string& bundleKeyCode, Amount& cost, Amount& crystalAmount, const std::string& name, const Amount& paidToDev)
+{
+  const auto& cmd = mv["pc"];
+  bundleKeyCode = cmd.asString ();
+  auto bundle_key_name = "CrystalsPurchase_" + bundleKeyCode;
+  
+  bool bundleNameSolved = false;
+  
+  for(auto& bundle: ctx.RoConfig ()->crystalbundles())
+  {
+    if(bundle.first == bundle_key_name)
+    {
+      bundleNameSolved = true;
+    }
+  }     
+     
+  if(bundleNameSolved == false)
+  {
+      return false;
+  }      
+     
+  float chiPRICE = -1;
+
+  for(auto& bundle: ctx.RoConfig ()->crystalbundles())
+  {
+      if(bundle.first == bundle_key_name)
+      {
+          auto& vals = bundle.second;
+          chiPRICE = vals.chicost();
+          crystalAmount = vals.quantity();
+          break;
+      }
+  }
+  
+  if(chiPRICE == -1)
+  {
+      LOG (WARNING) << "Could not solve crystal bundle entry for: " << bundle_key_name;
+      return false;
+  }
+  
+  VLOG (1) << "Trying to purchace bundle, amount paid left: " << paidToDev;
+  cost = chiPRICE * COIN;
+  
+  if (paidToDev < cost)
+  {
+      LOG (WARNING)
+          << "Required amount to purchace bundle character not paid by " << name
+          << " (only have " << paidToDev << ")";
+      return false;
+  }     
+     
+  return true;
+}
+
+bool BaseMoveProcessor::InventoryHasItem(const std::string& itemKeyName, const Inventory& inventory, const google::protobuf::uint64 amount)
+{      
+   for (const auto& entry : inventory.GetFungible ())
+   {
+      if(entry.first == itemKeyName && entry.second >= amount)
+      {
+         return true;
+      }
+   }
+  
+  return false;
+}
+
+void
+BaseMoveProcessor::TryCrystalPurchase (const std::string& name,
+                                         const Json::Value& mv,
+                                         Amount& paidToDev)
+{
+  const auto& cmd = mv["pc"];
+  if (!cmd.isString ()) return;
+
+  VLOG (1) << "Attempting to purchase crystal bundle through move: " << cmd;
+
+  const auto player = xayaplayers.GetByName (name, ctx.RoConfig());
+  CHECK (player != nullptr && player->IsInitialised ());
+
+  if (cmd.isObject ())
+  {
+      LOG (WARNING)
+          << "Purchase crystal bundle is object: " << cmd;
+      return;
+  }
+  
+  Amount cost = 0;
+  Amount crystalAmount  = 0;
+  std::string bundleKeyCode = "";
+  if(!ParseCrystalPurchase(mv, bundleKeyCode, cost, crystalAmount, name, paidToDev)) return;
+
+
+  paidToDev -= cost; 
+  player->AddBalance (crystalAmount); 
+  
+  VLOG (1) << "After purchacing bundle, paid to dev left: " << paidToDev;
+
+  return;
+}
+
+  std::string BaseMoveProcessor::GetRecepieKeyNameFromID(const std::string& authID, const Context& ctx)
+  {
+      
+    const auto& recepiesList = ctx.RoConfig()->recepies();
+    
+    for(const auto& recepieX: recepiesList)
+    {
+        if(recepieX.second.authoredid() == authID)
+        {
+            return recepieX.first;
+            break;
+        }
+    }      
+      
+    return "";
+  }
+  
+  std::string BaseMoveProcessor::GetCandyKeyNameFromID(const std::string& authID, const Context& ctx)
+  {
+      
+    const auto& candylist = ctx.RoConfig()->candies();
+    
+    for(const auto& candy: candylist)
+    {
+        if(candy.second.authoredid() == authID)
+        {
+            return candy.first;
+            break;
+        }
+    }      
+      
+    return "";
+  }  
 
 bool
 BaseMoveProcessor::ParseCoinTransferBurn (const XayaPlayer& a,
@@ -208,51 +344,51 @@ MoveProcessor::TryCoinOperation (const std::string& name,
                                  const Json::Value& mv,
                                  Amount& burntChi)
 {
-  auto a = xayaplayers.GetByName (name);
+  auto a = xayaplayers.GetByName (name, ctx.RoConfig ());
   CHECK (a != nullptr);
 
   CoinTransferBurn op;
   if (!ParseCoinTransferBurn (*a, mv, op, burntChi))
-    return;
+  return;
 
   if (op.minted > 0)
-    {
-      LOG (INFO) << name << " minted " << op.minted << " coins in the burnsale";
-      a->AddBalance (op.minted);
-      const Amount oldBurnsale = a->GetProto ().burnsale_balance ();
-      a->MutableProto ().set_burnsale_balance (oldBurnsale + op.minted);
-      moneySupply.Increment ("burnsale", op.minted);
-    }
+  {
+    LOG (INFO) << name << " minted " << op.minted << " coins in the burnsale";
+    a->AddBalance (op.minted);
+    const Amount oldBurnsale = a->GetProto ().burnsale_balance ();
+    a->MutableProto ().set_burnsale_balance (oldBurnsale + op.minted);
+    moneySupply.Increment ("burnsale", op.minted);
+  }
 
   if (op.burnt > 0)
-    {
-      LOG (INFO) << name << " is burning " << op.burnt << " coins";
-      a->AddBalance (-op.burnt);
-    }
+  {
+    LOG (INFO) << name << " is burning " << op.burnt << " coins";
+    a->AddBalance (-op.burnt);
+  }
 
   for (const auto& entry : op.transfers)
-    {
-      /* Transfers to self are a no-op, but we have to explicitly handle
-         them here.  Else we would run into troubles by having a second
-         active Account handle for the same account.  */
-      if (entry.first == name)
-        continue;
+  {
+    /* Transfers to self are a no-op, but we have to explicitly handle
+       them here.  Else we would run into troubles by having a second
+       active Account handle for the same account.  */
+    if (entry.first == name)
+      continue;
 
-      LOG (INFO)
-          << name << " is sending " << entry.second
-          << " coins to " << entry.first;
-      a->AddBalance (-entry.second);
+    LOG (INFO)
+        << name << " is sending " << entry.second
+        << " coins to " << entry.first;
+    a->AddBalance (-entry.second);
 
-      auto to = xayaplayers.GetByName (entry.first);
-      if (to == nullptr)
-        {
-          LOG (INFO)
-              << "Creating uninitialised account for coin recipient "
-              << entry.first;
-          to = xayaplayers.CreateNew (entry.first);
-        }
-      to->AddBalance (entry.second);
-    }
+    auto to = xayaplayers.GetByName (entry.first, ctx.RoConfig ());
+    if (to == nullptr)
+      {
+        LOG (INFO)
+            << "Creating uninitialised account for coin recipient "
+            << entry.first;
+        to = xayaplayers.CreateNew (entry.first, ctx.RoConfig ());
+      }
+    to->AddBalance (entry.second);
+  }
 }
 
 void
@@ -267,10 +403,10 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
   /* Ensure that the account database entry exists.  In other words, we
      have accounts (although perhaps uninitialised) for everyone who
      ever sent a Taurion move.  */
-  if (xayaplayers.GetByName (name) == nullptr)
+  if (xayaplayers.GetByName (name, ctx.RoConfig ()) == nullptr)
     {
       LOG (INFO) << "Creating uninitialised account for " << name;
-      xayaplayers.CreateNew (name);
+      xayaplayers.CreateNew (name, ctx.RoConfig ());
     }
 
   /* Handle coin transfers before other game operations.  They are even
@@ -281,9 +417,11 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
      implicitly.  */
   TryCoinOperation (name, mv, burnt);
 
+  /* Handle crystal purchace now */
+  TryCrystalPurchase (name, mv, paidToDev);
+
   /* At this point, we terminate if the game-play itself has not started.
-     This is more or less when the "game world is created", except that we
-     do allow Cubit operations already from the start of the burnsale.  */
+     This is more or less when the "game world is created"*/
   if (!ctx.Forks ().IsActive (Fork::GameStart))
     return;
 
@@ -291,22 +429,25 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
      e.g. choose one's faction and create characters in a single move.  */
   TryXayaPlayerUpdate (name, mv["a"]);
 
-  /* We perform tutorial update, simply setting ftuestate to the new variable*/
+  /* We are trying to update tutorial tracking variable*/
   TryTFTutorialUpdate (name, mv["tu"]);
 
+  /* We are trying all kind of cooking actions*/
+  TryCookingAction (name, mv["ca"]);
+  
   /* If there is no account (after potentially updating/initialising it),
      then let's not try to process any more updates.  This explicitly
      enforces that accounts have to be initialised before doing anything
      else, even if perhaps some changes wouldn't actually require access
      to an account in their processing.  */
-  if (!xayaplayers.GetByName (name)->IsInitialised ())
+  if (!xayaplayers.GetByName (name, ctx.RoConfig ())->IsInitialised ())
     {
       VLOG (1)
           << "Account " << name << " is not yet initialised,"
           << " ignoring parts of the move " << moveObj;
       return;
     }
-
+    
   /* If any burnt or paid-to-dev coins are left, it means probably something
      has gone wrong and the user overpaid due to a frontend bug.  */
   LOG_IF (WARNING, paidToDev > 0 || burnt > 0)
@@ -322,7 +463,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     if (!init.isObject ())
       return;
 
-    auto a = xayaplayers.GetByName (name);
+    auto a = xayaplayers.GetByName (name, ctx.RoConfig ());
     CHECK (a != nullptr);
 
     const auto& ftuestateVal = init["ftuestate"];
@@ -367,8 +508,164 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     LOG (INFO)
         << "Setting account " << name << " to ftuestate "
         << FTUEStateToString (ftuestate);
+        
+    //Lets also initialize account at this stage if its no yet. We do not need this at all,
+    //but maybe will become handy in the future. Can always remove later on, as its harmless
+    //and is triggered only during tutorial flag checks
+    
+    if (a->IsInitialised () == false)
+    {
+        a->SetRole(PlayerRole::PLAYER);
+    }
   }
+  
+  bool
+  BaseMoveProcessor::ParseCookRecepie(const XayaPlayer& a, const std::string& name, const Json::Value& recepie, std::map<std::string, pxd::Quantity>& fungibleItemAmountForDeduction, int32_t& cookCost, int32_t& duration)
+  {
+    if (!recepie.isObject ())
+    return false;
 
+    const std::string recepieID = recepie["rid"].asString ();
+    const std::string fighterID = recepie["fid"].asString ();
+    
+    auto& playerInventory = a.GetInventory();
+    
+    std::string itemInventoryName = GetRecepieKeyNameFromID(recepieID, ctx);
+    const auto& recepiesList = ctx.RoConfig()->recepies();
+    
+
+    if(itemInventoryName == "")
+    {
+        LOG (WARNING) << "Could not resolve key name from the authid for the item: " << recepieID;
+        return false;       
+    }    
+    
+    if(InventoryHasItem(itemInventoryName, playerInventory, 1) == false)
+    {
+        LOG (WARNING) << "Player inventory does not have recepie instance named: " << itemInventoryName;
+        return false;       
+    }
+    
+    for(const auto& recepie: recepiesList)
+    {
+        if(recepie.second.authoredid() == recepieID)
+        {
+            if(recepie.second.quality() == 0)
+            {
+                cookCost = ctx.RoConfig()->params().common_recipe_cook_cost();
+            }
+            
+            if(recepie.second.quality() == 1)
+            {
+                cookCost = ctx.RoConfig()->params().uncommon_recipe_cook_cost();
+            }
+
+            if(recepie.second.quality() == 2)
+            {
+                cookCost = ctx.RoConfig()->params().rare_recipe_cook_cost();
+            }
+
+            if(recepie.second.quality() == 3)
+            {
+                cookCost = ctx.RoConfig()->params().epic_recipe_cook_cost();
+            }  
+
+            duration = recepie.second.duration();
+        }
+    }
+    
+    if(cookCost == -1)
+    {
+        LOG (WARNING) << "Cooking cost could not be resolved for the instance named: " << itemInventoryName;
+        return false;          
+    }
+    
+    if(a.GetBalance() < cookCost)
+    {
+        LOG (WARNING) << "No enough crystals on balance to cook: " << itemInventoryName;
+        return false;              
+    }
+    
+    bool playerHasEnoughIngridients = true;
+    bool testWasPerformed = false;
+    
+    for(const auto& recepie: recepiesList)
+    {
+        if(recepie.second.authoredid() == recepieID)
+        {
+            testWasPerformed = true;
+            
+            for(const auto& candyNeeds: recepie.second.requiredcandy())
+            {
+                std::string candyInventoryName = GetCandyKeyNameFromID(candyNeeds.candytype(), ctx);
+                
+                if(InventoryHasItem(candyInventoryName, playerInventory, candyNeeds.amount()) == false)
+                {
+                    playerHasEnoughIngridients = false;
+                }
+                
+                pxd::Quantity quantity = candyNeeds.amount();
+                
+                fungibleItemAmountForDeduction.insert(std::pair<std::string, pxd::Quantity>(candyInventoryName, quantity));
+            }
+        }
+    }
+    
+    if(testWasPerformed == false)
+    {
+        LOG (WARNING) << "Failed to test for candy amounts for " << itemInventoryName;
+        return false;          
+    }
+    
+    if(playerHasEnoughIngridients == false)
+    {
+        LOG (WARNING) << "Not enough candy ingridients to cook " << itemInventoryName;
+        return false;         
+    }
+        
+    uint32_t slots = 0; //TODO, get from total player owning fighters   
+  
+    if(slots > ctx.RoConfig()->params().max_fighter_inventory_amount())
+    {
+        LOG (WARNING) << "Not enough slots to host a new fighter for " << itemInventoryName;
+        return false;         
+    }
+
+    return true;    
+  }
+  
+  void
+  MoveProcessor::MaybeCookRecepie (const std::string& name, const Json::Value& recepie)
+  {      
+    std::map<std::string, pxd::Quantity> fungibleItemAmountForDeduction;
+    int32_t cookCost = -1;
+    int32_t duration = -1;
+       
+    auto a = xayaplayers.GetByName (name, ctx.RoConfig ());
+    
+    if(!ParseCookRecepie(*a, name, recepie, fungibleItemAmountForDeduction, cookCost, duration)) return;
+    
+    auto& playerInventory = a->GetInventory();
+    for(const auto& itemToDeduct: fungibleItemAmountForDeduction)
+    {
+        playerInventory.AddFungibleCount(itemToDeduct.first, -itemToDeduct.second);
+    }
+    
+    playerInventory.AddFungibleCount(GetRecepieKeyNameFromID(recepie["rid"].asString (), ctx), -1);
+    
+    a->AddBalance(-cookCost);
+    
+    //TODO REMOVE FIGHTER
+    //TODO USE APPLICABLE GOODIE - check maybe ok NOW>?
+
+    proto::OngoinOperation* newOp = a->MutableProto().add_ongoings();
+    newOp->set_blocksleft(duration);
+    newOp->set_type((uint32_t)pxd::OngoingType::COOK_RECIPE);
+    newOp->set_itemauthid(recepie["rid"].asString ());
+
+    a->CalculatePrestige(ctx.RoConfig());
+    LOG (INFO) << "Cooking instance " << recepie << " submitted succesfully ";
+  }  
 
   void
   MoveProcessor::MaybeInitXayaPlayer (const std::string& name,
@@ -377,7 +674,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     if (!init.isObject ())
       return;
 
-    auto a = xayaplayers.GetByName (name);
+    auto a = xayaplayers.GetByName (name, ctx.RoConfig ());
     CHECK (a != nullptr);
     if (a->IsInitialised ())
       {
@@ -389,14 +686,14 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     if (!roleVal.isString ())
       {
         LOG (WARNING)
-            << "Account initialisation does not specify faction: " << init;
+            << "Account initialisation does not specify role: " << init;
         return;
       }
     const PlayerRole role = PlayerRoleFromString (roleVal.asString ());
     switch (role)
       {
       case PlayerRole::INVALID:
-        LOG (WARNING) << "Invalid faction specified for account: " << init;
+        LOG (WARNING) << "Invalid role specified for account: " << init;
         return;
 
       default:
@@ -411,7 +708,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
 
     a->SetRole (role);
     LOG (INFO)
-        << "Initialised account " << name << " to faction "
+        << "Initialised account " << name << " to role "
         << PlayerRoleToString (role);
   }
   
@@ -424,6 +721,17 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
 
     MaybeUpdateFTUEState (name, upd["t"]);
   }   
+
+  void
+  MoveProcessor::TryCookingAction (const std::string& name,
+                                   const Json::Value& upd)
+  {
+    if (!upd.isObject ())
+      return;
+
+    /*Trying to cook recepie, optionally with the fighter */
+    MaybeCookRecepie (name, upd["r"]);
+  } 
 
   void
   MoveProcessor::TryXayaPlayerUpdate (const std::string& name,

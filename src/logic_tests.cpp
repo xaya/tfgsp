@@ -17,6 +17,7 @@
 */
 
 #include "logic.hpp"
+#include "moveprocessor.hpp"
 
 #include "jsonutils.hpp"
 #include "params.hpp"
@@ -56,11 +57,22 @@ protected:
   ContextForTesting ctx;
 
   XayaPlayersTable xayaplayers;
-
+  
   PXLogicTests () : xayaplayers(db)
   {
     SetHeight (42);
   }
+  
+  /**
+   * Processes the given data (which is passed as string and converted to
+   * JSON before processing it).
+   */
+  void
+  Process (const std::string& str)
+  {
+    MoveProcessor mvProc(db, rnd, ctx);
+    mvProc.ProcessAll (ParseJson (str));
+  }  
 
   /**
    * Sets the block height for processing the next block.
@@ -82,11 +94,20 @@ protected:
     UpdateStateJson (ParseJson (movesStr));
   }
 
+   /**
+   * Builds a blockData JSON value from the given moves.
+   */
   Json::Value
   BuildBlockData (const Json::Value& moves)
   {
     Json::Value blockData(Json::objectValue);
+    blockData["admin"] = Json::Value (Json::arrayValue);
+    blockData["moves"] = moves;
 
+    Json::Value meta(Json::objectValue);
+    meta["height"] = ctx.Height ();
+    meta["timestamp"] = 1500000000;
+    blockData["block"] = meta;
 
     return blockData;
   }
@@ -144,9 +165,93 @@ using ValidateStateTests = PXLogicTests;
 
 TEST_F (ValidateStateTests, AncientAccountFaction)
 {
-  EXPECT_DEATH (xayaplayers.CreateNew ("domob")->SetRole (PlayerRole::INVALID), "to NULL role");
-  //EXPECT_DEATH (ValidateState (), "has invalid faction");
+  EXPECT_DEATH (xayaplayers.CreateNew ("domob", ctx.RoConfig())->SetRole (PlayerRole::INVALID), "to NULL role");
 }    
+
+TEST_F (ValidateStateTests, RecepieInstanceFullCycleTest)
+{
+   xayaplayers.CreateNew ("domob", ctx.RoConfig())->AddBalance (100);
+   
+   Process (R"([
+    {"name": "domob", "move": {"ca": {"r": {"rid": "5864a19b-c8c0-2d34-eaef-9455af0baf2c", "fid": ""}}}}
+   ])");  
+
+  auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  ASSERT_TRUE (a != nullptr);
+  EXPECT_EQ (a->GetOngoingsSize (), 1);
+  a.reset ();
+
+  UpdateState ("[]");
+  
+  a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  EXPECT_EQ (a->GetOngoingsSize (), 0);
+  EXPECT_EQ (a->CollectInventoryFighters(ctx.RoConfig()).size(), 1);
+  
+  EXPECT_EQ (a->GetBalance (), 75);
+  
+  EXPECT_EQ (a->GetInventory().GetFungibleCount("Recipe_Common_FirstRecipe"), 0);
+  EXPECT_EQ (a->GetInventory().GetFungibleCount("Common_Gumdrop"), 0);
+  EXPECT_EQ (a->GetInventory().GetFungibleCount("Common_Icing"), 0);
+  
+}   
+
+TEST_F (ValidateStateTests, RecepieInstanceRevertIfFullRoster)
+{
+  xayaplayers.CreateNew ("domob", ctx.RoConfig())->AddBalance (100);
+   
+  proto::ConfigData& cfg = const_cast <proto::ConfigData&>(*ctx.RoConfig());
+  cfg.mutable_params()->set_max_fighter_inventory_amount(0); 
+   
+  Process (R"([
+    {"name": "domob", "move": {"ca": {"r": {"rid": "5864a19b-c8c0-2d34-eaef-9455af0baf2c", "fid": ""}}}}
+  ])");  
+
+  auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  ASSERT_TRUE (a != nullptr);
+  EXPECT_EQ (a->GetOngoingsSize (), 1);
+  a.reset ();
+
+  UpdateState ("[]");
+  
+  a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  EXPECT_EQ (a->CollectInventoryFighters(ctx.RoConfig()).size(), 0);
+  
+  EXPECT_EQ (a->GetBalance (), 100);
+  
+  EXPECT_EQ (a->GetInventory().GetFungibleCount("Recipe_Common_FirstRecipe"), 1);
+  EXPECT_EQ (a->GetInventory().GetFungibleCount("Common_Gumdrop"), 1);
+  EXPECT_EQ (a->GetInventory().GetFungibleCount("Common_Icing"), 1);
+} 
+
+TEST_F (ValidateStateTests, RecepieInstanceFailWithMissingIngridients)
+{
+   xayaplayers.CreateNew ("domob", ctx.RoConfig())->AddBalance (100);
+   auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+
+   a->GetInventory().SetFungibleCount("Common_Icing", 0);
+   a.reset();
+   
+   Process (R"([
+    {"name": "domob", "move": {"ca": {"r": {"rid": "5864a19b-c8c0-2d34-eaef-9455af0baf2c", "fid": ""}}}}
+   ])");  
+
+  a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  ASSERT_TRUE (a != nullptr);
+  EXPECT_EQ (a->GetOngoingsSize (), 0);
+  a.reset ();
+
+  UpdateState ("[]");
+  
+  a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+
+  
+  EXPECT_EQ (a->GetBalance (), 100);
+  
+  EXPECT_EQ (a->GetInventory().GetFungibleCount("Recipe_Common_FirstRecipe"), 1);
+  EXPECT_EQ (a->GetInventory().GetFungibleCount("Common_Gumdrop"), 1);
+  EXPECT_EQ (a->GetInventory().GetFungibleCount("Common_Icing"), 0);
+  
+}  
     
 }
 

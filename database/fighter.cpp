@@ -1,0 +1,261 @@
+/*
+    GSP for the TF blockchain game
+    Copyright (C) 2019-2021  Autonomous Worlds Ltd
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#include "fighter.hpp"
+
+#include <xayautil/random.hpp>
+
+#include <glog/logging.h>
+
+namespace pxd
+{
+
+FighterInstance::FighterInstance (Database& d, const std::string& o, std::string r, const RoConfig& cfg, xaya::Random& rnd)
+  : id(d.GetNextId ()),
+    tracker(d.TrackHandle ("fighter", id)),
+    dirtyFields(true),
+    owner(o),    
+    isNew(true),
+    db(d)
+{
+  VLOG (1)
+      << "Created new fighter with ID " << id << ": "
+      << "owner=" << o;
+ 
+  data.SetToDefault ();
+  MutableProto().set_recipeid(r);
+  MutableProto().set_tournamentinstanceid(0);
+
+  const auto& recepiesList = cfg->recepies();
+  const auto& fighterMoveBlueprintList = cfg->fightermoveblueprints();
+  const auto& animations = cfg->animations();
+        
+  for(const auto& recepie: recepiesList)
+  {
+    if(recepie.second.authoredid() == r)
+    {
+        MutableProto().set_fightertypeid(recepie.second.fightertype());
+        MutableProto().set_quality(recepie.second.quality());
+        MutableProto().set_rating(GetRatingFromQuality(recepie.second.quality()));
+        MutableProto().set_sweetness(0 + recepie.second.quality());
+        MutableProto().set_highestappliedsweetener(0 + recepie.second.quality());
+        
+        std::map<pxd::ArmorType, std::string> slotsUsed;
+        
+        for(auto& move: recepie.second.moves())
+        {
+             std::string* newmove = MutableProto().add_moves();
+             newmove->assign(move);
+             
+             for(auto& moveBlueprint: fighterMoveBlueprintList)
+             {
+               if(moveBlueprint.second.authoredid() == move)
+               {   
+                 std::vector<pxd::ArmorType> aType = ArmorTypeFromMoveType((pxd::MoveType)moveBlueprint.second.movetype());
+                 pxd::ArmorType randomElement = aType[rnd.NextInt(aType.size())];
+                 
+                 if(slotsUsed.find(randomElement) == slotsUsed.end())
+                 {
+                    slotsUsed.insert(std::pair<pxd::ArmorType, std::string>(randomElement, moveBlueprint.second.candytype()));
+                   
+                    proto::ArmorPiece* newArmorPiece = MutableProto().add_armorpieces();
+                    newArmorPiece->set_armortype((uint32_t)randomElement);
+                    newArmorPiece->set_candy(moveBlueprint.second.candytype());
+                    newArmorPiece->set_rewardsource(0);
+                    newArmorPiece->set_rewardsourceid(0);
+                 }
+               }
+             }
+             
+             std::vector<std::string> animationsToChoiceFrom;
+             
+             for(auto& animation: animations)
+             {
+                 if(animation.second.quality() == recepie.second.quality())
+                 {
+                     animationsToChoiceFrom.push_back(animation.second.authoredid());
+                 }
+             }
+             
+             std::string randomAnimationElement = animationsToChoiceFrom[rnd.NextInt(animationsToChoiceFrom.size())];
+             MutableProto().set_animationid(randomAnimationElement);            
+        }
+    }
+  }
+  
+  Validate ();
+}
+
+FighterInstance::FighterInstance (Database& d, const Database::Result<FighterResult>& res, const RoConfig& cfg)
+  : dirtyFields(false), isNew(false), db(d)
+{
+  id = res.Get<FighterResult::id> ();
+  tracker = db.TrackHandle ("fighter", id);
+  owner = res.Get<FighterResult::owner> ();
+
+  data = res.GetProto<FighterResult::proto> ();
+
+  VLOG (2) << "Fetched fighter with ID " << id << " from database result";
+  Validate ();
+}
+
+std::vector<pxd::ArmorType> FighterInstance::ArmorTypeFromMoveType(pxd::MoveType moveType)
+{
+  std::vector<pxd::ArmorType> pieceList;
+    
+  switch(moveType) 
+  {
+     case pxd::MoveType::Heavy:
+        pieceList.push_back(pxd::ArmorType::Head);
+        pieceList.push_back(pxd::ArmorType::RightShoulder);
+        pieceList.push_back(pxd::ArmorType::LeftShoulder);
+        break;
+     case pxd::MoveType::Speedy:
+        pieceList.push_back(pxd::ArmorType::UpperRightArm);
+        pieceList.push_back(pxd::ArmorType::LowerRightArm);
+        pieceList.push_back(pxd::ArmorType::UpperLeftArm);
+        pieceList.push_back(pxd::ArmorType::LowerLeftArm);
+        break;
+     case pxd::MoveType::Tricky:
+        pieceList.push_back(pxd::ArmorType::RightHand);
+        pieceList.push_back(pxd::ArmorType::Torso);
+        pieceList.push_back(pxd::ArmorType::LeftHand);
+        break;
+     case pxd::MoveType::Distance:
+        pieceList.push_back(pxd::ArmorType::Waist);
+        pieceList.push_back(pxd::ArmorType::UpperRightLeg);
+        pieceList.push_back(pxd::ArmorType::UpperLeftLeg);
+        break;
+     case pxd::MoveType::Blocking:
+        pieceList.push_back(pxd::ArmorType::LowerRightLeg);
+        pieceList.push_back(pxd::ArmorType::RightFoot);
+        pieceList.push_back(pxd::ArmorType::LeftFoot);
+        break;        
+    
+     // you can have any number of case statements.
+     default : //Optional
+        LOG (WARNING) << "Default should not be triggered for the moveType of type " << (uint32_t)moveType;
+  }
+
+  return pieceList;  
+}
+
+uint32_t
+FighterInstance::GetRatingFromQuality (uint32_t quality)
+{
+    return 1000 + (quality-1) * 100;
+}
+
+FighterInstance::~FighterInstance ()
+{
+  Validate ();
+
+  if (isNew || data.IsDirty () || dirtyFields)
+  {
+      VLOG (2)
+          << "Fighter " << id
+          << " has been modified including proto data, updating DB";
+      auto stmt = db.Prepare (R"(
+        INSERT OR REPLACE INTO `fighters`
+          (`id`,`owner`, `proto`)
+          VALUES
+          (?1,
+           ?2,
+           ?3)
+      )");
+
+      BindFieldValues (stmt);
+      stmt.BindProto (3, data);
+      stmt.Execute ();
+
+      return;
+  }
+	
+  VLOG (2) << "Fighter " << id << " is not dirty, no update";
+}
+
+void
+FighterInstance::Validate () const
+{
+  CHECK_NE (id, Database::EMPTY_ID);
+}
+
+void
+FighterInstance::BindFieldValues (Database::Statement& stmt) const
+{
+  stmt.Bind (1, id);
+  stmt.Bind (2, owner);
+}
+
+FighterTable::Handle
+FighterTable::CreateNew (const std::string& owner, std::string recipe, const RoConfig& cfg, xaya::Random& rnd)
+{
+  return Handle (new FighterInstance (db, owner, recipe, cfg, rnd));
+}
+
+FighterTable::Handle
+FighterTable::GetFromResult (const Database::Result<FighterResult>& res, const RoConfig& cfg)
+{
+  return Handle (new FighterInstance (db, res, cfg));
+}
+
+FighterTable::Handle
+FighterTable::GetById (const Database::IdT id, const RoConfig& cfg)
+{
+  auto stmt = db.Prepare ("SELECT * FROM `fighters` WHERE `id` = ?1");
+  stmt.Bind (1, id);
+  auto res = stmt.Query<FighterResult> ();
+  if (!res.Step ())
+    return nullptr;
+
+  auto c = GetFromResult (res, cfg);
+  CHECK (!res.Step ());
+  return c;
+}
+
+Database::Result<FighterResult>
+FighterTable::QueryAll ()
+{
+  auto stmt = db.Prepare ("SELECT * FROM `fighters` ORDER BY `id`");
+  return stmt.Query<FighterResult> ();
+}
+
+Database::Result<FighterResult>
+FighterTable::QueryForOwner (const std::string& owner)
+{
+  auto stmt = db.Prepare (R"(
+    SELECT * FROM `fighters` WHERE `owner` = ?1 ORDER BY `id`
+  )");
+  stmt.Bind (1, owner);
+  return stmt.Query<FighterResult> ();
+}
+
+void
+FighterTable::DeleteById (const Database::IdT id)
+{
+  VLOG (1) << "Deleting fighter with ID " << id;
+
+  auto stmt = db.Prepare (R"(
+    DELETE FROM `fighters` WHERE `id` = ?1
+  )");
+  stmt.Bind (1, id);
+  stmt.Execute ();
+}
+
+
+} // namespace pxd

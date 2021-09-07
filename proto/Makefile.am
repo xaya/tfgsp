@@ -26,6 +26,9 @@ ROCONFIG_TEXT_PROTOS_REGTEST = \
 
 PROTOS = \
   config.proto \
+  inventory.proto \
+  armor_piece.proto \
+  activity.proto \
   crafted_recipe.proto \
   activity_rewards.proto \
   animation.proto \
@@ -39,7 +42,9 @@ PROTOS = \
   goody_bundle.proto \
   sweetener_blueprint.proto \
   tournament_blueprint.proto \
-  xaya_player.proto
+  xaya_player.proto \
+  ongoing.proto \
+  fighter.proto
   
 EXTRA_DIST = \
   $(PROTOS) $(ROCONFIG_TEXT_PROTOS) $(ROCONFIG_TEXT_PROTOS_REGTEST) \
