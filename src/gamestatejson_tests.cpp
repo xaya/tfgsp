@@ -18,7 +18,11 @@
 
 #include "gamestatejson.hpp"
 #include "database/dbtest.hpp"
+#include "database/fighter.hpp"
 #include "testutils.hpp"
+
+
+#include <xayautil/random.hpp>
 
 #include "database/xayaplayer.hpp"
 
@@ -61,7 +65,8 @@ protected:
   ExpectStateJson (const std::string& expectedStr)
   {
     const Json::Value actual = converter.FullState ();
-    VLOG (1) << "Actual JSON for the game state:\n" << actual;
+    LOG (WARNING) << "Actual JSON for the game state:\n" << actual;
+    LOG (WARNING) << "EXPECTED JSON for the game state:\n" << expectedStr;
     ASSERT_TRUE (PartialJsonEqual (actual, ParseJson (expectedStr)));
   }
 
@@ -74,11 +79,17 @@ class XayaPlayersJsonTests : public GameStateJsonTests
 
 protected:
 
+  TestRandom rnd;
+  
   XayaPlayersTable tbl;
+  FighterTable tbl2;
+  std::unique_ptr<pxd::RoConfig> cfg;
 
   XayaPlayersJsonTests ()
-    : tbl(db)
-  {}
+    : tbl(db), tbl2(db)
+  {
+      cfg = std::make_unique<pxd::RoConfig> (xaya::Chain::REGTEST);
+  }
 
 };
 
@@ -131,6 +142,45 @@ TEST_F (XayaPlayersJsonTests, UninitialisedBalance)
 			"role" : "p"
 		}
 	]
+  })");
+}
+
+TEST_F (XayaPlayersJsonTests, FighterInstance)
+{
+  auto a = tbl.CreateNew ("foo", ctx.RoConfig());
+  a->SetRole (PlayerRole::PLAYER);
+  a.reset ();
+
+  auto f1 = tbl2.CreateNew ("foo", "5864a19b-c8c0-2d34-eaef-9455af0baf2c", *cfg, rnd);
+  f1.reset();
+  
+  ExpectStateJson (R"({
+    "xayaplayers":
+      [
+        {"name": "foo", "role": "p", "ftuestate": "t0"}
+      ],
+    "fighters" :  [
+                    {
+                            "owner" : "foo",
+                            "fightertypeid" : "c160f7ad-c775-8614-abe2-8ef74e54401f",
+                            "highestappliedsweetener" : 1,
+                            "moves" :
+                            [
+                                    {
+                                            "authoredid" : "86b323c2-b2fd-2494-ab5e-bc3514bc92d8"
+                                    },
+                                    {
+                                            "authoredid" : "0090580c-04ef-9d84-e883-32f52c977b98"
+                                    }
+                            ],
+                            "quality" : 1,
+                            "rating" : 1000,
+                            "recipeid" : "5864a19b-c8c0-2d34-eaef-9455af0baf2c",
+                            "sweetness" : 1,
+                            "tournamentinstanceid" : 0
+                    }
+            ]
+
   })");
 }
 

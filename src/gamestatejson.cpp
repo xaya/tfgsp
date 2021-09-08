@@ -19,6 +19,7 @@
 #include "gamestatejson.hpp"
 
 #include "database/xayaplayer.hpp"
+#include "database/fighter.hpp"
 #include "database/activity.hpp"
 #include "database/moneysupply.hpp"
 
@@ -44,6 +45,56 @@ template <typename T, typename R>
 
   return arr;
 }    
+
+template <>
+  Json::Value
+  GameStateJson::Convert<FighterInstance>(const FighterInstance& fighter) const
+{
+  const auto& pb = fighter.GetProto ();
+  Json::Value res(Json::objectValue);
+  
+  res["owner"] = fighter.GetOwner ();
+  res["recipeid"] = pb.recipeid();
+  res["tournamentinstanceid"] = IntToJson (pb.tournamentinstanceid());
+  res["fightertypeid"] = pb.fightertypeid();
+  res["quality"] = IntToJson (pb.quality());
+  res["rating"] = IntToJson (pb.rating());
+  res["sweetness"] = IntToJson (pb.sweetness());
+  res["highestappliedsweetener"] = IntToJson (pb.highestappliedsweetener());
+  
+  Json::Value moves(Json::arrayValue);
+  
+  for (int i = 0; i < pb.moves_size (); ++i)
+  {
+      const auto& data = pb.moves (i);
+
+      Json::Value move(Json::objectValue);
+      move["authoredid"] = data;
+      moves.append (move);
+  } 
+ 
+  res["moves"] = moves;
+  
+  Json::Value armorPieces(Json::arrayValue);
+  
+  for (int i = 0; i < pb.armorpieces_size (); ++i)
+  {
+      const auto& data2 = pb.armorpieces (i);
+
+      Json::Value armor(Json::objectValue);
+      armor["candy"] = data2.candy();
+      armor["armortype"] = IntToJson (data2.armortype());
+      armor["rewardsource"] = IntToJson (data2.rewardsource());
+      armor["rewardsourceid"] = IntToJson (data2.rewardsourceid());
+      
+      armorPieces.append (armor);
+  }  
+  
+  res["armorpieces"] = armorPieces;
+  res["animationid"] = pb.animationid();
+  
+  return res;
+} 
  
 template <>
   Json::Value
@@ -170,6 +221,15 @@ GameStateJson::Activities()
 }
 
 Json::Value
+GameStateJson::Fighters()
+{
+  FighterTable tbl(db);
+  Json::Value res = ResultsAsArray (tbl, tbl.QueryAll ());
+
+  return res;
+}
+
+Json::Value
 GameStateJson::CrystalBundles()
 {
   const auto& bundles = ctx.RoConfig ()->crystalbundles();
@@ -191,7 +251,8 @@ GameStateJson::FullState()
   res["xayaplayers"] = XayaPlayers();
   res["activities"] = Activities();
   res["crystalbundles"] = CrystalBundles();
-
+  res["fighters"] = Fighters();
+  
   return res;
 }  
 

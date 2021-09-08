@@ -77,6 +77,11 @@ public:
    * Returns the JSON data about money supply and burnsale stats.
    */
   Json::Value MoneySupply();  
+  
+  /**
+   * Returns the JSON data about fightrers.
+   */
+  Json::Value Fighters();   
 
   /**
    * Returns the full game state JSON for the given Database handle.  The full
