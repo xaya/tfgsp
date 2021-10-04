@@ -98,6 +98,30 @@ PendingState::AddRecepieCookingInstance (const XayaPlayer& a, int32_t duration)
   aState.ongoings.push_back(newOp);
 }
 
+void
+PendingState::AddExpeditionInstance (const XayaPlayer& a, int32_t duration)
+{
+  VLOG (1) << "Adding pending expedition operation for name" << a.GetName ();
+
+  auto& aState = GetXayaPlayerState (a);
+  aState.balance = a.GetBalance();
+  
+  proto::OngoinOperation newOp;
+  newOp.set_blocksleft(duration);
+  newOp.set_type((int8_t)pxd::OngoingType::EXPEDITION);  
+  
+  aState.ongoings.push_back(newOp);
+}
+
+void
+PendingState::AddRewardIDs (const XayaPlayer& a, std::vector<uint32_t> rewardDatabaseIds)
+{
+  VLOG (1) << "Adding pending claim reward operations for name" << a.GetName ();
+
+  auto& aState = GetXayaPlayerState (a);
+  aState.rewardDatabaseIds = rewardDatabaseIds;
+}
+
 Json::Value
 PendingState::XayaPlayerState::ToJson () const
 {
@@ -140,6 +164,17 @@ PendingState::XayaPlayerState::ToJson () const
       res["ongoings"] = operations;        
   }  
     
+  if(rewardDatabaseIds.size() > 0)
+  {
+    Json::Value dtbrw(Json::arrayValue);
+    for(const auto& rw: rewardDatabaseIds) 
+    {
+      dtbrw.append(rw);
+    }  
+      
+    res["claimingrewards"] = dtbrw;  
+  }
+  
   return res;
 }
 
@@ -213,14 +248,38 @@ PendingStateUpdater::ProcessMove (const Json::Value& moveObj)
   std::map<std::string, pxd::Quantity> fungibleItemAmountForDeduction;
   int32_t cookCost = -1;
   int32_t duration = -1;
-    
+  std::string weHaveApplibeGoodyName = "";
+  
   Json::Value& upd = mv["ca"];
   if(upd.isObject())
   {
-    if(ParseCookRecepie(*a, name, upd["r"], fungibleItemAmountForDeduction, cookCost, duration))
+    pxd::proto::ExpeditionBlueprint expeditionBlueprint;
+    FighterTable::Handle fighter;
+    
+    if(ParseCookRecepie(*a, name, upd["r"], fungibleItemAmountForDeduction, cookCost, duration, weHaveApplibeGoodyName))
     {
       state.AddRecepieCookingInstance(*a, duration);
     }
+  }
+  
+  Json::Value& upd2 = mv["exp"];   
+  if(upd2.isObject())
+  {   
+    pxd::proto::ExpeditionBlueprint expeditionBlueprint;
+    FighterTable::Handle fighter; 
+
+    if(ParseExpeditionData(*a, name, upd2["f"], expeditionBlueprint, fighter, duration, weHaveApplibeGoodyName))
+    {
+      state.AddExpeditionInstance(*a, duration);
+    }  
+
+    std::vector<uint32_t> rewardDatabaseIds; 
+    
+    if(ParseRewardData(*a, name, upd2["c"], rewardDatabaseIds))
+    {
+      state.AddRewardIDs(*a, rewardDatabaseIds);
+    }  
+    
   }
   
   /*If we have any crystal bundles purchases pending, lets add them here*/

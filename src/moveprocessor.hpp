@@ -26,6 +26,9 @@
 
 #include "database/database.hpp"
 #include "database/xayaplayer.hpp"
+#include "database/fighter.hpp"
+#include "database/recipe.hpp"
+#include "database/reward.hpp"
 #include "database/moneysupply.hpp"
 #include "database/amount.hpp"
 
@@ -85,12 +88,18 @@ protected:
   /** Access handle for the accounts database table.  */
   XayaPlayersTable xayaplayers;  
   
+  /** Access handle for the recepies database table.  */
+  RecipeInstanceTable recipeTbl;    
+   
+  /** Access handle for the fighters database table.  */
+  FighterTable fighters;    
+  
   /** MoneySupply database table.  */
   MoneySupply moneySupply;  
+    
+  /** Access handle for the rewards database table.  */
+  RewardsTable rewards;    
   
-   /** Fighters database table.  */
-  FighterTable fighters;   
-
   explicit BaseMoveProcessor (Database& d, const Context& c);
 
   /**
@@ -133,7 +142,19 @@ protected:
    * Tries to parse a move that sets recepie for cooking
    */       
    
-  bool ParseCookRecepie(const XayaPlayer& a, const std::string& name, const Json::Value& recepie, std::map<std::string, pxd::Quantity>& fungibleItemAmountForDeduction, int32_t& cookCost, int32_t& duration);
+  bool ParseCookRecepie(const XayaPlayer& a, const std::string& name, const Json::Value& recepie, std::map<std::string, pxd::Quantity>& fungibleItemAmountForDeduction, int32_t& cookCost, int32_t& duration, std::string& weHaveApplibeGoodyName);
+  
+   /**
+   * Tries to parse a move that send fighter on the expedition
+   */    
+ 
+  bool ParseExpeditionData(const XayaPlayer& a, const std::string& name, const Json::Value& expedition, pxd::proto::ExpeditionBlueprint& expeditionBlueprint, FighterTable::Handle& fighter, int32_t& duration, std::string& weHaveApplibeGoodyName);
+  
+   /**
+   * Tries to parse a move that collects reward data
+   */    
+   
+  bool ParseRewardData(const XayaPlayer& a, const std::string& name, const Json::Value& expedition, std::vector<uint32_t>& rewardDatabaseIds);
   
   /**
    * Function checks if fungible item is inside players inventory
@@ -146,7 +167,7 @@ public:
    *  Ultimately, we need to get rid of authID, as its seems redundant at
    *  this point, but need to keep for now to be more consistant with the
    *  original source */     
-  static std::string GetRecepieKeyNameFromID(const std::string& authID, const Context& ctx);
+  pxd::RecipeInstanceTable::Handle GetRecepieObjectFromID(const uint32_t& ID, const Context& ctx);
   static std::string GetCandyKeyNameFromID(const std::string& authID, const Context& ctx); 
 
   virtual ~BaseMoveProcessor () = default;
@@ -195,6 +216,16 @@ private:
   */  
   void MaybeCookRecepie (const std::string& name, const Json::Value& recepie);
   
+  /**
+  * Tries to send the fighter for the expedition
+  */    
+  void MaybeGoForExpedition (const std::string& name, const Json::Value& expedition);
+  
+  /**
+  * Tries to claim all the expedition rewards
+  */    
+  void MaybeClaimReward (const std::string& name, const Json::Value& expedition);  
+  
    /**
    * Tries to update tutorial state even further on.
    */
@@ -214,6 +245,11 @@ private:
    * Tries to process all kind of cooking actions
    */
   void TryCookingAction (const std::string& name, const Json::Value& upd);
+  
+  /**
+   * Tries to process all kind of actions related to expeditions
+   */  
+  void TryExpeditionAction (const std::string& name, const Json::Value& upd);
   
   /**
    * Tries to handle a coin (Crystal) transfer / burn operation.  The amount

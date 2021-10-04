@@ -35,6 +35,19 @@ namespace pxd
 {
 
 /**
+ * Current status of the fighter
+ */
+enum class FighterStatus : int8_t
+{
+  Available = 0,
+  Expedition = 1,
+  Tournament = 2,
+  Exchange = 3,
+  Cooking = 4,
+  Deconstructing = 5,
+};
+
+/**
  * A type of fighters move 
  */
 enum class MoveType : int8_t
@@ -80,8 +93,24 @@ struct FighterResult : public Database::ResultType
   RESULT_COLUMN (int64_t, id, 1);
   RESULT_COLUMN (std::string, owner, 2);
   RESULT_COLUMN (pxd::proto::Fighter, proto, 3);
-
+  RESULT_COLUMN (int64_t, status, 4);
 };
+
+/**
+ * Retrieves a fighter status from a database column.  This function verifies that
+ * the database value represents a valid faction.  Otherwise it crashes the
+ * process (data corruption).
+ *
+ * This is templated, so that it can accept different database result types.
+ */
+template <typename T>
+  FighterStatus GetStatusFromColumn (const Database::Result<T>& res);
+
+
+/**
+ * Binds a status value to a status parameter.
+ */
+void BindStatusParameter (Database::Statement& stmt, unsigned ind, FighterStatus f);
 
 /**
  * Wrapper class for the state of one fighter.  This connects the actual game
@@ -121,12 +150,15 @@ private:
 
   /** Database reference this belongs to.  */
   Database& db;  
+  
+  /** Current fighter status */
+  FighterStatus status;
 
   /**
    * Constructs a new fighter with an auto-generated ID meant to be inserted
    * into the database.
    */
-  explicit FighterInstance (Database& d, const std::string& o, std::string r, const RoConfig& cfg, xaya::Random& rnd);
+  explicit FighterInstance (Database& d, const std::string& o, uint32_t r, const RoConfig& cfg, xaya::Random& rnd);
 
   /**
    * Constructs a fighter instance based on the given query result.  This
@@ -183,6 +215,19 @@ public:
   {
     return id;
   }
+
+  const FighterStatus
+  GetStatus () const
+  {
+    return status;
+  }
+
+  void
+  SetStatus (const FighterStatus newStatus)
+  {
+    dirtyFields = true;
+    status = newStatus;
+  } 
 
   const proto::Fighter&
   GetProto () const
@@ -247,7 +292,7 @@ public:
    * Returns a Fighter handle for a fresh instance corresponding to a new
    * fighter that will be created.
    */
-  Handle CreateNew (const std::string& owner, std::string recipe, const RoConfig& cfg, xaya::Random& rnd);
+  Handle CreateNew (const std::string& owner, uint32_t recipe, const RoConfig& cfg, xaya::Random& rnd);
 
   /**
    * Returns a handle for the instance based on a Database::Result.
@@ -270,6 +315,11 @@ public:
    * Queries for all characters with a given owner, ordered by ID.
    */
   Database::Result<FighterResult> QueryForOwner (const std::string& owner);  
+  
+  /**
+   * Counts for all fighters with a given owner
+   */  
+  unsigned CountForOwner (const std::string& owner);
 
   /**
    * Deletes the fighter with the given ID.
@@ -278,5 +328,7 @@ public:
 };
 
 } // namespace pxd
+
+#include "fighter.tpp"
 
 #endif // DATABASE_FIGHTER_HPP

@@ -19,22 +19,22 @@
 syntax = "proto2";
 option cc_enable_arenas = true;
 
-import "proto/fighter_move_blueprint.proto";
-
 package pxd.proto;
 
-message ArmorPiece
-{    
-  /*Name of the candy used in armor piece creation*/
-  optional string Candy = 1;    
+message ActivityRewardInstance
+{
+  optional uint32 TournamentId = 1;
   
-  /*Enum armor type for this armor piece*/
-  optional uint32 ArmorType = 2;
+  optional string ExpeditionId = 2;  
+  
+  optional uint32 SweetenerId = 3;   
 
-  /*Enum reward source, if came as tournament or activity reward*/
-  optional uint32 RewardSource = 3;   
+  optional uint32 GeneratedRecipeId = 4; 
 
-  /*Reward source authid*/
-  optional string RewardSourceID = 4;   
-   
+  optional string RewardId = 5;
+
+  optional uint32 PositionInTable = 6; 
+
+  optional uint32 FighterID = 7;  
 }
+

@@ -36,7 +36,7 @@ namespace pxd
 
 BaseMoveProcessor::BaseMoveProcessor (Database& d,
                                       const Context& c)
-  : ctx(c), db(d), xayaplayers(db), moneySupply(db), fighters(db)
+  : ctx(c), db(d), xayaplayers(db), recipeTbl(db), fighters(db), moneySupply(db), rewards(db)
 {}
 
 bool
@@ -78,6 +78,12 @@ bool
 BaseMoveProcessor::ParseCrystalPurchase(const Json::Value& mv, std::string& bundleKeyCode, Amount& cost, Amount& crystalAmount, const std::string& name, const Amount& paidToDev)
 {
   const auto& cmd = mv["pc"];
+  
+  if(!cmd.isString())
+  {
+      return false;
+  }
+  
   bundleKeyCode = cmd.asString ();
   auto bundle_key_name = "CrystalsPurchase_" + bundleKeyCode;
   
@@ -176,21 +182,9 @@ BaseMoveProcessor::TryCrystalPurchase (const std::string& name,
   return;
 }
 
-  std::string BaseMoveProcessor::GetRecepieKeyNameFromID(const std::string& authID, const Context& ctx)
+  pxd::RecipeInstanceTable::Handle BaseMoveProcessor::GetRecepieObjectFromID(const uint32_t& ID, const Context& ctx)
   {
-      
-    const auto& recepiesList = ctx.RoConfig()->recepies();
-    
-    for(const auto& recepieX: recepiesList)
-    {
-        if(recepieX.second.authoredid() == authID)
-        {
-            return recepieX.first;
-            break;
-        }
-    }      
-      
-    return "";
+    return recipeTbl.GetById(ID);
   }
   
   std::string BaseMoveProcessor::GetCandyKeyNameFromID(const std::string& authID, const Context& ctx)
@@ -435,6 +429,9 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
   /* We are trying all kind of cooking actions*/
   TryCookingAction (name, mv["ca"]);
   
+  /* We are trying all kind of expedition actions*/
+  TryExpeditionAction (name, mv["exp"]);  
+  
   /* If there is no account (after potentially updating/initialising it),
      then let's not try to process any more updates.  This explicitly
      enforces that accounts have to be initialised before doing anything
@@ -519,120 +516,464 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     }
   }
   
+  bool BaseMoveProcessor::ParseRewardData(const XayaPlayer& a, const std::string& name, const Json::Value& expedition, std::vector<uint32_t>& rewardDatabaseIds)
+  {
+    if (!expedition.isObject ())
+    return false;
+
+    if(!expedition["eid"].isString())
+    {
+        return false;
+    }
+    
+    const std::string expeditionID = expedition["eid"].asString ();
+    
+    pxd::proto::ExpeditionBlueprint expeditionBlueprint;
+    const auto& expeditionList = ctx.RoConfig()->expeditionblueprints();
+    bool blueprintSolved = false;
+    
+    for(const auto& expedition: expeditionList)
+    {
+        if(expedition.second.authoredid() == expeditionID)
+        {
+            expeditionBlueprint = expedition.second;
+            blueprintSolved = true;
+            break;
+        }
+    }
+    
+    if(blueprintSolved == false)
+    {
+        LOG (WARNING) << "Could not resolve expedition blueprint with authID: " << expeditionID;
+        return false;              
+    }    
+    
+    for(const auto& ongoing: a.GetProto().ongoings())
+    {
+        if(ongoing.expeditionblueprintid() == expeditionID && ongoing.type() == (uint32_t)pxd::OngoingType::EXPEDITION)
+        {
+          LOG (WARNING) << "Could not get rewards, expedition is in process: " << expeditionID;
+          return false;                
+        }
+    }
+    
+    auto res = rewards.QueryForOwner(a.GetName());
+    
+    int totalEntries = 0;
+    bool tryAndStep = res.Step();
+    while (tryAndStep)
+    {
+      auto rw = rewards.GetFromResult (res, ctx.RoConfig ());
+      
+      if(rw->GetProto().expeditionid() == expeditionID)
+      {
+        totalEntries++;
+        rewardDatabaseIds.push_back(rw->GetId());
+        tryAndStep = res.Step ();
+      }
+    }
+   
+    if(totalEntries <= 0)
+    {
+        LOG (WARNING) << "Could not find any relevan rewards for expedition: " << expeditionID;
+        return false;              
+    }   
+    
+    return true;
+  }      
+  
+  bool BaseMoveProcessor::ParseExpeditionData(const XayaPlayer& a, const std::string& name, const Json::Value& expedition, pxd::proto::ExpeditionBlueprint& expeditionBlueprint, FighterTable::Handle& fighter, int32_t& duration, std::string& weHaveApplibeGoodyName)
+  {
+    if (!expedition.isObject ())
+    return false;
+
+    if(!expedition["eid"].isString())
+    {
+        return false;
+    }
+    
+    if(!expedition["fid"].isInt())
+    {
+        return false;
+    }    
+
+    const std::string expeditionID = expedition["eid"].asString ();
+    const int fighterID = expedition["fid"].asInt();
+    
+    fighter = fighters.GetById (fighterID, ctx.RoConfig ());
+    
+    if(fighter == nullptr)
+    {
+        LOG (WARNING) << "Could not resolve fighter with id: " << fighterID;
+        return false;           
+    }
+    
+    if(a.GetName() != fighter->GetOwner())
+    {
+        LOG (WARNING) << "Fighter does not belong to the player, fighter id is: " << fighterID;
+        return false;         
+    }
+    
+    const auto& expeditionList = ctx.RoConfig()->expeditionblueprints();
+    bool blueprintSolved = false;
+    
+    for(const auto& expedition: expeditionList)
+    {
+        if(expedition.second.authoredid() == expeditionID)
+        {
+            expeditionBlueprint = expedition.second;
+            blueprintSolved = true;
+            break;
+        }
+    }
+    
+    if(blueprintSolved == false)
+    {
+        LOG (WARNING) << "Could not resolve expedition blueprint with authID: " << expeditionID;
+        return false;              
+    }
+    
+    if(expeditionBlueprint.authoredid() == "c064e7f7-acbf-4f74-fab8-cccd7b2d4004" && (int)a.GetFTUEState() > (int)FTUEState::FirstExpeditionPending)
+    {
+        LOG (WARNING) << "Could not resolve tutorial expedition twice " << expeditionID;
+        return false;            
+    }
+    
+    if(fighter->GetProto().sweetness() < expeditionBlueprint.minsweetness())
+    {
+        LOG (WARNING) << "Trying to join expedition but fighter doesn't meet sweetness requirements: " << fighterID;
+        return false;              
+    }
+    
+    if(fighter->GetProto().sweetness() > expeditionBlueprint.maxsweetness())
+    {
+        LOG (WARNING) << "Trying to join expedition but fighter doesn't meet sweetness requirements: " << fighterID;
+        return false;              
+    }    
+    
+    if(fighter->GetStatus() != FighterStatus::Available)
+    {
+        LOG (WARNING) << "Trying to join expedition but fighter isn't available : " << fighterID;
+        return false;              
+    }     
+    
+    const auto& goodiesList = ctx.RoConfig()->goodies();
+    float reductionPercent = 1;
+    
+    for(const auto& goodie: goodiesList)
+    {
+        if(a.GetInventory().GetFungibleCount(goodie.first) > 0)
+        {
+            if(goodie.second.goodytype() == (int8_t)pxd::GoodyType::Espresso)
+            {
+                weHaveApplibeGoodyName = goodie.first;
+                reductionPercent = (float)goodie.second.reductionpercent();
+                break;
+            }
+        }
+    }
+    int32_t effective_duration = expeditionBlueprint.duration();
+    if(weHaveApplibeGoodyName != "")
+    {
+        effective_duration = effective_duration * reductionPercent;
+    }    
+    
+    duration = effective_duration;
+    
+    return true;    
+  }  
+  
   bool
-  BaseMoveProcessor::ParseCookRecepie(const XayaPlayer& a, const std::string& name, const Json::Value& recepie, std::map<std::string, pxd::Quantity>& fungibleItemAmountForDeduction, int32_t& cookCost, int32_t& duration)
+  BaseMoveProcessor::ParseCookRecepie(const XayaPlayer& a, const std::string& name, const Json::Value& recepie, std::map<std::string, pxd::Quantity>& fungibleItemAmountForDeduction, int32_t& cookCost, int32_t& duration, std::string& weHaveApplibeGoodyName)
   {
     if (!recepie.isObject ())
     return false;
 
-    const std::string recepieID = recepie["rid"].asString ();
-    const std::string fighterID = recepie["fid"].asString ();
+    if(!recepie["rid"].isInt())
+    {
+        return false;
+    }
+   
+    if(!recepie["fid"].isInt())
+    {
+        return false;
+    }   
+
+    const uint32_t recepieID = (uint32_t)recepie["rid"].asInt();
+    const uint32_t fighterID = recepie["fid"].asInt();
     
     auto& playerInventory = a.GetInventory();
     
-    std::string itemInventoryName = GetRecepieKeyNameFromID(recepieID, ctx);
-    const auto& recepiesList = ctx.RoConfig()->recepies();
-    
+    auto itemInventoryRecipe = GetRecepieObjectFromID(recepieID, ctx);
 
-    if(itemInventoryName == "")
+    if(itemInventoryRecipe == nullptr)
     {
         LOG (WARNING) << "Could not resolve key name from the authid for the item: " << recepieID;
         return false;       
-    }    
+    }      
     
-    if(InventoryHasItem(itemInventoryName, playerInventory, 1) == false)
+    if(itemInventoryRecipe->GetOwner() != a.GetName())
     {
-        LOG (WARNING) << "Player inventory does not have recepie instance named: " << itemInventoryName;
-        return false;       
+        LOG (WARNING) << "Recipe does not belong to the player or is already in process " << recepieID;
+        return false;           
+    }
+
+    if(itemInventoryRecipe->GetProto().quality() == 0)
+    {
+        cookCost = ctx.RoConfig()->params().common_recipe_cook_cost();
     }
     
-    for(const auto& recepie: recepiesList)
+    if(itemInventoryRecipe->GetProto().quality() == 1)
     {
-        if(recepie.second.authoredid() == recepieID)
-        {
-            if(recepie.second.quality() == 0)
-            {
-                cookCost = ctx.RoConfig()->params().common_recipe_cook_cost();
-            }
-            
-            if(recepie.second.quality() == 1)
-            {
-                cookCost = ctx.RoConfig()->params().uncommon_recipe_cook_cost();
-            }
-
-            if(recepie.second.quality() == 2)
-            {
-                cookCost = ctx.RoConfig()->params().rare_recipe_cook_cost();
-            }
-
-            if(recepie.second.quality() == 3)
-            {
-                cookCost = ctx.RoConfig()->params().epic_recipe_cook_cost();
-            }  
-
-            duration = recepie.second.duration();
-        }
+        cookCost = ctx.RoConfig()->params().uncommon_recipe_cook_cost();
     }
-    
+
+    if(itemInventoryRecipe->GetProto().quality() == 2)
+    {
+        cookCost = ctx.RoConfig()->params().rare_recipe_cook_cost();
+    }
+
+    if(itemInventoryRecipe->GetProto().quality() == 3)
+    {
+        cookCost = ctx.RoConfig()->params().epic_recipe_cook_cost();
+    }  
+
     if(cookCost == -1)
     {
-        LOG (WARNING) << "Cooking cost could not be resolved for the instance named: " << itemInventoryName;
+        LOG (WARNING) << "Cooking cost could not be resolved for the instance named: " << recepieID;
         return false;          
     }
     
     if(a.GetBalance() < cookCost)
     {
-        LOG (WARNING) << "No enough crystals on balance to cook: " << itemInventoryName;
+        LOG (WARNING) << "No enough crystals on balance to cook: " << recepieID;
         return false;              
     }
     
     bool playerHasEnoughIngridients = true;
-    bool testWasPerformed = false;
-    
-    for(const auto& recepie: recepiesList)
+
+    for(const auto& candyNeeds: itemInventoryRecipe->GetProto().requiredcandy())
     {
-        if(recepie.second.authoredid() == recepieID)
+        std::string candyInventoryName = GetCandyKeyNameFromID(candyNeeds.candytype(), ctx);
+        
+        if(InventoryHasItem(candyInventoryName, playerInventory, candyNeeds.amount()) == false)
         {
-            testWasPerformed = true;
-            
-            for(const auto& candyNeeds: recepie.second.requiredcandy())
+            playerHasEnoughIngridients = false;
+        }
+        
+        pxd::Quantity quantity = candyNeeds.amount();
+        
+        fungibleItemAmountForDeduction.insert(std::pair<std::string, pxd::Quantity>(candyInventoryName, quantity));
+    }
+
+    
+    if(playerHasEnoughIngridients == false)
+    {
+        LOG (WARNING) << "Not enough candy ingridients to cook " << recepieID;
+        return false;         
+    }
+        
+    uint32_t slots = fighters.CountForOwner(a.GetName());
+
+    if(slots > ctx.RoConfig()->params().max_fighter_inventory_amount())
+    {
+        LOG (WARNING) << "Not enough slots to host a new fighter for " << recepieID;
+        return false;         
+    }
+    
+    float reductionPercent = 1;
+    const auto& goodiesList = ctx.RoConfig()->goodies();
+    for(const auto& goodie: goodiesList)
+    {
+        if(playerInventory.GetFungibleCount(goodie.first) > 0)
+        {
+            if(goodie.second.goodytype() == (int8_t)pxd::GoodyType::PressureCooker)
             {
-                std::string candyInventoryName = GetCandyKeyNameFromID(candyNeeds.candytype(), ctx);
-                
-                if(InventoryHasItem(candyInventoryName, playerInventory, candyNeeds.amount()) == false)
-                {
-                    playerHasEnoughIngridients = false;
-                }
-                
-                pxd::Quantity quantity = candyNeeds.amount();
-                
-                fungibleItemAmountForDeduction.insert(std::pair<std::string, pxd::Quantity>(candyInventoryName, quantity));
+                weHaveApplibeGoodyName = goodie.first;
+                reductionPercent = (float)goodie.second.reductionpercent();
+                break;
             }
         }
     }
     
-    if(testWasPerformed == false)
+    int32_t effective_duration = itemInventoryRecipe->GetProto().duration();;
+    if(weHaveApplibeGoodyName != "")
     {
-        LOG (WARNING) << "Failed to test for candy amounts for " << itemInventoryName;
-        return false;          
-    }
-    
-    if(playerHasEnoughIngridients == false)
-    {
-        LOG (WARNING) << "Not enough candy ingridients to cook " << itemInventoryName;
-        return false;         
-    }
-        
-    uint32_t slots = 0; //TODO, get from total player owning fighters   
-  
-    if(slots > ctx.RoConfig()->params().max_fighter_inventory_amount())
-    {
-        LOG (WARNING) << "Not enough slots to host a new fighter for " << itemInventoryName;
-        return false;         
-    }
+        effective_duration = effective_duration * reductionPercent;
+    }    
+
+    duration = effective_duration;
 
     return true;    
   }
+  
+  void MoveProcessor::MaybeClaimReward (const std::string& name, const Json::Value& expedition)
+  {      
+      std::vector<uint32_t> rewardDatabaseIds;      
+      auto a = xayaplayers.GetByName (name, ctx.RoConfig ());
+      
+      if(!ParseRewardData(*a, name, expedition, rewardDatabaseIds)) return;
+
+      LOG (INFO) << "Ready to give " << rewardDatabaseIds.size() << " rewards";
+
+      uint32_t curRecipeSlots = recipeTbl.CountForOwner(a->GetName());
+      uint32_t maxRecipeSlots = ctx.RoConfig()->params().max_recipe_inventory_amount();
+      
+      const auto& rewardsList = ctx.RoConfig()->activityrewards();
+      for(const auto& rw: rewardDatabaseIds)
+      {
+          /** Lets fetch reward from database, and grant it to the player. 
+              While doing so, lets check against space limitations in inv. for recepies    
+          */
+          
+          auto rewardData = rewards.GetById(rw);          
+          pxd::proto::ActivityReward rewardTableDb;
+ 
+          bool rewardsSolved = false;
+          
+          for(const auto& rewardsTable: rewardsList)
+          {
+              if(rewardsTable.second.authoredid() == rewardData->GetProto().rewardid())
+              {
+                  rewardTableDb = rewardsTable.second;
+                  rewardsSolved = true;
+                  break;
+              }
+          }           
+          
+          if(rewardsSolved == false)
+          {
+              LOG (ERROR) << "Fatal error, could not solve: " << rewardData->GetProto().rewardid();
+              continue;
+          }
+          
+          if((pxd::RewardType)(int)rewardTableDb.rewards(rewardData->GetProto().positionintable()).type() == pxd::RewardType::CraftedRecipe || (pxd::RewardType)(int)rewardTableDb.rewards(rewardData->GetProto().positionintable()).type() == pxd::RewardType::GeneratedRecipe)
+          {
+              if(curRecipeSlots >= maxRecipeSlots)
+              {
+                  LOG (INFO) << "Can not grant recipe, maxomus lots reached  of" << curRecipeSlots << " where max is " << maxRecipeSlots;
+                  continue;
+              }
+          }
+          
+          if((pxd::RewardType)(int)rewardTableDb.rewards(rewardData->GetProto().positionintable()).type() == pxd::RewardType::Candy)
+          {              
+              std::string candyName = GetCandyKeyNameFromID(rewardTableDb.rewards(rewardData->GetProto().positionintable()).candytype(), ctx);
+              a->GetInventory().AddFungibleCount(candyName, rewardTableDb.rewards(rewardData->GetProto().positionintable()).quantity());
+              
+              LOG (INFO) << "Granted " << rewardTableDb.rewards(rewardData->GetProto().positionintable()).quantity() << " candy " << candyName << " reward";
+          }          
+          
+          if((pxd::RewardType)(int)rewardTableDb.rewards(rewardData->GetProto().positionintable()).type() == pxd::RewardType::CraftedRecipe)
+          {         
+              auto ourRec = recipeTbl.GetById(rewardData->GetProto().generatedrecipeid());
+              ourRec->SetOwner(a->GetName());
+              
+              LOG (INFO) << "Granted " << " recipe " << rewardData->GetProto().generatedrecipeid() << " reward";
+              ourRec.reset();
+          }
+          
+          if((pxd::RewardType)(int)rewardTableDb.rewards(rewardData->GetProto().positionintable()).type() == pxd::RewardType::GeneratedRecipe)
+          {
+              auto ourRec = recipeTbl.GetById(rewardData->GetProto().generatedrecipeid());
+              ourRec->SetOwner(a->GetName());  
+
+              LOG (INFO) << "Granted " << " recipe " << rewardData->GetProto().generatedrecipeid() << " as reward";  
+              ourRec.reset();              
+          }          
+          
+          if((pxd::RewardType)(int)rewardTableDb.rewards(rewardData->GetProto().positionintable()).type() == pxd::RewardType::Move)
+          {
+              auto fighter = fighters.GetById(rewardData->GetProto().fighterid(), ctx.RoConfig());
+              std::string* newMove = fighter->MutableProto().add_moves();
+              newMove->assign(rewardTableDb.rewards(rewardData->GetProto().positionintable()).moveid());
+              
+              LOG (INFO) << "Granted " << " move to figher " << rewardData->GetProto().fighterid() << " as reward";   
+          }   
+
+          if((pxd::RewardType)(int)rewardTableDb.rewards(rewardData->GetProto().positionintable()).type() == pxd::RewardType::Animation)
+          {
+              auto fighter = fighters.GetById(rewardData->GetProto().fighterid(), ctx.RoConfig());
+              fighter->MutableProto().set_animationid(rewardTableDb.rewards(rewardData->GetProto().positionintable()).animationid()); //TODO into repeated list? Prob... But ok, ignore for now;
+          
+              LOG (INFO) << "Granted " << " animation to figher " << rewardData->GetProto().fighterid() << " as reward"; 
+          }   
+
+          if((pxd::RewardType)(int)rewardTableDb.rewards(rewardData->GetProto().positionintable()).type() == pxd::RewardType::Armor)
+          {
+              auto fighter = fighters.GetById(rewardData->GetProto().fighterid(), ctx.RoConfig());
+              
+              bool armorTypeWasPresent = false;
+              for(auto armorPiece: fighter->MutableProto().armorpieces())
+              {
+                  if(armorPiece.armortype() == rewardTableDb.rewards(rewardData->GetProto().positionintable()).armortype())
+                  {
+                      armorTypeWasPresent = true;
+                      armorPiece.set_candy(rewardTableDb.rewards(rewardData->GetProto().positionintable()).candytype());
+                      armorPiece.set_rewardsourceid(rewardData->GetProto().rewardid());
+                      armorPiece.set_rewardsource((uint32_t)pxd::RewardSource::Expedition);
+                  }
+              }
+              
+              if(armorTypeWasPresent == false)
+              {
+                  auto newArmorPiece = fighter->MutableProto().add_armorpieces();
+                  newArmorPiece->set_candy(rewardTableDb.rewards(rewardData->GetProto().positionintable()).candytype());
+                  newArmorPiece->set_rewardsourceid(rewardData->GetProto().rewardid());
+                  newArmorPiece->set_rewardsource((uint32_t)pxd::RewardSource::Expedition);   
+                  newArmorPiece->set_armortype(rewardTableDb.rewards(rewardData->GetProto().positionintable()).armortype());                  
+              }
+              
+              LOG (INFO) << "Granted " << " armor to figher " << rewardData->GetProto().fighterid();
+          }             
+          
+          rewards.DeleteById(rw);
+      }
+  }   
+  
+  void MoveProcessor::MaybeGoForExpedition (const std::string& name, const Json::Value& expedition)
+  {      
+    auto a = xayaplayers.GetByName (name, ctx.RoConfig ());
+    
+    std::string weHaveApplibeGoodyName = "";
+    int32_t duration = -1;
+    pxd::proto::ExpeditionBlueprint expeditionBlueprint;
+    FighterTable::Handle fighter;
+    
+    if(!ParseExpeditionData(*a, name, expedition, expeditionBlueprint, fighter, duration, weHaveApplibeGoodyName)) return;
+    
+    proto::OngoinOperation* newOp = a->MutableProto().add_ongoings();
+    
+    newOp->set_type((uint32_t)pxd::OngoingType::EXPEDITION);
+    newOp->set_fighterdatabaseid(expedition["fid"].asInt());
+    newOp->set_expeditionblueprintid(expedition["eid"].asString ());
+
+    fighter->SetStatus(FighterStatus::Expedition);
+    fighter->MutableProto().set_expeditioninstanceid(expedition["eid"].asString ());
+    
+    if(weHaveApplibeGoodyName != "")
+    {
+        a->GetInventory().AddFungibleCount(weHaveApplibeGoodyName, -1);
+        newOp->set_appliedgoodykeyname(weHaveApplibeGoodyName);
+    }
+    
+    /** We need to make it at least 1 block, else if will make no sense executing immediately logic flow wise*/
+    if(duration < 1)
+    {
+        duration = 1;
+    }    
+        
+    newOp->set_blocksleft(duration);    
+        
+    //If we are in tutorial yet, lets advance tutorial counter
+    
+    if(a->GetFTUEState() == FTUEState::FirstExpedition || a->GetFTUEState() == FTUEState::JoinFirstExpedition)
+    {
+        a->SetFTUEState(FTUEState::FirstExpeditionPending);
+    }    
+
+    LOG (INFO) << "Expedition " << expedition << " submitted succesfully ";
+  }    
   
   void
   MoveProcessor::MaybeCookRecepie (const std::string& name, const Json::Value& recepie)
@@ -640,28 +981,44 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     std::map<std::string, pxd::Quantity> fungibleItemAmountForDeduction;
     int32_t cookCost = -1;
     int32_t duration = -1;
-       
+    std::string weHaveApplibeGoodyName = "";
+    
     auto a = xayaplayers.GetByName (name, ctx.RoConfig ());
     
-    if(!ParseCookRecepie(*a, name, recepie, fungibleItemAmountForDeduction, cookCost, duration)) return;
+    if(!ParseCookRecepie(*a, name, recepie, fungibleItemAmountForDeduction, cookCost, duration, weHaveApplibeGoodyName)) return;
     
     auto& playerInventory = a->GetInventory();
     for(const auto& itemToDeduct: fungibleItemAmountForDeduction)
     {
         playerInventory.AddFungibleCount(itemToDeduct.first, -itemToDeduct.second);
     }
-    
-    playerInventory.AddFungibleCount(GetRecepieKeyNameFromID(recepie["rid"].asString (), ctx), -1);
-    
+      
     a->AddBalance(-cookCost);
     
     //TODO REMOVE FIGHTER
-    //TODO USE APPLICABLE GOODIE - check maybe ok NOW>?
 
     proto::OngoinOperation* newOp = a->MutableProto().add_ongoings();
-    newOp->set_blocksleft(duration);
+
     newOp->set_type((uint32_t)pxd::OngoingType::COOK_RECIPE);
-    newOp->set_itemauthid(recepie["rid"].asString ());
+    newOp->set_recipeid(recepie["rid"].asInt());
+    
+    auto itemInventoryRecipe = GetRecepieObjectFromID((uint32_t)recepie["rid"].asInt(), ctx);
+    itemInventoryRecipe->SetOwner("");
+    
+
+    if(weHaveApplibeGoodyName != "")
+    {
+        playerInventory.AddFungibleCount(weHaveApplibeGoodyName, -1);
+        newOp->set_appliedgoodykeyname(weHaveApplibeGoodyName);
+    }
+    
+    /** We need to make it at least 1 block, else if will make no sense executing immediately logic flow wise*/
+    if(duration < 1)
+    {
+        duration = 1;
+    }    
+
+    newOp->set_blocksleft(duration);
 
     a->CalculatePrestige(ctx.RoConfig());
     LOG (INFO) << "Cooking instance " << recepie << " submitted succesfully ";
@@ -732,6 +1089,20 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     /*Trying to cook recepie, optionally with the fighter */
     MaybeCookRecepie (name, upd["r"]);
   } 
+  
+  void
+  MoveProcessor::TryExpeditionAction (const std::string& name,
+                                   const Json::Value& upd)
+  {
+    if (!upd.isObject ())
+      return;
+
+    /*Trying to send own fighter to expedition*/
+    MaybeGoForExpedition (name, upd["f"]);
+    
+    /*Trying to claim reward from the finished expedition*/
+    MaybeClaimReward (name, upd["c"]);    
+  }   
 
   void
   MoveProcessor::TryXayaPlayerUpdate (const std::string& name,

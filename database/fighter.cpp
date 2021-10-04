@@ -17,6 +17,7 @@
 */
 
 #include "fighter.hpp"
+#include "recipe.hpp"
 
 #include <xayautil/random.hpp>
 
@@ -25,7 +26,7 @@
 namespace pxd
 {
 
-FighterInstance::FighterInstance (Database& d, const std::string& o, std::string r, const RoConfig& cfg, xaya::Random& rnd)
+FighterInstance::FighterInstance (Database& d, const std::string& o, uint32_t r, const RoConfig& cfg, xaya::Random& rnd)
   : id(d.GetNextId ()),
     tracker(d.TrackHandle ("fighter", id)),
     dirtyFields(true),
@@ -38,66 +39,73 @@ FighterInstance::FighterInstance (Database& d, const std::string& o, std::string
       << "owner=" << o;
  
   data.SetToDefault ();
+  
   MutableProto().set_recipeid(r);
   MutableProto().set_tournamentinstanceid(0);
+  
+  SetStatus(FighterStatus::Available);
 
-  const auto& recepiesList = cfg->recepies();
   const auto& fighterMoveBlueprintList = cfg->fightermoveblueprints();
   const auto& animations = cfg->animations();
         
-  for(const auto& recepie: recepiesList)
-  {
-    if(recepie.second.authoredid() == r)
-    {
-        MutableProto().set_fightertypeid(recepie.second.fightertype());
-        MutableProto().set_quality(recepie.second.quality());
-        MutableProto().set_rating(GetRatingFromQuality(recepie.second.quality()));
-        MutableProto().set_sweetness(0 + recepie.second.quality());
-        MutableProto().set_highestappliedsweetener(0 + recepie.second.quality());
-        
-        std::map<pxd::ArmorType, std::string> slotsUsed;
-        
-        for(auto& move: recepie.second.moves())
-        {
-             std::string* newmove = MutableProto().add_moves();
-             newmove->assign(move);
-             
-             for(auto& moveBlueprint: fighterMoveBlueprintList)
-             {
-               if(moveBlueprint.second.authoredid() == move)
-               {   
-                 std::vector<pxd::ArmorType> aType = ArmorTypeFromMoveType((pxd::MoveType)moveBlueprint.second.movetype());
-                 pxd::ArmorType randomElement = aType[rnd.NextInt(aType.size())];
-                 
-                 if(slotsUsed.find(randomElement) == slotsUsed.end())
-                 {
-                    slotsUsed.insert(std::pair<pxd::ArmorType, std::string>(randomElement, moveBlueprint.second.candytype()));
-                   
-                    proto::ArmorPiece* newArmorPiece = MutableProto().add_armorpieces();
-                    newArmorPiece->set_armortype((uint32_t)randomElement);
-                    newArmorPiece->set_candy(moveBlueprint.second.candytype());
-                    newArmorPiece->set_rewardsource(0);
-                    newArmorPiece->set_rewardsourceid(0);
-                 }
-               }
-             }
-             
-             std::vector<std::string> animationsToChoiceFrom;
-             
-             for(auto& animation: animations)
-             {
-                 if(animation.second.quality() == recepie.second.quality())
-                 {
-                     animationsToChoiceFrom.push_back(animation.second.authoredid());
-                 }
-             }
-             
-             std::string randomAnimationElement = animationsToChoiceFrom[rnd.NextInt(animationsToChoiceFrom.size())];
-             MutableProto().set_animationid(randomAnimationElement);            
-        }
-    }
-  }
+  RecipeInstanceTable recipeTbl(db);    
+  auto recepie = recipeTbl.GetById(r);
   
+  if(recepie == nullptr)
+  {
+      LOG (ERROR) << "fatal error, could not resolve fighter's recepie with the ID " << r;
+      return;
+  }
+              
+  MutableProto().set_fightertypeid(recepie->GetProto().fightertype());  
+  MutableProto().set_quality(recepie->GetProto().quality());
+  MutableProto().set_rating(GetRatingFromQuality(recepie->GetProto().quality()));
+  MutableProto().set_sweetness(0 + recepie->GetProto().quality());
+  MutableProto().set_name(recepie->GetProto().name());
+  MutableProto().set_highestappliedsweetener(0 + recepie->GetProto().quality());
+  
+  std::map<pxd::ArmorType, std::string> slotsUsed;
+  
+    
+  for(auto& move: recepie->GetProto().moves())
+  {
+       std::string* newmove = MutableProto().add_moves();
+       newmove->assign(move);
+       
+       for(auto& moveBlueprint: fighterMoveBlueprintList)
+       {
+           if(moveBlueprint.second.authoredid() == move)
+           {   
+             std::vector<pxd::ArmorType> aType = ArmorTypeFromMoveType((pxd::MoveType)moveBlueprint.second.movetype());
+             pxd::ArmorType randomElement = aType[rnd.NextInt(aType.size())];
+             
+             if(slotsUsed.find(randomElement) == slotsUsed.end())
+             {
+                slotsUsed.insert(std::pair<pxd::ArmorType, std::string>(randomElement, moveBlueprint.second.candytype()));
+               
+                proto::ArmorPiece* newArmorPiece = MutableProto().add_armorpieces();
+                newArmorPiece->set_armortype((uint32_t)randomElement);
+                newArmorPiece->set_candy(moveBlueprint.second.candytype());
+                newArmorPiece->set_rewardsource(0);
+                newArmorPiece->set_rewardsourceid("");
+             }
+           }
+       }
+       
+       std::vector<std::string> animationsToChoiceFrom;
+       
+       for(auto& animation: animations)
+       {
+           if(animation.second.quality() == recepie->GetProto().quality())
+           {
+               animationsToChoiceFrom.push_back(animation.second.authoredid());
+           }
+       }
+       
+       std::string randomAnimationElement = animationsToChoiceFrom[rnd.NextInt(animationsToChoiceFrom.size())];
+       MutableProto().set_animationid(randomAnimationElement);            
+  }
+
   Validate ();
 }
 
@@ -107,6 +115,7 @@ FighterInstance::FighterInstance (Database& d, const Database::Result<FighterRes
   id = res.Get<FighterResult::id> ();
   tracker = db.TrackHandle ("fighter", id);
   owner = res.Get<FighterResult::owner> ();
+  status = GetStatusFromColumn (res);
 
   data = res.GetProto<FighterResult::proto> ();
 
@@ -172,21 +181,31 @@ FighterInstance::~FighterInstance ()
           << " has been modified including proto data, updating DB";
       auto stmt = db.Prepare (R"(
         INSERT OR REPLACE INTO `fighters`
-          (`id`,`owner`, `proto`)
+          (`id`,`owner`, `proto`, `status`)
           VALUES
           (?1,
            ?2,
-           ?3)
+           ?3,
+           ?4)
       )");
 
       BindFieldValues (stmt);
       stmt.BindProto (3, data);
+      BindStatusParameter (stmt, 4, status);
       stmt.Execute ();
 
       return;
   }
 	
   VLOG (2) << "Fighter " << id << " is not dirty, no update";
+}
+
+void
+BindStatusParameter (Database::Statement& stmt, const unsigned ind,
+                      const FighterStatus f)
+{
+  stmt.Bind (ind, static_cast<int64_t> (f));
+  return;
 }
 
 void
@@ -203,7 +222,7 @@ FighterInstance::BindFieldValues (Database::Statement& stmt) const
 }
 
 FighterTable::Handle
-FighterTable::CreateNew (const std::string& owner, std::string recipe, const RoConfig& cfg, xaya::Random& rnd)
+FighterTable::CreateNew (const std::string& owner, uint32_t recipe, const RoConfig& cfg, xaya::Random& rnd)
 {
   return Handle (new FighterInstance (db, owner, recipe, cfg, rnd));
 }
@@ -243,6 +262,35 @@ FighterTable::QueryForOwner (const std::string& owner)
   )");
   stmt.Bind (1, owner);
   return stmt.Query<FighterResult> ();
+}
+
+namespace
+{
+
+struct CountResult : public Database::ResultType
+{
+  RESULT_COLUMN (int64_t, cnt, 1);
+};
+
+} // anonymous namespace
+
+unsigned
+FighterTable::CountForOwner (const std::string& owner)
+{
+  auto stmt = db.Prepare (R"(
+    SELECT COUNT(*) AS `cnt`
+      FROM `fighters`
+      WHERE `owner` = ?1
+      ORDER BY `id`
+  )");
+  stmt.Bind (1, owner);
+
+  auto res = stmt.Query<CountResult> ();
+  CHECK (res.Step ());
+  const unsigned count = res.Get<CountResult::cnt> ();
+  CHECK (!res.Step ());
+
+  return count;
 }
 
 void

@@ -79,9 +79,19 @@ public:
   Json::Value MoneySupply();  
   
   /**
-   * Returns the JSON data about fightrers.
+   * Returns the JSON data about fighters.
    */
   Json::Value Fighters();   
+
+  /**
+   * Returns the JSON data about rewards.
+   */
+  Json::Value Rewards(); 
+  
+  /**
+   * Returns the JSON data about recepies.
+   */
+  Json::Value Recepies();   
 
   /**
    * Returns the full game state JSON for the given Database handle.  The full

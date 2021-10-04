@@ -14,6 +14,7 @@ libdatabase_la_LIBADD = \
 libdatabase_la_SOURCES = \
   database.cpp \
   schema.cpp \
+  reward.cpp \
   activity.cpp \
   moneysupply.cpp \
   xayaplayer.cpp \
@@ -26,11 +27,12 @@ noinst_HEADERS = \
   database.hpp database.tpp \
   lazyproto.hpp lazyproto.tpp \ 
   schema.hpp \
+  reward.hpp \
   amount.hpp \
   activity.hpp \
   tournament.hpp \
   recipe.hpp \
-  fighter.hpp \
+  fighter.hpp fighter.tpp\
   xayaplayer.hpp xayaplayer.tpp \
   moneysupply.hpp \
   uniquehandles.hpp uniquehandles.tpp

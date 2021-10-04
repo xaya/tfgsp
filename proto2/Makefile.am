@@ -12,6 +12,7 @@ PROTOS = \
   $(builddir)/../proto/armor_piece.proto \
   $(builddir)/../proto/inventory.proto \
   $(builddir)/../proto/activity_rewards.proto \
+  $(builddir)/../proto/activity_reward_instance.proto \
   $(builddir)/../proto/animation.proto \
   $(builddir)/../proto/candy.proto \
   $(builddir)/../proto/crystal_bundle.proto \

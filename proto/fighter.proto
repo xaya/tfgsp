@@ -27,32 +27,38 @@ package pxd.proto;
 message Fighter
 {    
   /*Reference to the reciped GUID used to create this fighter*/
-  optional string RecipeId = 1;  
+  optional uint32 RecipeId = 1;  
   
   /*Reference to the Tournament auto incremented table unique ID this fighter currently takes place in*/
   optional uint32 TournamentInstanceID = 2;    
   
+  /*Reference to the expedition auth*/
+  optional string ExpeditionInstanceID = 3;    
+  
   /*FighterType authid used to create this fighter*/
-  optional string FighterTypeId = 3;
+  optional string FighterTypeId = 4;
 
   /*Fighters Quality*/
-  optional uint32 Quality = 4;   
+  optional uint32 Quality = 5;   
 
   /*Fighters Rating*/
-  optional uint32 Rating = 5;   
+  optional uint32 Rating = 6;   
   
   /*Fighters Sweetness*/
-  optional uint32 Sweetness = 6;    
+  optional uint32 Sweetness = 7;    
   
   /*Fighters HighestApplied Sweetner*/
-  optional uint32 HighestAppliedSweetener = 7;   
+  optional uint32 HighestAppliedSweetener = 8;   
 
   /*List of fighters moves*/
-  repeated string Moves = 8;  
+  repeated string Moves = 9;  
   
   /*List of armor pieces generates from moves and candies*/
-  repeated ArmorPiece ArmorPieces = 9;
+  repeated ArmorPiece ArmorPieces = 10;
   
   /*Fighters animation unique GUID*/
-  optional string AnimationID = 10;    
+  optional string AnimationID = 11;   
+
+  /*Authored fighter name*/
+  optional string Name = 12;     
 }

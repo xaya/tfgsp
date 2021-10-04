@@ -1,0 +1,6 @@
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *RecepieInstanceRevertIfFullRoster*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.RecepieInstanceRevertIfFullRoster

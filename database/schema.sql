@@ -53,6 +53,20 @@ CREATE TABLE IF NOT EXISTS `recepies` (
   `proto` BLOB NOT NULL
 );
 
+-- Data for the rewards in the game.
+CREATE TABLE IF NOT EXISTS `rewards` (
+
+  -- The reward ID, which is assigned based on libxayagame's AutoIds.
+  `id` INTEGER PRIMARY KEY,
+  
+ -- The Xaya name that owns this reward (and is thus allowed to send
+  -- moves for it).
+  `owner` TEXT NOT NULL,  
+
+  -- Additional data encoded as a ActivityRewardInstance protocol buffer.
+  `proto` BLOB NOT NULL  
+);
+
 -- Data for the fighters in the game.
 CREATE TABLE IF NOT EXISTS `fighters` (
 
@@ -64,7 +78,11 @@ CREATE TABLE IF NOT EXISTS `fighters` (
   `owner` TEXT NOT NULL,  
 
   -- Additional data encoded as a Fighter protocol buffer.
-  `proto` BLOB NOT NULL
+  `proto` BLOB NOT NULL,
+  
+  -- The status (as integer corresponding to the FighterStatus enum in C++).
+  -- Is always Available on start, when fresh fighter is created.
+  `status` INTEGER NULL    
 );
 
 -- Data stored for the Xaya players (names) themselves.

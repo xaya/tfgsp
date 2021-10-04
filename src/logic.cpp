@@ -17,6 +17,7 @@
 */
 
 #include "logic.hpp"
+#include "database/reward.hpp"
 
 #include "moveprocessor.hpp"
 
@@ -64,54 +65,227 @@ PXLogic::UpdateState (Database& db, xaya::Random& rnd,
   UpdateState (db, rnd, ctx, blockData);
 }
 
-void PXLogic::ResolveCookingRecepie(std::unique_ptr<XayaPlayer>& a, const std::string receipeAuthID, Database& db, const Context& ctx, xaya::Random& rnd)
+std::vector<uint32_t> PXLogic::GenerateActivityReward(const uint32_t fighterID, const std::string blueprintAuthID, const pxd::proto::AuthoredActivityReward rw, const Context& ctx, Database& db, std::unique_ptr<XayaPlayer>& a, xaya::Random& rnd, const uint32_t posInTableList, const std::string basedRewardsTableAuthId)
+{
+  RecipeInstanceTable recipeTbl(db);
+  RewardsTable rewardsTbl(db);
+    
+  std::vector<uint32_t> iDS;
+    
+  if((int8_t)rw.type() != (int8_t)RewardType::None)
+  {
+      auto newReward = rewardsTbl.CreateNew(a->GetName());              
+      newReward->MutableProto().set_expeditionid(blueprintAuthID);
+      newReward->MutableProto().set_rewardid(basedRewardsTableAuthId);
+      newReward->MutableProto().set_positionintable(posInTableList);
+      newReward->MutableProto().set_fighterid(fighterID);
+      
+      LOG (WARNING) << "Processing reward type:" << rw.type();
+      
+      if((RewardType)(int)rw.type() == RewardType::CraftedRecipe)
+      {
+          auto newRecipe = recipeTbl.CreateNew("", rw.craftedrecipeid(), ctx.RoConfig());          
+          newReward->MutableProto().set_generatedrecipeid(newRecipe->GetId());
+          iDS.push_back(newReward->GetId());
+          
+          LOG (WARNING) << "CraftedRecipe reward generated";
+      }
+      
+      if((RewardType)(int)rw.type() == RewardType::GeneratedRecipe)
+      {
+          newReward->MutableProto().set_generatedrecipeid(pxd::RecipeInstance::Generate((pxd::Quality)(int)rw.generatedrecipequality(), ctx.RoConfig(), rnd, db));                      
+          iDS.push_back(newReward->GetId());
+          
+          LOG (WARNING) << "GeneratedRecipe reward generated";
+      }
+      
+      if((RewardType)(int)rw.type() == RewardType::List)
+      {
+          const auto& rewardsList = ctx.RoConfig()->activityrewards();
+          for(const auto& rewardsTable: rewardsList)
+          {   
+            
+            if(rewardsTable.second.authoredid() == rw.listtableid())
+            {            
+              uint32_t posInTableList2 = 0;
+              
+              for(auto& rw2: rewardsTable.second.rewards())
+              {
+                  std::vector<uint32_t> newIDS = GenerateActivityReward(fighterID, blueprintAuthID, rw2, ctx, db, a, rnd, posInTableList2, rw.listtableid());
+                  
+                  for(long long unsigned int j = 0; j < newIDS.size(); j++)
+                  {
+                    iDS.push_back(newIDS[j]);
+                  }
+                  
+                  posInTableList2++;
+              }
+            }
+            
+            
+          }     
+      }
+  }
+
+  return iDS;
+}
+
+void PXLogic::ResolveExpedition(std::unique_ptr<XayaPlayer>& a, const std::string blueprintAuthID, const uint32_t fighterID, Database& db, const Context& ctx, xaya::Random& rnd)
+{
+    const auto& expeditionList = ctx.RoConfig()->expeditionblueprints();
+    bool blueprintSolved = false;
+    int rollCount = 0;
+    
+    const auto chain = ctx.Chain ();
+    if (blueprintAuthID == "00000000-0000-0000-zzzz-zzzzzzzzzzzz" && chain == xaya::Chain::MAIN)
+    {
+        LOG (WARNING) << "Unit test blueprint is not allowed on the mainnet " << blueprintAuthID;
+        return;
+    }
+    
+    std::string basedRewardsTableAuthId = "";
+    
+    for(const auto& expedition: expeditionList)
+    {
+        if(expedition.second.authoredid() == blueprintAuthID)
+        {
+            rollCount = expedition.second.baserollcount();
+            basedRewardsTableAuthId = expedition.second.baserewardstableid();
+            blueprintSolved = true;
+            break;
+        }
+    }   
+    
+    if(blueprintSolved == false)
+    {
+        LOG (WARNING) << "Could not resolve expedition in logic blueprint with authID: " << blueprintAuthID;
+        return;              
+    }
+    
+    pxd::proto::ActivityReward rewardTableDb;
+    
+    const auto& rewardsList = ctx.RoConfig()->activityrewards();
+    bool rewardsSolved = false;
+    
+    for(const auto& rewardsTable: rewardsList)
+    {
+        if(rewardsTable.second.authoredid() == basedRewardsTableAuthId)
+        {
+            rewardTableDb = rewardsTable.second;
+            rewardsSolved = true;
+            break;
+        }
+    }     
+
+    if(rewardsSolved == false)
+    {
+        LOG (WARNING) << "Could not resolve expedition rewards in logic  with authID: " << blueprintAuthID;
+        return;             
+    }
+    
+    FighterTable fighters(db);
+    FighterTable::Handle fighter;
+    fighter = fighters.GetById (fighterID, ctx.RoConfig ());
+    
+    if(fighter == nullptr)
+    {
+        LOG (WARNING) << "Could not resolve fighter with id: " << fighterID;
+        return;           
+    }
+
+    
+    fighter->SetStatus(FighterStatus::Available);
+    
+    uint32_t totalWeight = 0;
+    for(auto& rw: rewardTableDb.rewards())
+    {
+       totalWeight += (uint32_t)rw.weight();
+    }
+
+    LOG (WARNING) << "Rolling for total possible awards: " << rollCount;
+    
+    for(int roll = 0; roll < rollCount; ++roll)
+    {
+        int rolCurNum = 0;
+        
+        if(totalWeight != 0)
+        {
+          rnd.NextInt(totalWeight);
+        }
+        
+        int accumulatedWeight = 0;
+        int posInTableList = 0;
+        for(auto& rw: rewardTableDb.rewards())
+        {
+            accumulatedWeight += rw.weight();
+            
+            if(rolCurNum <= accumulatedWeight)
+            {
+               GenerateActivityReward(fighterID, blueprintAuthID, rw, ctx, db, a, rnd, posInTableList, basedRewardsTableAuthId);
+            }
+            
+             posInTableList++;
+        }
+    }
+
+    //If we are in tutorial yet, lets advance tutorial counter
+    
+    if(a->GetFTUEState() == FTUEState::FirstExpeditionPending)
+    {
+        a->SetFTUEState(FTUEState::ResolveFirstExpedition);
+    }    
+}
+
+void PXLogic::ResolveCookingRecepie(std::unique_ptr<XayaPlayer>& a, const uint32_t recepieID, Database& db, const Context& ctx, xaya::Random& rnd)
 {
     /* We must check against treat slots once more,
     because at this point player could have more fighters cooked
     from the previously running instances*/
+    FighterTable fighters(db);
+    RecipeInstanceTable recipeTbl(db);
     
-    uint32_t slots = 0; //TODO, get from total player owning fighters   
+    uint32_t slots = fighters.CountForOwner(a->GetName());   
   
     if(slots >= ctx.RoConfig()->params().max_fighter_inventory_amount())
     {
-        LOG (WARNING) << "Need to revert, not enough slots to host a new fighter for recepie with authid " << receipeAuthID;   
+        LOG (WARNING) << "Need to revert, not enough slots to host a new fighter for recepie with authid " << recepieID;   
         
         std::map<std::string, pxd::Quantity> fungibleItemAmountForDeduction;
         int32_t cookCost = -1;        
         
-        const auto& recepiesList = ctx.RoConfig()->recepies();
+        pxd::RecipeInstanceTable::Handle recepie = recipeTbl.GetById(recepieID);
         
-        for(const auto& recepie: recepiesList)
+        if(recepie == nullptr)
         {
-          if(recepie.second.authoredid() == receipeAuthID)
-          {
-              if(recepie.second.quality() == 0)
-              {
-                  cookCost = ctx.RoConfig()->params().common_recipe_cook_cost();
-              }
-              
-              if(recepie.second.quality() == 1)
-              {
-                  cookCost = ctx.RoConfig()->params().uncommon_recipe_cook_cost();
-              }
+            LOG (ERROR) << "Fatal error, could not find recepie with id: " << recepieID;
+            return;
+        }
+        
+        if(recepie->GetProto().quality() == 0)
+        {
+            cookCost = ctx.RoConfig()->params().common_recipe_cook_cost();
+        }
+        
+        if(recepie->GetProto().quality() == 1)
+        {
+            cookCost = ctx.RoConfig()->params().uncommon_recipe_cook_cost();
+        }
 
-              if(recepie.second.quality() == 2)
-              {
-                  cookCost = ctx.RoConfig()->params().rare_recipe_cook_cost();
-              }
+        if(recepie->GetProto().quality() == 2)
+        {
+            cookCost = ctx.RoConfig()->params().rare_recipe_cook_cost();
+        }
 
-              if(recepie.second.quality() == 3)
-              {
-                  cookCost = ctx.RoConfig()->params().epic_recipe_cook_cost();
-              } 
-              
-              for(const auto& candyNeeds: recepie.second.requiredcandy())
-              {
-                std::string candyInventoryName = BaseMoveProcessor::GetCandyKeyNameFromID(candyNeeds.candytype(), ctx);
-                pxd::Quantity quantity = candyNeeds.amount();
-                fungibleItemAmountForDeduction.insert(std::pair<std::string, pxd::Quantity>(candyInventoryName, quantity));              
-              }
-          }
+        if(recepie->GetProto().quality() == 3)
+        {
+            cookCost = ctx.RoConfig()->params().epic_recipe_cook_cost();
+        } 
+        
+        for(const auto& candyNeeds: recepie->GetProto().requiredcandy())
+        {
+          std::string candyInventoryName = BaseMoveProcessor::GetCandyKeyNameFromID(candyNeeds.candytype(), ctx);
+          pxd::Quantity quantity = candyNeeds.amount();
+          fungibleItemAmountForDeduction.insert(std::pair<std::string, pxd::Quantity>(candyInventoryName, quantity));              
         }
         
         auto& playerInventory = a->GetInventory();
@@ -121,15 +295,34 @@ void PXLogic::ResolveCookingRecepie(std::unique_ptr<XayaPlayer>& a, const std::s
         }
     
         a->AddBalance(cookCost); 
-        playerInventory.AddFungibleCount(BaseMoveProcessor::GetRecepieKeyNameFromID(receipeAuthID, ctx), 1);
+        
+        recepie->SetOwner(a->GetName());
     }
     else
     {
-        FighterTable fighters(db);
-        auto newFighter = fighters.CreateNew (a->GetName(), receipeAuthID, ctx.RoConfig(), rnd);
+        auto newFighter = fighters.CreateNew (a->GetName(), recepieID, ctx.RoConfig(), rnd);
         a->CalculatePrestige(ctx.RoConfig());
-    }    
-    
+        
+        //If we are in tutorial yet, lets advance tutorial counter
+        
+        if(a->GetFTUEState() == FTUEState::CookingFirstRecipe)
+        {
+            a->SetFTUEState(FTUEState::FirstExpedition);
+        }
+        
+        if(a->GetFTUEState() == FTUEState::CookingSecondRecipe)
+        {
+            a->SetFTUEState(FTUEState::FirstTournament);
+        }        
+        
+        /**
+        recipeTbl.DeleteById(recepieID);  
+        
+        now, jere ideally we want to erase it. but, for example, fighter object stores recepie ID,
+        and I am not sure will it be ever used somewhere else again? so, FOR NOW, lets not delete,
+        just keep empty owner so it marks this as used this way
+        */
+    }        
 }
 
 void PXLogic::TickAndResolveOngoings(Database& db, const Context& ctx, xaya::Random& rnd)
@@ -139,7 +332,7 @@ void PXLogic::TickAndResolveOngoings(Database& db, const Context& ctx, xaya::Ran
     XayaPlayersTable xayaplayers(db);
     auto res = xayaplayers.QueryAll ();
 
-    bool tryAndStep = res.Step ();
+    bool tryAndStep = res.Step();
     while (tryAndStep)
     {
       auto a = xayaplayers.GetFromResult (res, ctx.RoConfig ());
@@ -156,9 +349,17 @@ void PXLogic::TickAndResolveOngoings(Database& db, const Context& ctx, xaya::Ran
               {
                 LOG (INFO) << "Resolving oingoing operation for pxd::OngoingType::COOK_RECIPE";
                 
-                ResolveCookingRecepie(a, it->itemauthid(), db, ctx, rnd);
+                ResolveCookingRecepie(a, (uint32_t)it->recipeid(), db, ctx, rnd);
                 forErasing.push_back(it);
               }
+              
+              if((pxd::OngoingType)it->type() == pxd::OngoingType::EXPEDITION)
+              {
+                LOG (INFO) << "Resolving oingoing operation for pxd::OngoingType::EXPEDITION";
+                
+                ResolveExpedition(a, it->expeditionblueprintid(), (uint32_t)it->fighterdatabaseid(), db, ctx, rnd);
+                forErasing.push_back(it);
+              }              
           }          
       }
       

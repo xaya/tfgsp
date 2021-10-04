@@ -31,6 +31,7 @@ PROTOS = \
   activity.proto \
   crafted_recipe.proto \
   activity_rewards.proto \
+  activity_reward_instance.proto \
   animation.proto \
   candy.proto \
   crystal_bundle.proto \

@@ -71,6 +71,16 @@ public:
    */    
   void AddRecepieCookingInstance (const XayaPlayer& a, int32_t duration); 
   
+   /**
+   * Updates the state for a new recepie instance bundle
+   */    
+  void AddExpeditionInstance (const XayaPlayer& a, int32_t duration);   
+  
+   /**
+   * Updates the state for a new pending rewards
+   */      
+  void AddRewardIDs (const XayaPlayer& a, std::vector<uint32_t> rewardDatabaseIds);
+  
   /**
    * Pending state updates associated to an account.
    */
@@ -95,6 +105,9 @@ public:
      * Returns the JSON representation of the pending state.
      */
     Json::Value ToJson () const;
+    
+    /** IDs of rewards currently pending for claiming */
+    std::vector<uint32_t> rewardDatabaseIds;
 
   };  
   

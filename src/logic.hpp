@@ -78,10 +78,17 @@ class PXLogic : public xaya::SQLiteGame
 
 private:
 
+  /** Helper function that generates and pushes new reward instance into the database and returns unique auto ID */
+  static std::vector<uint32_t> GenerateActivityReward(const uint32_t fighterID, const std::string blueprintAuthID, const pxd::proto::AuthoredActivityReward rw, const Context& ctx, Database& db, std::unique_ptr<XayaPlayer>& a, xaya::Random& rnd, const uint32_t posInTableList, const std::string basedRewardsTableAuthId);
   /**
    * When cooking recepie operation reaches 0 blocks, we either
    * resolve it or reverse, based on cirsumstances */                         
-  static void ResolveCookingRecepie(std::unique_ptr<XayaPlayer>& a, const std::string receipeAuthID, Database& db, const Context& ctx, xaya::Random& rnd);
+  static void ResolveCookingRecepie(std::unique_ptr<XayaPlayer>& a, const uint32_t recepieID, Database& db, const Context& ctx, xaya::Random& rnd);
+
+  /**
+   * When expedition block count operation reaches 0 blocks, we either
+   * resolve it or close as completed, based on cirsumstances */   
+  static void ResolveExpedition(std::unique_ptr<XayaPlayer>& a, const std::string blueprintAuthID, const uint32_t fighterID, Database& db, const Context& ctx, xaya::Random& rnd);
 
   /**
    * For every ongoing operation we reduce its block count by 1

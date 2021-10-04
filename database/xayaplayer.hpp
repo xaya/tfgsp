@@ -22,6 +22,7 @@
 #include "database.hpp"
 #include "amount.hpp"
 #include "fighter.hpp"
+#include "recipe.hpp"
 #include "tournament.hpp"
 #include "inventory.hpp"
 #include "lazyproto.hpp"
@@ -34,16 +35,15 @@
 
 namespace pxd
 {
-
 /**
  * Ongoing operation type which we resolve once its blockcount hits zero
  */
 enum class OngoingType : int8_t
 {
   INVALID = 0,
-  COOK_RECIPE = 1
+  COOK_RECIPE = 1,
+  EXPEDITION = 2
 };
-
 
 /**
  * A player role in the game
@@ -150,14 +150,12 @@ PlayerRole PlayerRoleFromString (const std::string& str);
 FTUEState FTUEStateFromString (const std::string& str);
 
 /**
- * Binds a faction value to a statement parameter.  If f is Faction::INVALID,
- * then a NULL will be bound instead.
+ * Binds a role value to a role parameter. 
  */
 void BindPlayerRoleParameter (Database::Statement& stmt, unsigned ind, PlayerRole f);
 
 /**
- * Binds a faction value to a statement parameter.  If f is Faction::INVALID,
- * then a NULL will be bound instead.
+ * Binds a tutorial value to a tutorial parameter.
  */
 void BindFTUEStateParameter (Database::Statement& stmt, unsigned ind, FTUEState f);
 
@@ -209,7 +207,7 @@ private:
    */
   explicit XayaPlayer (Database& d, const Database::Result<XayaPlayerResult>& res, const RoConfig& cfg);
 
-  friend class XayaPlayersTable;
+  friend class XayaPlayersTable;       
 
 public:
 

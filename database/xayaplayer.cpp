@@ -45,11 +45,13 @@ XayaPlayer::XayaPlayer (Database& d, const std::string& n, const RoConfig& cfg)
   /*For the new account, we are supplying initial set of items*/    
   std::string starting_recepie_guid = cfg->params().starting_recipes(); 
   
-  for (const auto& recepie :  cfg->recepies())
+  for (const auto& recepie : cfg->recepies())
   {
     if(recepie.second.authoredid() == starting_recepie_guid)
     {
-        inv.SetFungibleCount(recepie.first, 1);
+
+        RecipeInstanceTable recipesTbl(d);          
+        recipesTbl.CreateNew (GetName(), starting_recepie_guid, cfg);
     
         for (const auto& candy : recepie.second.requiredcandy())
         {

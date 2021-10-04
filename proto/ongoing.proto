@@ -29,6 +29,18 @@ message OngoinOperation
   /*Enum OngoinType of the operation*/
   optional uint32 Type = 2; 
 
-  /*Enum OngoinType of the operation*/
-  optional string ItemAuthID = 3;     
+  /*Enum RecipeID of the operation*/
+  optional uint32 RecipeID = 3;     
+  
+  /*Enum FighterDatabaseID of the operation*/
+  optional uint32 FighterDatabaseID = 4;  
+
+  /*Enum ExpeditionBlueprintID of the operation*/
+  optional string ExpeditionBlueprintID = 5;    
+  
+  /*Enum appliedGoodyKeyName of the operation*/
+  optional string AppliedGoodyKeyName = 6;    
+  
+  /*Enum ItemDatabaseID of the operation*/
+  optional string ItemDatabaseID = 7;      
 }

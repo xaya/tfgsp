@@ -20,6 +20,8 @@
 
 #include "database/xayaplayer.hpp"
 #include "database/fighter.hpp"
+#include "database/recipe.hpp"
+#include "database/reward.hpp"
 #include "database/activity.hpp"
 #include "database/moneysupply.hpp"
 
@@ -48,13 +50,88 @@ template <typename T, typename R>
 
 template <>
   Json::Value
+  GameStateJson::Convert<RecipeInstance>(const RecipeInstance& recipe) const
+{
+  const auto& pb = recipe.GetProto ();
+  Json::Value res(Json::objectValue);
+  
+  res["owner"] = recipe.GetOwner ();
+  res["authoredid"] = pb.authoredid ();
+  res["did"] = recipe.GetId ();
+  
+  if(pb.authoredid () == "generated")
+  {
+    res["animationid"] = pb.animationid ();
+    res["name"] = pb.name ();
+    res["duration"] = pb.duration ();
+    res["fightername"] = pb.fightername ();
+    res["fightertype"] = pb.fightertype ();
+    res["quality"] = pb.quality ();
+    res["isaccountbound"] = pb.isaccountbound ();
+    res["requiredfighterquality"] = pb.requiredfighterquality ();
+    
+    Json::Value armorD(Json::arrayValue);
+    for(auto& armor: pb.armor())
+    {
+       Json::Value arm(Json::objectValue);
+       arm["candytype"] = armor.candytype();
+       arm["armortype"] = armor.armortype();
+       armorD.append (arm);       
+    }
+    res["armor"] = armorD;
+    
+    Json::Value moves(Json::arrayValue);
+    for(auto& move: pb.moves())
+    {
+       moves.append (move);       
+    }
+    res["moves"] = moves;   
+
+    Json::Value rcandy(Json::arrayValue);
+    for(auto& candy: pb.requiredcandy())
+    {
+       Json::Value cd(Json::objectValue);
+       cd["candytype"] = candy.candytype();
+       cd["amount"] = candy.amount();
+       rcandy.append (cd);       
+    }
+    res["requiredcandy"] = rcandy;
+  }
+
+  return res;
+} 
+
+template <>
+  Json::Value
+  GameStateJson::Convert<RewardInstance>(const RewardInstance& reward) const
+{
+  const auto& pb = reward.GetProto ();
+  Json::Value res(Json::objectValue);
+  
+  res["owner"] = reward.GetOwner ();
+  res["tournamentid"] = pb.tournamentid();
+  res["expeditionid"] = pb.expeditionid();
+  res["sweetenerid"] = pb.sweetenerid();
+  res["generatedrecipeid"] = pb.generatedrecipeid();
+  res["rewardid"] = pb.rewardid();
+  res["positionintable"] = pb.positionintable();
+  
+  return res;
+} 
+
+template <>
+  Json::Value
   GameStateJson::Convert<FighterInstance>(const FighterInstance& fighter) const
 {
   const auto& pb = fighter.GetProto ();
   Json::Value res(Json::objectValue);
   
   res["owner"] = fighter.GetOwner ();
+  res["status"] = (int)fighter.GetStatus();
   res["recipeid"] = pb.recipeid();
+  res["name"] = pb.name();
+  res["id"] = fighter.GetId();
+  res["expeditioninstanceid"] = pb.expeditioninstanceid();
   res["tournamentinstanceid"] = IntToJson (pb.tournamentinstanceid());
   res["fightertypeid"] = pb.fightertypeid();
   res["quality"] = IntToJson (pb.quality());
@@ -85,7 +162,7 @@ template <>
       armor["candy"] = data2.candy();
       armor["armortype"] = IntToJson (data2.armortype());
       armor["rewardsource"] = IntToJson (data2.rewardsource());
-      armor["rewardsourceid"] = IntToJson (data2.rewardsourceid());
+      armor["rewardsourceid"] = data2.rewardsourceid();
       
       armorPieces.append (armor);
   }  
@@ -150,6 +227,40 @@ template <>
   res["ftuestate"] = FTUEStateToString (a.GetFTUEState ());
   
   res["inventory"] = Convert (a.GetInventory ());
+  
+  Json::Value recJsonObj(Json::arrayValue);
+  RecipeInstanceTable recepiesTbl(db);
+  auto ourRecepies = recepiesTbl.QueryForOwner(a.GetName ());
+  
+  bool stepLoop = ourRecepies.Step ();
+  while (stepLoop)
+  {
+      const auto h = recepiesTbl.GetFromResult (ourRecepies);
+      recJsonObj.append (h->GetId());
+      stepLoop = ourRecepies.Step ();
+  }
+  res["recepies"] = recJsonObj;
+    
+  Json::Value ongoingOps(Json::arrayValue);
+  
+  for(auto& ongoing: pb.ongoings())
+  {
+      Json::Value ongOB(Json::arrayValue);
+      ongOB["type"] = ongoing.type();
+      
+      if((pxd::OngoingType)(int)ongoing.type() == pxd::OngoingType::COOK_RECIPE)
+      {
+        ongOB["recipeid"] = ongoing.recipeid();
+      }
+      
+      if((pxd::OngoingType)(int)ongoing.type() == pxd::OngoingType::EXPEDITION)
+      {
+        ongOB["fighterdatabaseid"] = ongoing.fighterdatabaseid();
+        ongOB["expeditionblueprintid"] = ongoing.expeditionblueprintid();
+      }
+  }
+  
+  res["ongoings"] = ongoingOps;
 
   return res;
 }
@@ -221,9 +332,27 @@ GameStateJson::Activities()
 }
 
 Json::Value
+GameStateJson::Rewards()
+{
+  RewardsTable tbl(db);
+  Json::Value res = ResultsAsArray (tbl, tbl.QueryAll ());
+
+  return res;
+}
+
+Json::Value
 GameStateJson::Fighters()
 {
   FighterTable tbl(db);
+  Json::Value res = ResultsAsArray (tbl, tbl.QueryAll ());
+
+  return res;
+}
+
+Json::Value
+GameStateJson::Recepies()
+{
+  RecipeInstanceTable tbl(db);
   Json::Value res = ResultsAsArray (tbl, tbl.QueryAll ());
 
   return res;
@@ -252,6 +381,8 @@ GameStateJson::FullState()
   res["activities"] = Activities();
   res["crystalbundles"] = CrystalBundles();
   res["fighters"] = Fighters();
+  res["rewards"] = Rewards();
+  res["recepies"] = Recepies();
   
   return res;
 }  

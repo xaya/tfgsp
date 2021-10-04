@@ -23,6 +23,7 @@
 #include "forks.hpp"
 
 #include "database/dbtest.hpp"
+#include "database/recipe.hpp"
 
 #include <xayautil/jsonutils.hpp>
 
@@ -42,19 +43,17 @@ namespace
 class MoveProcessorTests : public DBTestWithSchema
 {
 
-private:
-
-  TestRandom rnd;
-
 protected:
 
+  TestRandom rnd;
   ContextForTesting ctx;
   XayaPlayersTable xayaplayers;
-  
+  RecipeInstanceTable tbl2;
+  FighterTable tbl3;
   
 
   explicit MoveProcessorTests ()
-    : xayaplayers(db)
+    : xayaplayers(db), tbl2(db), tbl3(db)
   {}
 
   /**
@@ -216,8 +215,11 @@ TEST_F (XayaPlayersUpdateTests, RecepieInstanceSheduleTest)
 {
   xayaplayers.CreateNew ("domob", ctx.RoConfig())->AddBalance (100);
   
+  auto r0 = tbl2.CreateNew("domob", "5864a19b-c8c0-2d34-eaef-9455af0baf2c", ctx.RoConfig());
+  r0.reset();    
+  
   Process (R"([
-    {"name": "domob", "move": {"ca": {"r": {"rid": "5864a19b-c8c0-2d34-eaef-9455af0baf2c", "fid": ""}}}}
+    {"name": "domob", "move": {"ca": {"r": {"rid": 1, "fid": 0}}}}
   ])");  
   
   auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
@@ -230,7 +232,7 @@ TEST_F (XayaPlayersUpdateTests, RecepieInstanceWrongValues)
   xayaplayers.CreateNew ("domob", ctx.RoConfig())->AddBalance (100);
   
   Process (R"([
-    {"name": "domob", "move": {"ca": {"r": {"rid": "5864a19b-0000-2d34-eaef-9455af0baf2c", "fid": ""}}}}
+    {"name": "domob", "move": {"ca": {"r": {"rid": 4, "fid": 0}}}}
   ])");  
   
   auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
@@ -242,17 +244,71 @@ TEST_F (XayaPlayersUpdateTests, RecepieInstanceInsufficientResources)
 {
   xayaplayers.CreateNew ("domob", ctx.RoConfig())->AddBalance (100);
 
+  auto r0 = tbl2.CreateNew("domob", "5864a19b-c8c0-2d34-eaef-9455af0baf2c", ctx.RoConfig());
+  r0.reset();  
+
   Process (R"([
-    {"name": "domob", "move": {"ca": {"r": {"rid": "5864a19b-c8c0-2d34-eaef-9455af0baf2c", "fid": ""}}}}
+    {"name": "domob", "move": {"ca": {"r": {"rid": 1, "fid": 0}}}}
   ])");  
   
   Process (R"([
-    {"name": "domob", "move": {"ca": {"r": {"rid": "5864a19b-c8c0-2d34-eaef-9455af0baf2c", "fid": ""}}}}
+    {"name": "domob", "move": {"ca": {"r": {"rid": 2, "fid": 0}}}}
   ])");    
   
   auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
   ASSERT_TRUE (a != nullptr);
   EXPECT_EQ (a->GetOngoingsSize (), 1);
+}
+
+TEST_F (XayaPlayersUpdateTests, ExpeditionInstanceSheduleTest)
+{
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig());
+  auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
+  ft.reset();
+  EXPECT_EQ (xp->CollectInventoryFighters(ctx.RoConfig()).size(), 1);
+  xp.reset();
+  
+  Process (R"([
+    {"name": "domob", "move": {"exp": {"f": {"eid": "c064e7f7-acbf-4f74-fab8-cccd7b2d4004", "fid": 2}}}}
+  ])");  
+  
+  auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  ASSERT_TRUE (a != nullptr);
+  EXPECT_EQ (a->GetOngoingsSize (), 1);
+}
+
+TEST_F (XayaPlayersUpdateTests, ExpeditionInstanceSheduleTestWrongData1)
+{
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig());
+  auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
+  ft.reset();
+  EXPECT_EQ (xp->CollectInventoryFighters(ctx.RoConfig()).size(), 1);
+  xp.reset();
+  
+  Process (R"([
+    {"name": "domob", "move": {"exp": {"f": {"eid": "c064e7f7-acbf-4f74-fab8-cccd7b2d4004", "fid": 1}}}}
+  ])");  
+  
+  auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  ASSERT_TRUE (a != nullptr);
+  EXPECT_EQ (a->GetOngoingsSize (), 0);
+}
+
+TEST_F (XayaPlayersUpdateTests, ExpeditionInstanceSheduleTestWrongData2)
+{
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig());
+  auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
+  ft.reset();
+  EXPECT_EQ (xp->CollectInventoryFighters(ctx.RoConfig()).size(), 1);
+  xp.reset();
+  
+  Process (R"([
+    {"name": "domob", "move": {"exp": {"f": {"eid": "c064e7f7-acbf-0000-fab8-cccd7b2d4004", "fid": 2}}}}
+  ])");  
+  
+  auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  ASSERT_TRUE (a != nullptr);
+  EXPECT_EQ (a->GetOngoingsSize (), 0);
 }
 
 TEST_F (XayaPlayersUpdateTests, InitialisationOfExistingAccount)

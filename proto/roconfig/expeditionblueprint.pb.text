@@ -15,6 +15,21 @@ expeditionblueprints:
 }
 expeditionblueprints:
 {
+  key: "UnitTest_Expedition"
+  value:
+  {
+    AuthoredId: "00000000-0000-0000-zzzz-zzzzzzzzzzzz"
+    Name: "UnitTest Expedition"
+    Duration: 1
+    MinSweetness: 1
+    MaxSweetness: 10
+    MaxRewardQuality: 1
+    BaseRewardsTableId: "00000000-0000-0000-xxxx-xxxxxxxxxxxx"
+    BaseRollCount: 1
+  }
+}
+expeditionblueprints:
+{
   key: "Expedition_Rank4_ E1"
   value:
   {

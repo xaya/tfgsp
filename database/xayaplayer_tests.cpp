@@ -17,6 +17,7 @@
 */
 
 #include "xayaplayer.hpp"
+#include "recipe.hpp"
 
 #include "dbtest.hpp"
 #include "proto/roconfig.hpp"
@@ -34,10 +35,12 @@ class XayaPlayerTests : public DBTestWithSchema
 protected:
 
   XayaPlayersTable tbl;
+  RecipeInstanceTable tbl2;
+  
   std::unique_ptr<pxd::RoConfig> cfg;
 
   XayaPlayerTests ()
-    : tbl(db)
+    : tbl(db), tbl2(db)
   {
       cfg = std::make_unique<pxd::RoConfig> (xaya::Chain::REGTEST);
   }
@@ -180,14 +183,20 @@ TEST_F (XayaPlayersTableTests, StartingItems)
 {
   const RoConfig& cfg2 = *cfg;
   auto h = tbl.CreateNew ("domob", *cfg);
-  EXPECT_EQ (h->GetInventory ().GetFungibleCount ("Recipe_Common_FirstRecipe"), 1);
+  
   EXPECT_EQ (h->GetInventory ().GetFungibleCount ("Common_Gumdrop"), 1);
   EXPECT_EQ (h->GetInventory ().GetFungibleCount ("Common_Icing"), 1);  
   EXPECT_EQ (h->GetBalance (), cfg2->params().starting_crystals());
   h.reset ();
+  
+  auto r0 = tbl2.GetById(1);  
+  EXPECT_EQ (r0->GetProto().name(), "First Recipe");  
+  r0.reset();
 
-  h = tbl.GetByName ("domob", *cfg);
-  EXPECT_EQ (h->GetInventory ().GetFungibleCount ("Recipe_Common_FirstRecipe"), 1);
+  h = tbl.GetByName ("domob", *cfg);  
+  r0 = tbl2.GetById(1);  
+  EXPECT_EQ (r0->GetProto().name(), "First Recipe");  
+  
   EXPECT_EQ (h->GetInventory ().GetFungibleCount ("Common_Gumdrop"), 1);
   EXPECT_EQ (h->GetInventory ().GetFungibleCount ("Common_Icing"), 1);
   EXPECT_EQ (h->GetBalance (), cfg2->params().starting_crystals());

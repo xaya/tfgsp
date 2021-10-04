@@ -17,6 +17,7 @@
 */
 
 #include "logic.hpp"
+#include "database/recipe.hpp"
 #include "moveprocessor.hpp"
 
 #include "jsonutils.hpp"
@@ -25,7 +26,7 @@
 
 #include "database/dbtest.hpp"
 #include "database/xayaplayer.hpp"
-
+#include "database/reward.hpp"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -48,17 +49,17 @@ namespace pxd
 class PXLogicTests : public DBTestWithSchema
 {
 
-private:
-
-  TestRandom rnd;
-
 protected:
 
+  TestRandom rnd;
   ContextForTesting ctx;
-
-  XayaPlayersTable xayaplayers;
   
-  PXLogicTests () : xayaplayers(db)
+  XayaPlayersTable xayaplayers;
+  RecipeInstanceTable tbl2;
+  FighterTable tbl3;
+  RewardsTable tbl4;
+  
+  PXLogicTests () : xayaplayers(db), tbl2(db), tbl3(db), tbl4(db)
   {
     SetHeight (42);
   }
@@ -170,11 +171,14 @@ TEST_F (ValidateStateTests, AncientAccountFaction)
 
 TEST_F (ValidateStateTests, RecepieInstanceFullCycleTest)
 {
-   xayaplayers.CreateNew ("domob", ctx.RoConfig())->AddBalance (100);
+  xayaplayers.CreateNew ("domob", ctx.RoConfig())->AddBalance (100);
    
-   Process (R"([
-    {"name": "domob", "move": {"ca": {"r": {"rid": "5864a19b-c8c0-2d34-eaef-9455af0baf2c", "fid": ""}}}}
-   ])");  
+  auto r0 = tbl2.CreateNew("domob", "5864a19b-c8c0-2d34-eaef-9455af0baf2c", ctx.RoConfig());
+  r0.reset();   
+   
+  Process (R"([
+    {"name": "domob", "move": {"ca": {"r": {"rid": 1, "fid": 0}}}}
+  ])");  
 
   auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
   ASSERT_TRUE (a != nullptr);
@@ -189,10 +193,57 @@ TEST_F (ValidateStateTests, RecepieInstanceFullCycleTest)
   
   EXPECT_EQ (a->GetBalance (), 75);
   
-  EXPECT_EQ (a->GetInventory().GetFungibleCount("Recipe_Common_FirstRecipe"), 0);
+  auto r = tbl2.GetById(1); 
+  EXPECT_EQ (r->GetProto().name(), "First Recipe");
+  EXPECT_EQ (r->GetOwner(), "");
+  
   EXPECT_EQ (a->GetInventory().GetFungibleCount("Common_Gumdrop"), 0);
   EXPECT_EQ (a->GetInventory().GetFungibleCount("Common_Icing"), 0);
   
+}   
+
+TEST_F (ValidateStateTests, RecepieWithApplicableGoodieTest)
+{
+  auto a = xayaplayers.CreateNew ("domob", ctx.RoConfig());
+  a->AddBalance (100);
+  
+  a->GetInventory().SetFungibleCount("Rare_Jawbreaker", 50);
+  a->GetInventory().SetFungibleCount("Rare_Toffee Chunk", 30);
+  a->GetInventory().SetFungibleCount("Uncommon_Jelly Bean", 50);
+  a->GetInventory().SetFungibleCount("Uncommon_Chocolate Nut", 30);
+  a->GetInventory().SetFungibleCount("Common_Candy Button", 35);
+  
+  a->GetInventory().SetFungibleCount("Goodie_PressureCooker_1", 1);
+  
+  a.reset();
+  auto r0 = tbl2.CreateNew("domob", "fda69e34-c1cb-2664-4ba1-d943713218c5", ctx.RoConfig());
+  r0.reset();   
+   
+  Process (R"([
+    {"name": "domob", "move": {"ca": {"r": {"rid": 2, "fid": 0}}}}
+  ])");  
+
+  a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  ASSERT_TRUE (a != nullptr);
+  EXPECT_EQ (a->GetOngoingsSize (), 1);
+  a.reset ();
+
+  for (unsigned i = 0; i < 41; ++i)
+  {
+    UpdateState ("[]");
+  }
+  
+  a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  EXPECT_EQ (a->GetOngoingsSize (), 0);
+  EXPECT_EQ (a->CollectInventoryFighters(ctx.RoConfig()).size(), 1);
+  
+  EXPECT_EQ (a->GetBalance (), 55);
+  
+  auto r = tbl2.GetById(2); 
+  EXPECT_EQ (r->GetProto().name(), "Captain Scott Lemonpie");
+  EXPECT_EQ (r->GetOwner(), "");
+  
+  EXPECT_EQ (a->GetInventory().GetFungibleCount("Goodie_PressureCooker_1"), 0);
 }   
 
 TEST_F (ValidateStateTests, RecepieInstanceRevertIfFullRoster)
@@ -201,16 +252,16 @@ TEST_F (ValidateStateTests, RecepieInstanceRevertIfFullRoster)
    
   proto::ConfigData& cfg = const_cast <proto::ConfigData&>(*ctx.RoConfig());
   cfg.mutable_params()->set_max_fighter_inventory_amount(0); 
-   
+
   Process (R"([
-    {"name": "domob", "move": {"ca": {"r": {"rid": "5864a19b-c8c0-2d34-eaef-9455af0baf2c", "fid": ""}}}}
+    {"name": "domob", "move": {"ca": {"r": {"rid": 1, "fid": 0}}}}
   ])");  
 
   auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
   ASSERT_TRUE (a != nullptr);
   EXPECT_EQ (a->GetOngoingsSize (), 1);
   a.reset ();
-
+  
   UpdateState ("[]");
   
   a = xayaplayers.GetByName ("domob", ctx.RoConfig());
@@ -218,9 +269,72 @@ TEST_F (ValidateStateTests, RecepieInstanceRevertIfFullRoster)
   
   EXPECT_EQ (a->GetBalance (), 100);
   
-  EXPECT_EQ (a->GetInventory().GetFungibleCount("Recipe_Common_FirstRecipe"), 1);
+  auto r0 = tbl2.GetById(1); 
+  EXPECT_EQ (r0->GetProto().name(), "First Recipe");
+  EXPECT_EQ (r0->GetOwner(), "domob");
+  
   EXPECT_EQ (a->GetInventory().GetFungibleCount("Common_Gumdrop"), 1);
   EXPECT_EQ (a->GetInventory().GetFungibleCount("Common_Icing"), 1);
+} 
+
+TEST_F (ValidateStateTests, UnitTestExpeditionFailsOnMainNet)
+{  
+  ctx.SetChain (xaya::Chain::MAIN);
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig());
+  auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
+  ft.reset();
+  xp.reset();
+  
+  EXPECT_EQ (tbl2.CountForOwner(""), 0);
+  
+  Process (R"([
+    {"name": "domob", "move": {"exp": {"f": {"eid": "00000000-0000-0000-zzzz-zzzzzzzzzzzz", "fid": 2}}}}
+  ])");  
+  
+  for (unsigned i = 0; i < 1; ++i)
+  {
+    UpdateState ("[]");
+  }  
+  
+  auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  a.reset ();
+   
+  ft = tbl3.GetById(2, ctx.RoConfig());
+  ft.reset();
+  
+  EXPECT_EQ (tbl2.CountForOwner(""), 0);    
+}
+
+TEST_F (ValidateStateTests, GeneratedRecipeMakeSureItWorks)
+{
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig());
+  auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
+  ft.reset();
+  xp.reset();
+  
+  EXPECT_EQ (tbl2.CountForOwner(""), 0);
+  
+  Process (R"([
+    {"name": "domob", "move": {"exp": {"f": {"eid": "00000000-0000-0000-zzzz-zzzzzzzzzzzz", "fid": 2}}}}
+  ])");  
+  
+  for (unsigned i = 0; i < 1; ++i)
+  {
+    UpdateState ("[]");
+  }  
+  
+  auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  a.reset ();
+   
+  ft = tbl3.GetById(2, ctx.RoConfig());
+  ft.reset();
+  
+  EXPECT_EQ (tbl2.CountForOwner(""), 2);
+  auto res = tbl2.QueryForOwner("");
+  ASSERT_TRUE (res.Step ());
+  auto r = tbl2.GetFromResult (res);
+  
+  EXPECT_EQ (r->GetProto().name(), "generated");
 } 
 
 TEST_F (ValidateStateTests, RecepieInstanceFailWithMissingIngridients)
@@ -231,8 +345,11 @@ TEST_F (ValidateStateTests, RecepieInstanceFailWithMissingIngridients)
    a->GetInventory().SetFungibleCount("Common_Icing", 0);
    a.reset();
    
+   auto r0 = tbl2.CreateNew("domob", "5864a19b-c8c0-2d34-eaef-9455af0baf2c", ctx.RoConfig());
+   r0.reset();      
+   
    Process (R"([
-    {"name": "domob", "move": {"ca": {"r": {"rid": "5864a19b-c8c0-2d34-eaef-9455af0baf2c", "fid": ""}}}}
+    {"name": "domob", "move": {"ca": {"r": {"rid": 1, "fid": 0}}}}
    ])");  
 
   a = xayaplayers.GetByName ("domob", ctx.RoConfig());
@@ -247,11 +364,423 @@ TEST_F (ValidateStateTests, RecepieInstanceFailWithMissingIngridients)
   
   EXPECT_EQ (a->GetBalance (), 100);
   
-  EXPECT_EQ (a->GetInventory().GetFungibleCount("Recipe_Common_FirstRecipe"), 1);
+  auto r = tbl2.GetById(1); 
+  EXPECT_EQ (r->GetProto().name(), "First Recipe");
+  EXPECT_EQ (r->GetOwner(), "domob");
+  
   EXPECT_EQ (a->GetInventory().GetFungibleCount("Common_Gumdrop"), 1);
   EXPECT_EQ (a->GetInventory().GetFungibleCount("Common_Icing"), 0);
   
 }  
+
+TEST_F (ValidateStateTests, ExpeditionInstanceSolveTwiceTest)
+{
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig());
+  auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
+  EXPECT_EQ (ft->GetStatus(), FighterStatus::Available);
+  ft.reset();
+  EXPECT_EQ (xp->CollectInventoryFighters(ctx.RoConfig()).size(), 1);
+  xp.reset();
+  
+  Process (R"([
+    {"name": "domob", "move": {"exp": {"f": {"eid": "93ad71bb-cd8f-dc24-7885-2c3fd0013245", "fid": 2}}}}
+  ])");  
+  
+  auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  ASSERT_TRUE (a != nullptr);
+  EXPECT_EQ (a->GetOngoingsSize (), 1);
+  a.reset ();
+   
+  ft = tbl3.GetById(2, ctx.RoConfig());
+  EXPECT_EQ (ft->GetStatus(), FighterStatus::Expedition);
+  ft.reset();
+  
+  for (unsigned i = 0; i < 17; ++i)
+  {
+    UpdateState ("[]");
+  }
+  
+  ft = tbl3.GetById(2, ctx.RoConfig());
+  EXPECT_EQ (ft->GetStatus(), FighterStatus::Available);
+  ft.reset();  
+  
+  a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  a->SetFTUEState(FTUEState::FirstExpedition);
+  EXPECT_EQ (a->GetOngoingsSize (), 0);
+  a.reset ();
+  
+  Process (R"([
+    {"name": "domob", "move": {"exp": {"f": {"eid": "c064e7f7-acbf-4f74-fab8-cccd7b2d4004", "fid": 2}}}}
+  ])");  
+
+  a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  EXPECT_EQ (a->GetOngoingsSize (), 1);  
+ 
+  ft = tbl3.GetById(2, ctx.RoConfig());
+  EXPECT_EQ (ft->GetStatus(), FighterStatus::Expedition);
+  ft.reset(); 
+}
+
+TEST_F (ValidateStateTests, ClaimRewardsAfterExpedition)
+{
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig());
+  auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
+  EXPECT_EQ (ft->GetStatus(), FighterStatus::Available);
+  ft.reset();
+  EXPECT_EQ (xp->CollectInventoryFighters(ctx.RoConfig()).size(), 1);
+  xp.reset();
+  
+  Process (R"([
+    {"name": "domob", "move": {"exp": {"f": {"eid": "c064e7f7-acbf-4f74-fab8-cccd7b2d4004", "fid": 2}}}}
+  ])");  
+  
+  auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  ASSERT_TRUE (a != nullptr);
+  EXPECT_EQ (a->GetOngoingsSize (), 1);
+  a.reset ();
+   
+  ft = tbl3.GetById(2, ctx.RoConfig());
+  EXPECT_EQ (ft->GetStatus(), FighterStatus::Expedition);
+  ft.reset();
+  
+  for (unsigned i = 0; i < 1; ++i)
+  {
+    UpdateState ("[]");
+  }
+  
+  ft = tbl3.GetById(2, ctx.RoConfig());
+  EXPECT_EQ (ft->GetStatus(), FighterStatus::Available);
+  ft.reset();  
+  
+  a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  a->SetFTUEState(FTUEState::FirstExpedition);
+  EXPECT_EQ (a->GetOngoingsSize (), 0);
+  a.reset ();
+  
+  EXPECT_EQ (tbl4.CountForOwner("domob"), 4);
+  
+  Process (R"([
+    {"name": "domob", "move": {"exp": {"c": {"eid": "c064e7f7-acbf-4f74-fab8-cccd7b2d4004"}}}}
+  ])");  
+
+  EXPECT_EQ (tbl4.CountForOwner("domob"), 0);
+}
+
+TEST_F (ValidateStateTests, ClaimRewardsTestAllRewardTypesBeingAwardedProperly)
+{
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig());
+  auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
+  ft.reset();
+  xp.reset();
+  
+  EXPECT_EQ (tbl2.CountForOwner(""), 0);
+  
+  Process (R"([
+    {"name": "domob", "move": {"exp": {"f": {"eid": "00000000-0000-0000-zzzz-zzzzzzzzzzzz", "fid": 2}}}}
+  ])");  
+  
+  for (unsigned i = 0; i < 1; ++i)
+  {
+    UpdateState ("[]");
+  }  
+  
+  auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  a.reset ();
+   
+  ft = tbl3.GetById(2, ctx.RoConfig());
+  ft.reset();
+  
+  EXPECT_EQ (tbl2.CountForOwner(""), 2);
+  auto res = tbl2.QueryForOwner("");
+  ASSERT_TRUE (res.Step ());
+  auto r = tbl2.GetFromResult (res);
+  
+  EXPECT_EQ (r->GetProto().name(), "generated"); 
+  r.reset();  
+
+  Process (R"([
+    {"name": "domob", "move": {"exp": {"c": {"eid": "00000000-0000-0000-zzzz-zzzzzzzzzzzz"}}}}
+  ])");  
+
+  a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  EXPECT_EQ (a->GetInventory().GetFungibleCount("Common_Candy Button"), 5);
+  a.reset();
+  
+  ft = tbl3.GetById(2, ctx.RoConfig());
+  EXPECT_EQ (ft->GetProto().animationid(), "27448f34-ca08-99b4-1b63-fd4b227e6af4");
+  EXPECT_EQ (ft->GetProto().armorpieces(2).armortype(), 18);    
+}
+
+TEST_F (ValidateStateTests, ClaimRewardsInvalidParams)
+{
+auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig());
+  auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
+  ft.reset();
+  xp.reset();
+  
+  EXPECT_EQ (tbl2.CountForOwner(""), 0);
+  
+  Process (R"([
+    {"name": "domob", "move": {"exp": {"f": {"eid": "00000000-0000-0000-zzzz-zzzzzzzzzzzz", "fid": 2}}}}
+  ])");  
+  
+  for (unsigned i = 0; i < 1; ++i)
+  {
+    UpdateState ("[]");
+  }  
+  
+  auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  a.reset ();
+   
+  ft = tbl3.GetById(2, ctx.RoConfig());
+  ft.reset();
+  
+  EXPECT_EQ (tbl2.CountForOwner(""), 2);
+  auto res = tbl2.QueryForOwner("");
+  ASSERT_TRUE (res.Step ());
+  auto r = tbl2.GetFromResult (res);
+  
+  EXPECT_EQ (r->GetProto().name(), "generated"); 
+  r.reset();  
+
+  Process (R"([
+    {"name": "domob", "move": {"exp": {"c": {"eid": "50379c2b-2422-8104-ea69-bb2882e9cac0"}}}}
+  ])");  
+
+  a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  EXPECT_EQ (a->GetInventory().GetFungibleCount("Common_Candy Button"), 0);
+  a.reset();    
+}
+
+TEST_F (ValidateStateTests, ClaimRewardsWhenFullSlotsEmptySomeAndFinishClaiming)
+{
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig());
+  auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
+  EXPECT_EQ (ft->GetStatus(), FighterStatus::Available);
+  ft.reset();
+  EXPECT_EQ (xp->CollectInventoryFighters(ctx.RoConfig()).size(), 1);
+  xp.reset();
+  
+  proto::ConfigData& cfg = const_cast <proto::ConfigData&>(*ctx.RoConfig());
+  cfg.mutable_params()->set_max_recipe_inventory_amount(0); 
+  
+  Process (R"([
+    {"name": "domob", "move": {"exp": {"f": {"eid": "c064e7f7-acbf-4f74-fab8-cccd7b2d4004", "fid": 2}}}}
+  ])");  
+  
+  auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  ASSERT_TRUE (a != nullptr);
+  EXPECT_EQ (a->GetOngoingsSize (), 1);
+  a.reset ();
+   
+  ft = tbl3.GetById(2, ctx.RoConfig());
+  EXPECT_EQ (ft->GetStatus(), FighterStatus::Expedition);
+  ft.reset();
+  
+  for (unsigned i = 0; i < 1; ++i)
+  {
+    UpdateState ("[]");
+  }
+  
+  ft = tbl3.GetById(2, ctx.RoConfig());
+  EXPECT_EQ (ft->GetStatus(), FighterStatus::Available);
+  ft.reset();  
+  
+  a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  a->SetFTUEState(FTUEState::FirstExpedition);
+  EXPECT_EQ (a->GetOngoingsSize (), 0);
+  a.reset ();
+  
+  EXPECT_EQ (tbl4.CountForOwner("domob"), 4);
+  
+  Process (R"([
+    {"name": "domob", "move": {"exp": {"c": {"eid": "c064e7f7-acbf-4f74-fab8-cccd7b2d4004"}}}}
+  ])");  
+
+  EXPECT_EQ (tbl4.CountForOwner("domob"), 1);
+  
+  cfg.mutable_params()->set_max_recipe_inventory_amount(10);  
+
+  Process (R"([
+    {"name": "domob", "move": {"exp": {"c": {"eid": "c064e7f7-acbf-4f74-fab8-cccd7b2d4004"}}}}
+  ])");    
+  
+  EXPECT_EQ (tbl4.CountForOwner("domob"), 0);
+}
+
+TEST_F (ValidateStateTests, ExpeditionInstanceBusyFighterNotSending)
+{
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig());
+  auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
+  EXPECT_EQ (ft->GetStatus(), FighterStatus::Available);
+  ft.reset();
+  EXPECT_EQ (xp->CollectInventoryFighters(ctx.RoConfig()).size(), 1);
+  xp.reset();
+  
+  Process (R"([
+    {"name": "domob", "move": {"exp": {"f": {"eid": "93ad71bb-cd8f-dc24-7885-2c3fd0013245", "fid": 2}}}}
+  ])");  
+  
+  auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  ASSERT_TRUE (a != nullptr);
+  EXPECT_EQ (a->GetOngoingsSize (), 1);
+  a.reset ();
+   
+  ft = tbl3.GetById(2, ctx.RoConfig());
+  EXPECT_EQ (ft->GetStatus(), FighterStatus::Expedition);
+  ft.reset();
+  
+  for (unsigned i = 0; i < 1; ++i)
+  {
+    UpdateState ("[]");
+  }
+  
+  Process (R"([
+    {"name": "domob", "move": {"exp": {"f": {"eid": "93ad71bb-cd8f-dc24-7885-2c3fd0013245", "fid": 2}}}}
+  ])");  
+
+  a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  EXPECT_EQ (a->GetOngoingsSize (), 1);  
+}
+
+TEST_F (ValidateStateTests, ExpeditionTestRewards)
+{
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig());
+  auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
+  EXPECT_EQ (ft->GetStatus(), FighterStatus::Available);
+  ft.reset();
+  EXPECT_EQ (xp->CollectInventoryFighters(ctx.RoConfig()).size(), 1);
+  xp.reset();
+  
+  Process (R"([
+    {"name": "domob", "move": {"exp": {"f": {"eid": "c064e7f7-acbf-4f74-fab8-cccd7b2d4004", "fid": 2}}}}
+  ])");  
+  
+  auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  ASSERT_TRUE (a != nullptr);
+  EXPECT_EQ (a->GetOngoingsSize (), 1);
+  a.reset ();
+   
+  ft = tbl3.GetById(2, ctx.RoConfig());
+  EXPECT_EQ (ft->GetStatus(), FighterStatus::Expedition);
+  ft.reset();
+  
+  for (unsigned i = 0; i < 1; ++i)
+  {
+    UpdateState ("[]");
+  }
+  
+  EXPECT_EQ (tbl4.CountForOwner("domob"), 4);
+
+}
+
+TEST_F (ValidateStateTests, ExpeditionWithApplicableGoodieTest)
+{
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig());
+  xp->GetInventory().SetFungibleCount("Goodie_Espresso_1", 1);
+
+  auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
+  EXPECT_EQ (ft->GetStatus(), FighterStatus::Available);
+  ft.reset();
+  EXPECT_EQ (xp->CollectInventoryFighters(ctx.RoConfig()).size(), 1);
+  xp.reset();
+  
+  Process (R"([
+    {"name": "domob", "move": {"exp": {"f": {"eid": "93ad71bb-cd8f-dc24-7885-2c3fd0013245", "fid": 2}}}}
+  ])");  
+  
+  auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  ASSERT_TRUE (a != nullptr);
+  EXPECT_EQ (a->GetOngoingsSize (), 1);
+  a.reset ();
+   
+  ft = tbl3.GetById(2, ctx.RoConfig());
+  EXPECT_EQ (ft->GetStatus(), FighterStatus::Expedition);
+  ft.reset();
+  
+  for (unsigned i = 0; i < 14; ++i)
+  {
+    UpdateState ("[]");
+  }
+  
+  ft = tbl3.GetById(2, ctx.RoConfig());
+  EXPECT_EQ (ft->GetStatus(), FighterStatus::Available);
+  ft.reset();  
+  
+  a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  EXPECT_EQ (a->GetInventory().GetFungibleCount("Goodie_Espresso_1"), 0);
+
+}
+
+TEST_F (ValidateStateTests, ExpeditionWithWrongTyprApplicableGoodieTest)
+{
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig());
+  xp->GetInventory().SetFungibleCount("Goodie_PressureCooker_1", 1);
+
+  auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
+  EXPECT_EQ (ft->GetStatus(), FighterStatus::Available);
+  ft.reset();
+  EXPECT_EQ (xp->CollectInventoryFighters(ctx.RoConfig()).size(), 1);
+  xp.reset();
+  
+  Process (R"([
+    {"name": "domob", "move": {"exp": {"f": {"eid": "93ad71bb-cd8f-dc24-7885-2c3fd0013245", "fid": 2}}}}
+  ])");  
+  
+  auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  ASSERT_TRUE (a != nullptr);
+  EXPECT_EQ (a->GetOngoingsSize (), 1);
+  a.reset ();
+   
+  ft = tbl3.GetById(2, ctx.RoConfig());
+  EXPECT_EQ (ft->GetStatus(), FighterStatus::Expedition);
+  ft.reset();
+  
+  for (unsigned i = 0; i < 14; ++i)
+  {
+    UpdateState ("[]");
+  }
+  
+  ft = tbl3.GetById(2, ctx.RoConfig());
+  EXPECT_EQ (ft->GetStatus(), FighterStatus::Expedition);
+  ft.reset();  
+  
+  a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  EXPECT_EQ (a->GetInventory().GetFungibleCount("Goodie_PressureCooker_1"), 1);
+
+}
+
+TEST_F (ValidateStateTests, ExpeditionInstanceTutorialTwiceFail)
+{
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig());
+  xp->SetFTUEState(FTUEState::FirstExpedition);
+  auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
+  ft.reset();
+  EXPECT_EQ (xp->CollectInventoryFighters(ctx.RoConfig()).size(), 1);
+  xp.reset();
+  
+  Process (R"([
+    {"name": "domob", "move": {"exp": {"f": {"eid": "c064e7f7-acbf-4f74-fab8-cccd7b2d4004", "fid": 2}}}}
+  ])");  
+  
+  auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  ASSERT_TRUE (a != nullptr);
+  EXPECT_EQ (a->GetOngoingsSize (), 1);
+  a.reset ();
+   
+  UpdateState ("[]");
+  
+  a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  EXPECT_EQ (a->GetOngoingsSize (), 0);
+  a.reset ();
+  
+  Process (R"([
+    {"name": "domob", "move": {"exp": {"f": {"eid": "c064e7f7-acbf-4f74-fab8-cccd7b2d4004", "fid": 2}}}}
+  ])");  
+
+  a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  EXPECT_EQ (a->GetOngoingsSize (), 0);  
+}
     
 }
 

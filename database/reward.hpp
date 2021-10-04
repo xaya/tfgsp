@@ -16,15 +16,15 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#ifndef DATABASE_RECIPE_HPP
-#define DATABASE_RECIPE_HPP
+#ifndef DATABASE_REWARD_HPP
+#define DATABASE_REWARD_HPP
 
 
 #include "database.hpp"
 #include "inventory.hpp"
 #include "lazyproto.hpp"
 
-#include "proto/crafted_recipe.pb.h"
+#include "proto/activity_reward_instance.pb.h"
 #include "proto/roconfig.hpp"
 
 #include <functional>
@@ -33,40 +33,61 @@
 
 namespace pxd
 {
-    
+
 /**
- * Current quality of the recepie we are going to generate
+ * Type of the reward issuer
  */
-enum class Quality : int8_t
+enum class RewardSource : int8_t
 {
   None = 0,
-  Common = 1,
-  Uncommon = 2,
-  Rare = 3,
-  Epic = 4
+  Tournament = 1,
+  Expedition = 2,
+  Sweetener
+};    
+
+/**
+ * Type of goody applied to ungoing operation
+ */
+enum class GoodyType : int8_t
+{
+  None = 0,
+  PressureCooker = 1,
+  Espresso = 2
+};
+
+enum class RewardType : int8_t
+{
+  Candy = 0,
+  GeneratedRecipe = 1,
+  CraftedRecipe = 2,
+  Move = 3,
+  Armor = 4,
+  Animation = 5,
+  List = 6,
+  None = 7
 };
 
 /**
- * Database result type for rows from the recipes table.
+ * Database result type for rows from the rewards table.
  */
-struct RecipeInstanceResult : public Database::ResultType
+struct RewardInstanceResult : public Database::ResultType
 {
   RESULT_COLUMN (int64_t, id, 1);
   RESULT_COLUMN (std::string, owner, 2);
-  RESULT_COLUMN (pxd::proto::CraftedRecipe, proto, 3);
+  RESULT_COLUMN (pxd::proto::ActivityRewardInstance, proto, 3);
 };
 
 /**
- * Wrapper class for the state of one recepies.  This connects the actual game
+ * Wrapper class for the state of one rewards instance.  This connects the actual game
  * logic (reading the state and doing modifications to it) from the database.
  * All interpretation of database results and upates to the database are done
  * through this class.
  *
  * This class should not be instantiated directly by users.  Instead, the
- * methods from RecipeTable should be used.  Furthermore, variables should
- * be of type RecipeTable::Handle (or using auto) to get move semantics.
+ * methods from RewardsTable should be used.  Furthermore, variables should
+ * be of type RewardsTable::Handle (or using auto) to get move semantics.
  */
-class RecipeInstance
+class RewardInstance
 {
 
 private:
@@ -78,7 +99,7 @@ private:
   Database::HandleTracker tracker;
 
   /** All other data in the protocol buffer.  */
-  LazyProto<proto::CraftedRecipe> data;
+  LazyProto<proto::ActivityRewardInstance> data;
 
   /**
    * Set to true if any modification to the non-proto columns was made that
@@ -94,25 +115,20 @@ private:
 
   /** Database reference this belongs to.  */
   Database& db;  
-
-  /**
-   * Constructs a new recipe with an auto-generated ID meant to be inserted
-   * into the database.
-   */
-  explicit RecipeInstance (Database& d, const std::string& o, const std::string& cr, const RoConfig& cfg);
   
   /**
-   * Constructs a new recipe with an auto-generated ID meant to be inserted
-   * into the database based on the generated recipe instance
+   * Constructs a new reward with an auto-generated ID meant to be inserted
+   * into the database.
    */
-  explicit RecipeInstance (Database& d, const std::string& o, const pxd::proto::CraftedRecipe cr, const RoConfig& cfg);  
+  explicit RewardInstance (Database& d, const std::string& o);
 
   /**
-   * Constructs a recepie instance instance based on the given query result. This
+   * Constructs a reward instance based on the given query result.  This
    * represents the data from the result row but can then be modified.  The
-   * result should come from a query made through RecipeInstanceTable.
+   * result should come from a query made through RewardsTable.
    */
-  explicit RecipeInstance (Database& d, const Database::Result<RecipeInstanceResult>& res);
+  explicit RewardInstance (Database& d,
+                      const Database::Result<RewardInstanceResult>& res);
 
   /**
    * Binds parameters in a statement to the mutable non-proto fields.  This is
@@ -125,7 +141,7 @@ private:
    */
   void BindFieldValues (Database::Statement& stmt) const;
 
-  friend class RecipeInstanceTable;
+  friend class RewardsTable;
 
 protected:
 
@@ -143,11 +159,11 @@ public:
    * In the destructor, the underlying database is updated if there are any
    * modifications to send.
    */
-  ~RecipeInstance ();
+  ~RewardInstance ();
 
-  RecipeInstance () = delete;
-  RecipeInstance (const RecipeInstance&) = delete;
-  void operator= (const RecipeInstance&) = delete;
+  RewardInstance () = delete;
+  RewardInstance (const RewardInstance&) = delete;
+  void operator= (const RewardInstance&) = delete;
 
   /* Accessor methods.  */
 
@@ -157,7 +173,7 @@ public:
     return id;
   }
 
-  const proto::CraftedRecipe&
+  const proto::ActivityRewardInstance&
   GetProto () const
   {
     return data.Get ();
@@ -176,21 +192,19 @@ public:
     owner = o;
   }  
 
-  proto::CraftedRecipe&
+  proto::ActivityRewardInstance&
   MutableProto ()
   {
     return data.Mutable ();
   }
-  
-  static uint32_t Generate(pxd::Quality quality, const RoConfig& cfg,  xaya::Random& rnd, Database& db);
 };
 
 /**
- * Utility class that handles querying the recipe table in the database and
- * should be used to obtain Recipe instances (or rather, the underlying
+ * Utility class that handles querying the rewards table in the database and
+ * should be used to obtain RewardInstance instances (or rather, the underlying
  * Database::Result's for them).
  */
-class RecipeInstanceTable
+class RewardsTable
 {
 
 private:
@@ -200,70 +214,62 @@ private:
 
 public:
 
-  /** Movable handle to a recipe instance.  */
-  using Handle = std::unique_ptr<RecipeInstance>;
+  /** Movable handle to a reward instance.  */
+  using Handle = std::unique_ptr<RewardInstance>;
 
-  explicit RecipeInstanceTable (Database& d)
+  explicit RewardsTable (Database& d)
     : db(d)
   {}
 
-  RecipeInstanceTable () = delete;
-  RecipeInstanceTable (const RecipeInstanceTable&) = delete;
-  void operator= (const RecipeInstanceTable&) = delete;
+  RewardsTable () = delete;
+  RewardsTable (const RewardsTable&) = delete;
+  void operator= (const RewardsTable&) = delete;
 
   /**
-   * Returns a RecipeInstance handle for a fresh instance corresponding to a new
-   * recipe that will be created.
+   * Returns a RewardInstance handle for a fresh instance corresponding to a new
+   * reward that will be created.
    */
-  Handle CreateNew (const std::string& owner, const std::string& cr, const RoConfig& cfg);
-  
-  /**
-   * Returns a RecipeInstance handle for a fresh instance corresponding to a new
-   * recipe that will be created.
-   */
-  Handle CreateNew (const std::string& owner, const pxd::proto::CraftedRecipe cr, const RoConfig& cfg);  
+  Handle CreateNew (const std::string& owner);
 
   /**
    * Returns a handle for the instance based on a Database::Result.
    */
-  Handle GetFromResult (const Database::Result<RecipeInstanceResult>& res);
-  
-  /**
-   * Returns a handle for the instance based on a Database::Result. Version with config, to make it
-     compatible with gamestate.cpp template function
-   */
-  Handle GetFromResult (const Database::Result<RecipeInstanceResult>& res, const RoConfig& cfg);
-  
+  Handle GetFromResult (const Database::Result<RewardInstanceResult>& res);
 
   /**
-   * Returns the recepie with the given ID or a null handle if there is
+   * Returns a handle for the instance based on a Database::Result, with config to match with template 
+     function in gamestate.cpp
+   */
+  Handle GetFromResult (const Database::Result<RewardInstanceResult>& res, const RoConfig& cfg);
+
+  /**
+   * Returns the reward with the given ID or a null handle if there is
    * none with that ID.
    */
   Handle GetById (Database::IdT id);
 
   /**
-   * Queries for all recepies in the database table.  The recepies are
+   * Queries for all rewards in the database table.  The rewards are
    * ordered by ID to make the result deterministic.
    */
-  Database::Result<RecipeInstanceResult> QueryAll ();
+  Database::Result<RewardInstanceResult> QueryAll ();
   
   /**
    * Queries for all characters with a given owner, ordered by ID.
    */
-  Database::Result<RecipeInstanceResult> QueryForOwner (const std::string& owner);  
+  Database::Result<RewardInstanceResult> QueryForOwner (const std::string& owner);  
+  
+  /**
+   * Counts for all rewards with a given owner
+   */  
+  unsigned CountForOwner (const std::string& owner);
 
   /**
-   * Deletes the recipe with the given ID.
+   * Deletes the reward with the given ID.
    */
   void DeleteById (Database::IdT id);
-  
-  
-  /**
-   * Counts for all recepies with a given owner
-   */  
-  unsigned CountForOwner (const std::string& owner);  
 };
 
 } // namespace pxd
 
-#endif // DATABASE_RECIPE_HPP
+#endif // DATABASE_REWARD_HPP

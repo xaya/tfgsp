@@ -10,6 +10,21 @@ activityrewards:
 }
 activityrewards:
 {
+  key: "UnitTest_Reward"
+  value:
+  {
+    AuthoredId: "00000000-0000-0000-xxxx-xxxxxxxxxxxx"
+    Name: "UnitTest_Rewards"
+    Rewards: {ListTableId: "00000000-0000-0000-0000-000000000000" Type: 1 GeneratedRecipeQuality: 1 CraftedRecipeId: "00000000-0000-0000-0000-000000000000" MoveId: "00000000-0000-0000-0000-000000000000" ArmorType: 0 AnimationId: "00000000-0000-0000-0000-000000000000" CandyType: "00000000-0000-0000-0000-000000000000" Quantity: 1 Weight: 0}
+    Rewards: {ListTableId: "00000000-0000-0000-0000-000000000000" Type: 5 GeneratedRecipeQuality: 0 CraftedRecipeId: "00000000-0000-0000-0000-000000000000" MoveId: "00000000-0000-0000-0000-000000000000" ArmorType: 0 AnimationId: "27448f34-ca08-99b4-1b63-fd4b227e6af4" CandyType: "00000000-0000-0000-0000-000000000000" Quantity: 1 Weight: 0}
+    Rewards: {ListTableId: "00000000-0000-0000-0000-000000000000" Type: 4 GeneratedRecipeQuality: 0 CraftedRecipeId: "00000000-0000-0000-0000-000000000000" MoveId: "00000000-0000-0000-0000-000000000000" ArmorType: 18 AnimationId: "00000000-0000-0000-0000-000000000000" CandyType: "4c8a2a05-5649-8234-ea6a-1a80d41cbeb1" Quantity: 1 Weight: 0}    
+    Rewards: {ListTableId: "00000000-0000-0000-0000-000000000000" Type: 2 GeneratedRecipeQuality: 0 CraftedRecipeId: "fae112f6-dba3-e154-78bf-154ec2f3f94b" MoveId: "00000000-0000-0000-0000-000000000000" ArmorType: 0 AnimationId: "00000000-0000-0000-0000-000000000000" CandyType: "00000000-0000-0000-0000-000000000000" Quantity: 1 Weight: 0}
+    Rewards: {ListTableId: "00000000-0000-0000-0000-000000000000" Type: 3 GeneratedRecipeQuality: 0 CraftedRecipeId: "00000000-0000-0000-0000-000000000000" MoveId: "8e4753b5-c739-aaf4-ab79-4d333a69cae6" ArmorType: 0 AnimationId: "00000000-0000-0000-0000-000000000000" CandyType: "00000000-0000-0000-0000-000000000000" Quantity: 1 Weight: 0}
+    Rewards: {ListTableId: "00000000-0000-0000-0000-000000000000" Type: 0 GeneratedRecipeQuality: 1 CraftedRecipeId: "00000000-0000-0000-0000-000000000000" MoveId: "00000000-0000-0000-0000-000000000000" ArmorType: 0 AnimationId: "00000000-0000-0000-0000-000000000000" CandyType: "f6025c1b-55e8-da24-d96f-0ecebf74c436" Quantity: 5 Weight: 0}
+  }
+}
+activityrewards:
+{
   key: "SweetenerRewardsList_ArmorSet_Rare_GummiBear_Legs"
   value:
   {

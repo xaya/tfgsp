@@ -23,6 +23,7 @@
 #include "forks.hpp"
 
 #include "database/dbtest.hpp"
+#include "database/recipe.hpp"
 
 #include <xayautil/jsonutils.hpp>
 
@@ -50,8 +51,10 @@ protected:
   ContextForTesting ctx;
 
   XayaPlayersTable xayaplayers;
+  RecipeInstanceTable tbl2;
+  FighterTable tbl3;
 
-  PendingStateTests () : xayaplayers(db)
+  PendingStateTests () : xayaplayers(db), tbl2(db), tbl3(db)
   {}
   
   /**
@@ -63,7 +66,8 @@ protected:
   ExpectStateJson (const std::string& expectedStr)
   {
     const Json::Value actual = state.ToJson ();
-    VLOG (1) << "Actual JSON for the pending state:\n" << actual;
+    LOG (WARNING) << "Actual JSON for the pending state:\n" << actual;
+    LOG (WARNING) << "Expected JSON for the pending state:\n" << expectedStr;
     
     ASSERT_TRUE (PartialJsonEqual (actual, ParseJson (expectedStr)));
   }
@@ -153,12 +157,9 @@ TEST_F (PendingStateTests, CoinTransferBurn)
 class PendingStateUpdaterTests : public PendingStateTests
 {
 
-private:
-
-  TestRandom rnd;
-
 protected:
 
+  TestRandom rnd;
   ContextForTesting ctx;
 
   PendingStateUpdaterTests ()
@@ -339,7 +340,10 @@ TEST_F (PendingStateUpdaterTests, SubmitRecepieInstance)
   a->AddBalance(100);
   a.reset();
   
-  Process ("testy2", R"({"ca": {"r": {"rid": "5864a19b-c8c0-2d34-eaef-9455af0baf2c", "fid": ""}}})");  
+  auto r0 = tbl2.CreateNew("testy2", "5864a19b-c8c0-2d34-eaef-9455af0baf2c", ctx.RoConfig());
+  r0.reset();     
+  
+  Process ("testy2", R"({"ca": {"r": {"rid": 1, "fid": 0}}})");  
   
   ExpectStateJson (R"(
     {
@@ -354,12 +358,62 @@ TEST_F (PendingStateUpdaterTests, SubmitRecepieInstance)
   )");
 }
 
+TEST_F (PendingStateUpdaterTests, SubmitExpedition)
+{
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig());
+  auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
+  EXPECT_EQ (ft->GetStatus(), FighterStatus::Available);
+  ft.reset();
+  EXPECT_EQ (xp->CollectInventoryFighters(ctx.RoConfig()).size(), 1);
+  xp.reset();
+        
+  Process ("domob", R"({"exp": {"f": {"eid": "c064e7f7-acbf-4f74-fab8-cccd7b2d4004", "fid": 2}}})");  
+  
+  ExpectStateJson (R"(
+    {
+      "xayaplayers":
+        [
+          {
+            "name": "domob",
+            "ongoings": [2]
+          }
+        ]
+    }
+  )");
+}
+
+TEST_F (PendingStateUpdaterTests, ExpeditionGetRewards)
+{
+  auto a = xayaplayers.CreateNew ("domob", ctx.RoConfig());
+  
+  std::vector<uint32_t> rewardDatabaseIds;
+  rewardDatabaseIds.push_back(1);
+  rewardDatabaseIds.push_back(4);
+   
+  state.AddRewardIDs (*a, rewardDatabaseIds);
+  a.reset ();
+   
+  ExpectStateJson (R"(
+    {
+      "xayaplayers":
+        [
+          {
+            "name": "domob",
+            "claimingrewards": [1, 4]
+          }
+        ]
+    }
+  )"); 
+  
+}
+
 TEST_F (PendingStateUpdaterTests, SubmitRecepieInstanceMultiple)
 {
   auto a = xayaplayers.CreateNew ("testy2", ctx.RoConfig());
   a->AddBalance(100);
   
-  a->GetInventory().SetFungibleCount("Recipe_Rare_CommanderKrissyCocoCrunch", 1);
+  auto r0 = tbl2.CreateNew("testy2", "2729a029-a53e-7b34-38c7-2c6ebe932c94", ctx.RoConfig());
+  r0.reset();   
   
   a->GetInventory().SetFungibleCount("Rare_Giant Chocolate Chip", 50);
   a->GetInventory().SetFungibleCount("Rare_Peanut Butter Cup", 30);
@@ -370,8 +424,8 @@ TEST_F (PendingStateUpdaterTests, SubmitRecepieInstanceMultiple)
   
   a.reset();
   
-  Process ("testy2", R"({"ca": {"r": {"rid": "5864a19b-c8c0-2d34-eaef-9455af0baf2c", "fid": ""}}})"); 
-  Process ("testy2", R"({"ca": {"r": {"rid": "2729a029-a53e-7b34-38c7-2c6ebe932c94", "fid": ""}}})");    
+  Process ("testy2", R"({"ca": {"r": {"rid": 1, "fid": 0}}})"); 
+  Process ("testy2", R"({"ca": {"r": {"rid": 2, "fid": 0}}})");    
   
   ExpectStateJson (R"(
     {
@@ -392,7 +446,7 @@ TEST_F (PendingStateUpdaterTests, SubmitRecepieNotExistingInPlayerInventory)
   a->AddBalance(100);
   a.reset();
   
-  Process ("testy2", R"({"ca": {"r": {"rid": "175cd684-0079-c1b4-89b7-6bca7288f50d", "fid": ""}}})");  
+  Process ("testy2", R"({"ca": {"r": {"rid": 3, "fid": 0}}})");  
   
   ExpectStateJson (R"(
     {

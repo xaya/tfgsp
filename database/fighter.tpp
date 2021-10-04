@@ -1,6 +1,6 @@
 /*
     GSP for the TF blockchain game
-    Copyright (C) 2020  Autonomous Worlds Ltd
+    Copyright (C) 2019-2020  Autonomous Worlds Ltd
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -16,25 +16,25 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-syntax = "proto2";
-option cc_enable_arenas = true;
+/* Template implementation code for fighter.hpp.  */
 
-import "proto/fighter_move_blueprint.proto";
+#include <glog/logging.h>
 
-package pxd.proto;
+#include <type_traits>
 
-message ArmorPiece
-{    
-  /*Name of the candy used in armor piece creation*/
-  optional string Candy = 1;    
-  
-  /*Enum armor type for this armor piece*/
-  optional uint32 ArmorType = 2;
+namespace pxd
+{
 
-  /*Enum reward source, if came as tournament or activity reward*/
-  optional uint32 RewardSource = 3;   
+template <typename T>
+  FighterStatus
+  GetStatusFromColumn (const Database::Result<T>& res)
+{
+  if (res.template IsNull<typename T::status> ())
+    return FighterStatus::Available;
 
-  /*Reward source authid*/
-  optional string RewardSourceID = 4;   
-   
+  const auto val = res.template Get<typename T::status> ();
+  return static_cast<FighterStatus> (val);
 }
+
+
+} // namespace pxd
