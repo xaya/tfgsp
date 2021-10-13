@@ -164,6 +164,26 @@ std::vector<pxd::ArmorType> FighterInstance::ArmorTypeFromMoveType(pxd::MoveType
   return pieceList;  
 }
 
+void FighterInstance::UpdateSweetness()
+{
+    if(GetProto().rating() > 200)
+    {
+        if((pxd::Sweetness)(int)GetProto().sweetness() != pxd::Sweetness::Super_Sweet)
+        {
+            MutableProto().set_sweetness((int)pxd::Sweetness::Super_Sweet);
+            return;
+        }
+    }
+    
+    uint32_t srate = (int)(GetProto().sweetness() * 100 + 1000);
+    
+    if(GetProto().rating() >= srate)
+    {
+        pxd::Sweetness newSW = (pxd::Sweetness)(((GetProto().rating() - 1000) / 100) + 1);
+        MutableProto().set_sweetness((int)newSW);
+    } 
+}
+
 uint32_t
 FighterInstance::GetRatingFromQuality (uint32_t quality)
 {

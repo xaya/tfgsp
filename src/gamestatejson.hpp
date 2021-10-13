@@ -91,7 +91,12 @@ public:
   /**
    * Returns the JSON data about recepies.
    */
-  Json::Value Recepies();   
+  Json::Value Recepies(); 
+
+  /**
+   * Returns the JSON data about tournaments.
+   */
+  Json::Value Tournaments();   
 
   /**
    * Returns the full game state JSON for the given Database handle.  The full

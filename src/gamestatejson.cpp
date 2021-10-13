@@ -193,6 +193,21 @@ template <>
  
 template <>
   Json::Value
+  GameStateJson::Convert<TournamentInstance>(const TournamentInstance& tournament) const
+{
+  const auto& pb = tournament.GetProto ();
+  Json::Value res(Json::objectValue);
+  
+  res["state"] = IntToJson (tournament.GetInstance().state());
+  res["winnerid"] = tournament.GetInstance().winnerid();
+  res["blocksleft"] = IntToJson (tournament.GetInstance().blocksleft());
+  res["blueprint"] = pb.authoredid();
+  
+  return res;
+}   
+ 
+template <>
+  Json::Value
   GameStateJson::Convert<Inventory>(const Inventory& inv) const
 {
   Json::Value fungible(Json::objectValue);
@@ -359,6 +374,15 @@ GameStateJson::Recepies()
 }
 
 Json::Value
+GameStateJson::Tournaments()
+{
+  TournamentTable tbl(db);
+  Json::Value res = ResultsAsArray (tbl, tbl.QueryAll ());
+
+  return res;
+}
+
+Json::Value
 GameStateJson::CrystalBundles()
 {
   const auto& bundles = ctx.RoConfig ()->crystalbundles();
@@ -383,6 +407,7 @@ GameStateJson::FullState()
   res["fighters"] = Fighters();
   res["rewards"] = Rewards();
   res["recepies"] = Recepies();
+  res["tournaments"] = Tournaments();
   
   return res;
 }  

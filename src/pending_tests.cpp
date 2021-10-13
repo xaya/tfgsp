@@ -18,6 +18,7 @@
 
 #include "pending.hpp"
 
+#include "logic.hpp"
 #include "jsonutils.hpp"
 #include "testutils.hpp"
 #include "forks.hpp"
@@ -53,8 +54,9 @@ protected:
   XayaPlayersTable xayaplayers;
   RecipeInstanceTable tbl2;
   FighterTable tbl3;
+  TournamentTable tbl5;
 
-  PendingStateTests () : xayaplayers(db), tbl2(db), tbl3(db)
+  PendingStateTests () : xayaplayers(db), tbl2(db), tbl3(db), tbl5(db)
   {}
   
   /**
@@ -378,6 +380,53 @@ TEST_F (PendingStateUpdaterTests, SubmitExpedition)
             "ongoings": [2]
           }
         ]
+    }
+  )");
+}
+
+TEST_F (PendingStateUpdaterTests, SubmitTournamentEntry)
+{
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig());
+  auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
+  ft.reset();
+  
+  auto ft2 = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
+  ft2.reset();
+  xp.reset();
+  
+  PXLogic::ReopenMissingTournaments (db, ctx);
+  
+  auto tutorialTrmn = tbl5.GetByAuthIdName("cbd2e78a-37ce-b864-793d-8dd27788a774", ctx.RoConfig());
+  ASSERT_TRUE (tutorialTrmn != nullptr);
+  uint32_t TID = tutorialTrmn->GetId();
+  tutorialTrmn.reset();  
+        
+  std::ostringstream s;
+  s << TID;
+  std::string converted(s.str());  
+  
+  Process ("domob", R"({"tm": {"e": {"tid": )" + converted + R"(, "fc": [2,3]}}})"); 
+  
+  ExpectStateJson (R"(
+    {
+        "xayaplayers" :
+        [
+                {
+                        "name" : "domob",
+                        "tournamententries" :
+                        [
+                                {
+                                        "fids" :
+                                        [
+                                                2,
+                                                3
+                                        ],
+                                        "id" : )"+converted+R"(
+                                }
+                        ]
+                }
+        ]
+
     }
   )");
 }

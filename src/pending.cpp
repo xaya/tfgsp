@@ -114,6 +114,27 @@ PendingState::AddExpeditionInstance (const XayaPlayer& a, int32_t duration)
 }
 
 void
+PendingState::AddTournamentEntries (const XayaPlayer& a, uint32_t tournamentID, std::vector<uint32_t> fighterIDS)
+{
+  VLOG (1) << "Adding pending tournament entries for name" << a.GetName ();
+  
+  auto& aState = GetXayaPlayerState (a);
+  
+  const auto mit = aState.tournamentEntries.find (tournamentID);
+  if (mit == aState.tournamentEntries.end ())
+  {
+    aState.tournamentEntries.insert(std::pair<uint32_t, std::vector<uint32_t>>(tournamentID, fighterIDS));  
+  }
+  else
+  {
+    for(const auto& val: fighterIDS)
+    {
+      aState.tournamentEntries[tournamentID].push_back(val); 
+    }
+  }  
+}
+
+void
 PendingState::AddRewardIDs (const XayaPlayer& a, std::vector<uint32_t> rewardDatabaseIds)
 {
   VLOG (1) << "Adding pending claim reward operations for name" << a.GetName ();
@@ -173,6 +194,27 @@ PendingState::XayaPlayerState::ToJson () const
     }  
       
     res["claimingrewards"] = dtbrw;  
+  }
+  
+  if(tournamentEntries.size() > 0)
+  {
+    Json::Value trnmentr(Json::arrayValue);
+    for(const auto& rw: tournamentEntries) 
+    {
+      Json::Value trnmentr2(Json::arrayValue);
+      Json::Value trnm(Json::objectValue);
+      trnm["id"] = rw.first;
+      
+      for(const auto& val: rw.second)
+      {
+        trnmentr2.append(val);
+      }
+      
+      trnm["fids"] = trnmentr2;
+      trnmentr.append(trnm);
+    }  
+      
+    res["tournamententries"] = trnmentr;      
   }
   
   return res;
@@ -281,6 +323,20 @@ PendingStateUpdater::ProcessMove (const Json::Value& moveObj)
     }  
     
   }
+  
+  Json::Value& upd3 = mv["tm"];   
+  
+  if(upd3.isObject())
+  {   
+    uint32_t tournamentID = 0;
+    std::vector<uint32_t> fighterIDS;   
+    
+    if(ParseTournamentEntryData(*a, name, upd3["e"], tournamentID, fighterIDS))
+    {
+      state.AddTournamentEntries(*a, tournamentID, fighterIDS);  
+    }
+    
+  }  
   
   /*If we have any crystal bundles purchases pending, lets add them here*/
  

@@ -1,0 +1,18 @@
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentResolvedTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentResolvedTest
+unknown file: Failure
+C++ exception with description "basic_string::_M_construct null not valid" thrown in the test body.
+[  FAILED  ] ValidateStateTests.TournamentResolvedTest (9 ms)
+[----------] 1 test from ValidateStateTests (9 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (9 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] ValidateStateTests.TournamentResolvedTest
+
+ 1 FAILED TEST

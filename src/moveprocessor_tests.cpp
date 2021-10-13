@@ -50,10 +50,10 @@ protected:
   XayaPlayersTable xayaplayers;
   RecipeInstanceTable tbl2;
   FighterTable tbl3;
-  
+  TournamentTable tbl4;
 
   explicit MoveProcessorTests ()
-    : xayaplayers(db), tbl2(db), tbl3(db)
+    : xayaplayers(db), tbl2(db), tbl3(db), tbl4(db)
   {}
 
   /**

@@ -76,10 +76,18 @@ public:
 class PXLogic : public xaya::SQLiteGame
 {
 
+public:
+
+  /**
+   * Scans tournament instances and tournament blueprints to see if we need
+   * to open any new instance
+   */     
+  static void ReopenMissingTournaments(Database& db, const Context& ctx);
+
 private:
 
   /** Helper function that generates and pushes new reward instance into the database and returns unique auto ID */
-  static std::vector<uint32_t> GenerateActivityReward(const uint32_t fighterID, const std::string blueprintAuthID, const pxd::proto::AuthoredActivityReward rw, const Context& ctx, Database& db, std::unique_ptr<XayaPlayer>& a, xaya::Random& rnd, const uint32_t posInTableList, const std::string basedRewardsTableAuthId);
+  static std::vector<uint32_t> GenerateActivityReward(const uint32_t fighterID, const std::string blueprintAuthID, const uint32_t tournamentID,  const pxd::proto::AuthoredActivityReward rw, const Context& ctx, Database& db, std::unique_ptr<XayaPlayer>& a, xaya::Random& rnd, const uint32_t posInTableList, const std::string basedRewardsTableAuthId);
   /**
    * When cooking recepie operation reaches 0 blocks, we either
    * resolve it or reverse, based on cirsumstances */                         
@@ -95,6 +103,27 @@ private:
    * and if it reaches 0, we are sending it for the resolution, and erase from array
    */     
   static void TickAndResolveOngoings(Database& db, const Context& ctx, xaya::Random& rnd);
+
+  /**
+   * Scans all tournaments to either start them or finilize
+   */  
+  static void ProcessTournaments(Database& db, const Context& ctx, xaya::Random& rnd); 
+
+  /**
+   * When fighters are fighting against each other in tournament, used to calculate results
+   * between the 2 moves of fighters
+   */  
+
+  static uint32_t ExecuteOneMoveAgainstAnother(const Context& ctx, std::string lmv, std::string rmv);
+  
+  /**
+   * Some crazy class ported as function from original code for ratings and scores calculation
+   */    
+  
+  static void CreateEloRating(const Context& ctx, uint32_t& ratingA, uint32_t& ratingB, uint32_t& scoreA, uint32_t& scoreB, uint32_t& expectedA, 
+uint32_t& expectedB, uint32_t& newRatingA, uint32_t& newRatingB);
+
+  static void EloGetNewRatings();
 
   /**
    * Handles the actual logic for the game-state update.  This is extracted

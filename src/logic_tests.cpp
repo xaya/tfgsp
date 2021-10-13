@@ -35,6 +35,8 @@
 
 #include <string>
 #include <vector>
+#include <sstream>
+
 
 namespace pxd
 {
@@ -58,8 +60,9 @@ protected:
   RecipeInstanceTable tbl2;
   FighterTable tbl3;
   RewardsTable tbl4;
+  TournamentTable tbl5;
   
-  PXLogicTests () : xayaplayers(db), tbl2(db), tbl3(db), tbl4(db)
+  PXLogicTests () : xayaplayers(db), tbl2(db), tbl3(db), tbl4(db), tbl5(db)
   {
     SetHeight (42);
   }
@@ -780,6 +783,179 @@ TEST_F (ValidateStateTests, ExpeditionInstanceTutorialTwiceFail)
 
   a = xayaplayers.GetByName ("domob", ctx.RoConfig());
   EXPECT_EQ (a->GetOngoingsSize (), 0);  
+}
+
+TEST_F (ValidateStateTests, TournamentInstanceSheduleTest)
+{
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig());
+  auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
+  ft.reset();
+  
+  auto ft2 = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
+  ft2.reset();
+  
+  EXPECT_EQ (xp->CollectInventoryFighters(ctx.RoConfig()).size(), 2);
+  xp.reset();
+  
+  UpdateState ("[]");
+  
+  auto tutorialTrmn = tbl5.GetByAuthIdName("cbd2e78a-37ce-b864-793d-8dd27788a774", ctx.RoConfig());
+  ASSERT_TRUE (tutorialTrmn != nullptr);
+  uint32_t TID = tutorialTrmn->GetId();
+  tutorialTrmn.reset();
+  
+  std::ostringstream s;
+  s << TID;
+  std::string converted(s.str());  
+  
+  Process (R"([
+    {"name": "domob", "move": {"tm": {"e": {"tid": )" + converted + R"(, "fc": [2,3]}}}}
+  ])");   
+  
+  auto res = tbl5.QueryAll ();
+  ASSERT_TRUE (res.Step ());
+  
+  ft = tbl3.GetById(3, ctx.RoConfig());
+  EXPECT_EQ (ft->GetProto().tournamentinstanceid(), TID);  
+  ft.reset();
+}
+
+TEST_F (ValidateStateTests, TournamentResolvedTest)
+{
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig());
+  auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
+  ft.reset();
+  
+  auto ft2 = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
+  ft2.reset();
+  
+  EXPECT_EQ (xp->CollectInventoryFighters(ctx.RoConfig()).size(), 2);
+  xp->CalculatePrestige(ctx.RoConfig());
+  xp.reset();
+  
+  UpdateState ("[]");
+  
+  auto tutorialTrmn = tbl5.GetByAuthIdName("cbd2e78a-37ce-b864-793d-8dd27788a774", ctx.RoConfig());
+  ASSERT_TRUE (tutorialTrmn != nullptr);
+  uint32_t TID = tutorialTrmn->GetId();
+  tutorialTrmn.reset();
+  
+  std::ostringstream s;
+  s << TID;
+  std::string converted(s.str());  
+  
+  Process (R"([
+    {"name": "domob", "move": {"tm": {"e": {"tid": )" + converted + R"(, "fc": [2,3]}}}}
+  ])");   
+  
+
+  auto xp2 = xayaplayers.CreateNew ("andy", ctx.RoConfig());
+  auto ftA = tbl3.CreateNew ("andy", 1, ctx.RoConfig(), rnd);
+  uint32_t ftA1id = ftA->GetId();
+  ftA.reset();
+  
+  auto ftA2 = tbl3.CreateNew ("andy", 1, ctx.RoConfig(), rnd);
+  uint32_t ftA2id = ftA2->GetId();
+  ftA2.reset();
+  
+  EXPECT_EQ (xp2->CollectInventoryFighters(ctx.RoConfig()).size(), 2);
+  xp2->CalculatePrestige(ctx.RoConfig());
+  xp2.reset();
+  
+  UpdateState ("[]");
+  
+  EXPECT_EQ (tbl4.CountForOwner("domob"), 0);
+  
+  std::ostringstream s1;
+  s1 << ftA1id;
+  std::string converted1(s1.str()); 
+
+  std::ostringstream s2;
+  s2 << ftA2id;
+  std::string converted2(s2.str()); 
+  
+  Process (R"([
+    {"name": "andy", "move": {"tm": {"e": {"tid": )" + converted + R"(, "fc": [)" + converted1 + R"(,)" + converted2 + R"(]}}}}
+  ])");    
+
+  for (unsigned i = 0; i < 3; ++i)
+  {
+    UpdateState ("[]");
+  }
+  
+  EXPECT_EQ (tbl4.CountForOwner("domob"), 8);
+  EXPECT_EQ (tbl4.CountForOwner("andy"), 11);
+}
+
+TEST_F (ValidateStateTests, TournamentStrongerFighterWins)
+{
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig());
+  auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
+  ft.reset();
+  
+  auto r0 = tbl2.CreateNew("domob", "7b7d8898-7f58-0334-0bad-825dc87a6638", ctx.RoConfig());
+  uint32_t strongRecepieID = r0->GetId();
+  r0.reset();  
+  
+  auto ft2VeryStrongFighter = tbl3.CreateNew ("domob", strongRecepieID, ctx.RoConfig(), rnd);
+  ft2VeryStrongFighter.reset();
+  
+  EXPECT_EQ (xp->CollectInventoryFighters(ctx.RoConfig()).size(), 2);
+  xp->CalculatePrestige(ctx.RoConfig());
+  xp.reset();
+  
+  UpdateState ("[]");
+  
+  auto tutorialTrmn = tbl5.GetByAuthIdName("cbd2e78a-37ce-b864-793d-8dd27788a774", ctx.RoConfig());
+  ASSERT_TRUE (tutorialTrmn != nullptr);
+  uint32_t TID = tutorialTrmn->GetId();
+  tutorialTrmn.reset();
+  
+  std::ostringstream s;
+  s << TID;
+  std::string converted(s.str());  
+  
+  Process (R"([
+    {"name": "domob", "move": {"tm": {"e": {"tid": )" + converted + R"(, "fc": [2,4]}}}}
+  ])");   
+  
+
+  auto xp2 = xayaplayers.CreateNew ("andy", ctx.RoConfig());
+  auto ftA = tbl3.CreateNew ("andy", 1, ctx.RoConfig(), rnd);
+  uint32_t ftA1id = ftA->GetId();
+  ftA.reset();
+  
+  auto ftA2 = tbl3.CreateNew ("andy", 1, ctx.RoConfig(), rnd);
+  uint32_t ftA2id = ftA2->GetId();
+  ftA2.reset();
+  
+  EXPECT_EQ (xp2->CollectInventoryFighters(ctx.RoConfig()).size(), 2);
+  xp2->CalculatePrestige(ctx.RoConfig());
+  xp2.reset();
+  
+  UpdateState ("[]");
+  
+  EXPECT_EQ (tbl4.CountForOwner("domob"), 0);
+  
+  std::ostringstream s1;
+  s1 << ftA1id;
+  std::string converted1(s1.str()); 
+
+  std::ostringstream s2;
+  s2 << ftA2id;
+  std::string converted2(s2.str()); 
+  
+  Process (R"([
+    {"name": "andy", "move": {"tm": {"e": {"tid": )" + converted + R"(, "fc": [)" + converted1 + R"(,)" + converted2 + R"(]}}}}
+  ])");    
+
+  for (unsigned i = 0; i < 3; ++i)
+  {
+    UpdateState ("[]");
+  }
+  
+  EXPECT_EQ (tbl4.CountForOwner("domob"), 11);
+  EXPECT_EQ (tbl4.CountForOwner("andy"), 8);
 }
     
 }

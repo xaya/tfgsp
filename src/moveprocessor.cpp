@@ -36,7 +36,7 @@ namespace pxd
 
 BaseMoveProcessor::BaseMoveProcessor (Database& d,
                                       const Context& c)
-  : ctx(c), db(d), xayaplayers(db), recipeTbl(db), fighters(db), moneySupply(db), rewards(db)
+  : ctx(c), db(d), xayaplayers(db), recipeTbl(db), fighters(db), moneySupply(db), rewards(db), tournamentsTbl(db)
 {}
 
 bool
@@ -432,6 +432,9 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
   /* We are trying all kind of expedition actions*/
   TryExpeditionAction (name, mv["exp"]);  
   
+  /* We are trying all kind of tournament related actions*/
+  TryTournamentAction (name, mv["tm"]);    
+  
   /* If there is no account (after potentially updating/initialising it),
      then let's not try to process any more updates.  This explicitly
      enforces that accounts have to be initialised before doing anything
@@ -582,6 +585,154 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     return true;
   }      
   
+  bool BaseMoveProcessor::ParseTournamentEntryData(const XayaPlayer& a, const std::string& name, const Json::Value& tournament, uint32_t& tournamentID, std::vector<uint32_t>& fighterIDS)
+  {
+    if (!tournament.isObject ())
+    {
+      return false;
+    }
+
+    if(!tournament["tid"].isInt())
+    {
+      return false;
+    }
+    
+    tournamentID = tournament["tid"].asInt();
+    
+    const auto& fghtrs = tournament["fc"];
+    if (!fghtrs.isArray ())
+    {
+      LOG (WARNING) << "Fighter is not array for tournament with id: " << tournamentID;
+      return false;
+    }
+    
+    auto tournamentData = tournamentsTbl.GetById(tournamentID, ctx.RoConfig ());
+    
+    for (const auto& ft : fghtrs)
+    {
+      if (!ft.isInt ())
+      {
+        LOG (WARNING) << "Fighter is not integer for tournament with id: " << tournamentID;
+        return false; 
+      }
+      
+      fighterIDS.push_back(ft.asInt());
+    }
+  
+    if(tournamentData == nullptr)
+    {
+      LOG (WARNING) << "Asking for non-existant tournament with id: " << tournamentID;
+      return false;
+    }
+
+    if((pxd::TournamentState)(int)tournamentData->GetInstance().state() != pxd::TournamentState::Listed)
+    {
+      LOG (WARNING) << "Tournament is already running or completed for id: " << tournamentID;
+      tournamentData.reset();
+      return false;
+    }
+    
+    if((int)tournamentData->GetInstance().fighters_size() >= (int)tournamentData->GetProto().teamsize() * (int)tournamentData->GetProto().teamcount())
+    {
+      LOG (WARNING) << "Tournament roster is already full for id: " << tournamentID;
+      tournamentData.reset();
+      return false;        
+    }    
+
+    //We check fighters now against entry validity
+      
+    for(long long unsigned int r = 0; r < fighterIDS.size(); r++)
+    {
+        auto fighter = fighters.GetById (fighterIDS[r], ctx.RoConfig ());
+        
+        if(fighter == nullptr)
+        {
+          LOG (WARNING) << "Fatal erorr, could not get fighter with ID" << fighterIDS[r];
+          return false;                
+        }
+        
+        if(fighter->GetOwner() != a.GetName())
+        {
+          LOG (WARNING) << "Fighter does not belong to: " << a.GetName();
+          tournamentData.reset();
+          fighter.reset();
+          return false;               
+        }
+        
+        if(fighter->GetProto().sweetness() < tournamentData->GetProto().minsweetness())
+        {
+          LOG (WARNING) << "Fighter sweetness mismatch for tournament with id: " << tournamentID;
+          tournamentData.reset();
+          fighter.reset();
+          return false;              
+        }
+        
+        if(fighter->GetProto().sweetness() > tournamentData->GetProto().maxsweetness())
+        {
+          LOG (WARNING) << "Fighter sweetness mismatch for tournament with id: " << tournamentID;
+          tournamentData.reset();
+          fighter.reset();
+          return false;              
+        } 
+
+        if((pxd::FighterStatus)(int)fighter->GetStatus() != pxd::FighterStatus::Available)
+        {
+          LOG (WARNING) << "Fighter status is busy for tournament with id: " << tournamentID;
+          tournamentData.reset();
+          fighter.reset();
+          return false;              
+        }    
+
+        fighter.reset();        
+    }
+
+    for(auto fighterAlreadyInside : tournamentData->GetInstance().fighters())
+    {
+        auto fighter = fighters.GetById (fighterAlreadyInside, ctx.RoConfig ());
+        
+        if(fighter == nullptr)
+        {
+          LOG (WARNING) << "Fatal erorr, could not get fighter with ID" << fighterAlreadyInside;
+          return false;                
+        }        
+        
+        if(fighter->GetOwner() == a.GetName())
+        {
+          tournamentData.reset();
+          fighter.reset();
+          LOG (WARNING) << "Some player fighters are already in tournament with id: " << tournamentID;
+          return false;
+        }
+        
+        fighter.reset();
+    }
+    
+    if(fighterIDS.size() != tournamentData->GetProto().teamsize())
+    {
+      LOG (WARNING) << "Incorrect number of fighters sent to join tournament with id: " << tournamentID;
+      tournamentData.reset();     
+      return false;           
+    }
+    
+    if(tournamentData->GetProto().authoredid() == "cbd2e78a-37ce-b864-793d-8dd27788a774" && (int)a.GetFTUEState() > (int)pxd::FTUEState::JoinFirstTournament)
+    {
+      LOG (WARNING) << "Can't join FTUE tournament again! With id: " << tournamentID;
+      tournamentData.reset();
+      return false;          
+    }
+    
+    if(a.GetBalance() < tournamentData->GetProto().joincost())
+    {
+      LOG (WARNING) << "Not enough crystals to join tournament with id: " << tournamentID;
+      tournamentData.reset();
+      return false;          
+    }
+
+    tournamentData.reset();
+    
+    return true;
+  }
+  
   bool BaseMoveProcessor::ParseExpeditionData(const XayaPlayer& a, const std::string& name, const Json::Value& expedition, pxd::proto::ExpeditionBlueprint& expeditionBlueprint, FighterTable::Handle& fighter, int32_t& duration, std::string& weHaveApplibeGoodyName)
   {
     if (!expedition.isObject ())
@@ -611,6 +762,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     if(a.GetName() != fighter->GetOwner())
     {
         LOG (WARNING) << "Fighter does not belong to the player, fighter id is: " << fighterID;
+        fighter.reset();
         return false;         
     }
     
@@ -630,30 +782,35 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     if(blueprintSolved == false)
     {
         LOG (WARNING) << "Could not resolve expedition blueprint with authID: " << expeditionID;
+        fighter.reset();
         return false;              
     }
     
     if(expeditionBlueprint.authoredid() == "c064e7f7-acbf-4f74-fab8-cccd7b2d4004" && (int)a.GetFTUEState() > (int)FTUEState::FirstExpeditionPending)
     {
         LOG (WARNING) << "Could not resolve tutorial expedition twice " << expeditionID;
+        fighter.reset();
         return false;            
     }
     
     if(fighter->GetProto().sweetness() < expeditionBlueprint.minsweetness())
     {
         LOG (WARNING) << "Trying to join expedition but fighter doesn't meet sweetness requirements: " << fighterID;
+        fighter.reset();
         return false;              
     }
     
     if(fighter->GetProto().sweetness() > expeditionBlueprint.maxsweetness())
     {
         LOG (WARNING) << "Trying to join expedition but fighter doesn't meet sweetness requirements: " << fighterID;
+        fighter.reset();
         return false;              
     }    
     
     if(fighter->GetStatus() != FighterStatus::Available)
     {
         LOG (WARNING) << "Trying to join expedition but fighter isn't available : " << fighterID;
+        fighter.reset();
         return false;              
     }     
     
@@ -700,7 +857,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     }   
 
     const uint32_t recepieID = (uint32_t)recepie["rid"].asInt();
-    const uint32_t fighterID = recepie["fid"].asInt();
+    //const uint32_t fighterID = recepie["fid"].asInt();
     
     auto& playerInventory = a.GetInventory();
     
@@ -931,9 +1088,58 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
       }
   }   
   
+  void MoveProcessor::MaybeEnterTournament (const std::string& name, const Json::Value& tournament)
+  {      
+    auto a = xayaplayers.GetByName (name, ctx.RoConfig ());
+    
+    if(a == nullptr)
+    {
+      LOG (INFO) << "Player " << name << " not found";
+      return;
+    }
+    
+    uint32_t tournamentID = 0;
+    std::vector<uint32_t> fighterIDS;   
+    
+    if(!ParseTournamentEntryData(*a, name, tournament, tournamentID, fighterIDS)) return;
+
+    auto tournamentData = tournamentsTbl.GetById(tournamentID, ctx.RoConfig ());
+    
+    for(long long unsigned int r = 0; r < fighterIDS.size(); r++)
+    {
+        auto fighter = fighters.GetById (fighterIDS[r], ctx.RoConfig ());
+        fighter->MutableProto().set_tournamentinstanceid(tournamentID);
+        fighter->SetStatus(pxd::FighterStatus::Tournament);
+      
+        tournamentData->MutableInstance().add_fighters(fighterIDS[r]);
+
+        LOG (INFO) << "Fighter " << tournamentData->MutableInstance().fighters(tournamentData->MutableInstance().fighters_size()-1) << " enters tournament ";
+        
+        fighter.reset();
+    }
+
+    a->AddBalance (tournamentData->GetProto().joincost()); 
+    tournamentData.reset();
+    
+    if(a->GetFTUEState() == FTUEState::JoinFirstTournament)
+    {
+      a->SetFTUEState(FTUEState::FirstTournamentPending);
+    }     
+    
+    a.reset();
+    
+    LOG (INFO) << "Tournament " << tournamentID << " entered succesfully ";
+  }      
+  
   void MoveProcessor::MaybeGoForExpedition (const std::string& name, const Json::Value& expedition)
   {      
     auto a = xayaplayers.GetByName (name, ctx.RoConfig ());
+    
+    if(a == nullptr)
+    {
+      LOG (INFO) << "Player " << name << " not found";
+      return;
+    }    
     
     std::string weHaveApplibeGoodyName = "";
     int32_t duration = -1;
@@ -985,6 +1191,12 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     
     auto a = xayaplayers.GetByName (name, ctx.RoConfig ());
     
+    if(a == nullptr)
+    {
+      LOG (INFO) << "Player " << name << " not found";
+      return;
+    }    
+    
     if(!ParseCookRecepie(*a, name, recepie, fungibleItemAmountForDeduction, cookCost, duration, weHaveApplibeGoodyName)) return;
     
     auto& playerInventory = a->GetInventory();
@@ -1034,10 +1246,10 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     auto a = xayaplayers.GetByName (name, ctx.RoConfig ());
     CHECK (a != nullptr);
     if (a->IsInitialised ())
-      {
-        LOG (WARNING) << "Account " << name << " is already initialised";
-        return;
-      }
+    {
+      LOG (WARNING) << "Account " << name << " is already initialised";
+      return;
+    }
 
     const auto& roleVal = init["role"];
     if (!roleVal.isString ())
@@ -1102,7 +1314,19 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     
     /*Trying to claim reward from the finished expedition*/
     MaybeClaimReward (name, upd["c"]);    
-  }   
+ 
+  }  
+
+  void
+  MoveProcessor::TryTournamentAction (const std::string& name,
+                                   const Json::Value& upd)
+  {
+    if (!upd.isObject ())
+      return;
+    
+    /*Trying to enter the tournament*/
+    MaybeEnterTournament (name, upd["e"]);    
+  }     
 
   void
   MoveProcessor::TryXayaPlayerUpdate (const std::string& name,

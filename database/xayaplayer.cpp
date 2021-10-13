@@ -152,15 +152,15 @@ std::vector<TournamentTable::Handle> XayaPlayer::CollectTournaments(const RoConf
   auto res = tournamentsTable.QueryAll();
   while (res.Step ())
   {
-      auto c = tournamentsTable.GetFromResult (res);
+      auto c = tournamentsTable.GetFromResult (res, cfg);
       tournaments.push_back(std::move(c));
   }
   return tournaments;
 }
 
-float XayaPlayer::GetFighterPercentageFromQuality(uint32_t quality, std::vector<FighterTable::Handle>& fighters)
+uint32_t XayaPlayer::GetFighterPercentageFromQuality(uint32_t quality, std::vector<FighterTable::Handle>& fighters)
 {
-  float totalFighters = 0;
+  uint32_t totalFighters = 0;
   for(const auto& fighter: fighters)
   {
      if(fighter.get()->GetProto().quality() == quality)
@@ -169,7 +169,7 @@ float XayaPlayer::GetFighterPercentageFromQuality(uint32_t quality, std::vector<
      }
   }  
   
-  return totalFighters / fighters.size();
+  return (totalFighters * 100) / fighters.size();
 }
 
 void
@@ -184,12 +184,12 @@ XayaPlayer::CalculatePrestige(const RoConfig& cfg)
       return;
     }
     
-    float getPercentageEpic  = GetFighterPercentageFromQuality(4, fighters) * cfg->params().prestige_epic_mod() * log10(totalFighters+1);
-    float getPercentageRare  = GetFighterPercentageFromQuality(3, fighters) * cfg->params().prestige_rare_mod() * log10(totalFighters+1);
-    float getPercentageUncommom  = GetFighterPercentageFromQuality(2, fighters) * cfg->params().prestige_uncommon_mod() * log10(totalFighters+1);
-    float getPercentageCommon  = GetFighterPercentageFromQuality(1, fighters) * cfg->params().prestige_common_mod() * log10(totalFighters+1);
+    uint32_t getPercentageEpic  = GetFighterPercentageFromQuality(4, fighters) * cfg->params().prestige_epic_mod() * log10(totalFighters+1);
+    uint32_t getPercentageRare  = GetFighterPercentageFromQuality(3, fighters) * cfg->params().prestige_rare_mod() * log10(totalFighters+1);
+    uint32_t getPercentageUncommom  = GetFighterPercentageFromQuality(2, fighters) * cfg->params().prestige_uncommon_mod() * log10(totalFighters+1);
+    uint32_t getPercentageCommon  = GetFighterPercentageFromQuality(1, fighters) * cfg->params().prestige_common_mod() * log10(totalFighters+1);
 
-    float fighterAverage = 0;
+    uint32_t fighterAverage = 0;
     
     for(const auto& fighter: fighters)
     {
@@ -203,18 +203,11 @@ XayaPlayer::CalculatePrestige(const RoConfig& cfg)
         }
     }
     
-    float averageRatingScore =  fighterAverage * cfg->params().prestige_avg_rating_mod() * log10(totalFighters+1);
+    uint32_t averageRatingScore =  (fighterAverage) * cfg->params().prestige_avg_rating_mod() * log10(totalFighters+1);
     
-    std::vector<TournamentTable::Handle> tournaments = CollectTournaments(cfg);
-    float winCount = 0;
-    
-    //for(const auto& tournament: tournaments)
-    //{
-        //winCount++; //todo
-    //}
-    
-    float totalTournaments = tournaments.size();
-    float winPercent = 0.0f;
+    uint32_t winCount = GetProto().tournamentswon() * 100;
+    uint32_t totalTournaments = GetProto().tournamentscompleted() * 100;
+    uint32_t winPercent = 0;
     
     if(totalTournaments > 0)
     {
@@ -222,8 +215,9 @@ XayaPlayer::CalculatePrestige(const RoConfig& cfg)
         winPercent *= cfg->params().prestige_tournament_performance_mod();
     }
     
-    float winPercentPrestigeMod = winPercent;
-    prestige = (int64_t)(getPercentageEpic + getPercentageRare + getPercentageUncommom + getPercentageCommon + averageRatingScore) * (1 + winPercentPrestigeMod);
+    uint32_t winPercentPrestigeMod = winPercent;
+    prestige = (int64_t)(getPercentageEpic + getPercentageRare + getPercentageUncommom + getPercentageCommon + averageRatingScore) * (100 + winPercentPrestigeMod);
+    prestige = prestige / 100;
     
     dirtyFields = true;
 }

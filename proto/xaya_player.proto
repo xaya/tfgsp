@@ -60,4 +60,14 @@ message XayaPlayer
    * Stores all operations that takes several blocks to resolve
    */  
   repeated OngoinOperation ongoings = 7;
+  
+  /**
+   * Tournaments bookeeping entry
+   */
+  optional uint32 TournamentsCompleted = 8;   
+  
+  /**
+   * Tournaments bookeeping entry
+   */
+  optional uint32 TournamentsWon = 9;    
 }

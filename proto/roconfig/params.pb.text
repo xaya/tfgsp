@@ -13,9 +13,9 @@ params:
     
     starting_recipes: "5864a19b-c8c0-2d34-eaef-9455af0baf2c"
   
-    elok_factor: 50
+    elok_factor: 5000
   
-    alms: 0.15
+    alms: 15
   
     starting_crystals: 0
   

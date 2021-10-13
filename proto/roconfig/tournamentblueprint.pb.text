@@ -9,7 +9,7 @@ tournamentbluprints:
     TeamCount: 2
     TeamSize: 2
     MinSweetness: 1
-    MaxSweetness: 1
+    MaxSweetness: 10
     MaxRewardQuality: 2
     BaseRewardsTableId: "e6d106ef-38e1-67d4-db02-fd1fde4d94a1"
     BaseRollCount: 1

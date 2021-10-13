@@ -1,0 +1,1075 @@
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+logic_tests.cpp:808: Failure
+Expected equality of these values:
+  ft->GetProto().tournamentinstanceid()
+    Which is: 0
+  12
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest (5 ms)
+[----------] 1 test from ValidateStateTests (9 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (9 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest
+
+ 1 FAILED TEST
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+logic_tests.cpp:808: Failure
+Expected equality of these values:
+  ft->GetProto().tournamentinstanceid()
+    Which is: 0
+  12
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest (5 ms)
+[----------] 1 test from ValidateStateTests (5 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (6 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest
+
+ 1 FAILED TEST
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+logic_tests.cpp:808: Failure
+Expected equality of these values:
+  ft->GetProto().tournamentinstanceid()
+    Which is: 0
+  12
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest (5 ms)
+[----------] 1 test from ValidateStateTests (5 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (9 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest
+
+ 1 FAILED TEST
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+logic_tests.cpp:808: Failure
+Expected equality of these values:
+  ft->GetProto().tournamentinstanceid()
+    Which is: 0
+  12
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest (5 ms)
+[----------] 1 test from ValidateStateTests (5 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (9 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest
+
+ 1 FAILED TEST
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+logic_tests.cpp:808: Failure
+Expected equality of these values:
+  ft->GetProto().tournamentinstanceid()
+    Which is: 0
+  13
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest (6 ms)
+[----------] 1 test from ValidateStateTests (6 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (6 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest
+
+ 1 FAILED TEST
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+logic_tests.cpp:808: Failure
+Expected equality of these values:
+  ft->GetProto().tournamentinstanceid()
+    Which is: 0
+  13
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest (6 ms)
+[----------] 1 test from ValidateStateTests (6 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (10 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest
+
+ 1 FAILED TEST
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+logic_tests.cpp:808: Failure
+Expected equality of these values:
+  ft->GetProto().tournamentinstanceid()
+    Which is: 0
+  14
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest (5 ms)
+[----------] 1 test from ValidateStateTests (5 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (6 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest
+
+ 1 FAILED TEST
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+logic_tests.cpp:808: Failure
+Expected equality of these values:
+  ft->GetProto().tournamentinstanceid()
+    Which is: 0
+  15
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest (6 ms)
+[----------] 1 test from ValidateStateTests (6 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (10 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest
+
+ 1 FAILED TEST
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+logic_tests.cpp:808: Failure
+Expected equality of these values:
+  ft->GetProto().tournamentinstanceid()
+    Which is: 0
+  16
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest (6 ms)
+[----------] 1 test from ValidateStateTests (6 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (10 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest
+
+ 1 FAILED TEST
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+logic_tests.cpp:808: Failure
+Expected equality of these values:
+  ft->GetProto().tournamentinstanceid()
+    Which is: 0
+  17
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest (5 ms)
+[----------] 1 test from ValidateStateTests (5 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (5 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest
+
+ 1 FAILED TEST
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+logic_tests.cpp:808: Failure
+Expected equality of these values:
+  ft->GetProto().tournamentinstanceid()
+    Which is: 0
+  18
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest (5 ms)
+[----------] 1 test from ValidateStateTests (5 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (10 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest
+
+ 1 FAILED TEST
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+logic_tests.cpp:808: Failure
+Expected equality of these values:
+  ft->GetProto().tournamentinstanceid()
+    Which is: 0
+  19
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest (5 ms)
+[----------] 1 test from ValidateStateTests (5 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (9 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest
+
+ 1 FAILED TEST
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+logic_tests.cpp:808: Failure
+Expected equality of these values:
+  ft->GetProto().tournamentinstanceid()
+    Which is: 0
+  20
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest (5 ms)
+[----------] 1 test from ValidateStateTests (5 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (9 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest
+
+ 1 FAILED TEST
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+logic_tests.cpp:808: Failure
+Expected equality of these values:
+  ft->GetProto().tournamentinstanceid()
+    Which is: 0
+  21
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest (5 ms)
+[----------] 1 test from ValidateStateTests (5 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (6 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest
+
+ 1 FAILED TEST
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+logic_tests.cpp:808: Failure
+Expected equality of these values:
+  ft->GetProto().tournamentinstanceid()
+    Which is: 0
+  22
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest (5 ms)
+[----------] 1 test from ValidateStateTests (5 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (9 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest
+
+ 1 FAILED TEST
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+logic_tests.cpp:808: Failure
+Expected equality of these values:
+  ft->GetProto().tournamentinstanceid()
+    Which is: 0
+  23
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest (5 ms)
+[----------] 1 test from ValidateStateTests (5 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (6 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest
+
+ 1 FAILED TEST
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+logic_tests.cpp:808: Failure
+Expected equality of these values:
+  ft->GetProto().tournamentinstanceid()
+    Which is: 0
+  24
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest (5 ms)
+[----------] 1 test from ValidateStateTests (5 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (9 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest
+
+ 1 FAILED TEST
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+logic_tests.cpp:808: Failure
+Expected equality of these values:
+  ft->GetProto().tournamentinstanceid()
+    Which is: 0
+  25
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest (6 ms)
+[----------] 1 test from ValidateStateTests (6 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (10 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest
+
+ 1 FAILED TEST
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+logic_tests.cpp:808: Failure
+Expected equality of these values:
+  ft->GetProto().tournamentinstanceid()
+    Which is: 0
+  4
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest (5 ms)
+[----------] 1 test from ValidateStateTests (5 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (6 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest
+
+ 1 FAILED TEST
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+logic_tests.cpp:808: Failure
+Expected equality of these values:
+  ft->GetProto().tournamentinstanceid()
+    Which is: 0
+  1
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest (5 ms)
+[----------] 1 test from ValidateStateTests (5 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (6 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest
+
+ 1 FAILED TEST
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+logic_tests.cpp:808: Failure
+Expected equality of these values:
+  ft->GetProto().tournamentinstanceid()
+    Which is: 0
+  2
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest (5 ms)
+[----------] 1 test from ValidateStateTests (5 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (9 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest
+
+ 1 FAILED TEST
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+logic_tests.cpp:808: Failure
+Expected equality of these values:
+  ft->GetProto().tournamentinstanceid()
+    Which is: 0
+  3
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest (5 ms)
+[----------] 1 test from ValidateStateTests (5 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (9 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest
+
+ 1 FAILED TEST
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+logic_tests.cpp:808: Failure
+Expected equality of these values:
+  ft->GetProto().tournamentinstanceid()
+    Which is: 0
+  3
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest (5 ms)
+[----------] 1 test from ValidateStateTests (5 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (9 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest
+
+ 1 FAILED TEST
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+logic_tests.cpp:808: Failure
+Expected equality of these values:
+  ft->GetProto().tournamentinstanceid()
+    Which is: 0
+  3
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest (5 ms)
+[----------] 1 test from ValidateStateTests (5 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (9 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest
+
+ 1 FAILED TEST
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+logic_tests.cpp:808: Failure
+Expected equality of these values:
+  ft->GetProto().tournamentinstanceid()
+    Which is: 0
+  4
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest (5 ms)
+[----------] 1 test from ValidateStateTests (5 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (9 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest
+
+ 1 FAILED TEST
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+logic_tests.cpp:808: Failure
+Expected equality of these values:
+  ft->GetProto().tournamentinstanceid()
+    Which is: 0
+  4
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest (5 ms)
+[----------] 1 test from ValidateStateTests (5 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (9 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest
+
+ 1 FAILED TEST
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+logic_tests.cpp:808: Failure
+Expected equality of these values:
+  ft->GetProto().tournamentinstanceid()
+    Which is: 0
+  5
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest (5 ms)
+[----------] 1 test from ValidateStateTests (5 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (6 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest
+
+ 1 FAILED TEST
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+logic_tests.cpp:808: Failure
+Expected equality of these values:
+  ft->GetProto().tournamentinstanceid()
+    Which is: 0
+  6
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest (5 ms)
+[----------] 1 test from ValidateStateTests (5 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (9 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest
+
+ 1 FAILED TEST
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+logic_tests.cpp:808: Failure
+Expected equality of these values:
+  ft->GetProto().tournamentinstanceid()
+    Which is: 0
+  7
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest (5 ms)
+[----------] 1 test from ValidateStateTests (5 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (6 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest
+
+ 1 FAILED TEST
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+logic_tests.cpp:808: Failure
+Expected equality of these values:
+  ft->GetProto().tournamentinstanceid()
+    Which is: 0
+  8
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest (5 ms)
+[----------] 1 test from ValidateStateTests (5 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (9 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest
+
+ 1 FAILED TEST
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+logic_tests.cpp:808: Failure
+Expected equality of these values:
+  ft->GetProto().tournamentinstanceid()
+    Which is: 0
+  9
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest (5 ms)
+[----------] 1 test from ValidateStateTests (5 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (6 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest
+
+ 1 FAILED TEST
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+logic_tests.cpp:808: Failure
+Expected equality of these values:
+  ft->GetProto().tournamentinstanceid()
+    Which is: 0
+  10
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest (5 ms)
+[----------] 1 test from ValidateStateTests (5 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (9 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest
+
+ 1 FAILED TEST
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+logic_tests.cpp:808: Failure
+Expected equality of these values:
+  ft->GetProto().tournamentinstanceid()
+    Which is: 0
+  11
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest (5 ms)
+[----------] 1 test from ValidateStateTests (5 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (9 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest
+
+ 1 FAILED TEST
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+logic_tests.cpp:808: Failure
+Expected equality of these values:
+  ft->GetProto().tournamentinstanceid()
+    Which is: 0
+  12
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest (5 ms)
+[----------] 1 test from ValidateStateTests (5 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (9 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest
+
+ 1 FAILED TEST
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+logic_tests.cpp:808: Failure
+Expected equality of these values:
+  ft->GetProto().tournamentinstanceid()
+    Which is: 0
+  13
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest (5 ms)
+[----------] 1 test from ValidateStateTests (5 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (9 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest
+
+ 1 FAILED TEST
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+logic_tests.cpp:808: Failure
+Expected equality of these values:
+  ft->GetProto().tournamentinstanceid()
+    Which is: 0
+  14
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest (5 ms)
+[----------] 1 test from ValidateStateTests (5 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (10 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest
+
+ 1 FAILED TEST
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+logic_tests.cpp:808: Failure
+Expected equality of these values:
+  ft->GetProto().tournamentinstanceid()
+    Which is: 0
+  15
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest (5 ms)
+[----------] 1 test from ValidateStateTests (5 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (9 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest
+
+ 1 FAILED TEST
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+logic_tests.cpp:808: Failure
+Expected equality of these values:
+  ft->GetProto().tournamentinstanceid()
+    Which is: 0
+  16
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest (5 ms)
+[----------] 1 test from ValidateStateTests (5 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (6 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest
+
+ 1 FAILED TEST
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+logic_tests.cpp:808: Failure
+Expected equality of these values:
+  ft->GetProto().tournamentinstanceid()
+    Which is: 0
+  17
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest (5 ms)
+[----------] 1 test from ValidateStateTests (5 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (9 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest
+
+ 1 FAILED TEST
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+logic_tests.cpp:808: Failure
+Expected equality of these values:
+  ft->GetProto().tournamentinstanceid()
+    Which is: 0
+  17
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest (5 ms)
+[----------] 1 test from ValidateStateTests (5 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (6 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest
+
+ 1 FAILED TEST
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+logic_tests.cpp:808: Failure
+Expected equality of these values:
+  ft->GetProto().tournamentinstanceid()
+    Which is: 0
+  17
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest (5 ms)
+[----------] 1 test from ValidateStateTests (5 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (9 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest
+
+ 1 FAILED TEST
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+logic_tests.cpp:808: Failure
+Expected equality of these values:
+  ft->GetProto().tournamentinstanceid()
+    Which is: 0
+  17
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest (5 ms)
+[----------] 1 test from ValidateStateTests (5 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (5 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest
+
+ 1 FAILED TEST
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+logic_tests.cpp:808: Failure
+Expected equality of these values:
+  ft->GetProto().tournamentinstanceid()
+    Which is: 0
+  17
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest (5 ms)
+[----------] 1 test from ValidateStateTests (5 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (5 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest
+
+ 1 FAILED TEST
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+logic_tests.cpp:808: Failure
+Expected equality of these values:
+  ft->GetProto().tournamentinstanceid()
+    Which is: 0
+  17
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest (5 ms)
+[----------] 1 test from ValidateStateTests (5 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (5 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest
+
+ 1 FAILED TEST
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+logic_tests.cpp:808: Failure
+Expected equality of these values:
+  ft->GetProto().tournamentinstanceid()
+    Which is: 0
+  17
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest (5 ms)
+[----------] 1 test from ValidateStateTests (5 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (6 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest
+
+ 1 FAILED TEST
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+logic_tests.cpp:808: Failure
+Expected equality of these values:
+  ft->GetProto().tournamentinstanceid()
+    Which is: 0
+  17
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest (5 ms)
+[----------] 1 test from ValidateStateTests (5 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (5 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest
+
+ 1 FAILED TEST
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+logic_tests.cpp:808: Failure
+Expected equality of these values:
+  ft->GetProto().tournamentinstanceid()
+    Which is: 0
+  17
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest (5 ms)
+[----------] 1 test from ValidateStateTests (5 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (9 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest
+
+ 1 FAILED TEST
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+unknown file: Failure
+C++ exception with description "* Line 2, Column 65
+  Missing ',' or '}' in object declaration
+" thrown in the test body.
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest (5 ms)
+[----------] 1 test from ValidateStateTests (5 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (9 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest
+
+ 1 FAILED TEST
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+unknown file: Failure
+C++ exception with description "* Line 2, Column 65
+  Missing ',' or '}' in object declaration
+" thrown in the test body.
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest (5 ms)
+[----------] 1 test from ValidateStateTests (5 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (9 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] ValidateStateTests.TournamentInstanceSheduleTest
+
+ 1 FAILED TEST
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentInstanceSheduleTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentInstanceSheduleTest
+Running main() from C:/_/M/mingw-w64-gtest/src/googletest-release-1.11.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *TournamentResolvedTest*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ValidateStateTests
+[ RUN      ] ValidateStateTests.TournamentResolvedTest

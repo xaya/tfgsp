@@ -25,6 +25,7 @@
 #include "lazyproto.hpp"
 
 #include "proto/tournament_blueprint.pb.h"
+#include "proto/tournament_instance.pb.h"
 #include "proto/roconfig.hpp"
 
 #include <functional>
@@ -33,6 +34,27 @@
 
 namespace pxd
 {
+    
+/**
+ * Completed tournament results type
+ */
+enum class MatchResultType : int8_t
+{
+  Lose = 0,
+  Draw = 1,
+  Win = 2
+};
+
+
+/**
+ * Current tournament state
+ */
+enum class TournamentState : int8_t
+{
+  Listed = 0,
+  Running = 1,
+  Completed = 2
+};
 
 /**
  * Database result type for rows from the tournament table.
@@ -40,7 +62,9 @@ namespace pxd
 struct TournamentResult : public Database::ResultType
 {
   RESULT_COLUMN (int64_t, id, 1);
-  RESULT_COLUMN (pxd::proto::TournamentBlueprint, proto, 2);
+  RESULT_COLUMN (std::string, name, 2);
+  RESULT_COLUMN (pxd::proto::TournamentBlueprint, proto, 3);
+  RESULT_COLUMN (pxd::proto::TournamentInstance, instance, 4);
 
 };
 
@@ -77,14 +101,20 @@ private:
   /** Whether or not this is a new instance.  */
   bool isNew;
 
+  /** Name for easi unit-tests queries.  */
+  std::string name;
+
   /** Database reference this belongs to.  */
-  Database& db;  
+  Database& db; 
+
+  /** Additional instanced data of the tournament  */
+  LazyProto<proto::TournamentInstance> instance;
 
   /**
    * Constructs a new tournament with an auto-generated ID meant to be inserted
    * into the database.
    */
-  explicit TournamentInstance (Database& d, const std::string& blueprintGuid);
+  explicit TournamentInstance (Database& d, const std::string& blueprintGuid, const RoConfig& cfg);
 
   /**
    * Constructs a tournament instance based on the given query result.  This
@@ -142,6 +172,18 @@ public:
     return data.Get ();
   }
   
+  const proto::TournamentInstance&
+  GetInstance () const
+  {
+    return instance.Get ();
+  }
+
+  proto::TournamentInstance&
+  MutableInstance ()
+  {
+    return instance.Mutable ();
+  }  
+  
   proto::TournamentBlueprint&
   MutableProto ()
   {
@@ -179,18 +221,24 @@ public:
    * Returns a TournamentInstance handle for a fresh instance corresponding to a new
    * tournament that will be created.
    */
-  Handle CreateNew (const std::string& blueprintGuid);
+  Handle CreateNew (const std::string& blueprintGuid, const RoConfig& cfg);
 
   /**
    * Returns a handle for the instance based on a Database::Result.
    */
-  Handle GetFromResult (const Database::Result<TournamentResult>& res);
+  Handle GetFromResult (const Database::Result<TournamentResult>& res, const RoConfig& cfg);
 
   /**
    * Returns the tournament with the given ID or a null handle if there is
    * none with that ID.
    */
-  Handle GetById (Database::IdT id);
+  Handle GetById (Database::IdT id, const RoConfig& cfg);
+  
+  /**
+   * Returns the tournament with the given authID (use for unit tests only, its not doing any additional checks)
+   * or a null handle if there is
+   */  
+  Handle GetByAuthIdName (const std::string authIdName, const RoConfig& cfg);  
 
   /**
    * Queries for all tournaments in the database table. The tournaments are

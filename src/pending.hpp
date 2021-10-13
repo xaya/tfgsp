@@ -81,6 +81,11 @@ public:
    */      
   void AddRewardIDs (const XayaPlayer& a, std::vector<uint32_t> rewardDatabaseIds);
   
+   /**
+   * Updates the state for a new pending tournament entries
+   */      
+  void AddTournamentEntries (const XayaPlayer& a, uint32_t tournamentID, std::vector<uint32_t> fighterIDS);
+  
   /**
    * Pending state updates associated to an account.
    */
@@ -108,6 +113,11 @@ public:
     
     /** IDs of rewards currently pending for claiming */
     std::vector<uint32_t> rewardDatabaseIds;
+    
+    /** List of the tournament entries which are pending for the
+        not yet started tournaments to enter
+    */
+    std::map<uint32_t, std::vector<uint32_t>> tournamentEntries;
 
   };  
   

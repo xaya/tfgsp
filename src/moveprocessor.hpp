@@ -27,6 +27,7 @@
 #include "database/database.hpp"
 #include "database/xayaplayer.hpp"
 #include "database/fighter.hpp"
+#include "database/tournament.hpp"
 #include "database/recipe.hpp"
 #include "database/reward.hpp"
 #include "database/moneysupply.hpp"
@@ -100,6 +101,9 @@ protected:
   /** Access handle for the rewards database table.  */
   RewardsTable rewards;    
   
+  /** Access handle tournaments database instances*/
+  TournamentTable tournamentsTbl;     
+  
   explicit BaseMoveProcessor (Database& d, const Context& c);
 
   /**
@@ -149,6 +153,13 @@ protected:
    */    
  
   bool ParseExpeditionData(const XayaPlayer& a, const std::string& name, const Json::Value& expedition, pxd::proto::ExpeditionBlueprint& expeditionBlueprint, FighterTable::Handle& fighter, int32_t& duration, std::string& weHaveApplibeGoodyName);
+ 
+   /**
+   * Tries to parse a move that send fighter on the tournament
+   */ 
+ 
+  bool ParseTournamentEntryData(const XayaPlayer& a, const std::string& name, const Json::Value& tournament, uint32_t& tournamentID, std::vector<uint32_t>& fighterIDS);
+    
   
    /**
    * Tries to parse a move that collects reward data
@@ -226,6 +237,11 @@ private:
   */    
   void MaybeClaimReward (const std::string& name, const Json::Value& expedition);  
   
+  /**
+  * Tries to send the fighters for the tournament
+  */    
+  void MaybeEnterTournament (const std::string& name, const Json::Value& expedition);  
+  
    /**
    * Tries to update tutorial state even further on.
    */
@@ -250,6 +266,11 @@ private:
    * Tries to process all kind of actions related to expeditions
    */  
   void TryExpeditionAction (const std::string& name, const Json::Value& upd);
+  
+  /**
+   * Tries to process all kind of actions related to expeditions
+   */  
+  void TryTournamentAction (const std::string& name, const Json::Value& upd);  
   
   /**
    * Tries to handle a coin (Crystal) transfer / burn operation.  The amount

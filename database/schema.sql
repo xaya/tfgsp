@@ -35,8 +35,14 @@ CREATE TABLE IF NOT EXISTS `tournaments` (
   -- The recipe ID, which is assigned based on libxayagame's AutoIds.
   `id` INTEGER PRIMARY KEY,
   
+  -- Tournament name, used for easy unit-tests query
+  `name` TEXT NOT NULL,  
+  
   -- Additional data encoded as a TournamentBlueprint protocol buffer.
-  `proto` BLOB NOT NULL
+  `proto` BLOB NOT NULL,
+  
+  -- Additional data encoded as a TournamentInstance protocol buffer.
+  `instance` BLOB NOT NULL  
 );
 
 -- Data for the recipe instances in the game.

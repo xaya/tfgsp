@@ -33,6 +33,24 @@
 
 namespace pxd
 {
+    
+/**
+ * Current sweetness of the fighter
+ */
+enum class Sweetness : int8_t
+{
+  Any = 0,
+  Not_Too_Sweet = 1,
+  Bittersweet = 2,
+  Semi_Sweet = 3,
+  Sweet_and_Sour = 4,
+  Salty_Sweet = 5,
+  Artificially_Sweet = 6,
+  Sticky_Sweet = 7,
+  Sugary_Sweet = 8,
+  Pretty_Sweet = 9,
+  Super_Sweet = 10
+};
 
 /**
  * Current status of the fighter
@@ -197,6 +215,11 @@ public:
    * Helper function for fighter calculation during 
    */
   uint32_t GetRatingFromQuality (uint32_t quality);
+  
+  /**
+   * Calculates new sweetness based on the rating
+   */  
+  void UpdateSweetness();
 
   /**
    * In the destructor, the underlying database is updated if there are any

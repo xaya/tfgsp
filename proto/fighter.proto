@@ -60,5 +60,14 @@ message Fighter
   optional string AnimationID = 11;   
 
   /*Authored fighter name*/
-  optional string Name = 12;     
+  optional string Name = 12;    
+
+  /*Fighters matches track history entry*/
+  optional uint32 TotalMatches = 13; 
+
+  /*Fighters matches track history entry*/
+  optional uint32 MatchesWon = 14;  
+
+  /*Fighters matches track history entry*/
+  optional uint32 MatchesLost = 15;    
 }

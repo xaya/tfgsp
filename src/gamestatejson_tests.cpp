@@ -87,11 +87,12 @@ protected:
   FighterTable tbl2;
   RecipeInstanceTable tbl3;
   RewardsTable tbl4;
+  TournamentTable tbl5;
    
   std::unique_ptr<pxd::RoConfig> cfg;
 
   XayaPlayersJsonTests ()
-    : tbl(db), tbl2(db), tbl3(db), tbl4(db)
+    : tbl(db), tbl2(db), tbl3(db), tbl4(db), tbl5(db)
   {
       cfg = std::make_unique<pxd::RoConfig> (xaya::Chain::REGTEST);
   }
@@ -280,6 +281,25 @@ TEST_F (XayaPlayersJsonTests, ExpeditionInstance)
             "owner" : "domob",
             "sweetenerid" : 0,
             "tournamentid" : 0
+          }
+        ]
+        }
+        )");
+}
+
+TEST_F (XayaPlayersJsonTests, TournamentInstance)
+{
+  auto tnm = tbl5.CreateNew ("99258908-ce4f-50e4-2880-99f0027b8d2b", ctx.RoConfig());
+  tnm.reset();
+
+  ExpectStateJson (R"({
+        "tournaments" :
+        [
+          {
+            "blocksleft" : 60,
+            "blueprint" : "99258908-ce4f-50e4-2880-99f0027b8d2b",
+            "state" : 0,
+            "winnerid" : ""
           }
         ]
         }

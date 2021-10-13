@@ -29,6 +29,7 @@ PROTOS = \
   inventory.proto \
   armor_piece.proto \
   activity.proto \
+  tournament_instance.proto \
   crafted_recipe.proto \
   activity_rewards.proto \
   activity_reward_instance.proto \
