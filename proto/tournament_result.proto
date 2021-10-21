@@ -21,25 +21,16 @@ option cc_enable_arenas = true;
 
 package pxd.proto;
 
-import "proto/tournament_result.proto";
-
-message TournamentInstance
+/** Pre-collected results for the front-end to display*/
+message TournamentResult
 {
-  /** List of fighters participating in the tournament */
-  repeated uint32 Fighters = 1;
+  optional uint32 FighterId = 1;  
+  
+  optional uint32 Wins = 2;  
+  
+  optional uint32 Draws = 3; 
 
-  /** Name of the player that won in the tournament */
-  optional string WinnerID = 2;  
+  optional uint32 Losses = 4; 
   
-  /** State of the current tournament instance */
-  optional uint32 State = 3;  
-  
-  /** BlocksLeft of running tournament instance */
-  optional uint32 BlocksLeft = 4;
-
-  /** Teams already joined that tournament tournament instance */
-  optional uint32 TeamsJoined = 5;    
-  
-  /** Results of the individual fighters */
-  repeated TournamentResult results = 6;  
+  optional uint32 RatingDelta = 5;   
 }

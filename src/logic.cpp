@@ -21,6 +21,8 @@
 #include "logic.hpp"
 #include "database/reward.hpp"
 
+#include "proto/tournament_result.pb.h"
+
 #include "moveprocessor.hpp"
 
 #include "database/schema.hpp"
@@ -536,6 +538,64 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
     {
       auto tnm = tournamentsDatabase.GetFromResult (res, ctx.RoConfig ());  
 
+      // for every fighter, create a pair with all other fighters who are not on the same team
+      
+      std::map<std::string, std::vector<uint32_t>> teams;
+      std::vector<std::pair<uint32_t,uint32_t>> fighterPairs;
+      std::map<std::string, uint32_t> participatingPlayerTotalScore;
+
+      std::map<uint32_t, proto::TournamentResult*> fighterResults;
+      //Lets collect teams
+      
+      for(auto participantFighter : tnm->GetInstance().fighters())
+      {
+          auto fighter = fighters.GetById (participantFighter, ctx.RoConfig ());
+          std::string owner = fighter->GetOwner();
+          
+          if (teams.find(owner) == teams.end())
+          {
+            std::vector<uint32_t> newTeam;
+            newTeam.push_back(participantFighter);
+            
+            teams.insert(std::pair<std::string, std::vector<uint32_t>>(owner, newTeam));  
+          }
+          else
+          {
+            teams[owner].push_back(participantFighter);
+          }
+          
+          fighter.reset();
+          
+          proto::TournamentResult* newRslt = tnm->MutableInstance().add_results();
+    
+          newRslt->set_fighterid(participantFighter);
+          newRslt->set_wins(0);
+          newRslt->set_draws(0);
+          newRslt->set_losses(0);
+          newRslt->set_ratingdelta(0);
+          
+          fighterResults.insert(std::pair<uint32_t, proto::TournamentResult*>(participantFighter, newRslt));
+      }
+      
+      tnm->MutableInstance().set_teamsjoined(teams.size());
+      
+      //Lets populate pairs now
+      
+      for(auto element1 = teams.begin() ; element1 != teams.end() ; ++element1) 
+      {
+          for(auto element2 = std::next(element1) ; element2 != teams.end() ; ++element2) 
+          {                    
+              for(long long unsigned int e1 = 0; e1 < element1->second.size(); e1++)
+              {
+                for(long long unsigned int e2 = 0; e2 < element2->second.size(); e2++)
+                {
+                    std::pair<uint32_t,uint32_t>  newPair= std::make_pair(element1->second[e1], element2->second[e2]);
+                    fighterPairs.push_back(newPair);
+                }
+              }                      
+          }
+      }
+
       if((pxd::TournamentState)(int)tnm->GetInstance().state() == pxd::TournamentState::Listed)
       {
         if((int)tnm->GetProto().teamcount() * (int)tnm->GetProto().teamsize() == tnm->GetInstance().fighters_size())
@@ -556,52 +616,7 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
           }
           
           if(tnm->GetInstance().blocksleft() == 0)
-          {
-              // for every fighter, create a pair with all other fighters who are not on the same team
-              
-              std::map<std::string, std::vector<uint32_t>> teams;
-              std::vector<std::pair<uint32_t,uint32_t>> fighterPairs;
-              std::map<std::string, uint32_t> participatingPlayerTotalScore;
-
-              //Lets collect teams
-              
-              for(auto participantFighter : tnm->GetInstance().fighters())
-              {
-                  auto fighter = fighters.GetById (participantFighter, ctx.RoConfig ());
-                  std::string owner = fighter->GetOwner();
-                  
-                  if (teams.find(owner) == teams.end())
-                  {
-                    std::vector<uint32_t> newTeam;
-                    newTeam.push_back(participantFighter);
-                    
-                    teams.insert(std::pair<std::string, std::vector<uint32_t>>(owner, newTeam));  
-                  }
-                  else
-                  {
-                    teams[owner].push_back(participantFighter);
-                  }
-                  
-                  fighter.reset();
-              }
-              
-              //Lets populate pairs now
-              
-              for(auto element1 = teams.begin() ; element1 != teams.end() ; ++element1) 
-              {
-                  for(auto element2 = std::next(element1) ; element2 != teams.end() ; ++element2) 
-                  {                    
-                      for(long long unsigned int e1 = 0; e1 < element1->second.size(); e1++)
-                      {
-                        for(long long unsigned int e2 = 0; e2 < element2->second.size(); e2++)
-                        {
-                            std::pair<uint32_t,uint32_t>  newPair= std::make_pair(element1->second[e1], element2->second[e2]);
-                            fighterPairs.push_back(newPair);
-                        }
-                      }                      
-                  }
-              }
-              
+          { 
               for(auto fPair: fighterPairs)
               {
                  auto rhs = fighters.GetById (fPair.first, ctx.RoConfig ()); 
@@ -706,6 +721,9 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
                         rwin = pxd::MatchResultType::Lose;
                         participatingPlayerTotalScore[lhs->GetOwner()] += 100;
                         scoreA = 100;
+                        
+                        fighterResults[fPair.first]->set_losses(fighterResults[fPair.first]->losses() + 1);
+                        fighterResults[fPair.second]->set_wins(fighterResults[fPair.second]->wins() + 1);
                         break;
                     case 1:
                         lwin = pxd::MatchResultType::Draw;
@@ -714,12 +732,18 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
                         scoreB = 50;
                         participatingPlayerTotalScore[lhs->GetOwner()] += 50;
                         participatingPlayerTotalScore[rhs->GetOwner()] += 50;
+                        
+                        fighterResults[fPair.first]->set_draws(fighterResults[fPair.first]->draws() + 1);
+                        fighterResults[fPair.second]->set_draws(fighterResults[fPair.second]->draws() + 1);                        
                         break;
                     case 2:
                         lwin = pxd::MatchResultType::Lose;
                         rwin = pxd::MatchResultType::Win;
                         scoreB = 100;
                         participatingPlayerTotalScore[rhs->GetOwner()] += 100;
+                        
+                        fighterResults[fPair.second]->set_losses(fighterResults[fPair.second]->losses() + 1);
+                        fighterResults[fPair.first]->set_wins(fighterResults[fPair.first]->wins() + 1);                        
                         break;
                  }                 
 
@@ -761,7 +785,10 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
                  if(rwin == pxd::MatchResultType::Lose)
                  {
                    rhs->MutableProto().set_matcheslost(rhs->GetProto().matcheslost() + 1);  
-                 }                  
+                 }             
+
+                 fighterResults[fPair.second]->set_ratingdelta(fighterResults[fPair.second]->ratingdelta() + rRatingDelta);
+                 fighterResults[fPair.first]->set_ratingdelta(fighterResults[fPair.first]->ratingdelta() + lRatingDelta);                                   
                       
                  rhs.reset();
                  lhs.reset();
@@ -858,6 +885,8 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
                   
                   LOG (INFO) << "Plater rating after " << a->GetPresitge();
                   
+                  a->SetFTUEState(FTUEState::ResolveFirstTournament);
+                  
                   a.reset();
               }
 
@@ -883,9 +912,9 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
 
 void PXLogic::ReopenMissingTournaments(Database& db, const Context& ctx)
 {
-    TournamentTable tournamentsDatabase(db);
-    
+    TournamentTable tournamentsDatabase(db);   
     const auto& tournamentList = ctx.RoConfig()->tournamentbluprints();
+
     for(const auto& tournamentBP: tournamentList)
     {
         bool weNeedToCreateNewInstance = true;
@@ -963,9 +992,9 @@ PXLogic::GetInitialStateBlock (unsigned& height,
   switch (chain)
     {
     case xaya::Chain::MAIN:
-      height = 3'011'108;
+      height = 3'272'596;
       hashHex
-          = "a4c0b18c23f21c15df284710209f089925eb5582b0945cbc317f51899ceeaea4";
+          = "35ac4d137f9304ab27f77c85ce6f3639b4942a3e40725c6262a954f77e1aaf24";
       break;
 
     case xaya::Chain::TEST:

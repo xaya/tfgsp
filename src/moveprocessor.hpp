@@ -167,6 +167,12 @@ protected:
    
   bool ParseRewardData(const XayaPlayer& a, const std::string& name, const Json::Value& expedition, std::vector<uint32_t>& rewardDatabaseIds);
   
+   /**
+   * Tries to parse a move that collects tournament reward data
+   */    
+   
+  bool ParseTournamentRewardData(const XayaPlayer& a, const std::string& name, const Json::Value& tournament, std::vector<uint32_t>& rewardDatabaseIds);  
+  
   /**
    * Function checks if fungible item is inside players inventory
    */  
@@ -236,6 +242,11 @@ private:
   * Tries to claim all the expedition rewards
   */    
   void MaybeClaimReward (const std::string& name, const Json::Value& expedition);  
+  
+  /**
+  * Tries to claim all the tournament rewards
+  */    
+  void MaybeClaimTournamentReward (const std::string& name, const Json::Value& tournament);    
   
   /**
   * Tries to send the fighters for the tournament

@@ -885,6 +885,15 @@ TEST_F (ValidateStateTests, TournamentResolvedTest)
   
   EXPECT_EQ (tbl4.CountForOwner("domob"), 8);
   EXPECT_EQ (tbl4.CountForOwner("andy"), 11);
+  
+  Process (R"([
+    {"name": "andy", "move": {"tm": {"c": {"tid": )" + converted + R"(}}}}
+  ])"); 
+  
+  UpdateState ("[]");
+  
+  EXPECT_EQ (tbl4.CountForOwner("domob"), 8);
+  EXPECT_EQ (tbl4.CountForOwner("andy"), 0);  
 }
 
 TEST_F (ValidateStateTests, TournamentStrongerFighterWins)

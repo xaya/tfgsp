@@ -519,6 +519,50 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     }
   }
   
+  bool BaseMoveProcessor::ParseTournamentRewardData(const XayaPlayer& a, const std::string& name, const Json::Value& tournament, std::vector<uint32_t>& rewardDatabaseIds)
+  {
+    if (!tournament.isObject ())
+    return false;
+
+    if(!tournament["tid"].isInt())
+    {
+        return false;
+    }
+    
+    const uint32_t tournamentID = tournament["tid"].asInt();
+    auto tournamentData = tournamentsTbl.GetById(tournamentID, ctx.RoConfig ());
+    
+    if(tournamentData == nullptr)
+    {
+        LOG (WARNING) << "Could not resolve tournament entry with authID: " << tournamentID;
+        return false;              
+    }    
+        
+    auto res = rewards.QueryForOwner(a.GetName());
+    
+    int totalEntries = 0;
+    bool tryAndStep = res.Step();
+    while (tryAndStep)
+    {
+      auto rw = rewards.GetFromResult (res, ctx.RoConfig ());
+      
+      if(rw->GetProto().tournamentid() == tournamentID)
+      {
+        totalEntries++;
+        rewardDatabaseIds.push_back(rw->GetId());
+        tryAndStep = res.Step ();
+      }
+    }
+   
+    if(totalEntries <= 0)
+    {
+        LOG (WARNING) << "Could not find any relevan rewards for tournament: " << tournamentID;
+        return false;              
+    }   
+    
+    return true;
+  }        
+  
   bool BaseMoveProcessor::ParseRewardData(const XayaPlayer& a, const std::string& name, const Json::Value& expedition, std::vector<uint32_t>& rewardDatabaseIds)
   {
     if (!expedition.isObject ())
@@ -589,11 +633,13 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
   {
     if (!tournament.isObject ())
     {
+      LOG (WARNING) << "Tournament is not an object";
       return false;
     }
 
     if(!tournament["tid"].isInt())
     {
+      LOG (WARNING) << "tid is not an int";
       return false;
     }
     
@@ -714,7 +760,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
       return false;           
     }
     
-    if(tournamentData->GetProto().authoredid() == "cbd2e78a-37ce-b864-793d-8dd27788a774" && (int)a.GetFTUEState() > (int)pxd::FTUEState::JoinFirstTournament)
+    if(tournamentData->GetProto().authoredid() == "cbd2e78a-37ce-b864-793d-8dd27788a774" && (int)a.GetFTUEState() >= (int)pxd::FTUEState::ResolveFirstTournament)
     {
       LOG (WARNING) << "Can't join FTUE tournament again! With id: " << tournamentID;
       tournamentData.reset();
@@ -963,6 +1009,130 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
 
     return true;    
   }
+  
+  void MoveProcessor::MaybeClaimTournamentReward (const std::string& name, const Json::Value& tournament)
+  {  
+      std::vector<uint32_t> rewardDatabaseIds;      
+      auto a = xayaplayers.GetByName (name, ctx.RoConfig ());
+      
+      if(!ParseTournamentRewardData(*a, name, tournament, rewardDatabaseIds)) return;
+
+      LOG (INFO) << "Ready to give " << rewardDatabaseIds.size() << " rewards";
+
+      uint32_t curRecipeSlots = recipeTbl.CountForOwner(a->GetName());
+      uint32_t maxRecipeSlots = ctx.RoConfig()->params().max_recipe_inventory_amount();
+      
+      const auto& rewardsList = ctx.RoConfig()->activityrewards();
+      for(const auto& rw: rewardDatabaseIds)
+      {
+          /** Lets fetch reward from database, and grant it to the player. 
+              While doing so, lets check against space limitations in inv. for recepies    
+          */
+          
+          auto rewardData = rewards.GetById(rw);          
+          pxd::proto::ActivityReward rewardTableDb;
+ 
+          bool rewardsSolved = false;
+          
+          for(const auto& rewardsTable: rewardsList)
+          {
+              if(rewardsTable.second.authoredid() == rewardData->GetProto().rewardid())
+              {
+                  rewardTableDb = rewardsTable.second;
+                  rewardsSolved = true;
+                  break;
+              }
+          }           
+          
+          if(rewardsSolved == false)
+          {
+              LOG (ERROR) << "Fatal error, could not solve: " << rewardData->GetProto().rewardid();
+              continue;
+          }
+          
+          if((pxd::RewardType)(int)rewardTableDb.rewards(rewardData->GetProto().positionintable()).type() == pxd::RewardType::CraftedRecipe || (pxd::RewardType)(int)rewardTableDb.rewards(rewardData->GetProto().positionintable()).type() == pxd::RewardType::GeneratedRecipe)
+          {
+              if(curRecipeSlots >= maxRecipeSlots)
+              {
+                  LOG (INFO) << "Can not grant recipe, maxomus lots reached  of" << curRecipeSlots << " where max is " << maxRecipeSlots;
+                  continue;
+              }
+          }
+          
+          if((pxd::RewardType)(int)rewardTableDb.rewards(rewardData->GetProto().positionintable()).type() == pxd::RewardType::Candy)
+          {              
+              std::string candyName = GetCandyKeyNameFromID(rewardTableDb.rewards(rewardData->GetProto().positionintable()).candytype(), ctx);
+              a->GetInventory().AddFungibleCount(candyName, rewardTableDb.rewards(rewardData->GetProto().positionintable()).quantity());
+              
+              LOG (INFO) << "Granted " << rewardTableDb.rewards(rewardData->GetProto().positionintable()).quantity() << " candy " << candyName << " reward";
+          }          
+          
+          if((pxd::RewardType)(int)rewardTableDb.rewards(rewardData->GetProto().positionintable()).type() == pxd::RewardType::CraftedRecipe)
+          {         
+              auto ourRec = recipeTbl.GetById(rewardData->GetProto().generatedrecipeid());
+              ourRec->SetOwner(a->GetName());
+              
+              LOG (INFO) << "Granted " << " recipe " << rewardData->GetProto().generatedrecipeid() << " reward";
+              ourRec.reset();
+          }
+          
+          if((pxd::RewardType)(int)rewardTableDb.rewards(rewardData->GetProto().positionintable()).type() == pxd::RewardType::GeneratedRecipe)
+          {
+              auto ourRec = recipeTbl.GetById(rewardData->GetProto().generatedrecipeid());
+              ourRec->SetOwner(a->GetName());  
+
+              LOG (INFO) << "Granted " << " recipe " << rewardData->GetProto().generatedrecipeid() << " as reward";  
+              ourRec.reset();              
+          }          
+          
+          if((pxd::RewardType)(int)rewardTableDb.rewards(rewardData->GetProto().positionintable()).type() == pxd::RewardType::Move)
+          {
+              auto fighter = fighters.GetById(rewardData->GetProto().fighterid(), ctx.RoConfig());
+              std::string* newMove = fighter->MutableProto().add_moves();
+              newMove->assign(rewardTableDb.rewards(rewardData->GetProto().positionintable()).moveid());
+              
+              LOG (INFO) << "Granted " << " move to figher " << rewardData->GetProto().fighterid() << " as reward";   
+          }   
+
+          if((pxd::RewardType)(int)rewardTableDb.rewards(rewardData->GetProto().positionintable()).type() == pxd::RewardType::Animation)
+          {
+              auto fighter = fighters.GetById(rewardData->GetProto().fighterid(), ctx.RoConfig());
+              fighter->MutableProto().set_animationid(rewardTableDb.rewards(rewardData->GetProto().positionintable()).animationid()); //TODO into repeated list? Prob... But ok, ignore for now;
+          
+              LOG (INFO) << "Granted " << " animation to figher " << rewardData->GetProto().fighterid() << " as reward"; 
+          }   
+
+          if((pxd::RewardType)(int)rewardTableDb.rewards(rewardData->GetProto().positionintable()).type() == pxd::RewardType::Armor)
+          {
+              auto fighter = fighters.GetById(rewardData->GetProto().fighterid(), ctx.RoConfig());
+              
+              bool armorTypeWasPresent = false;
+              for(auto armorPiece: fighter->MutableProto().armorpieces())
+              {
+                  if(armorPiece.armortype() == rewardTableDb.rewards(rewardData->GetProto().positionintable()).armortype())
+                  {
+                      armorTypeWasPresent = true;
+                      armorPiece.set_candy(rewardTableDb.rewards(rewardData->GetProto().positionintable()).candytype());
+                      armorPiece.set_rewardsourceid(rewardData->GetProto().rewardid());
+                      armorPiece.set_rewardsource((uint32_t)pxd::RewardSource::Expedition);
+                  }
+              }
+              
+              if(armorTypeWasPresent == false)
+              {
+                  auto newArmorPiece = fighter->MutableProto().add_armorpieces();
+                  newArmorPiece->set_candy(rewardTableDb.rewards(rewardData->GetProto().positionintable()).candytype());
+                  newArmorPiece->set_rewardsourceid(rewardData->GetProto().rewardid());
+                  newArmorPiece->set_rewardsource((uint32_t)pxd::RewardSource::Expedition);   
+                  newArmorPiece->set_armortype(rewardTableDb.rewards(rewardData->GetProto().positionintable()).armortype());                  
+              }
+              
+              LOG (INFO) << "Granted " << " armor to figher " << rewardData->GetProto().fighterid();
+          }             
+          
+          rewards.DeleteById(rw);
+      }  
+  }  
   
   void MoveProcessor::MaybeClaimReward (const std::string& name, const Json::Value& expedition)
   {      
@@ -1325,7 +1495,10 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
       return;
     
     /*Trying to enter the tournament*/
-    MaybeEnterTournament (name, upd["e"]);    
+    MaybeEnterTournament (name, upd["e"]); 
+
+    /*Trying to claim reward from the finished tournament*/
+    MaybeClaimTournamentReward (name, upd["c"]);      
   }     
 
   void

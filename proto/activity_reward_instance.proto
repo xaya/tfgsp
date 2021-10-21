@@ -36,5 +36,7 @@ message ActivityRewardInstance
   optional uint32 PositionInTable = 6; 
 
   optional uint32 FighterID = 7;  
+  
+  optional string RewardAutoTableId = 8;
 }
 

@@ -115,6 +115,7 @@ template <>
   res["generatedrecipeid"] = pb.generatedrecipeid();
   res["rewardid"] = pb.rewardid();
   res["positionintable"] = pb.positionintable();
+  res["rid"] = reward.GetId();
   
   return res;
 } 
@@ -170,6 +171,44 @@ template <>
   res["armorpieces"] = armorPieces;
   res["animationid"] = pb.animationid();
   
+  // If fighter is participating in any activity, front-end needs 'blocksleft' information for that
+  res["blocksleft"] = IntToJson (0);
+  
+
+  XayaPlayersTable xayaplayers(db);
+  auto a = xayaplayers.GetByName (fighter.GetOwner (), ctx.RoConfig ());
+  for (auto it = a->GetProto().ongoings().begin(); it != a->GetProto().ongoings().end(); it++)
+  {
+      if(it->fighterdatabaseid() == fighter.GetId())
+      {
+        res["blocksleft"] = IntToJson (it->blocksleft());
+      }
+  }
+  a.reset();
+
+  if(pb.tournamentinstanceid() > 0)
+  {
+    TournamentTable tournamentsDatabase(db);
+    auto resDD = tournamentsDatabase.QueryAll ();
+
+    bool tryAndStep = resDD.Step();
+    while (tryAndStep)
+    {
+      auto tnm = tournamentsDatabase.GetFromResult (resDD, ctx.RoConfig ());
+      for(auto participantFighter : tnm->GetInstance().fighters())
+      {
+        if(participantFighter == fighter.GetId())
+        {
+            res["blocksleft"] = IntToJson (tnm->GetInstance().blocksleft());
+        }
+      }
+      
+      tnm.reset();
+      tryAndStep = resDD.Step ();      
+    }
+  
+  }
+
   return res;
 } 
  
@@ -198,10 +237,38 @@ template <>
   const auto& pb = tournament.GetProto ();
   Json::Value res(Json::objectValue);
   
+  res["tid"] = tournament.GetId();
   res["state"] = IntToJson (tournament.GetInstance().state());
   res["winnerid"] = tournament.GetInstance().winnerid();
   res["blocksleft"] = IntToJson (tournament.GetInstance().blocksleft());
   res["blueprint"] = pb.authoredid();
+  res["teamsjoined"] = IntToJson (tournament.GetInstance().teamsjoined());
+
+  Json::Value fighters(Json::arrayValue);
+  
+  for(const auto ft: tournament.GetInstance().fighters())
+  {
+     fighters.append(ft); 
+  }
+  
+  res["fighters"] = fighters;
+  
+  Json::Value tResults(Json::arrayValue);
+  
+  for(const auto result: tournament.GetInstance().results())
+  {
+     Json::Value rslt(Json::objectValue);
+     
+     rslt["fighterid"] = IntToJson (result.fighterid());
+     rslt["wins"] = IntToJson (result.wins());
+     rslt["draws"] = IntToJson (result.draws());
+     rslt["losses"] = IntToJson (result.losses());
+     rslt["ratingdelta"] = IntToJson (result.ratingdelta());
+     
+     tResults.append(rslt); 
+  } 
+  
+  res["results"] = tResults;
   
   return res;
 }   

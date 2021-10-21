@@ -299,7 +299,8 @@ TEST_F (XayaPlayersJsonTests, TournamentInstance)
             "blocksleft" : 60,
             "blueprint" : "99258908-ce4f-50e4-2880-99f0027b8d2b",
             "state" : 0,
-            "winnerid" : ""
+            "winnerid" : "",
+            "results" : []
           }
         ]
         }

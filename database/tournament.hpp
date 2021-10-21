@@ -52,8 +52,9 @@ enum class MatchResultType : int8_t
 enum class TournamentState : int8_t
 {
   Listed = 0,
-  Running = 1,
-  Completed = 2
+  Pending = 1,
+  Running = 2,
+  Completed = 3
 };
 
 /**
