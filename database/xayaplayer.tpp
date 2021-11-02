@@ -43,17 +43,6 @@ template <typename T>
 }
 
 template <typename T>
-  FTUEState
-  GetFTUEStateFromColumn (const Database::Result<T>& res)
-{
-  if (res.template IsNull<typename T::ftuestate> ())
-    return FTUEState::Intro;
-
-  const auto val = res.template Get<typename T::ftuestate> ();
-  return static_cast<FTUEState> (val);
-}
-
-template <typename T>
   PlayerRole
   GetPlayerRoleFromColumn (const Database::Result<T>& res)
 {

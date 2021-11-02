@@ -83,6 +83,11 @@ public:
    * to open any new instance
    */     
   static void ReopenMissingTournaments(Database& db, const Context& ctx);
+  
+  /**
+   * Scans all fighters, finds ones on the exchange, tests if expired, delists
+   */    
+  static void CheckFightersForSale(Database& db, const Context& ctx);
 
 private:
 
@@ -97,6 +102,12 @@ private:
    * When expedition block count operation reaches 0 blocks, we either
    * resolve it or close as completed, based on cirsumstances */   
   static void ResolveExpedition(std::unique_ptr<XayaPlayer>& a, const std::string blueprintAuthID, const uint32_t fighterID, Database& db, const Context& ctx, xaya::Random& rnd);
+
+  /**
+   * When deconstruction block count operation reaches 0 blocks, we either
+   * resolve it or close as completed, based on cirsumstances */   
+  static void ResolveDeconstruction(std::unique_ptr<XayaPlayer>& a, const uint32_t fighterID, Database& db, const Context& ctx, xaya::Random& rnd);
+
 
   /**
    * For every ongoing operation we reduce its block count by 1

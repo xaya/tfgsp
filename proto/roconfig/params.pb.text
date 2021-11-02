@@ -11,19 +11,19 @@ params:
     burnsale_stages: { amount_sold: 10000000000 price_sat: 50000 }
     burnsale_stages: { amount_sold: 20000000000 price_sat: 100000 }
     
-    starting_recipes: "5864a19b-c8c0-2d34-eaef-9455af0baf2c"
+    starting_recipes: "1bbc7d99-7fce-24a4-c9a3-dfaf4b744efa"
   
     elok_factor: 5000
   
     alms: 15
   
-    starting_crystals: 0
+    starting_crystals: 50
   
     required_candy_per_vove: 20
   
     exchange_listing_fee: 10
   
-    exchange_sale_percentage: 0.04
+    exchange_sale_percentage: 4
   
     common_recipe_cook_cost: 15
   
@@ -55,7 +55,7 @@ params:
   
     deconstruction_blocks: 10
   
-    deconstruction_return_percent: 0.5  
+    deconstruction_return_percent: 50 
     
     base_prestige: 0
   

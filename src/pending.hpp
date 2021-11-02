@@ -86,6 +86,21 @@ public:
    */      
   void AddTournamentEntries (const XayaPlayer& a, uint32_t tournamentID, std::vector<uint32_t> fighterIDS);
   
+   /**
+   * Updates the state for a new pending tournament leaves
+   */      
+  void AddTournamentLeaves (const XayaPlayer& a, uint32_t tournamentID);  
+  
+    /**
+   * Updates the state for a new pending purchases of fungible items
+   */      
+  void AddPurchasing (const XayaPlayer& a, std::string authID);
+  
+   /**
+   * Updates the state for a new fighter deconstruction
+   */      
+  void AddDeconstructionData (const XayaPlayer& a, uint32_t fighterID);   
+  
   /**
    * Pending state updates associated to an account.
    */
@@ -118,6 +133,19 @@ public:
         not yet started tournaments to enter
     */
     std::map<uint32_t, std::vector<uint32_t>> tournamentEntries;
+    
+    /** Pending ids of tournaments player currently is trying
+        to leave out
+    */    
+    std::vector<uint32_t> tournamentLeaves;
+    
+    /** Pending ids of fighters player currently  being deconstructed
+    */    
+    std::vector<uint32_t> deconstructionData;    
+    
+    /** Pending authids of currently items purchasing
+    */    
+    std::vector<std::string> purchasing;       
 
   };  
   

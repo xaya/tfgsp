@@ -133,6 +133,73 @@ std::vector<uint32_t> PXLogic::GenerateActivityReward(const uint32_t fighterID, 
   return iDS;
 }
 
+void PXLogic::ResolveDeconstruction(std::unique_ptr<XayaPlayer>& a, const uint32_t fighterID, Database& db, const Context& ctx, xaya::Random& rnd)
+{
+    uint32_t returnPercent = ctx.RoConfig()->params().deconstruction_return_percent();
+
+    FighterTable fighters(db);
+    FighterTable::Handle fighter;
+    fighter = fighters.GetById (fighterID, ctx.RoConfig ());
+    
+    if(fighter == nullptr)
+    {
+        LOG (WARNING) << "Could not resolve fighter with id: " << fighterID;
+        return;           
+    }
+
+    RecipeInstanceTable recipeTbl(db); 
+    pxd::RecipeInstanceTable::Handle recepie = recipeTbl.GetById(fighter->GetProto().recipeid());
+    
+    if(recepie == nullptr)
+    {
+        LOG (ERROR) << "Fatal error, could not find recepie with id: " << fighter->GetProto().recipeid();
+        return;
+    }    
+
+    uint64_t total = 0;
+    std::vector<std::string> candyTypes;
+    
+    for(const auto& val: recepie->GetProto().requiredcandy())
+    {
+        total += val.amount();
+        candyTypes.push_back(BaseMoveProcessor::GetCandyKeyNameFromID(val.candytype(), ctx));
+    }
+    
+    uint64_t recovered = (total * returnPercent) / 100;
+    std::map<std::string, uint64_t> dict;
+    
+    for(long long unsigned int x =0; x < recovered; x++)
+    {
+        std::string candyType = candyTypes[rnd.NextInt(candyTypes.size())];
+        
+        if (dict.find(candyType) == dict.end())
+        {
+            dict.insert(std::pair<std::string, uint64_t>(candyType, 0));
+        }
+        
+        dict[candyType] += 1;
+    }
+    
+    RewardsTable rewardsTbl(db);
+    auto newReward = rewardsTbl.CreateNew(a->GetName());              
+    newReward->MutableProto().set_expeditionid("");
+    newReward->MutableProto().set_rewardid("");
+    newReward->MutableProto().set_tournamentid(0);
+    newReward->MutableProto().set_positionintable(0);
+    newReward->MutableProto().set_fighterid(fighterID);    
+    
+    for(const auto& entry: dict)
+    {
+      proto::Deconstruction* newD = newReward->MutableProto().add_deconstructions();
+      newD->set_deconstructionid(fighterID);
+      newD->set_candytype(entry.first);
+      newD->set_quantity(entry.second);
+    }
+    
+    recepie.reset();
+    fighter.reset();
+}
+
 void PXLogic::ResolveExpedition(std::unique_ptr<XayaPlayer>& a, const std::string blueprintAuthID, const uint32_t fighterID, Database& db, const Context& ctx, xaya::Random& rnd)
 {
     const auto& expeditionList = ctx.RoConfig()->expeditionblueprints();
@@ -229,14 +296,7 @@ void PXLogic::ResolveExpedition(std::unique_ptr<XayaPlayer>& a, const std::strin
             
              posInTableList++;
         }
-    }
-
-    //If we are in tutorial yet, lets advance tutorial counter
-    
-    if(a->GetFTUEState() == FTUEState::FirstExpeditionPending)
-    {
-        a->SetFTUEState(FTUEState::ResolveFirstExpedition);
-    }    
+    }   
 }
 
 void PXLogic::ResolveCookingRecepie(std::unique_ptr<XayaPlayer>& a, const uint32_t recepieID, Database& db, const Context& ctx, xaya::Random& rnd)
@@ -306,18 +366,6 @@ void PXLogic::ResolveCookingRecepie(std::unique_ptr<XayaPlayer>& a, const uint32
         auto newFighter = fighters.CreateNew (a->GetName(), recepieID, ctx.RoConfig(), rnd);
         a->CalculatePrestige(ctx.RoConfig());
         
-        //If we are in tutorial yet, lets advance tutorial counter
-        
-        if(a->GetFTUEState() == FTUEState::CookingFirstRecipe)
-        {
-            a->SetFTUEState(FTUEState::FirstExpedition);
-        }
-        
-        if(a->GetFTUEState() == FTUEState::CookingSecondRecipe)
-        {
-            a->SetFTUEState(FTUEState::FirstTournament);
-        }        
-        
         /**
         recipeTbl.DeleteById(recepieID);  
         
@@ -341,37 +389,57 @@ void PXLogic::TickAndResolveOngoings(Database& db, const Context& ctx, xaya::Ran
       auto a = xayaplayers.GetFromResult (res, ctx.RoConfig ());
       auto ongoings = a->MutableProto().mutable_ongoings();
       
-      std::vector<google::protobuf::internal::RepeatedPtrIterator<pxd::proto::OngoinOperation>> forErasing;
+      
+      bool erasingDone = false;
+      
       for (auto it = ongoings->begin(); it != ongoings->end(); it++)
       {
-          it->set_blocksleft(it->blocksleft() - 1);
-
-          if(it->blocksleft() == 0)
-          {
-              if((pxd::OngoingType)it->type() == pxd::OngoingType::COOK_RECIPE)
-              {
-                LOG (INFO) << "Resolving oingoing operation for pxd::OngoingType::COOK_RECIPE";
-                
-                ResolveCookingRecepie(a, (uint32_t)it->recipeid(), db, ctx, rnd);
-                forErasing.push_back(it);
-              }
-              
-              if((pxd::OngoingType)it->type() == pxd::OngoingType::EXPEDITION)
-              {
-                LOG (INFO) << "Resolving oingoing operation for pxd::OngoingType::EXPEDITION";
-                
-                ResolveExpedition(a, it->expeditionblueprintid(), (uint32_t)it->fighterdatabaseid(), db, ctx, rnd);
-                forErasing.push_back(it);
-              }              
-          }          
-      }
+            it->set_blocksleft(it->blocksleft() - 1);
+      }            
       
-      for(uint32_t t = 0; t < forErasing.size(); t++)
+      while(erasingDone == false)
       {
-          ongoings->erase(forErasing[t]);
+        erasingDone = true;
+        ongoings = a->MutableProto().mutable_ongoings();
+        
+        for (auto it = ongoings->begin(); it != ongoings->end(); it++)
+        {
+            if(it->blocksleft() == 0)
+            {
+                if((pxd::OngoingType)it->type() == pxd::OngoingType::COOK_RECIPE)
+                {
+                  LOG (INFO) << "Resolving oingoing operation for pxd::OngoingType::COOK_RECIPE";
+                  
+                  ResolveCookingRecepie(a, (uint32_t)it->recipeid(), db, ctx, rnd);
+                  ongoings->erase(it);
+                  erasingDone = false;
+                  break;
+                }
+                
+                if((pxd::OngoingType)it->type() == pxd::OngoingType::EXPEDITION)
+                {
+                  LOG (INFO) << "Resolving oingoing operation for pxd::OngoingType::EXPEDITION";
+                  
+                  ResolveExpedition(a, it->expeditionblueprintid(), (uint32_t)it->fighterdatabaseid(), db, ctx, rnd);
+                  ongoings->erase(it);
+                  erasingDone = false;
+                  break;
+                }     
+
+                if((pxd::OngoingType)it->type() == pxd::OngoingType::DECONSTRUCTION)
+                {
+                  LOG (INFO) << "Resolving oingoing operation for pxd::OngoingType::DECONSTRUCTION";
+                    
+                  ResolveDeconstruction(a, (uint32_t)it->fighterdatabaseid(), db, ctx, rnd);
+                  ongoings->erase(it); 
+                  erasingDone = false;
+                  break;                  
+                }                  
+            }          
+        }
       }
-      
-       tryAndStep = res.Step ();
+
+      tryAndStep = res.Step ();
     }    
 }
 
@@ -565,16 +633,6 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
           }
           
           fighter.reset();
-          
-          proto::TournamentResult* newRslt = tnm->MutableInstance().add_results();
-    
-          newRslt->set_fighterid(participantFighter);
-          newRslt->set_wins(0);
-          newRslt->set_draws(0);
-          newRslt->set_losses(0);
-          newRslt->set_ratingdelta(0);
-          
-          fighterResults.insert(std::pair<uint32_t, proto::TournamentResult*>(participantFighter, newRslt));
       }
       
       tnm->MutableInstance().set_teamsjoined(teams.size());
@@ -616,7 +674,20 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
           }
           
           if(tnm->GetInstance().blocksleft() == 0)
-          { 
+          {
+              for(auto participantFighter : tnm->GetInstance().fighters())
+              {
+                  proto::TournamentResult* newRslt = tnm->MutableInstance().add_results();
+            
+                  newRslt->set_fighterid(participantFighter);
+                  newRslt->set_wins(0);
+                  newRslt->set_draws(0);
+                  newRslt->set_losses(0);
+                  newRslt->set_ratingdelta(0);
+                  
+                  fighterResults.insert(std::pair<uint32_t, proto::TournamentResult*>(participantFighter, newRslt));
+              }
+              
               for(auto fPair: fighterPairs)
               {
                  auto rhs = fighters.GetById (fPair.first, ctx.RoConfig ()); 
@@ -884,9 +955,7 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
                   a->CalculatePrestige(ctx.RoConfig());
                   
                   LOG (INFO) << "Plater rating after " << a->GetPresitge();
-                  
-                  a->SetFTUEState(FTUEState::ResolveFirstTournament);
-                  
+
                   a.reset();
               }
 
@@ -908,6 +977,30 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
       tnm.reset();
       tryAndStep = res.Step ();
     }
+}
+
+void PXLogic::CheckFightersForSale(Database& db, const Context& ctx)
+{
+    FighterTable fighters(db); 
+
+    auto res = fighters.QueryAll ();
+
+    bool tryAndStep = res.Step();
+    while (tryAndStep)
+    {
+      auto fighterDb = fighters.GetFromResult (res, ctx.RoConfig ());
+      
+      if((pxd::FighterStatus)(int)fighterDb->GetStatus() == pxd::FighterStatus::Exchange) 
+      {
+         if(fighterDb->GetProto().exchangeexpire() < ctx.Height ())
+         {
+             fighterDb->SetStatus(pxd::FighterStatus::Available);
+         }
+      }
+      
+      fighterDb.reset();
+      tryAndStep = res.Step ();
+    }      
 }
 
 void PXLogic::ReopenMissingTournaments(Database& db, const Context& ctx)
@@ -968,10 +1061,14 @@ PXLogic::UpdateState (Database& db, xaya::Random& rnd,
   mvProc.ProcessAdmin (blockData["admin"]);
   mvProc.ProcessAll (blockData["moves"]);
   
-  /*The first thing we do, is try and resolve all pending ongoing operations
+  /** The first thing we do, is try and resolve all pending ongoing operations
   from the last block. So if there count is minimal 1, they will guarantee
   to get solved before any new moves submitted by player */    
   TickAndResolveOngoings(db, ctx, rnd);
+  
+  /** We need to see if any fighters is on exchange, and if its expiration
+      is already off and we need to de-lest it automatically*/
+  CheckFightersForSale(db, ctx);
 
 #ifdef ENABLE_SLOW_ASSERTS
   ValidateStateSlow (db, ctx);
@@ -992,9 +1089,9 @@ PXLogic::GetInitialStateBlock (unsigned& height,
   switch (chain)
     {
     case xaya::Chain::MAIN:
-      height = 3'272'596;
+      height = 3'287'584;
       hashHex
-          = "35ac4d137f9304ab27f77c85ce6f3639b4942a3e40725c6262a954f77e1aaf24";
+          = "49d2346ee661056c8b233491d2d56a47719d6a42f2b0a83316dfc21ca493ec4d";
       break;
 
     case xaya::Chain::TEST:

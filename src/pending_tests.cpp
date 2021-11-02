@@ -48,6 +48,7 @@ class PendingStateTests : public DBTestWithSchema
 protected:
 
   PendingState state;
+  TestRandom rnd;
 
   ContextForTesting ctx;
 
@@ -87,7 +88,7 @@ TEST_F (PendingStateTests, Empty)
 
 TEST_F (PendingStateTests, Clear)
 {
-  auto a = xayaplayers.CreateNew ("domob", ctx.RoConfig());
+  auto a = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
   a->SetRole (PlayerRole::PLAYER);
   CoinTransferBurn coinOp;
   coinOp.minted = 5;
@@ -112,7 +113,7 @@ TEST_F (PendingStateTests, Clear)
 
 TEST_F (PendingStateTests, CoinTransferBurn)
 {
-  auto a = xayaplayers.CreateNew ("domob", ctx.RoConfig());
+  auto a = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
 
   CoinTransferBurn coinOp;
   coinOp.minted = 32;
@@ -129,24 +130,24 @@ TEST_F (PendingStateTests, CoinTransferBurn)
   a.reset ();
 
   ExpectStateJson (R"(
-    {
-      "xayaplayers":
-        [
-          {
-            "name": "domob",
-            "coinops":
-              {
-                "minted": 42,
-                "burnt": 7,
-                "transfers":
-                  {
-                    "andy": 21,
-                    "daniel": 10
-                  }
-              }
-          }
-        ]
-    }
+{
+	"xayaplayers" : 
+	[
+		{
+			"coinops" : 
+			{
+				"burnt" : 7,
+				"minted" : 42,
+				"transfers" : 
+				{
+					"andy" : 21,
+					"daniel" : 10
+				}
+			},
+			"name" : "domob"
+		}
+	]
+}
   )");
 }
 
@@ -242,8 +243,8 @@ TEST_F (PendingStateUpdaterTests, UninitialisedAndNonExistantAccount)
 
 TEST_F (PendingStateUpdaterTests, CoinTransferBurn)
 {
-  xayaplayers.CreateNew ("domob", ctx.RoConfig())->AddBalance (100);
-  xayaplayers.CreateNew ("andy", ctx.RoConfig())->AddBalance (100);
+  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (100);
+  xayaplayers.CreateNew ("andy", ctx.RoConfig(), rnd)->AddBalance (100);
 
   Process ("domob", R"({
     "abc": "foo",
@@ -265,32 +266,41 @@ TEST_F (PendingStateUpdaterTests, CoinTransferBurn)
 
   ExpectStateJson (R"(
     {
-      "xayaplayers":
-        [
+      "xayaplayers" : 
+      [
           {
-            "name": "andy",
-            "coinops":
+              "coinops" : 
               {
-                "burnt": 0,
-                "transfers": {"domob": 5}
-              }
+                  "burnt" : 101,
+                  "minted" : 0,
+                  "transfers" : 
+                  {
+                      "domob" : 5,
+                      "invalid" : 2
+                  }
+              },
+              "name" : "andy"
           },
           {
-            "name": "domob",
-            "coinops":
+              "coinops" : 
               {
-                "burnt": 12,
-                "transfers": {"andy": 5}
-              }
+                  "burnt" : 12,
+                  "minted" : 0,
+                  "transfers" : 
+                  {
+                      "andy" : 5
+                  }
+              },
+              "name" : "domob"
           }
-        ]
+      ]
     }
   )");
 }
 
 TEST_F (PendingStateUpdaterTests, Minting)
 {
-  xayaplayers.CreateNew ("domob", ctx.RoConfig());
+  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
 
   ProcessWithBurn ("domob", COIN, R"({
     "vc": {"m": {}}
@@ -317,7 +327,7 @@ TEST_F (PendingStateUpdaterTests, Minting)
 
 TEST_F (PendingStateUpdaterTests, PurchaseCrystals)
 {
-  xayaplayers.CreateNew ("domob", ctx.RoConfig())->AddBalance (100);
+  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (100);
   
   ProcessWithDevPayment ("domob", 1 * COIN, R"({
     "pc": "T1"
@@ -338,8 +348,12 @@ TEST_F (PendingStateUpdaterTests, PurchaseCrystals)
 
 TEST_F (PendingStateUpdaterTests, SubmitRecepieInstance)
 {
-  auto a = xayaplayers.CreateNew ("testy2", ctx.RoConfig());
+  auto a = xayaplayers.CreateNew ("testy2", ctx.RoConfig(), rnd);
   a->AddBalance(100);
+  
+  a->GetInventory().SetFungibleCount("Common_Gumdrop", 1);
+  a->GetInventory().SetFungibleCount("Common_Icing", 1);  
+  
   a.reset();
   
   auto r0 = tbl2.CreateNew("testy2", "5864a19b-c8c0-2d34-eaef-9455af0baf2c", ctx.RoConfig());
@@ -362,14 +376,14 @@ TEST_F (PendingStateUpdaterTests, SubmitRecepieInstance)
 
 TEST_F (PendingStateUpdaterTests, SubmitExpedition)
 {
-  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig());
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
   auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
   EXPECT_EQ (ft->GetStatus(), FighterStatus::Available);
   ft.reset();
-  EXPECT_EQ (xp->CollectInventoryFighters(ctx.RoConfig()).size(), 1);
+  EXPECT_EQ (xp->CollectInventoryFighters(ctx.RoConfig()).size(), 3);
   xp.reset();
         
-  Process ("domob", R"({"exp": {"f": {"eid": "c064e7f7-acbf-4f74-fab8-cccd7b2d4004", "fid": 2}}})");  
+  Process ("domob", R"({"exp": {"f": {"eid": "c064e7f7-acbf-4f74-fab8-cccd7b2d4004", "fid": 4}}})");  
   
   ExpectStateJson (R"(
     {
@@ -386,11 +400,13 @@ TEST_F (PendingStateUpdaterTests, SubmitExpedition)
 
 TEST_F (PendingStateUpdaterTests, SubmitTournamentEntry)
 {
-  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig());
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
   auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
+  int ft1id = ft->GetId();
   ft.reset();
   
   auto ft2 = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
+  int ft2id = ft2->GetId();
   ft2.reset();
   xp.reset();
   
@@ -405,7 +421,15 @@ TEST_F (PendingStateUpdaterTests, SubmitTournamentEntry)
   s << TID;
   std::string converted(s.str());  
   
-  Process ("domob", R"({"tm": {"e": {"tid": )" + converted + R"(, "fc": [2,3]}}})"); 
+  std::ostringstream s1;
+  s1 << ft1id;
+  std::string converted1(s1.str());  
+
+  std::ostringstream s2;
+  s2 << ft2id;
+  std::string converted2(s2.str());    
+  
+  Process ("domob", R"({"tm": {"e": {"tid": )" + converted + R"(, "fc": [)"+converted1+R"(,)"+converted2+R"(]}}})"); 
   
   ExpectStateJson (R"(
     {
@@ -418,8 +442,8 @@ TEST_F (PendingStateUpdaterTests, SubmitTournamentEntry)
                                 {
                                         "fids" :
                                         [
-                                                2,
-                                                3
+                                                )"+converted1+R"(,
+                                                )"+converted2+R"(
                                         ],
                                         "id" : )"+converted+R"(
                                 }
@@ -433,7 +457,7 @@ TEST_F (PendingStateUpdaterTests, SubmitTournamentEntry)
 
 TEST_F (PendingStateUpdaterTests, ExpeditionGetRewards)
 {
-  auto a = xayaplayers.CreateNew ("domob", ctx.RoConfig());
+  auto a = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
   
   std::vector<uint32_t> rewardDatabaseIds;
   rewardDatabaseIds.push_back(1);
@@ -458,12 +482,14 @@ TEST_F (PendingStateUpdaterTests, ExpeditionGetRewards)
 
 TEST_F (PendingStateUpdaterTests, SubmitRecepieInstanceMultiple)
 {
-  auto a = xayaplayers.CreateNew ("testy2", ctx.RoConfig());
+  auto a = xayaplayers.CreateNew ("testy2", ctx.RoConfig(), rnd);
   a->AddBalance(100);
   
   auto r0 = tbl2.CreateNew("testy2", "2729a029-a53e-7b34-38c7-2c6ebe932c94", ctx.RoConfig());
   r0.reset();   
   
+  a->GetInventory().SetFungibleCount("Common_Gumdrop", 1);
+  a->GetInventory().SetFungibleCount("Common_Icing", 1);    
   a->GetInventory().SetFungibleCount("Rare_Giant Chocolate Chip", 50);
   a->GetInventory().SetFungibleCount("Rare_Peanut Butter Cup", 30);
   a->GetInventory().SetFungibleCount("Uncommon_Chocolate Nut", 50);
@@ -491,7 +517,7 @@ TEST_F (PendingStateUpdaterTests, SubmitRecepieInstanceMultiple)
 
 TEST_F (PendingStateUpdaterTests, SubmitRecepieNotExistingInPlayerInventory)
 {
-  auto a = xayaplayers.CreateNew ("testy2", ctx.RoConfig());
+  auto a = xayaplayers.CreateNew ("testy2", ctx.RoConfig(), rnd);
   a->AddBalance(100);
   a.reset();
   
@@ -499,8 +525,11 @@ TEST_F (PendingStateUpdaterTests, SubmitRecepieNotExistingInPlayerInventory)
   
   ExpectStateJson (R"(
     {
-      "xayaplayers":
+        "xayaplayers" :
         [
+                {
+                        "name" : "testy2"
+                }
         ]
     }
   )");

@@ -42,7 +42,8 @@ enum class OngoingType : int8_t
 {
   INVALID = 0,
   COOK_RECIPE = 1,
-  EXPEDITION = 2
+  EXPEDITION = 2,
+  DECONSTRUCTION = 3
 };
 
 /**
@@ -57,31 +58,6 @@ enum class PlayerRole : int8_t
   CONFIGADMIN = 4,
   EXCHANGEADMIN = 8,
   ADMINISTRATOR = 15
-};
-
-/**
- * Tutorial advencement stage of the player
- */
-enum class FTUEState : int8_t
-{
-    Intro = 0,
-    FirstRecipe = 1,
-    CookFirstRecipe = 3,
-    CookingFirstRecipe = 4,
-    FirstExpedition = 5,
-    JoinFirstExpedition = 6,
-    FirstExpeditionPending = 7,
-    ResolveFirstExpedition = 8,
-    SecondRecipe = 9,
-    CookSecondRecipe = 10,
-    CookingSecondRecipe = 11,
-    FirstTournament = 12,
-    GoToFirstTournament = 13,
-    JoinFirstTournament = 14,
-    FirstTournamentPending = 15,
-    ResolveFirstTournament = 16,
-    Completed = 17,
-    Invalid = 18
 };
 
 /**
@@ -119,9 +95,8 @@ struct XayaPlayerResult : public ResultWithRole
 {
   RESULT_COLUMN (std::string, name, 1);
   RESULT_COLUMN (pxd::proto::XayaPlayer, proto, 2);
-  RESULT_COLUMN (int64_t, ftuestate, 3);
-  RESULT_COLUMN (pxd::proto::Inventory, inventory, 4);
-  RESULT_COLUMN (int64_t, prestige, 5);
+  RESULT_COLUMN (pxd::proto::Inventory, inventory, 3);
+  RESULT_COLUMN (int64_t, prestige, 4);
 };
 
 
@@ -131,13 +106,6 @@ struct XayaPlayerResult : public ResultWithRole
  */
 std::string PlayerRoleToString (PlayerRole f);
 
-
-/**
- * Converts the tutorial enumerator to a string.  This is used for logging and other
- * messages, as well as in the JSON format of game states.
- */
-std::string FTUEStateToString (FTUEState f);
-
 /**
  * Parses a faction value from a string.  Returns INVALID if the string does
  * not represent any of the real factions.
@@ -145,19 +113,9 @@ std::string FTUEStateToString (FTUEState f);
 PlayerRole PlayerRoleFromString (const std::string& str);
 
 /**
- * Parses a ftustate value from a string.
- */
-FTUEState FTUEStateFromString (const std::string& str);
-
-/**
  * Binds a role value to a role parameter. 
  */
 void BindPlayerRoleParameter (Database::Statement& stmt, unsigned ind, PlayerRole f);
-
-/**
- * Binds a tutorial value to a tutorial parameter.
- */
-void BindFTUEStateParameter (Database::Statement& stmt, unsigned ind, FTUEState f);
 
 /**
  * Wrapper class around the state of one Xaya account (name) in the database.
@@ -179,10 +137,7 @@ private:
 
   /** The role of this account.  May be INVALID if not yet initialised.  */
   PlayerRole role;
-  
-  /** The tutorial state of this account. Always starts as Intro*/
-  FTUEState ftuestate;  
-
+   
   /** General proto data.  */
   LazyProto<proto::XayaPlayer> data;
   
@@ -199,7 +154,7 @@ private:
    * Constructs an instance with "default / empty" data for the given name
    * and not-yet-set faction.
    */
-  explicit XayaPlayer (Database& d, const std::string& n, const RoConfig& cfg);
+  explicit XayaPlayer (Database& d, const std::string& n, const RoConfig& cfg, xaya::Random& rnd);
 
   /**
    * Constructs an instance based on the given DB result set.  The result
@@ -222,7 +177,6 @@ public:
   void operator= (const XayaPlayer&) = delete;
 
   void SetRole (PlayerRole f);
-  void SetFTUEState (FTUEState f);
 
   const std::string&
   GetName () const
@@ -241,13 +195,7 @@ public:
   {
     return role;
   }
-  
-  FTUEState
-  GetFTUEState () const
-  {
-    return ftuestate;
-  }  
-  
+
   const bool
   GetIsMine ();
 
@@ -363,7 +311,7 @@ public:
    * Creates a new entry in the database for the given name.
    * Calling this method for a name that already has an account is an error.
    */
-  Handle CreateNew (const std::string& name, const RoConfig& cfg);
+  Handle CreateNew (const std::string& name, const RoConfig& cfg, xaya::Random& rnd);
 
   /**
    * Returns a handle for the instance based on a Database::Result.

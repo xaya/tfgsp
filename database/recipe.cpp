@@ -183,6 +183,8 @@ RecipeInstance::BindFieldValues (Database::Statement& stmt) const
 
 uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xaya::Random& rnd, Database& db)
 {
+    LOG (WARNING) << "Generating custom recipe";
+    
     std::vector<pxd::proto::FighterName> potentialNames;
     const auto& fighterNames = cfg->fighternames();
     
@@ -297,8 +299,10 @@ uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xa
       generatedRecipe.set_duration(cfg->params().epic_recipe_cook_cost());
     }     
     
+    LOG (WARNING) << "name: " << fname + " " + lname;
+    
     generatedRecipe.set_fightername(fname + " " + lname);
-    generatedRecipe.set_name("generated");
+    generatedRecipe.set_name(fname + " " + lname);
     generatedRecipe.set_fightertype(fighterType.authoredid());
     generatedRecipe.set_quality((int)quality);
     generatedRecipe.set_requiredfighterquality((int)Quality::None);
@@ -342,22 +346,29 @@ uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xa
         {
             for(auto& probableMove: fighterType.moveprobabilities())
             {
+                if(randomMoveSolved == true)
+                {
+                    break;
+                }
+                
                 int probabilityTreshhold = probableMove.probability() * 1000;
                 int rolCurNum = rnd.NextInt(30000);  //30000, as in proto file max prob. is 30     
 
                 if(rolCurNum < probabilityTreshhold)
-                {
+                {                 
                   randomMoveSolved = true;
                   
                   for(auto& moveBlp: moveBlueprints)
-                  {
-                    if(moveBlp.second.authoredid() == probableMove.authoredid())
-                    {
-                      generatedMoveblueprints.push_back(moveBlp.second);
+                  {       
+                    if( (Quality)(uint32_t)moveBlp.second.quality() == quality)
+                    {                        
+                      if( moveBlp.second.movetype() == probableMove.movetype())
+                      {
+                        generatedMoveblueprints.push_back(moveBlp.second);
+                        break;
+                      }
                     }
-                  }
-                  
-                  break;
+                  }  
                 }                    
             }
         }
@@ -369,6 +380,43 @@ uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xa
         newMove->assign(generatedMoveblueprints[d].authoredid());
     }
     
+    LOG (WARNING) << "total moves: " << generatedMoveblueprints.size() << "out of " << numberOfMoves;
+    
+    // We generated candy needed amount based on the moves
+    
+    uint64_t candyPerMoveAmount = cfg->params().required_candy_per_vove();
+    
+    std::map<std::string, uint64_t> rcCandyData;
+    
+    for(const auto& move: generatedRecipe.moves())
+    {
+        for(auto& moveBlp: moveBlueprints)
+        {
+          if(moveBlp.second.authoredid() == move)
+          {
+             std::string candyAuthId = moveBlp.second.candytype();
+
+             if (rcCandyData.find(candyAuthId) == rcCandyData.end())
+             {
+                rcCandyData.insert(std::pair<std::string, uint64_t>(candyAuthId, candyPerMoveAmount));
+             }
+             else
+             {
+                rcCandyData[candyAuthId] += (candyPerMoveAmount);
+             }
+             
+             break;
+          }
+        }
+    }
+    
+    for(const auto& rcData: rcCandyData)
+    {
+      pxd::proto::CandyAmount* rcNew = generatedRecipe.add_requiredcandy();
+      rcNew->set_candytype(rcData.first);
+      rcNew->set_amount(rcData.second);           
+    }
+
     RecipeInstanceTable rt(db);
     
     auto handle = rt.CreateNew("", generatedRecipe, cfg);    

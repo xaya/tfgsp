@@ -99,6 +99,16 @@ PendingState::AddRecepieCookingInstance (const XayaPlayer& a, int32_t duration)
 }
 
 void
+PendingState::AddPurchasing (const XayaPlayer& a, std::string authID)
+{
+  VLOG (1) << "Adding pending recepie cooking operation for name" << a.GetName ();
+  
+  auto& aState = GetXayaPlayerState (a);
+  aState.purchasing.push_back(authID);
+}
+
+
+void
 PendingState::AddExpeditionInstance (const XayaPlayer& a, int32_t duration)
 {
   VLOG (1) << "Adding pending expedition operation for name" << a.GetName ();
@@ -133,6 +143,25 @@ PendingState::AddTournamentEntries (const XayaPlayer& a, uint32_t tournamentID, 
     }
   }  
 }
+
+void
+PendingState::AddTournamentLeaves (const XayaPlayer& a, uint32_t tournamentID)
+{
+  VLOG (1) << "Adding pending tournament retracts for name" << a.GetName ();
+  
+  auto& aState = GetXayaPlayerState (a);
+  aState.tournamentLeaves.push_back(tournamentID);  
+}
+
+void
+PendingState::AddDeconstructionData (const XayaPlayer& a, uint32_t fighterID)
+{
+  VLOG (1) << "Adding pending tournament retracts for name" << a.GetName ();
+  
+  auto& aState = GetXayaPlayerState (a);
+  aState.deconstructionData.push_back(fighterID);  
+}
+
 
 void
 PendingState::AddRewardIDs (const XayaPlayer& a, std::vector<uint32_t> rewardDatabaseIds)
@@ -216,6 +245,28 @@ PendingState::XayaPlayerState::ToJson () const
       
     res["tournamententries"] = trnmentr;      
   }
+  
+  if(tournamentLeaves.size() > 0)
+  {
+    Json::Value trnmentr(Json::arrayValue);
+    for(const auto& rw: tournamentLeaves) 
+    {
+      trnmentr.append(rw);
+    }  
+      
+    res["tournamentleaves"] = trnmentr;      
+  }  
+  
+  if(deconstructionData.size() > 0)
+  {
+    Json::Value fghttrs(Json::arrayValue);
+    for(const auto& rw: deconstructionData) 
+    {
+      fghttrs.append(rw);
+    }  
+      
+    res["deconstruction"] = fghttrs;      
+  }    
   
   return res;
 }
@@ -336,16 +387,49 @@ PendingStateUpdater::ProcessMove (const Json::Value& moveObj)
       state.AddTournamentEntries(*a, tournamentID, fighterIDS);  
     }
     
+    if(ParseTournamentLeaveData(*a, name, upd3["l"], tournamentID))
+    {
+      state.AddTournamentLeaves(*a, tournamentID);  
+    }    
+    
   }  
   
+  Json::Value& upd4 = mv["f"];   
+  
+  if(upd4.isObject())
+  {  
+    uint32_t fighterID = 0;
+    if(ParseDeconstructData(*a, name, upd4["d"], fighterID))
+    {
+      state.AddDeconstructionData(*a, fighterID);  
+    }
+  }
+
   /*If we have any crystal bundles purchases pending, lets add them here*/
  
   Amount cost = 0;
   Amount crystalAmount  = 0;
+  std::string fungibleName = "";
   
   if(ParseCrystalPurchase(mv, bundleKeyCode, cost, crystalAmount, name, paidToDev))
   {
       state.AddCrystalPurchase(*a, bundleKeyCode);
+  }  
+  
+  if(!ParseGoodyPurchase(mv, cost, name, fungibleName, a->GetBalance()))
+  {
+      state.AddPurchasing(*a, mv["pg"].asString());
+  }
+  
+  if(!ParseSweetenerPurchase(mv, cost, name, fungibleName, a->GetBalance()))
+  {
+      state.AddPurchasing(*a, mv["ps"].asString());
+  }  
+  
+  std::map<std::string, uint64_t> fungibles;
+  if(!ParseGoodyBundlePurchase(mv, cost, name, fungibles, a->GetBalance()))
+  {
+      state.AddPurchasing(*a, mv["pgb"].asString());
   }  
 
   /* Release the account again.  It is not needed anymore, and some of

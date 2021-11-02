@@ -21,6 +21,15 @@ option cc_enable_arenas = true;
 
 package pxd.proto;
 
+message Deconstruction
+{
+  optional uint32 DeconstructionId = 1;  
+
+  optional string CandyType = 2;  
+  
+  optional uint32 Quantity = 3;   
+}
+
 message ActivityRewardInstance
 {
   optional uint32 TournamentId = 1;
@@ -38,5 +47,7 @@ message ActivityRewardInstance
   optional uint32 FighterID = 7;  
   
   optional string RewardAutoTableId = 8;
+  
+  repeated Deconstruction Deconstructions = 9;
 }
 

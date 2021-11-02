@@ -69,5 +69,11 @@ message Fighter
   optional uint32 MatchesWon = 14;  
 
   /*Fighters matches track history entry*/
-  optional uint32 MatchesLost = 15;    
+  optional uint32 MatchesLost = 15;
+
+  /*Exchange experation block*/
+  optional uint32 ExchangeExpire = 16;
+  
+  /*Exchange experation block*/
+  optional uint64 ExchangePrice = 17;  
 }

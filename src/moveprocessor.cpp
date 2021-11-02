@@ -75,6 +75,148 @@ BaseMoveProcessor::ExtractMoveBasics (const Json::Value& moveObj,
 }
 
 bool
+BaseMoveProcessor::ParseSweetenerPurchase(const Json::Value& mv, Amount& cost, const std::string& name, std::string& fungibleName, Amount balance)
+{
+  const auto& cmd = mv["ps"];
+  
+  if(!cmd.isString())
+  {
+      return false;
+  }
+  
+  bool exists = false;
+  const auto& sweetenerList = ctx.RoConfig()->sweetenerblueprints();
+  
+  for(const auto& swtnr: sweetenerList)
+  {
+      if(swtnr.second.authoredid() == cmd.asString())
+      {
+          cost = swtnr.second.price();
+          fungibleName = swtnr.first;
+          exists = true;
+          break;
+      }
+  }
+  
+  if(exists == false)
+  {
+      LOG (WARNING) << "Could not solve sweetener entry for: " << cmd;
+      return false;      
+  }
+  
+  if (balance < cost)
+  {
+      LOG (WARNING)
+          << "Required amount to purchace bundle character not paid by " << name
+          << " (only have " << balance << ")";
+      return false;
+  }     
+
+  return true;  
+}
+
+bool
+BaseMoveProcessor::ParseGoodyBundlePurchase(const Json::Value& mv, Amount& cost, const std::string& name, std::map<std::string, uint64_t>& fungibles, Amount balance)
+{
+  const auto& cmd = mv["pgb"];
+  
+  if(!cmd.isString())
+  {
+      return false;
+  }
+  
+  bool exists = false;
+  const auto& gbList = ctx.RoConfig()->goodybundles();
+  const auto& gdList = ctx.RoConfig()->goodies();
+  
+  for(const auto& gb: gbList)
+  {
+    if(gb.second.authoredid() == cmd.asString())
+    {
+        cost = gb.second.price();
+        
+        for(const auto& entry: gb.second.bundledgoodies())
+        {
+          for(const auto& gd: gdList)
+          {
+            if(gd.second.authoredid() == entry.goodyid())
+            {
+              if (fungibles.find(gd.first) == fungibles.end())
+              {
+                fungibles.insert(std::pair<std::string, uint64_t>(gd.first, entry.quantity()));
+              }
+              else
+              {
+                fungibles[gd.first] += entry.quantity();
+              }
+            }
+          }
+        }
+
+      exists = true;
+      break;
+    }
+  }
+  
+  if(exists == false)
+  {
+      LOG (WARNING) << "Could not solve sweetener entry for: " << cmd;
+      return false;      
+  }
+  
+  if (balance < cost)
+  {
+      LOG (WARNING)
+          << "Required amount to purchace bundle character not paid by " << name
+          << " (only have " << balance << ")";
+      return false;
+  }     
+
+  return true;  
+}
+
+bool
+BaseMoveProcessor::ParseGoodyPurchase(const Json::Value& mv, Amount& cost, const std::string& name, std::string& fungibleName, Amount balance)
+{
+  const auto& cmd = mv["pg"];
+  
+  if(!cmd.isString())
+  {
+      return false;
+  }
+  
+  bool exists = false;
+  const auto& gdList = ctx.RoConfig()->goodies();
+  
+  for(const auto& gd: gdList)
+  {
+      if(gd.second.authoredid() == cmd.asString())
+      {
+          cost = gd.second.price();
+          fungibleName = gd.first;
+          exists = true;
+          break;
+      }
+  }
+  
+  if(exists == false)
+  {
+      LOG (WARNING) << "Could not solve sweetener entry for: " << cmd;
+      return false;      
+  }
+  
+  if (balance < cost)
+  {
+      LOG (WARNING)
+          << "Required amount to purchace bundle character not paid by " << name
+          << " (only have " << balance << ")";
+      return false;
+  }     
+
+  return true;  
+}
+
+bool
 BaseMoveProcessor::ParseCrystalPurchase(const Json::Value& mv, std::string& bundleKeyCode, Amount& cost, Amount& crystalAmount, const std::string& name, const Amount& paidToDev)
 {
   const auto& cmd = mv["pc"];
@@ -149,9 +291,96 @@ bool BaseMoveProcessor::InventoryHasItem(const std::string& itemKeyName, const I
 }
 
 void
-BaseMoveProcessor::TryCrystalPurchase (const std::string& name,
-                                         const Json::Value& mv,
-                                         Amount& paidToDev)
+BaseMoveProcessor::TrySweetenerPurchase (const std::string& name, const Json::Value& mv)
+{
+  const auto& cmd = mv["ps"];
+  if (!cmd.isString ()) return;
+
+  VLOG (1) << "Attempting to purchase sweetener through move: " << cmd;
+  
+  const auto player = xayaplayers.GetByName (name, ctx.RoConfig());
+  CHECK (player != nullptr && player->IsInitialised ());
+
+  if (cmd.isObject ())
+  {
+      LOG (WARNING) << "Purchase sweetener is object: " << cmd;
+      return;
+  } 
+  
+  Amount cost = 0;
+  std::string fungibleName = "";
+  if(!ParseSweetenerPurchase(mv, cost, name, fungibleName, player->GetBalance()))
+  {
+      return;
+  }
+  
+  player->AddBalance (-cost); 
+  player->GetInventory().AddFungibleCount(fungibleName, 1);
+}
+
+void
+BaseMoveProcessor::TryGoodyPurchase (const std::string& name, const Json::Value& mv)
+{
+  const auto& cmd = mv["pg"];
+  if (!cmd.isString ()) return;
+
+  VLOG (1) << "Attempting to purchase goody through move: " << cmd;
+  
+  const auto player = xayaplayers.GetByName (name, ctx.RoConfig());
+  CHECK (player != nullptr && player->IsInitialised ());
+
+  if (cmd.isObject ())
+  {
+      LOG (WARNING) << "Purchase goody is object: " << cmd;
+      return;
+  } 
+  
+  Amount cost = 0;
+  std::string fungibleName = "";
+  if(!ParseGoodyPurchase(mv, cost, name, fungibleName, player->GetBalance()))
+  {
+      return;
+  }
+  
+  player->AddBalance(-cost); 
+  player->GetInventory().AddFungibleCount(fungibleName, 1);
+  
+}
+
+void
+BaseMoveProcessor::TryGoodyBundlePurchase (const std::string& name, const Json::Value& mv)
+{
+  const auto& cmd = mv["pgb"];
+  if (!cmd.isString ()) return;
+
+  VLOG (1) << "Attempting to purchase goody bundle through move: " << cmd;
+  
+  const auto player = xayaplayers.GetByName (name, ctx.RoConfig());
+  CHECK (player != nullptr && player->IsInitialised ());
+
+  if (cmd.isObject ())
+  {
+      LOG (WARNING) << "Purchase goody bundle is object: " << cmd;
+      return;
+  } 
+  
+  Amount cost = 0;
+  std::map<std::string, uint64_t> fungibles;
+  if(!ParseGoodyBundlePurchase(mv, cost, name, fungibles, player->GetBalance()))
+  {
+      return;
+  }
+  
+  player->AddBalance (-cost); 
+  
+  for(const auto& fbl: fungibles)
+  {
+    player->GetInventory().AddFungibleCount(fbl.first, fbl.second);
+  }
+}
+
+void
+BaseMoveProcessor::TryCrystalPurchase (const std::string& name, const Json::Value& mv, Amount& paidToDev)
 {
   const auto& cmd = mv["pc"];
   if (!cmd.isString ()) return;
@@ -171,7 +400,10 @@ BaseMoveProcessor::TryCrystalPurchase (const std::string& name,
   Amount cost = 0;
   Amount crystalAmount  = 0;
   std::string bundleKeyCode = "";
-  if(!ParseCrystalPurchase(mv, bundleKeyCode, cost, crystalAmount, name, paidToDev)) return;
+  if(!ParseCrystalPurchase(mv, bundleKeyCode, cost, crystalAmount, name, paidToDev)) 
+  {
+      return;
+  }
 
 
   paidToDev -= cost; 
@@ -379,10 +611,12 @@ MoveProcessor::TryCoinOperation (const std::string& name,
         LOG (INFO)
             << "Creating uninitialised account for coin recipient "
             << entry.first;
-        to = xayaplayers.CreateNew (entry.first, ctx.RoConfig ());
+        to = xayaplayers.CreateNew (entry.first, ctx.RoConfig (), rnd);
       }
     to->AddBalance (entry.second);
   }
+  
+  a.reset();
 }
 
 void
@@ -400,7 +634,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
   if (xayaplayers.GetByName (name, ctx.RoConfig ()) == nullptr)
     {
       LOG (INFO) << "Creating uninitialised account for " << name;
-      xayaplayers.CreateNew (name, ctx.RoConfig ());
+      xayaplayers.CreateNew (name, ctx.RoConfig (), rnd);
     }
 
   /* Handle coin transfers before other game operations.  They are even
@@ -413,6 +647,15 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
 
   /* Handle crystal purchace now */
   TryCrystalPurchase (name, mv, paidToDev);
+  
+  /* Handle sweetener purchace now */
+  TrySweetenerPurchase (name, mv);  
+  
+  /* Handle goody purchace now */
+  TryGoodyPurchase (name, mv);   
+  
+  /* Handle goody bundle purchace now */
+  TryGoodyBundlePurchase (name, mv);    
 
   /* At this point, we terminate if the game-play itself has not started.
      This is more or less when the "game world is created"*/
@@ -423,9 +666,6 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
      e.g. choose one's faction and create characters in a single move.  */
   TryXayaPlayerUpdate (name, mv["a"]);
 
-  /* We are trying to update tutorial tracking variable*/
-  TryTFTutorialUpdate (name, mv["tu"]);
-
   /* We are trying all kind of cooking actions*/
   TryCookingAction (name, mv["ca"]);
   
@@ -433,7 +673,10 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
   TryExpeditionAction (name, mv["exp"]);  
   
   /* We are trying all kind of tournament related actions*/
-  TryTournamentAction (name, mv["tm"]);    
+  TryTournamentAction (name, mv["tm"]);   
+
+  /* We are trying all kind of fighter related actions*/
+  TryFighterAction (name, mv["f"]);     
   
   /* If there is no account (after potentially updating/initialising it),
      then let's not try to process any more updates.  This explicitly
@@ -456,69 +699,6 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
       << burnt << " burnt CHI satoshi left";
 }
 
-  void
-  MoveProcessor::MaybeUpdateFTUEState (const std::string& name,
-                                   const Json::Value& init)
-  {
-    if (!init.isObject ())
-      return;
-
-    auto a = xayaplayers.GetByName (name, ctx.RoConfig ());
-    CHECK (a != nullptr);
-
-    const auto& ftuestateVal = init["ftuestate"];
-    if (!ftuestateVal.isString ())
-      {
-        LOG (WARNING)
-            << "Name update does not specify ftuestate: " << init;
-        return;
-      }
-      
-      
-    const FTUEState ftuestate = FTUEStateFromString (ftuestateVal.asString ());
-    
-    switch (ftuestate)
-    {
-      case FTUEState::Invalid:
-        LOG (WARNING) << "Invalid ftuestate specified for account: " << init;
-        return;
-
-      default:
-        break;
-    }    
-    
-    const FTUEState ftuestateCurrent = a->GetFTUEState ();
-    
-    int s1val = static_cast<int>(ftuestate);
-    int s2val = static_cast<int>(ftuestateCurrent);
-    
-    if(s1val <= s2val)
-    {
-        LOG (WARNING) << "Ftuestate name update can only update forward: " << init;
-        return;        
-    }
-    
-    if (init.size () != 1)
-    {
-        LOG (WARNING) << "Ftuestate name update has extra fields: " << init;
-        return;
-    }
-
-    a->SetFTUEState (ftuestate);
-    LOG (INFO)
-        << "Setting account " << name << " to ftuestate "
-        << FTUEStateToString (ftuestate);
-        
-    //Lets also initialize account at this stage if its no yet. We do not need this at all,
-    //but maybe will become handy in the future. Can always remove later on, as its harmless
-    //and is triggered only during tutorial flag checks
-    
-    if (a->IsInitialised () == false)
-    {
-        a->SetRole(PlayerRole::PLAYER);
-    }
-  }
-  
   bool BaseMoveProcessor::ParseTournamentRewardData(const XayaPlayer& a, const std::string& name, const Json::Value& tournament, std::vector<uint32_t>& rewardDatabaseIds)
   {
     if (!tournament.isObject ())
@@ -629,11 +809,358 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     return true;
   }      
   
+  bool BaseMoveProcessor::ParseTournamentLeaveData(const XayaPlayer& a, const std::string& name, const Json::Value& tournament, uint32_t& tournamentID)
+  {
+    if (!tournament.isObject ())
+    {
+      VLOG (1) << "Tournament is not an object";
+      return false;
+    }
+
+    if(!tournament["tid"].isInt())
+    {
+      LOG (WARNING) << "tid is not an int";
+      return false;
+    }
+    
+    tournamentID = tournament["tid"].asInt();
+    
+    auto tournamentData = tournamentsTbl.GetById(tournamentID, ctx.RoConfig ());
+    
+    if(tournamentData == nullptr)
+    {
+      LOG (WARNING) << "Asking for non-existant tournament with id: " << tournamentID;
+      return false;
+    }    
+    
+    const auto chain = ctx.Chain ();
+    if(tournamentData->GetProto().authoredid() == "cbd2e78a-37ce-b864-793d-8dd27788a774" && chain == xaya::Chain::MAIN)
+    {
+      LOG (WARNING) << "Can not leave tutorial tournament entry";
+      return false;        
+    }    
+     
+    if((pxd::TournamentState)(uint32_t)tournamentData->GetInstance().state() != pxd::TournamentState::Listed)
+    {
+      LOG (WARNING) << "Asking to leave already pending tournament with id: " << tournamentID;
+      return false;        
+    }
+    
+    bool playerIsParticipating = false;
+    
+    for(const auto fighterID : tournamentData->GetInstance().fighters())
+    {
+        auto fighterDb = fighters.GetById (fighterID, ctx.RoConfig ());
+        
+        if(fighterDb->GetOwner() == name)
+        {
+            playerIsParticipating = true;
+            fighterDb.reset(); 
+            break;
+        }
+     
+        fighterDb.reset();     
+    }
+    
+    if(playerIsParticipating == false)
+    {
+      LOG (WARNING) << "Player is not participating in the tournament with id: " << tournamentID;
+      return false;        
+    }
+
+    return true;
+  }  
+  
+  bool BaseMoveProcessor::ParseFighterForSaleData(const XayaPlayer& a, const std::string& name, const Json::Value& fighter, uint32_t& fighterID, uint32_t& duration, Amount& price)
+  {
+    if (!fighter.isObject ())
+    {
+      VLOG (1) << "Fighter is not an object" << fighter;
+      return false;
+    }
+
+    if(!fighter["fid"].isInt())
+    {
+      LOG (WARNING) << "fid is not an int";
+      return false;
+    }
+    
+    if(!fighter["p"].isInt())
+    {
+      LOG (WARNING) << "p is not an int";
+      return false;
+    }        
+    
+    if(!fighter["d"].isInt())
+    {
+      LOG (WARNING) << "d is not an int";
+      return false;
+    }    
+    
+    fighterID = fighter["fid"].asInt();
+    duration = fighter["d"].asInt();
+    price = fighter["p"].asInt();
+    
+    if(price <= 0)
+    {
+      LOG (WARNING) << "Incorrect price" << price;
+      return false;         
+    }
+    
+    auto fighterDb = fighters.GetById (fighterID, ctx.RoConfig ());
+    
+    if(fighterDb == nullptr)
+    {
+      LOG (WARNING) << "Fatal erorr, could not get fighter with ID" << fighterID;
+      fighterDb.reset();
+      return false;                
+    }
+    
+    if(fighterDb->GetOwner() != a.GetName())
+    {
+      LOG (WARNING) << "Fighter does not belong to: " << a.GetName();
+      fighterDb.reset();
+      return false;               
+    }    
+    
+    if((pxd::FighterStatus)(int)fighterDb->GetStatus() != pxd::FighterStatus::Available) 
+    {
+      LOG (WARNING) << "Fighter status is not available: " << fighterID;
+      fighterDb.reset();
+      return false;              
+    }    
+    
+    if(duration < 1 || duration > 14)
+    {
+      LOG (WARNING) << "Invalid duration: " << duration;
+      fighterDb.reset();
+      return false;         
+    }
+    
+    if(a.GetBalance() < ctx.RoConfig()->params().exchange_listing_fee())
+    {
+      LOG (WARNING) << "Not enough crystal balance for listing fee " << ctx.RoConfig()->params().exchange_listing_fee();
+      fighterDb.reset();
+      return false;          
+    }
+
+    fighterDb.reset();   
+    return true;    
+  }    
+  
+  bool BaseMoveProcessor::ParseRemoveBuyData(const XayaPlayer& a, const std::string& name, const Json::Value& fighter, uint32_t& fighterID)
+  {
+    if (!fighter.isObject ())
+    {
+      VLOG (1) << "Fighter is not an object";
+      return false;
+    }
+
+    if(!fighter["fid"].isInt())
+    {
+      LOG (WARNING) << "fid is not an int";
+      return false;
+    }
+    
+    fighterID = fighter["fid"].asInt();
+    
+    auto fighterDb = fighters.GetById (fighterID, ctx.RoConfig ());
+    
+    if(fighterDb == nullptr)
+    {
+      LOG (WARNING) << "Fatal erorr, could not get fighter with ID" << fighterID;
+      return false;                
+    }
+    
+    if(fighterDb->GetOwner() != a.GetName())
+    {
+      LOG (WARNING) << "Fighter is not owned by: " << a.GetName();
+      fighterDb.reset();
+      return false;               
+    }    
+    
+    if((pxd::FighterStatus)(int)fighterDb->GetStatus() != pxd::FighterStatus::Exchange)
+    {
+      LOG (WARNING) << "Fighter status is not on exchange: " << fighterID;
+      fighterDb.reset();
+      return false;              
+    }    
+    
+    fighterDb.reset(); 
+    return true;    
+  }        
+  
+  bool BaseMoveProcessor::ParseBuyData(const XayaPlayer& a, const std::string& name, const Json::Value& fighter, uint32_t& fighterID)
+  {
+    if (!fighter.isObject ())
+    {
+      VLOG (1) << "Fighter is not an object";
+      return false;
+    }
+
+    if(!fighter["fid"].isInt())
+    {
+      LOG (WARNING) << "fid is not an int";
+      return false;
+    }
+    
+    fighterID = fighter["fid"].asInt();
+    
+    auto fighterDb = fighters.GetById (fighterID, ctx.RoConfig ());
+    
+    if(fighterDb == nullptr)
+    {
+      LOG (WARNING) << "Fatal erorr, could not get fighter with ID" << fighterID;
+      return false;                
+    }
+    
+    if(fighterDb->GetOwner() == a.GetName())
+    {
+      LOG (WARNING) << "Can noy buy own fighter, its nonsense: " << a.GetName();
+      fighterDb.reset();
+      return false;               
+    }    
+    
+    if((pxd::FighterStatus)(int)fighterDb->GetStatus() != pxd::FighterStatus::Exchange)
+    {
+      LOG (WARNING) << "Fighter status is not on exchange: " << fighterID;
+      fighterDb.reset();
+      return false;              
+    }    
+    
+    if(a.GetBalance() < (Amount)fighterDb->GetProto().exchangeprice())
+    {
+      LOG (WARNING) << "Not enough crystals to buy: " << fighterID;
+      fighterDb.reset();
+      return false;         
+    }
+    
+    if((uint64_t)fighterDb->GetProto().exchangeexpire() <= ctx.Height())
+    {
+      LOG (WARNING) << "Listing expired for: " << fighterID;
+      fighterDb.reset();
+      return false;         
+    }  
+
+    uint32_t slots = fighters.CountForOwner(a.GetName());
+
+    if(slots > ctx.RoConfig()->params().max_fighter_inventory_amount())
+    {
+        LOG (WARNING) << "Not enough slots to host a new fighter for " << fighterID;
+        return false;         
+    }        
+
+    fighterDb.reset(); 
+    return true;    
+  }      
+
+  bool BaseMoveProcessor::ParseDeconstructRewardData(const XayaPlayer& a, const std::string& name, const Json::Value& fighter, uint32_t& fighterID)
+  {
+    if (!fighter.isObject ())
+    {
+      VLOG (1) << "Fighter is not an object" << fighter;
+      return false;
+    }
+
+    if(!fighter["fid"].isInt())
+    {
+      LOG (WARNING) << "fid is not an int";
+      return false;
+    }
+    
+    fighterID = fighter["fid"].asInt();
+    
+    auto fighterDb = fighters.GetById (fighterID, ctx.RoConfig ());
+    
+    if(fighterDb == nullptr)
+    {
+      LOG (WARNING) << "Fatal erorr, could not get fighter with ID" << fighterID;
+      fighterDb.reset();
+      return false;                
+    }
+    
+    if(fighterDb->GetOwner() != a.GetName())
+    {
+      LOG (WARNING) << "Fighter does not belong to: " << a.GetName();
+      fighterDb.reset();
+      return false;               
+    }    
+    
+    if((pxd::FighterStatus)(int)fighterDb->GetStatus() != pxd::FighterStatus::Deconstructing) 
+    {
+      LOG (WARNING) << "Fighter status is not in deconstruction: " << fighterID;
+      fighterDb.reset();
+      return false;              
+    }    
+
+    bool isFinished = true;
+    
+    for(const auto& ongoing: a.GetProto().ongoings())
+    {
+        if(ongoing.fighterdatabaseid() == fighterID && ongoing.type() == (uint32_t)pxd::OngoingType::DECONSTRUCTION)
+        {
+            isFinished = false;
+        }
+    }
+    
+    if(isFinished == false)
+    {
+      LOG (WARNING) << "Ongoing operation still presetent for fighter with id: " << fighterID;
+      fighterDb.reset();
+      return false;           
+    }
+
+    fighterDb.reset(); 
+    return true;    
+  }    
+
+  bool BaseMoveProcessor::ParseDeconstructData(const XayaPlayer& a, const std::string& name, const Json::Value& fighter, uint32_t& fighterID)
+  {
+    if (!fighter.isObject ())
+    {
+      VLOG (1) << "Fighter is not an object";
+      return false;
+    }
+
+    if(!fighter["fid"].isInt())
+    {
+      LOG (WARNING) << "fid is not an int";
+      return false;
+    }
+    
+    fighterID = fighter["fid"].asInt();
+    
+    auto fighterDb = fighters.GetById (fighterID, ctx.RoConfig ());
+    
+    if(fighterDb == nullptr)
+    {
+      LOG (WARNING) << "Fatal erorr, could not get fighter with ID" << fighterID;
+      return false;                
+    }
+    
+    if(fighterDb->GetOwner() != a.GetName())
+    {
+      LOG (WARNING) << "Fighter does not belong to: " << a.GetName();
+      fighterDb.reset();
+      return false;               
+    }    
+    
+    if((pxd::FighterStatus)(int)fighterDb->GetStatus() != pxd::FighterStatus::Available)
+    {
+      LOG (WARNING) << "Fighter status is busy for decmposition with id: " << fighterID;
+      fighterDb.reset();
+      return false;              
+    }    
+
+    fighterDb.reset(); 
+    return true;    
+  }    
+  
   bool BaseMoveProcessor::ParseTournamentEntryData(const XayaPlayer& a, const std::string& name, const Json::Value& tournament, uint32_t& tournamentID, std::vector<uint32_t>& fighterIDS)
   {
     if (!tournament.isObject ())
     {
-      LOG (WARNING) << "Tournament is not an object";
+      VLOG (1) << "Tournament is not an object";
       return false;
     }
 
@@ -760,7 +1287,8 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
       return false;           
     }
     
-    if(tournamentData->GetProto().authoredid() == "cbd2e78a-37ce-b864-793d-8dd27788a774" && (int)a.GetFTUEState() >= (int)pxd::FTUEState::ResolveFirstTournament)
+    const auto chain = ctx.Chain ();
+    if(tournamentData->GetProto().authoredid() == "cbd2e78a-37ce-b864-793d-8dd27788a774" && chain == xaya::Chain::MAIN)
     {
       LOG (WARNING) << "Can't join FTUE tournament again! With id: " << tournamentID;
       tournamentData.reset();
@@ -832,7 +1360,8 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
         return false;              
     }
     
-    if(expeditionBlueprint.authoredid() == "c064e7f7-acbf-4f74-fab8-cccd7b2d4004" && (int)a.GetFTUEState() > (int)FTUEState::FirstExpeditionPending)
+    const auto chain = ctx.Chain ();
+    if(expeditionBlueprint.authoredid() == "c064e7f7-acbf-4f74-fab8-cccd7b2d4004" && chain == xaya::Chain::MAIN)
     {
         LOG (WARNING) << "Could not resolve tutorial expedition twice " << expeditionID;
         fighter.reset();
@@ -1015,7 +1544,11 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
       std::vector<uint32_t> rewardDatabaseIds;      
       auto a = xayaplayers.GetByName (name, ctx.RoConfig ());
       
-      if(!ParseTournamentRewardData(*a, name, tournament, rewardDatabaseIds)) return;
+      if(!ParseTournamentRewardData(*a, name, tournament, rewardDatabaseIds))
+      {
+          a.reset();
+          return;
+      }
 
       LOG (INFO) << "Ready to give " << rewardDatabaseIds.size() << " rewards";
 
@@ -1132,6 +1665,8 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
           
           rewards.DeleteById(rw);
       }  
+      
+      a.reset();
   }  
   
   void MoveProcessor::MaybeClaimReward (const std::string& name, const Json::Value& expedition)
@@ -1139,8 +1674,12 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
       std::vector<uint32_t> rewardDatabaseIds;      
       auto a = xayaplayers.GetByName (name, ctx.RoConfig ());
       
-      if(!ParseRewardData(*a, name, expedition, rewardDatabaseIds)) return;
-
+      if(!ParseRewardData(*a, name, expedition, rewardDatabaseIds))      
+      {
+          a.reset();
+          return;
+      }
+      
       LOG (INFO) << "Ready to give " << rewardDatabaseIds.size() << " rewards";
 
       uint32_t curRecipeSlots = recipeTbl.CountForOwner(a->GetName());
@@ -1256,7 +1795,243 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
           
           rewards.DeleteById(rw);
       }
+      
+      a.reset();
   }   
+  
+ void MoveProcessor::MaybeLeaveTournament (const std::string& name, const Json::Value& tournament)
+  {      
+    auto a = xayaplayers.GetByName (name, ctx.RoConfig ());
+    
+    if(a == nullptr)
+    {
+      LOG (INFO) << "Player " << name << " not found";
+      return;
+    }
+    
+    uint32_t tournamentID = 0;
+
+    if(!ParseTournamentLeaveData(*a, name, tournament, tournamentID))      
+    {
+      a.reset();
+      return;
+    }
+
+    auto tournamentData = tournamentsTbl.GetById(tournamentID, ctx.RoConfig ());
+    
+    std::vector<uint32_t> fighterIDS;
+    
+    for(auto ft: tournamentData->GetInstance().fighters())
+    {
+        fighterIDS.push_back(ft);
+    }
+    
+    for(long long unsigned int r = 0; r < fighterIDS.size(); r++)
+    {
+        auto fighter = fighters.GetById (fighterIDS[r], ctx.RoConfig ());
+        
+        if(fighter->GetOwner() == name)
+        {
+          fighter->MutableProto().set_tournamentinstanceid(0);
+          fighter->SetStatus(pxd::FighterStatus::Available);
+        
+          for (auto it = tournamentData->GetInstance().fighters().begin(); it != tournamentData->GetInstance().fighters().end(); it++)
+          {
+              if (*it == fighterIDS[r])
+              {
+                  tournamentData->MutableInstance().mutable_fighters()->erase(it);
+                  break;
+              }
+          }
+
+          LOG (INFO) << "Fighter " << fighter->GetId() << " leaves tournament ";
+          
+          fighter.reset();
+        }
+    }
+
+    a->AddBalance(-tournamentData->GetProto().joincost()); 
+    tournamentData.reset();
+    
+    a.reset();
+    
+    LOG (INFO) << "Tournament " << tournamentID << " leaved succesfully ";
+  }    
+
+ void MoveProcessor::MaybeClaimDeconstructionReward (const std::string& name, const Json::Value& fighter)
+ {      
+    auto a = xayaplayers.GetByName (name, ctx.RoConfig ());
+    
+    if(a == nullptr)
+    {
+      LOG (INFO) << "Player " << name << " not found";
+      return;
+    }
+    
+    uint32_t fighterID = 0;
+    if(!ParseDeconstructRewardData(*a, name, fighter, fighterID))      
+    {
+      a.reset();
+      return;
+    }
+
+    std::vector<uint32_t> rewardDatabaseIds;
+    auto res = rewards.QueryForOwner(a->GetName());
+    
+    bool tryAndStep = res.Step();
+    while (tryAndStep)
+    {
+      auto rw = rewards.GetFromResult (res, ctx.RoConfig ());
+      
+      if(rw->GetProto().fighterid() == fighterID)
+      {
+        for(const auto& reward: rw->GetProto().deconstructions())
+        {
+           a->GetInventory().AddFungibleCount(reward.candytype(), reward.quantity()); 
+        }
+          
+        rewardDatabaseIds.push_back(rw->GetId());
+      }
+      
+      rw.reset();
+      tryAndStep = res.Step ();
+    }      
+    
+    for(const auto& rw: rewardDatabaseIds)
+    {
+      rewards.DeleteById(rw);
+    }
+    
+    fighters.DeleteById(fighterID);
+    a->CalculatePrestige(ctx.RoConfig());
+    a.reset();
+  } 
+
+void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json::Value& fighter)
+ {      
+    auto a = xayaplayers.GetByName (name, ctx.RoConfig ());
+    
+    if(a == nullptr)
+    {
+      LOG (INFO) << "Player " << name << " not found";
+      return;
+    }
+    
+    uint32_t fighterID = 0;
+    uint32_t duration = 0;
+    Amount price = 0;
+    
+    if(!ParseFighterForSaleData(*a, name, fighter, fighterID, duration, price))      
+    {
+      a.reset();
+      return;
+    }
+
+    auto fighterDb = fighters.GetById (fighterID, ctx.RoConfig ());
+    fighterDb->SetStatus(pxd::FighterStatus::Exchange);
+    
+    int listingFree = ctx.RoConfig()->params().exchange_listing_fee();
+    
+    a->AddBalance(-listingFree);
+    
+    int secondsInOneDay = 24 * 60 * 60;
+    int blocksInOneDay = secondsInOneDay / 30;
+    fighterDb->MutableProto().set_exchangeexpire(ctx.Height () + (duration * blocksInOneDay));
+    fighterDb->MutableProto().set_exchangeprice(price);
+    
+    fighterDb.reset(); 
+    a.reset();        
+  }        
+
+ void MoveProcessor::MaybeDeconstructFighter (const std::string& name, const Json::Value& fighter)
+ {      
+    auto a = xayaplayers.GetByName (name, ctx.RoConfig ());
+    
+    if(a == nullptr)
+    {
+      LOG (INFO) << "Player " << name << " not found";
+      return;
+    }
+    
+    uint32_t fighterID = 0;
+    if(!ParseDeconstructData(*a, name, fighter, fighterID))      
+    {
+      a.reset();
+      return;
+    }
+
+    auto fighterDb = fighters.GetById (fighterID, ctx.RoConfig ());
+    fighterDb->SetStatus(pxd::FighterStatus::Deconstructing);
+    
+    proto::OngoinOperation* newOp = a->MutableProto().add_ongoings();
+    
+    newOp->set_type((uint32_t)pxd::OngoingType::DECONSTRUCTION);
+    newOp->set_fighterdatabaseid(fighterID);  
+    newOp->set_blocksleft(ctx.RoConfig()->params().deconstruction_blocks());
+    
+    fighterDb.reset(); 
+    a.reset();    
+    
+  }        
+  
+ void MoveProcessor::MaybeRemoveFighterFromExchange(const std::string& name, const Json::Value& fighter)
+ {      
+    auto a = xayaplayers.GetByName (name, ctx.RoConfig ());
+    
+    if(a == nullptr)
+    {
+      LOG (INFO) << "Player " << name << " not found";
+      return;
+    }
+    
+    uint32_t fighterID = 0;
+    if(!ParseRemoveBuyData(*a, name, fighter, fighterID))      
+    {
+      a.reset();
+      return;
+    }
+
+    auto fighterDb = fighters.GetById (fighterID, ctx.RoConfig ());
+    fighterDb->SetStatus(pxd::FighterStatus::Available);
+    fighterDb.reset();
+  }    
+  
+ void MoveProcessor::MaybeBuyFighterFromExchange(const std::string& name, const Json::Value& fighter)
+ {      
+    auto a = xayaplayers.GetByName (name, ctx.RoConfig ());
+    
+    if(a == nullptr)
+    {
+      LOG (INFO) << "Player " << name << " not found";
+      return;
+    }
+    
+    uint32_t fighterID = 0;
+    if(!ParseBuyData(*a, name, fighter, fighterID))      
+    {
+      a.reset();
+      return;
+    }
+
+    auto fighterDb = fighters.GetById (fighterID, ctx.RoConfig ());
+    fighterDb->SetStatus(pxd::FighterStatus::Available);
+    
+    int feeMultipler = 100 - ctx.RoConfig()->params().exchange_sale_percentage();
+    
+    a->AddBalance (-fighterDb->GetProto().exchangeprice());
+    
+    auto a2 = xayaplayers.GetByName (fighterDb->GetOwner(), ctx.RoConfig ());
+    a2->AddBalance(fighterDb->GetProto().exchangeprice() * feeMultipler);
+
+    fighterDb->SetOwner(name);
+    fighterDb.reset();
+     
+    a->CalculatePrestige(ctx.RoConfig());
+    a2->CalculatePrestige(ctx.RoConfig());
+  
+    a.reset();  
+    a2.reset();
+  }          
   
   void MoveProcessor::MaybeEnterTournament (const std::string& name, const Json::Value& tournament)
   {      
@@ -1271,7 +2046,11 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     uint32_t tournamentID = 0;
     std::vector<uint32_t> fighterIDS;   
     
-    if(!ParseTournamentEntryData(*a, name, tournament, tournamentID, fighterIDS)) return;
+    if(!ParseTournamentEntryData(*a, name, tournament, tournamentID, fighterIDS))       
+    {
+      a.reset();
+      return;
+    }
 
     auto tournamentData = tournamentsTbl.GetById(tournamentID, ctx.RoConfig ());
     
@@ -1290,11 +2069,6 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
 
     a->AddBalance (tournamentData->GetProto().joincost()); 
     tournamentData.reset();
-    
-    if(a->GetFTUEState() == FTUEState::JoinFirstTournament)
-    {
-      a->SetFTUEState(FTUEState::FirstTournamentPending);
-    }     
     
     a.reset();
     
@@ -1340,14 +2114,8 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     }    
         
     newOp->set_blocksleft(duration);    
-        
-    //If we are in tutorial yet, lets advance tutorial counter
     
-    if(a->GetFTUEState() == FTUEState::FirstExpedition || a->GetFTUEState() == FTUEState::JoinFirstExpedition)
-    {
-        a->SetFTUEState(FTUEState::FirstExpeditionPending);
-    }    
-
+    a.reset();
     LOG (INFO) << "Expedition " << expedition << " submitted succesfully ";
   }    
   
@@ -1403,6 +2171,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     newOp->set_blocksleft(duration);
 
     a->CalculatePrestige(ctx.RoConfig());
+    a.reset();
     LOG (INFO) << "Cooking instance " << recepie << " submitted succesfully ";
   }  
 
@@ -1446,21 +2215,12 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
       }
 
     a->SetRole (role);
+    a.reset();
     LOG (INFO)
         << "Initialised account " << name << " to role "
         << PlayerRoleToString (role);
   }
   
-  void
-  MoveProcessor::TryTFTutorialUpdate (const std::string& name,
-                                   const Json::Value& upd)
-  {
-    if (!upd.isObject ())
-      return;
-
-    MaybeUpdateFTUEState (name, upd["t"]);
-  }   
-
   void
   MoveProcessor::TryCookingAction (const std::string& name,
                                    const Json::Value& upd)
@@ -1496,10 +2256,37 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     
     /*Trying to enter the tournament*/
     MaybeEnterTournament (name, upd["e"]); 
+    
+    /*Trying to leave the tournament*/
+    MaybeLeaveTournament (name, upd["l"]);     
 
     /*Trying to claim reward from the finished tournament*/
     MaybeClaimTournamentReward (name, upd["c"]);      
   }     
+  
+  void
+  MoveProcessor::TryFighterAction (const std::string& name,
+                                   const Json::Value& upd)
+  {
+    if (!upd.isObject ())
+      return;
+    
+    /*Trying to deconstruct the fighter*/
+    MaybeDeconstructFighter (name, upd["d"]); 
+    
+    /*Trying to claim reward after deconstruction is done*/
+    MaybeClaimDeconstructionReward (name, upd["c"]);  
+
+    /*Trying to auction the fighter*/
+    MaybePutFighterForSale(name, upd["s"]); 
+
+    /*Trying to buy the fighter*/
+    MaybeBuyFighterFromExchange(name, upd["b"]);  
+
+    /*Trying to remove the listed fighter*/
+    MaybeRemoveFighterFromExchange(name, upd["r"]);        
+      
+  }    
 
   void
   MoveProcessor::TryXayaPlayerUpdate (const std::string& name,

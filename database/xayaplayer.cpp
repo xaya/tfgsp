@@ -17,14 +17,17 @@
 */
 
 #include "xayaplayer.hpp"
+
+#include <xayautil/random.hpp>
+
 #include <math.h>
 
 namespace pxd
 {
 
-XayaPlayer::XayaPlayer (Database& d, const std::string& n, const RoConfig& cfg)
+XayaPlayer::XayaPlayer (Database& d, const std::string& n, const RoConfig& cfg, xaya::Random& rnd)
   : db(d), name(n), tracker(db.TrackHandle ("xayaplayer", n)),
-    role(PlayerRole::INVALID), ftuestate(FTUEState::Intro), dirtyFields(true)
+    role(PlayerRole::INVALID), dirtyFields(true)
 {
   VLOG (1) << "Created instance for newly initialised account " << name;
   data.SetToDefault ();
@@ -45,29 +48,36 @@ XayaPlayer::XayaPlayer (Database& d, const std::string& n, const RoConfig& cfg)
   /*For the new account, we are supplying initial set of items*/    
   std::string starting_recepie_guid = cfg->params().starting_recipes(); 
   
-  for (const auto& recepie : cfg->recepies())
-  {
-    if(recepie.second.authoredid() == starting_recepie_guid)
-    {
-
-        RecipeInstanceTable recipesTbl(d);          
-        recipesTbl.CreateNew (GetName(), starting_recepie_guid, cfg);
-    
-        for (const auto& candy : recepie.second.requiredcandy())
-        {
-            for (const auto& candyTemplate : cfg->candies())
-            {
-               if(candyTemplate.second.authoredid() == candy.candytype())
-               {
-                  inv.SetFungibleCount(candyTemplate.first, candy.amount());
-               }
-            }
-        }
-    }
-  }
+  RecipeInstanceTable recipesTbl(d);
+  
+  auto rcp1 = recipesTbl.CreateNew (GetName(), "5864a19b-c8c0-2d34-eaef-9455af0baf2c", cfg);
+  auto rcp2 = recipesTbl.CreateNew (GetName(), "ba0121ba-e8a6-7e64-9bc1-71dfeca27daa", cfg);
+  
+  int rcp1Id = rcp1->GetId();
+  rcp1.reset();
+  
+  int rcp2Id = rcp2->GetId();
+  rcp2.reset();
+  
+  // This also should be consisten with items we have at the end of front-end tutorial
+  
+  inv.SetFungibleCount("Common_Nonpareil", 10);
+  inv.SetFungibleCount("Common_Icing", 20);
+  inv.SetFungibleCount("Common_Fizzy Powder", 9);
+  inv.SetFungibleCount("Common_Chocolate Chip", 20);
+  inv.SetFungibleCount("Common_Candy Cane", 9);
+  
+  // This also includes having 2 tutorial fighters cooked, and that includes preowning 2 starting recepies
+  
+  FighterTable fighterTbl(d);
+  
+  fighterTbl.CreateNew (GetName(), rcp1Id, cfg, rnd);
+  fighterTbl.CreateNew (GetName(), rcp2Id, cfg, rnd);
+  
+  // And finally tutorial reward recepies      
+  recipesTbl.CreateNew (GetName(), starting_recepie_guid, cfg);
   
   AddBalance(cfg->params().starting_crystals());  
-  
   CalculatePrestige(cfg);
 }
 
@@ -79,8 +89,7 @@ XayaPlayer::XayaPlayer (Database& d, const Database::Result<XayaPlayerResult>& r
 
   role = GetNullablePlayerRoleFromColumn (res);
   data = res.GetProto<XayaPlayerResult::proto> ();
-  ftuestate = GetFTUEStateFromColumn (res);
-  
+
   inv = res.GetProto<XayaPlayerResult::inventory> ();
   
   /*Load configuration values*/ 
@@ -105,14 +114,13 @@ XayaPlayer::~XayaPlayer ()
 
   auto stmt = db.Prepare (R"(
     INSERT OR REPLACE INTO `xayaplayers`
-      (`name`, `role`, `proto`, `ftuestate`, `inventory`, `prestige`)
-      VALUES (?1, ?2, ?3, ?4, ?108, ?5)
+      (`name`, `role`, `proto`, `inventory`, `prestige`)
+      VALUES (?1, ?2, ?3, ?108, ?5)
   )");
 
   stmt.Bind (1, name);
   BindPlayerRoleParameter (stmt, 2, role);
   stmt.BindProto (3, data);
-  BindFTUEStateParameter (stmt, 4, ftuestate);
   stmt.Bind (5, prestige);
   stmt.BindProto (108, inv.GetProtoForBinding ());
 
@@ -223,14 +231,6 @@ XayaPlayer::CalculatePrestige(const RoConfig& cfg)
 }
 
 void
-BindFTUEStateParameter (Database::Statement& stmt, const unsigned ind,
-                      const FTUEState f)
-{
-  stmt.Bind (ind, static_cast<int64_t> (f));
-  return;
-}
-
-void
 BindPlayerRoleParameter (Database::Statement& stmt, const unsigned ind,
                       const PlayerRole f)
 {
@@ -250,50 +250,6 @@ BindPlayerRoleParameter (Database::Statement& stmt, const unsigned ind,
     default:
       LOG (FATAL)
           << "Binding invalid faction to parameter: " << static_cast<int> (f);
-    }
-}
-
-std::string
-FTUEStateToString (const FTUEState f)
-{
-  switch (f)
-    {
-    case FTUEState::Intro:
-      return "t0";
-    case FTUEState::FirstRecipe:
-      return "t1";
-    case FTUEState::CookFirstRecipe:
-      return "t3";
-    case FTUEState::CookingFirstRecipe:
-      return "t4";
-    case FTUEState::FirstExpedition:
-      return "t5";
-    case FTUEState::JoinFirstExpedition:
-      return "t6";  
-    case FTUEState::FirstExpeditionPending:
-      return "t7";  
-    case FTUEState::ResolveFirstExpedition:
-      return "t8";  
-    case FTUEState::SecondRecipe:
-      return "t9";  
-    case FTUEState::CookSecondRecipe:
-      return "t10";  
-    case FTUEState::CookingSecondRecipe:
-      return "t11";  
-    case FTUEState::FirstTournament:
-      return "t12";  
-    case FTUEState::GoToFirstTournament:
-      return "t13";  
-    case FTUEState::JoinFirstTournament:
-      return "t14";  
-    case FTUEState::FirstTournamentPending:
-      return "t15";  
-    case FTUEState::ResolveFirstTournament:
-      return "t16";  
-    case FTUEState::Completed:
-      return "t17";        
-    default:
-      LOG (FATAL) << "Invalid FTUEState: " << static_cast<int> (f);
     }
 }
 
@@ -328,55 +284,6 @@ XayaPlayer::SetRole (const PlayerRole f)
       << "Setting account " << name << " to NULL role";
   role = f;
   dirtyFields = true;
-}
-
-void
-XayaPlayer::SetFTUEState(const FTUEState f)
-{
-  ftuestate = f;
-  dirtyFields = true;
-}
-
-FTUEState
-FTUEStateFromString (const std::string& str)
-{
-  if (str == "t0")
-    return FTUEState::Intro;
-  if (str == "t1")
-    return FTUEState::FirstRecipe;
-  if (str == "t3")
-    return FTUEState::CookFirstRecipe;
-  if (str == "t4")
-    return FTUEState::CookingFirstRecipe;
-  if (str == "t5")
-    return FTUEState::FirstExpedition;
-  if (str == "t6")
-    return FTUEState::JoinFirstExpedition;
-  if (str == "t7")
-    return FTUEState::FirstExpeditionPending;
-  if (str == "t8")
-    return FTUEState::ResolveFirstExpedition;
-  if (str == "t9")
-    return FTUEState::SecondRecipe;
-  if (str == "t10")
-    return FTUEState::CookSecondRecipe;
-  if (str == "t11")
-    return FTUEState::CookingSecondRecipe;
-  if (str == "t12")
-    return FTUEState::FirstTournament;
-  if (str == "t13")
-    return FTUEState::GoToFirstTournament;
-  if (str == "t14")
-    return FTUEState::JoinFirstTournament;
-  if (str == "t15")
-    return FTUEState::FirstTournamentPending;
-  if (str == "t16")
-    return FTUEState::ResolveFirstTournament;
-  if (str == "t17")
-    return FTUEState::Completed;
-
-  LOG (WARNING) << "String is not a valid ftuestate: " << str;
-  return FTUEState::Invalid;
 }
 
 PlayerRole
@@ -425,11 +332,11 @@ XayaPlayer::AddBalance (const Amount val)
 }
 
 XayaPlayersTable::Handle
-XayaPlayersTable::CreateNew (const std::string& name, const RoConfig& cfg)
+XayaPlayersTable::CreateNew (const std::string& name, const RoConfig& cfg, xaya::Random& rnd)
 {
   CHECK (GetByName (name, cfg) == nullptr)
       << "Account for " << name << " exists already";
-  return Handle (new XayaPlayer (db, name, cfg));
+  return Handle (new XayaPlayer (db, name, cfg, rnd));
 }
 
 XayaPlayersTable::Handle

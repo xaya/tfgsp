@@ -174,16 +174,19 @@ template <>
   // If fighter is participating in any activity, front-end needs 'blocksleft' information for that
   res["blocksleft"] = IntToJson (0);
   
-
   XayaPlayersTable xayaplayers(db);
   auto a = xayaplayers.GetByName (fighter.GetOwner (), ctx.RoConfig ());
   for (auto it = a->GetProto().ongoings().begin(); it != a->GetProto().ongoings().end(); it++)
   {
       if(it->fighterdatabaseid() == fighter.GetId())
-      {
-        res["blocksleft"] = IntToJson (it->blocksleft());
+      { 
+        res["blocksleft"] = IntToJson (it->blocksleft());        
       }
   }
+  
+  res["exchangeexpire"] = IntToJson (pb.exchangeexpire());
+  res["exchangeprice"] = IntToJson (pb.exchangeprice());
+  
   a.reset();
 
   if(pb.tournamentinstanceid() > 0)
@@ -206,8 +209,32 @@ template <>
       tnm.reset();
       tryAndStep = resDD.Step ();      
     }
-  
   }
+
+  Json::Value deconstructsArray(Json::arrayValue);
+  
+  RewardsTable tbl(db);
+  auto ourRewards = tbl.QueryForOwner(fighter.GetOwner ());
+  bool stepLoop = ourRewards.Step ();
+  while (stepLoop)
+  {
+      const auto h = tbl.GetFromResult (ourRewards);
+      
+      if(h->GetProto().fighterid() == fighter.GetId() && h->GetProto().deconstructions_size() > 0)
+      {
+          for(const auto& dcdata: h->GetProto().deconstructions())
+          {
+              Json::Value dcObj(Json::objectValue);
+              dcObj["candytype"] = dcdata.candytype();
+              dcObj["quantity"] = dcdata.quantity();
+              deconstructsArray.append(dcObj);
+          }
+      }
+      
+      stepLoop = ourRewards.Step ();
+  }  
+  
+  res["deconstructions"] = deconstructsArray;
 
   return res;
 } 
@@ -306,8 +333,6 @@ template <>
       res["role"] = PlayerRoleToString (a.GetRole ());
   }
 
-  res["ftuestate"] = FTUEStateToString (a.GetFTUEState ());
-  
   res["inventory"] = Convert (a.GetInventory ());
   
   Json::Value recJsonObj(Json::arrayValue);

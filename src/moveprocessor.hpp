@@ -134,13 +134,54 @@ protected:
   /**
    * Tries to handle a move that purchases crystals
    */                       
-  void TryCrystalPurchase (const std::string& name, const Json::Value& mv, Amount& paidToDev);  
+  void TryCrystalPurchase (const std::string& name, const Json::Value& mv, Amount& paidToDev); 
+
+  /**
+   * Tries to handle a move that purchases goody
+   */                       
+  void TryGoodyPurchase (const std::string& name, const Json::Value& mv); 
+
+  /**
+   * Tries to handle a move that purchases sweetener
+   */                       
+  void TrySweetenerPurchase (const std::string& name, const Json::Value& mv);     
+
+  /**
+   * Tries to handle a move that purchases goody bundle
+   */                       
+  void TryGoodyBundlePurchase (const std::string& name, const Json::Value& mv);      
 
   /**
    * Tries to parse a move that purchases crystals up to the point where actual handling happens
    * The idea that we can safely use this inside pending parser too to validate everything properly
    */      
   bool ParseCrystalPurchase(const Json::Value& mv, std::string& bundleKeyName, Amount& cost, Amount& crystalAmount, const std::string& name, const Amount& paidToDev);
+  
+  /**
+   * Tries to parse a move that purchases goody
+   */       
+   
+  bool ParseGoodyPurchase(const Json::Value& mv, Amount& cost, const std::string& name, std::string& fungibleName, Amount balance);
+  
+  /**
+   * Tries to parse a move that purchases sweetener
+   */       
+   
+  bool ParseSweetenerPurchase(const Json::Value& mv, Amount& cost, const std::string& name, std::string& fungibleName, Amount balance);  
+    
+  /**
+   * Tries to parse a move that puts fighter on the auction
+   */       
+    
+  bool ParseFighterForSaleData(const XayaPlayer& a, const std::string& name, const Json::Value& fighter, uint32_t& fighterID, 
+  uint32_t& duration, Amount& price);
+      
+    
+  /**
+   * Tries to parse a move that purchases goody bundle
+   */       
+   
+  bool ParseGoodyBundlePurchase(const Json::Value& mv, Amount& cost, const std::string& name, std::map<std::string, uint64_t>& fungibles, Amount balance);    
   
   /**
    * Tries to parse a move that sets recepie for cooking
@@ -159,8 +200,37 @@ protected:
    */ 
  
   bool ParseTournamentEntryData(const XayaPlayer& a, const std::string& name, const Json::Value& tournament, uint32_t& tournamentID, std::vector<uint32_t>& fighterIDS);
-    
+ 
+  /**
+   * Tries to parse a move that deconstructs fighter
+   */ 
+ 
+  bool ParseDeconstructData(const XayaPlayer& a, const std::string& name, const Json::Value& fighter, uint32_t& fighterID);
   
+  /**
+   * Tries to parse a move that buys fighter from the exchange 
+   */ 
+ 
+  bool ParseBuyData(const XayaPlayer& a, const std::string& name, const Json::Value& fighter, uint32_t& fighterID);
+
+  /**
+   * Tries to parse a move that removes fighter from the exchange 
+   */ 
+ 
+  bool ParseRemoveBuyData(const XayaPlayer& a, const std::string& name, const Json::Value& fighter, uint32_t& fighterID);    
+  
+  /**
+   * Tries to parse a move that claims deconstruction rewards
+   */ 
+ 
+  bool ParseDeconstructRewardData(const XayaPlayer& a, const std::string& name, const Json::Value& fighter, uint32_t& fighterID);  
+    
+   /**
+   * Tries to parse a move that withdraws fighters from the tournament
+   */ 
+ 
+  bool ParseTournamentLeaveData(const XayaPlayer& a, const std::string& name, const Json::Value& tournament, uint32_t& tournamentID);
+     
    /**
    * Tries to parse a move that collects reward data
    */    
@@ -226,7 +296,35 @@ private:
    * Tries to handle an account initialisation (choosing faction) from
    * the given move.
    */
+  void MaybeDeconstructFighter(const std::string& name, const Json::Value& fighter);  
+  
+   /**
+   * Tries to get the rewards from the deconstructed fighter
+   */
+  void MaybeClaimDeconstructionReward(const std::string& name, const Json::Value& fighter);    
+  
+   /**
+   * Tries to handle an account initialisation (choosing faction) from
+   * the given move.
+   */
   void MaybeInitXayaPlayer (const std::string& name, const Json::Value& init);
+  
+  
+   /**
+   * Tries to put the fighter for sale on the exchange
+   */  
+  void MaybePutFighterForSale (const std::string& name, const Json::Value& fighter);
+     
+     
+   /**
+   * Tries to put the fighter for sale on the exchange
+   */  
+  void MaybeBuyFighterFromExchange(const std::string& name, const Json::Value& fighter);  
+
+   /**
+   * Tries to remove the fighter from the exchange sale
+   */  
+  void MaybeRemoveFighterFromExchange(const std::string& name, const Json::Value& fighter);      
   
   /**
   * Tries to cook recepie instance, optionally with the fighter attached
@@ -251,7 +349,12 @@ private:
   /**
   * Tries to send the fighters for the tournament
   */    
-  void MaybeEnterTournament (const std::string& name, const Json::Value& expedition);  
+  void MaybeEnterTournament (const std::string& name, const Json::Value& tournament);  
+  
+  /**
+  * Tries to withdraw the fighters for the tournament
+  */    
+  void MaybeLeaveTournament (const std::string& name, const Json::Value& tournament);    
   
    /**
    * Tries to update tutorial state even further on.
@@ -262,11 +365,6 @@ private:
    * Tries to handle a move that updates an account.
    */
   void TryXayaPlayerUpdate (const std::string& name, const Json::Value& upd);
-  
-  /**
-   * Tries to set new ftuestate variable for the tutorial
-   */
-  void TryTFTutorialUpdate (const std::string& name, const Json::Value& upd);  
   
   /**
    * Tries to process all kind of cooking actions
@@ -282,6 +380,11 @@ private:
    * Tries to process all kind of actions related to expeditions
    */  
   void TryTournamentAction (const std::string& name, const Json::Value& upd);  
+  
+  /**
+   * Tries to process all kind of actions related to fighters
+   */  
+  void TryFighterAction (const std::string& name, const Json::Value& upd);    
   
   /**
    * Tries to handle a coin (Crystal) transfer / burn operation.  The amount

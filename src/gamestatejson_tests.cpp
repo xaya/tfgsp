@@ -101,59 +101,95 @@ protected:
 
 TEST_F (XayaPlayersJsonTests, KillsAndFame)
 {
-  auto a = tbl.CreateNew ("foo", ctx.RoConfig());
+  auto a = tbl.CreateNew ("foo", ctx.RoConfig(), rnd);
   a->SetRole (PlayerRole::PLAYER);
   a.reset ();
 
-  a = tbl.CreateNew ("bar", ctx.RoConfig());
+  a = tbl.CreateNew ("bar", ctx.RoConfig(), rnd);
   a->SetRole (PlayerRole::ROLEADMIN);
-  a->SetFTUEState (FTUEState::FirstTournament);
   a.reset ();
 
   ExpectStateJson (R"({
     "xayaplayers":
       [
-        {"name": "bar", "role": "r", "ftuestate": "t12"},
-        {"name": "foo", "role": "p", "ftuestate": "t0"}
+        {"name": "bar", "role": "r"},
+        {"name": "foo", "role": "p"}
       ]
   })");
 }
 
 TEST_F (XayaPlayersJsonTests, UninitialisedBalance)
 {
-  tbl.CreateNew ("foo", ctx.RoConfig())->SetRole (PlayerRole::PLAYER);
+  tbl.CreateNew ("foo", ctx.RoConfig(), rnd)->SetRole (PlayerRole::PLAYER);
 
-  auto a = tbl.CreateNew ("bar", ctx.RoConfig());
+  auto a = tbl.CreateNew ("bar", ctx.RoConfig(), rnd);
   a->AddBalance (42);
   a.reset ();
 
   ExpectStateJson (R"({
-	"xayaplayers" : 
-	[
-		{
-			"balance" : 
-			{
-				"available" : 42,
-			},
-			"minted" : 0,
-			"name" : "bar"
-		},
-		{
-			"balance" : 
-			{
-				"available" : 0,
-			},
-			"minted" : 0,
-			"name" : "foo",
-			"role" : "p"
-		}
-	]
+        "xayaplayers" :
+        [
+                {
+                        "balance" :
+                        {
+                                "available" : 92
+                        },
+                        "inventory" :
+                        {
+                                "fungible" :
+                                {
+                                        "Common_Candy Cane" : 9,
+                                        "Common_Chocolate Chip" : 20,
+                                        "Common_Fizzy Powder" : 9,
+                                        "Common_Icing" : 20,
+                                        "Common_Nonpareil" : 10
+                                }
+                        },
+                        "minted" : 0,
+                        "name" : "bar",
+                        "ongoings" : [],
+                        "recepies" :
+                        [
+                                6,
+                                7,
+                                10
+                        ]
+                },
+                {
+                        "balance" :
+                        {
+                                "available" : 50
+                        },
+                        "inventory" :
+                        {
+                                "fungible" :
+                                {
+                                        "Common_Candy Cane" : 9,
+                                        "Common_Chocolate Chip" : 20,
+                                        "Common_Fizzy Powder" : 9,
+                                        "Common_Icing" : 20,
+                                        "Common_Nonpareil" : 10
+                                }
+                        },
+                        "minted" : 0,
+                        "name" : "foo",
+                        "ongoings" : [],
+                        "recepies" :
+                        [
+                                1,
+                                2,
+                                5
+                        ],
+                        "role" : "p"
+                }
+        ]
+
   })");
 }
 
 TEST_F (XayaPlayersJsonTests, FighterInstance)
 {
-  auto a = tbl.CreateNew ("foo", ctx.RoConfig());
+  auto a = tbl.CreateNew ("foo", ctx.RoConfig(), rnd);
   a->SetRole (PlayerRole::PLAYER);
   a.reset ();
 
@@ -167,36 +203,135 @@ TEST_F (XayaPlayersJsonTests, FighterInstance)
   ExpectStateJson (R"({
     "xayaplayers":
       [
-        {"name": "foo", "role": "p", "ftuestate": "t0"}
+        {"name": "foo", "role": "p"}
       ],
-    "fighters" :  [
-                    {
-                            "owner" : "foo",
-                            "fightertypeid" : "c160f7ad-c775-8614-abe2-8ef74e54401f",
-                            "highestappliedsweetener" : 1,
-                            "moves" :
-                            [
-                                    {
-                                            "authoredid" : "86b323c2-b2fd-2494-ab5e-bc3514bc92d8"
-                                    },
-                                    {
-                                            "authoredid" : "0090580c-04ef-9d84-e883-32f52c977b98"
-                                    }
-                            ],
-                            "quality" : 1,
-                            "rating" : 1000,
-                            "recipeid" : 2,
-                            "sweetness" : 1,
-                            "tournamentinstanceid" : 0
-                    }
-            ]
+   "fighters" :
+        [
+                {
+                        "armorpieces" :
+                        [
+                                {
+                                        "armortype" : 3,
+                                        "candy" : "934dae05-689f-30e4-5804-d497aee0b47c",
+                                        "rewardsource" : 0,
+                                        "rewardsourceid" : ""
+                                },
+                                {
+                                        "armortype" : 14,
+                                        "candy" : "c2774273-0cd4-2494-fa02-76cffe1ef1ef",
+                                        "rewardsource" : 0,
+                                        "rewardsourceid" : ""
+                                }
+                        ],
+                        "blocksleft" : 0,
+                        "expeditioninstanceid" : "",
+                        "fightertypeid" : "c160f7ad-c775-8614-abe2-8ef74e54401f",
+                        "highestappliedsweetener" : 1,
+                        "id" : 3,
+                        "moves" :
+                        [
+                                {
+                                        "authoredid" : "86b323c2-b2fd-2494-ab5e-bc3514bc92d8"
+                                },
+                                {
+                                        "authoredid" : "0090580c-04ef-9d84-e883-32f52c977b98"
+                                }
+                        ],
+                        "name" : "First Recipe",
+                        "owner" : "foo",
+                        "quality" : 1,
+                        "rating" : 1000,
+                        "recipeid" : 1,
+                        "status" : 0,
+                        "sweetness" : 1,
+                        "tournamentinstanceid" : 0
+                },
+                {
+                        "armorpieces" :
+                        [
+                                {
+                                        "armortype" : 13,
+                                        "candy" : "4e343f68-1aaa-0e84-7bab-eae458b68264",
+                                        "rewardsource" : 0,
+                                        "rewardsourceid" : ""
+                                },
+                                {
+                                        "armortype" : 14,
+                                        "candy" : "c2774273-0cd4-2494-fa02-76cffe1ef1ef",
+                                        "rewardsource" : 0,
+                                        "rewardsourceid" : ""
+                                }
+                        ],
+                        "blocksleft" : 0,
+                        "expeditioninstanceid" : "",
+                        "fightertypeid" : "85f361b8-e55d-0244-1a98-26bffa0a18a2",
+                        "highestappliedsweetener" : 1,
+                        "id" : 4,
+                        "moves" :
+                        [
+                                {
+                                        "authoredid" : "2c555752-8a84-58f4-395e-6460b7864069"
+                                },
+                                {
+                                        "authoredid" : "0090580c-04ef-9d84-e883-32f52c977b98"
+                                }
+                        ],
+                        "name" : "Second Recipe",
+                        "owner" : "foo",
+                        "quality" : 1,
+                        "rating" : 1000,
+                        "recipeid" : 2,
+                        "status" : 0,
+                        "sweetness" : 1,
+                        "tournamentinstanceid" : 0
+                },
+                {
+                        "armorpieces" :
+                        [
+                                {
+                                        "armortype" : 3,
+                                        "candy" : "934dae05-689f-30e4-5804-d497aee0b47c",
+                                        "rewardsource" : 0,
+                                        "rewardsourceid" : ""
+                                },
+                                {
+                                        "armortype" : 17,
+                                        "candy" : "c2774273-0cd4-2494-fa02-76cffe1ef1ef",
+                                        "rewardsource" : 0,
+                                        "rewardsourceid" : ""
+                                }
+                        ],
+                        "blocksleft" : 0,
+                        "expeditioninstanceid" : "",
+                        "fightertypeid" : "c160f7ad-c775-8614-abe2-8ef74e54401f",
+                        "highestappliedsweetener" : 1,
+                        "id" : 7,
+                        "moves" :
+                        [
+                                {
+                                        "authoredid" : "86b323c2-b2fd-2494-ab5e-bc3514bc92d8"
+                                },
+                                {
+                                        "authoredid" : "0090580c-04ef-9d84-e883-32f52c977b98"
+                                }
+                        ],
+                        "name" : "First Recipe",
+                        "owner" : "foo",
+                        "quality" : 1,
+                        "rating" : 1000,
+                        "recipeid" : 6,
+                        "status" : 0,
+                        "sweetness" : 1,
+                        "tournamentinstanceid" : 0
+                }
+        ]
 
   })");
 }
 
 TEST_F (XayaPlayersJsonTests, RecipeInstance)
 {
-  auto a = tbl.CreateNew ("foo", ctx.RoConfig());
+  auto a = tbl.CreateNew ("foo", ctx.RoConfig(), rnd);
   a->SetRole (PlayerRole::PLAYER);
   a.reset ();
 
@@ -207,13 +342,23 @@ TEST_F (XayaPlayersJsonTests, RecipeInstance)
   ExpectStateJson (R"({
     "xayaplayers":
       [
-        {"name": "foo", "role": "p", "ftuestate": "t0"}
+        {"name": "foo", "role": "p"}
       ],
-    "recepies" :
-      [
+     "recepies" :
+        [
                 {
                         "authoredid" : "5864a19b-c8c0-2d34-eaef-9455af0baf2c",
                         "did" : 1,
+                        "owner" : "foo"
+                },
+                {
+                        "authoredid" : "ba0121ba-e8a6-7e64-9bc1-71dfeca27daa",
+                        "did" : 2,
+                        "owner" : "foo"
+                },
+                {
+                        "authoredid" : "1bbc7d99-7fce-24a4-c9a3-dfaf4b744efa",
+                        "did" : 5,
                         "owner" : "foo"
                 },
                 {
@@ -230,7 +375,7 @@ TEST_F (XayaPlayersJsonTests, RecipeInstance)
                                 }
                         ],
                         "authoredid" : "generated",
-                        "did" : 2,
+                        "did" : 6,
                         "duration" : 1,
                         "fightername" : "Sour Gummi Brawler",
                         "fightertype" : "c160f7ad-c775-8614-abe2-8ef74e54401f",
@@ -256,14 +401,14 @@ TEST_F (XayaPlayersJsonTests, RecipeInstance)
                         ],
                         "requiredfighterquality" : 0
                 }
-      ]
+        ]
 
   })");
 }
 
 TEST_F (XayaPlayersJsonTests, ExpeditionInstance)
 {
-  auto a = tbl.CreateNew ("foo", ctx.RoConfig());
+  auto a = tbl.CreateNew ("foo", ctx.RoConfig(), rnd);
   a->SetRole (PlayerRole::PLAYER);
   a.reset ();
 
