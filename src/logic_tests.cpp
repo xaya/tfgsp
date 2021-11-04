@@ -431,7 +431,7 @@ TEST_F (ValidateStateTests, SweetenerCookAndProperRewardsClaimed)
 
   ft = tbl3.GetById(4, ctx.RoConfig());
   ASSERT_TRUE (ft != nullptr); 
-  EXPECT_EQ(ft->GetProto().moves_size(), 1);
+  EXPECT_EQ(ft->GetProto().moves_size(), 2);
   ft.reset();
 
   Process (R"([

@@ -424,7 +424,7 @@ TEST_F (XayaPlayersJsonTests, ExpeditionInstance)
             "expeditionid" : "myexpid",
             "generatedrecipeid" : 2,
             "owner" : "domob",
-            "sweetenerid" : 0,
+            "sweetenerid" : "",
             "tournamentid" : 0
           }
         ]

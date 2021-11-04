@@ -116,6 +116,7 @@ template <>
   res["rewardid"] = pb.rewardid();
   res["positionintable"] = pb.positionintable();
   res["rid"] = reward.GetId();
+  res["fighterid"] = pb.fighterid();
   
   return res;
 } 

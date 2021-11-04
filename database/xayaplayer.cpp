@@ -71,19 +71,11 @@ XayaPlayer::XayaPlayer (Database& d, const std::string& n, const RoConfig& cfg, 
   
   FighterTable fighterTbl(d);
   
-  auto f1 = fighterTbl.CreateNew (GetName(), rcp1Id, cfg, rnd);
-  auto f2 = fighterTbl.CreateNew (GetName(), rcp2Id, cfg, rnd);
-  
-  f1->MutableProto().set_rating(1200);
-  f2->MutableProto().set_sweetness((int)pxd::Sweetness::Bittersweet);
-  
-  f1.reset();
-  f2.reset();
+  fighterTbl.CreateNew (GetName(), rcp1Id, cfg, rnd);
+  fighterTbl.CreateNew (GetName(), rcp2Id, cfg, rnd);
   
   // And finally tutorial reward recepies      
   recipesTbl.CreateNew (GetName(), starting_recepie_guid, cfg);
-  
-  
   
   AddBalance(cfg->params().starting_crystals());  
   CalculatePrestige(cfg);

@@ -87,11 +87,11 @@ std::vector<uint32_t> PXLogic::GenerateActivityReward(const uint32_t fighterID, 
       
       if(sweetenerAuthID != "")
       {
-        newReward->MutableProto().set_sweetenerid(1);  
+        newReward->MutableProto().set_sweetenerid(sweetenerAuthID);  
       }
       else
       {
-        newReward->MutableProto().set_sweetenerid(0); 
+        newReward->MutableProto().set_sweetenerid(""); 
       }
 
       if((RewardType)(int)rw.type() == RewardType::CraftedRecipe)

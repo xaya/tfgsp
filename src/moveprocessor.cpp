@@ -1454,7 +1454,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     {
       auto rw = rewards.GetFromResult (res, ctx.RoConfig ());
       
-      if(rw->GetProto().fighterid() == fighterDb->GetId() && rw->GetProto().sweetenerid() == 1)
+      if(rw->GetProto().fighterid() == fighterDb->GetId() && rw->GetProto().sweetenerid() != "")
       {
         totalEntries++;
         rewardDatabaseIds.push_back(rw->GetId());

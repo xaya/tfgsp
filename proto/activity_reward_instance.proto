@@ -36,7 +36,7 @@ message ActivityRewardInstance
   
   optional string ExpeditionId = 2;  
   
-  optional uint32 SweetenerId = 3;   
+  optional string SweetenerId = 3;   
 
   optional uint32 GeneratedRecipeId = 4; 
 
