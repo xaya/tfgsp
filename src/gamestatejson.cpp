@@ -352,7 +352,7 @@ template <>
   
   for(auto& ongoing: pb.ongoings())
   {
-      Json::Value ongOB(Json::arrayValue);
+      Json::Value ongOB(Json::objectValue);
       ongOB["type"] = ongoing.type();
       
       if((pxd::OngoingType)(int)ongoing.type() == pxd::OngoingType::COOK_RECIPE)

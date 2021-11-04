@@ -42,5 +42,8 @@ message OngoinOperation
   optional string AppliedGoodyKeyName = 6;    
   
   /*Enum ItemDatabaseID of the operation*/
-  optional string ItemDatabaseID = 7;      
+  optional string ItemDatabaseID = 7; 
+
+  /*Used for sweeteners to select proper reward option*/
+  optional uint32 RewardID = 8;    
 }

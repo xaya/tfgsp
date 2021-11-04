@@ -1416,6 +1416,204 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
   }  
   
   bool
+  BaseMoveProcessor::ParseClaimSweetener(const XayaPlayer& a, const std::string& name, const Json::Value& sweetener, uint32_t& fighterID, std::vector<uint32_t>& rewardDatabaseIds)
+  {
+    if (!sweetener.isObject ())
+    {
+       LOG (WARNING) << "sweetener is not an object";
+       return false;
+    } 
+
+    if (!sweetener["fid"].isInt())
+    {
+       LOG (WARNING) << "fid is not a int";
+       return false;
+    } 
+    
+    fighterID = (uint32_t)sweetener["fid"].asInt();
+    auto fighterDb = fighters.GetById (fighterID, ctx.RoConfig ());       
+    
+    if(fighterDb->GetOwner() != a.GetName())
+    {
+      LOG (WARNING) << "Fighter does not belong to: " << a.GetName();
+      fighterDb.reset();
+      return false;               
+    }   
+
+    if((pxd::FighterStatus)(int)fighterDb->GetStatus() != pxd::FighterStatus::Available) 
+    {
+      LOG (WARNING) << "Fighter status is not available: " << fighterID;
+      fighterDb.reset();
+      return false;              
+    }    
+
+    auto res = rewards.QueryForOwner(a.GetName()); 
+    int totalEntries = 0;
+    bool tryAndStep = res.Step();
+    while (tryAndStep)
+    {
+      auto rw = rewards.GetFromResult (res, ctx.RoConfig ());
+      
+      if(rw->GetProto().fighterid() == fighterDb->GetId() && rw->GetProto().sweetenerid() == 1)
+      {
+        totalEntries++;
+        rewardDatabaseIds.push_back(rw->GetId());
+        tryAndStep = res.Step ();
+      }
+    }
+   
+    if(totalEntries <= 0)
+    {
+        LOG (WARNING) << "Could not find any relevan rewards for sweetenwer fighter: " << fighterDb->GetId();
+        return false;              
+    }      
+     
+    fighterDb.reset();
+    return true;  
+    
+  }      
+  
+  bool
+  BaseMoveProcessor::ParseSweetener(const XayaPlayer& a, const std::string& name, const Json::Value& sweetener, std::map<std::string, pxd::Quantity>& fungibleItemAmountForDeduction, int32_t& cookCost, uint32_t& fighterID, int32_t& duration, std::string& sweetenerKeyName)
+  {
+    if (!sweetener.isObject ())
+    {
+       LOG (WARNING) << "sweetener is not an object";
+       return false;
+    } 
+
+    if (!sweetener["sid"].isString())
+    {
+       LOG (WARNING) << "sid is not a string";
+       return false;
+    }  
+
+    if (!sweetener["fid"].isInt())
+    {
+       LOG (WARNING) << "fid is not a int";
+       return false;
+    }     
+
+    if (!sweetener["rid"].isInt())
+    {
+       LOG (WARNING) << "rid is not a int";
+       return false;
+    }       
+
+    fighterID = (uint32_t)sweetener["fid"].asInt();
+    const int rewardID = (uint32_t)sweetener["rid"].asInt();
+    std::string sweetenerID = sweetener["sid"].asString();
+    
+    
+    auto fighterDb = fighters.GetById (fighterID, ctx.RoConfig ());
+    
+    if(fighterDb == nullptr)
+    {
+      LOG (WARNING) << "Fatal erorr, could not get fighter with ID" << fighterID;
+      fighterDb.reset();
+      return false;                
+    }
+    
+    if(fighterDb->GetOwner() != a.GetName())
+    {
+      LOG (WARNING) << "Fighter does not belong to: " << a.GetName();
+      fighterDb.reset();
+      return false;               
+    }    
+    
+    if((pxd::FighterStatus)(int)fighterDb->GetStatus() != pxd::FighterStatus::Available) 
+    {
+      LOG (WARNING) << "Fighter status is not available: " << fighterID;
+      fighterDb.reset();
+      return false;              
+    }    
+
+    pxd::proto::SweetenerBlueprint sweetenerBlueprint;
+    for(auto swb: ctx.RoConfig()->sweetenerblueprints())
+    {
+        if(swb.second.authoredid() == sweetenerID)
+        {
+            sweetenerBlueprint = swb.second;
+            sweetenerKeyName = swb.first;
+            break;
+        }
+    }
+
+    if(sweetenerKeyName == "")
+    {
+      LOG (WARNING) << "Sweetener uthored id not found for: " << sweetenerID;
+      fighterDb.reset();
+      return false;               
+    }   
+
+     auto& playerInventory = a.GetInventory();
+     
+     if(playerInventory.GetFungibleCount(sweetenerKeyName) == 0)
+     {
+      LOG (WARNING) << "Player does not have sweetener: " << sweetenerKeyName;
+      fighterDb.reset();
+      return false;             
+     }
+     
+     if(a.GetBalance() < sweetenerBlueprint.cookcost())
+     {
+      LOG (WARNING) << "Player does not have enough crystals, needs: " << sweetenerBlueprint.cookcost();
+      fighterDb.reset();
+      return false;            
+     }
+     
+     if(rewardID >= sweetenerBlueprint.rewardchoices_size() || rewardID < 0)
+     {
+      LOG (WARNING) << "Reward ID is invalid, must be in raonge of 0 to : " << sweetenerBlueprint.rewardchoices_size();
+      fighterDb.reset();
+      return false;           
+     }
+     
+     cookCost = sweetenerBlueprint.cookcost();
+     duration = sweetenerBlueprint.duration();
+     
+     bool playerHasEnoughIngridients = true;
+
+     for(const auto& candyNeeds: sweetenerBlueprint.rewardchoices(rewardID).requiredcandy())
+     {
+        std::string candyInventoryName = GetCandyKeyNameFromID(candyNeeds.first, ctx);
+        
+        if(InventoryHasItem(candyInventoryName, playerInventory, candyNeeds.second) == false)
+        {
+            playerHasEnoughIngridients = false;
+        }
+        
+        pxd::Quantity quantity = candyNeeds.second;
+        
+        fungibleItemAmountForDeduction.insert(std::pair<std::string, pxd::Quantity>(candyInventoryName, quantity));
+     }
+    
+     if(playerHasEnoughIngridients == false)
+     {
+        LOG (WARNING) << "Not enough candy ingridients to cook " << sweetenerID;
+        fighterDb.reset();
+        return false;         
+     }    
+
+     if(sweetenerBlueprint.requiredsweetness() <= fighterDb->GetProto().highestappliedsweetener())
+     {
+        LOG (WARNING) << "Already applied equal or higher sweetener to this fighter " << fighterID;
+        fighterDb.reset();
+        return false;          
+     }         
+     
+     if(sweetenerBlueprint.requiredsweetness() > fighterDb->GetProto().sweetness())
+     {
+        LOG (WARNING) << "Fighter isn't sweet enough " << fighterID;
+        fighterDb.reset();
+        return false;          
+     }          
+     
+     fighterDb.reset();
+     return true;   
+  }      
+  
+  bool
   BaseMoveProcessor::ParseCookRecepie(const XayaPlayer& a, const std::string& name, const Json::Value& recepie, std::map<std::string, pxd::Quantity>& fungibleItemAmountForDeduction, int32_t& cookCost, int32_t& duration, std::string& weHaveApplibeGoodyName)
   {
     if (!recepie.isObject ())
@@ -1550,7 +1748,15 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
           return;
       }
 
+      a.reset();
+      ClaimRewardsInnerLogic(name, rewardDatabaseIds);   
+  }  
+  
+  void MoveProcessor::ClaimRewardsInnerLogic(std::string name, std::vector<uint32_t> rewardDatabaseIds)
+  {
       LOG (INFO) << "Ready to give " << rewardDatabaseIds.size() << " rewards";
+
+      auto a = xayaplayers.GetByName (name, ctx.RoConfig ());
 
       uint32_t curRecipeSlots = recipeTbl.CountForOwner(a->GetName());
       uint32_t maxRecipeSlots = ctx.RoConfig()->params().max_recipe_inventory_amount();
@@ -1580,6 +1786,8 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
           if(rewardsSolved == false)
           {
               LOG (ERROR) << "Fatal error, could not solve: " << rewardData->GetProto().rewardid();
+              rewards.DeleteById(rw);
+              rewardData.reset();
               continue;
           }
           
@@ -1588,13 +1796,16 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
               if(curRecipeSlots >= maxRecipeSlots)
               {
                   LOG (INFO) << "Can not grant recipe, maxomus lots reached  of" << curRecipeSlots << " where max is " << maxRecipeSlots;
+                  rewards.DeleteById(rw);
+                  rewardData.reset();
                   continue;
               }
           }
           
           if((pxd::RewardType)(int)rewardTableDb.rewards(rewardData->GetProto().positionintable()).type() == pxd::RewardType::Candy)
           {              
-              std::string candyName = GetCandyKeyNameFromID(rewardTableDb.rewards(rewardData->GetProto().positionintable()).candytype(), ctx);
+              const std::string candyName = GetCandyKeyNameFromID(rewardTableDb.rewards(rewardData->GetProto().positionintable()).candytype(), ctx);
+            
               a->GetInventory().AddFungibleCount(candyName, rewardTableDb.rewards(rewardData->GetProto().positionintable()).quantity());
               
               LOG (INFO) << "Granted " << rewardTableDb.rewards(rewardData->GetProto().positionintable()).quantity() << " candy " << candyName << " reward";
@@ -1664,10 +1875,10 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
           }             
           
           rewards.DeleteById(rw);
-      }  
+      }      
       
       a.reset();
-  }  
+  }
   
   void MoveProcessor::MaybeClaimReward (const std::string& name, const Json::Value& expedition)
   {      
@@ -1680,123 +1891,8 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
           return;
       }
       
-      LOG (INFO) << "Ready to give " << rewardDatabaseIds.size() << " rewards";
-
-      uint32_t curRecipeSlots = recipeTbl.CountForOwner(a->GetName());
-      uint32_t maxRecipeSlots = ctx.RoConfig()->params().max_recipe_inventory_amount();
-      
-      const auto& rewardsList = ctx.RoConfig()->activityrewards();
-      for(const auto& rw: rewardDatabaseIds)
-      {
-          /** Lets fetch reward from database, and grant it to the player. 
-              While doing so, lets check against space limitations in inv. for recepies    
-          */
-          
-          auto rewardData = rewards.GetById(rw);          
-          pxd::proto::ActivityReward rewardTableDb;
- 
-          bool rewardsSolved = false;
-          
-          for(const auto& rewardsTable: rewardsList)
-          {
-              if(rewardsTable.second.authoredid() == rewardData->GetProto().rewardid())
-              {
-                  rewardTableDb = rewardsTable.second;
-                  rewardsSolved = true;
-                  break;
-              }
-          }           
-          
-          if(rewardsSolved == false)
-          {
-              LOG (ERROR) << "Fatal error, could not solve: " << rewardData->GetProto().rewardid();
-              continue;
-          }
-          
-          if((pxd::RewardType)(int)rewardTableDb.rewards(rewardData->GetProto().positionintable()).type() == pxd::RewardType::CraftedRecipe || (pxd::RewardType)(int)rewardTableDb.rewards(rewardData->GetProto().positionintable()).type() == pxd::RewardType::GeneratedRecipe)
-          {
-              if(curRecipeSlots >= maxRecipeSlots)
-              {
-                  LOG (INFO) << "Can not grant recipe, maxomus lots reached  of" << curRecipeSlots << " where max is " << maxRecipeSlots;
-                  continue;
-              }
-          }
-          
-          if((pxd::RewardType)(int)rewardTableDb.rewards(rewardData->GetProto().positionintable()).type() == pxd::RewardType::Candy)
-          {              
-              std::string candyName = GetCandyKeyNameFromID(rewardTableDb.rewards(rewardData->GetProto().positionintable()).candytype(), ctx);
-              a->GetInventory().AddFungibleCount(candyName, rewardTableDb.rewards(rewardData->GetProto().positionintable()).quantity());
-              
-              LOG (INFO) << "Granted " << rewardTableDb.rewards(rewardData->GetProto().positionintable()).quantity() << " candy " << candyName << " reward";
-          }          
-          
-          if((pxd::RewardType)(int)rewardTableDb.rewards(rewardData->GetProto().positionintable()).type() == pxd::RewardType::CraftedRecipe)
-          {         
-              auto ourRec = recipeTbl.GetById(rewardData->GetProto().generatedrecipeid());
-              ourRec->SetOwner(a->GetName());
-              
-              LOG (INFO) << "Granted " << " recipe " << rewardData->GetProto().generatedrecipeid() << " reward";
-              ourRec.reset();
-          }
-          
-          if((pxd::RewardType)(int)rewardTableDb.rewards(rewardData->GetProto().positionintable()).type() == pxd::RewardType::GeneratedRecipe)
-          {
-              auto ourRec = recipeTbl.GetById(rewardData->GetProto().generatedrecipeid());
-              ourRec->SetOwner(a->GetName());  
-
-              LOG (INFO) << "Granted " << " recipe " << rewardData->GetProto().generatedrecipeid() << " as reward";  
-              ourRec.reset();              
-          }          
-          
-          if((pxd::RewardType)(int)rewardTableDb.rewards(rewardData->GetProto().positionintable()).type() == pxd::RewardType::Move)
-          {
-              auto fighter = fighters.GetById(rewardData->GetProto().fighterid(), ctx.RoConfig());
-              std::string* newMove = fighter->MutableProto().add_moves();
-              newMove->assign(rewardTableDb.rewards(rewardData->GetProto().positionintable()).moveid());
-              
-              LOG (INFO) << "Granted " << " move to figher " << rewardData->GetProto().fighterid() << " as reward";   
-          }   
-
-          if((pxd::RewardType)(int)rewardTableDb.rewards(rewardData->GetProto().positionintable()).type() == pxd::RewardType::Animation)
-          {
-              auto fighter = fighters.GetById(rewardData->GetProto().fighterid(), ctx.RoConfig());
-              fighter->MutableProto().set_animationid(rewardTableDb.rewards(rewardData->GetProto().positionintable()).animationid()); //TODO into repeated list? Prob... But ok, ignore for now;
-          
-              LOG (INFO) << "Granted " << " animation to figher " << rewardData->GetProto().fighterid() << " as reward"; 
-          }   
-
-          if((pxd::RewardType)(int)rewardTableDb.rewards(rewardData->GetProto().positionintable()).type() == pxd::RewardType::Armor)
-          {
-              auto fighter = fighters.GetById(rewardData->GetProto().fighterid(), ctx.RoConfig());
-              
-              bool armorTypeWasPresent = false;
-              for(auto armorPiece: fighter->MutableProto().armorpieces())
-              {
-                  if(armorPiece.armortype() == rewardTableDb.rewards(rewardData->GetProto().positionintable()).armortype())
-                  {
-                      armorTypeWasPresent = true;
-                      armorPiece.set_candy(rewardTableDb.rewards(rewardData->GetProto().positionintable()).candytype());
-                      armorPiece.set_rewardsourceid(rewardData->GetProto().rewardid());
-                      armorPiece.set_rewardsource((uint32_t)pxd::RewardSource::Expedition);
-                  }
-              }
-              
-              if(armorTypeWasPresent == false)
-              {
-                  auto newArmorPiece = fighter->MutableProto().add_armorpieces();
-                  newArmorPiece->set_candy(rewardTableDb.rewards(rewardData->GetProto().positionintable()).candytype());
-                  newArmorPiece->set_rewardsourceid(rewardData->GetProto().rewardid());
-                  newArmorPiece->set_rewardsource((uint32_t)pxd::RewardSource::Expedition);   
-                  newArmorPiece->set_armortype(rewardTableDb.rewards(rewardData->GetProto().positionintable()).armortype());                  
-              }
-              
-              LOG (INFO) << "Granted " << " armor to figher " << rewardData->GetProto().fighterid();
-          }             
-          
-          rewards.DeleteById(rw);
-      }
-      
       a.reset();
+      ClaimRewardsInnerLogic(name, rewardDatabaseIds);  
   }   
   
  void MoveProcessor::MaybeLeaveTournament (const std::string& name, const Json::Value& tournament)
@@ -2120,6 +2216,74 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
   }    
   
   void
+  MoveProcessor::MaybeClaimSweetenerReward (const std::string& name, const Json::Value& sweetener)
+  {    
+    auto a = xayaplayers.GetByName (name, ctx.RoConfig ());
+    
+    if(a == nullptr)
+    {
+      LOG (INFO) << "Player " << name << " not found";
+      return;
+    }    
+    
+    uint32_t fighterID = -1; 
+    std::vector<uint32_t> rewardDatabaseIds;  
+    
+    if(!ParseClaimSweetener(*a, name, sweetener, fighterID, rewardDatabaseIds)) return;    
+    
+    a.reset();    
+    ClaimRewardsInnerLogic(name, rewardDatabaseIds); 
+  }  
+  
+  void
+  MoveProcessor::MaybeCookSweetener (const std::string& name, const Json::Value& sweetener)
+  {   
+    std::map<std::string, pxd::Quantity> fungibleItemAmountForDeduction;
+    int32_t cookCost = -1;
+    uint32_t fighterID = -1;    
+    int32_t duration = -1;
+    std::string sweetenerKeyName = "";
+
+    auto a = xayaplayers.GetByName (name, ctx.RoConfig ());
+    
+    if(a == nullptr)
+    {
+      LOG (INFO) << "Player " << name << " not found";
+      return;
+    }    
+    
+    if(!ParseSweetener(*a, name, sweetener, fungibleItemAmountForDeduction, cookCost, fighterID, duration, sweetenerKeyName)) return;
+    
+    auto& playerInventory = a->GetInventory();
+    for(const auto& itemToDeduct: fungibleItemAmountForDeduction)
+    {
+        playerInventory.AddFungibleCount(itemToDeduct.first, -itemToDeduct.second);
+    }
+    
+    playerInventory.AddFungibleCount(sweetenerKeyName, -1);
+      
+    a->AddBalance(-cookCost);    
+  
+    auto fighterDb = fighters.GetById (fighterID, ctx.RoConfig ());
+    fighterDb->SetStatus(pxd::FighterStatus::Cooking);
+    fighterDb.reset();
+    
+    proto::OngoinOperation* newOp = a->MutableProto().add_ongoings();
+
+    newOp->set_type((uint32_t)pxd::OngoingType::COOK_SWEETENER);
+    newOp->set_appliedgoodykeyname(sweetener["sid"].asString());
+    newOp->set_rewardid(sweetener["rid"].asInt());
+    newOp->set_fighterdatabaseid(fighterID);
+    
+    /** We need to make it at least 1 block, else if will make no sense executing immediately logic flow wise*/
+    if(duration < 1)
+    {
+        duration = 1;
+    }    
+    newOp->set_blocksleft(duration);    
+  }  
+  
+  void
   MoveProcessor::MaybeCookRecepie (const std::string& name, const Json::Value& recepie)
   {      
     std::map<std::string, pxd::Quantity> fungibleItemAmountForDeduction;
@@ -2230,6 +2394,12 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 
     /*Trying to cook recepie, optionally with the fighter */
     MaybeCookRecepie (name, upd["r"]);
+    
+    /*Trying to cook sweetener */
+    MaybeCookSweetener (name, upd["s"]);  
+
+    /*Trying to cook sweetener */
+    MaybeClaimSweetenerReward (name, upd["sc"]);      
   } 
   
   void

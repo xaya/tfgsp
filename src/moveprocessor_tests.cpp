@@ -239,6 +239,32 @@ TEST_F (XayaPlayersUpdateTests, RecepieInstanceInsufficientResources)
   EXPECT_EQ (a->GetOngoingsSize (), 1);
 }
 
+TEST_F (XayaPlayersUpdateTests, SweetenerSubmitForCooking)
+{
+  auto pl = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
+  pl->GetInventory().SetFungibleCount("Sweetener_R2", 1);
+  
+  pl->GetInventory().SetFungibleCount("Common_Icing", 10);
+  pl->GetInventory().SetFungibleCount("Common_Fruit Slice", 10);
+
+  pl.reset();
+  
+  auto ft = tbl3.GetById(4, ctx.RoConfig());
+  ASSERT_TRUE (ft != nullptr); 
+  ft->MutableProto().set_rating(1210); 
+  ft->MutableProto().set_sweetness((int)pxd::Sweetness::Bittersweet);  
+  ft.reset();
+  
+  Process (R"([
+    {"name": "domob", "move": {"ca": {"s": {"sid": "d596403b-b76f-52c4-6956-4bfd55231de0", "fid": 4, "rid": 1}}}}
+  ])");  
+  
+  pl = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  ASSERT_TRUE (pl != nullptr);
+  EXPECT_EQ (pl->GetOngoingsSize (), 1);
+  pl.reset();
+}
+
 TEST_F (XayaPlayersUpdateTests, ExpeditionInstanceSheduleTest)
 {
   auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);

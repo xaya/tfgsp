@@ -176,13 +176,19 @@ protected:
   bool ParseFighterForSaleData(const XayaPlayer& a, const std::string& name, const Json::Value& fighter, uint32_t& fighterID, 
   uint32_t& duration, Amount& price);
       
-    
   /**
    * Tries to parse a move that purchases goody bundle
    */       
    
   bool ParseGoodyBundlePurchase(const Json::Value& mv, Amount& cost, const std::string& name, std::map<std::string, uint64_t>& fungibles, Amount balance);    
   
+  /**
+   * Parses move that claims cooked sweetener rewards
+   */    
+  
+  bool ParseClaimSweetener(const XayaPlayer& a, const std::string& name, const Json::Value& sweetener, uint32_t& fighterID, 
+  std::vector<uint32_t>& rewardDatabaseIds);
+      
   /**
    * Tries to parse a move that sets recepie for cooking
    */       
@@ -207,6 +213,14 @@ protected:
  
   bool ParseDeconstructData(const XayaPlayer& a, const std::string& name, const Json::Value& fighter, uint32_t& fighterID);
   
+  /**
+   * Tries to parse a move sweetener fungible that upgrades fighter
+   */ 
+   
+  bool ParseSweetener(const XayaPlayer& a, const std::string& name, const Json::Value& sweetener, 
+  std::map<std::string, pxd::Quantity>& fungibleItemAmountForDeduction, int32_t& cookCost, uint32_t& fighterID, 
+  int32_t& duration, std::string& sweetenerKeyName);
+ 
   /**
    * Tries to parse a move that buys fighter from the exchange 
    */ 
@@ -299,6 +313,12 @@ private:
   void MaybeDeconstructFighter(const std::string& name, const Json::Value& fighter);  
   
    /**
+   * Actual claiming logic, as this is called from multiple places, we
+   * seperate into own function
+   */  
+  void ClaimRewardsInnerLogic(std::string name, std::vector<uint32_t> rewardDatabaseIds);  
+  
+   /**
    * Tries to get the rewards from the deconstructed fighter
    */
   void MaybeClaimDeconstructionReward(const std::string& name, const Json::Value& fighter);    
@@ -330,6 +350,16 @@ private:
   * Tries to cook recepie instance, optionally with the fighter attached
   */  
   void MaybeCookRecepie (const std::string& name, const Json::Value& recepie);
+  
+  /**
+  * Tries to claim sweetener rewards if that is possible
+  */   
+  void MaybeClaimSweetenerReward (const std::string& name, const Json::Value& sweetener);
+  
+  /**
+  * Tries to cook sweetener instance
+  */  
+  void MaybeCookSweetener (const std::string& name, const Json::Value& sweetener);  
   
   /**
   * Tries to send the fighter for the expedition

@@ -43,7 +43,8 @@ enum class OngoingType : int8_t
   INVALID = 0,
   COOK_RECIPE = 1,
   EXPEDITION = 2,
-  DECONSTRUCTION = 3
+  DECONSTRUCTION = 3,
+  COOK_SWEETENER = 4
 };
 
 /**
@@ -273,7 +274,7 @@ public:
 private:
    
   /*Helper utility function used in perstige calculations*/
-  uint32_t GetFighterPercentageFromQuality(uint32_t quality, std::vector<FighterTable::Handle>& fighters);
+  double GetFighterPercentageFromQuality(uint32_t quality, std::vector<FighterTable::Handle>& fighters);
   
   /*We are not writing those in the database, so we need to create them on each 
   time we load account or create fresh*/

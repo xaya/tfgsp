@@ -69,7 +69,7 @@ PXLogic::UpdateState (Database& db, xaya::Random& rnd,
   UpdateState (db, rnd, ctx, blockData);
 }
 
-std::vector<uint32_t> PXLogic::GenerateActivityReward(const uint32_t fighterID, const std::string blueprintAuthID, const uint32_t tournamentID, const pxd::proto::AuthoredActivityReward rw, const Context& ctx, Database& db, std::unique_ptr<XayaPlayer>& a, xaya::Random& rnd, const uint32_t posInTableList, const std::string basedRewardsTableAuthId)
+std::vector<uint32_t> PXLogic::GenerateActivityReward(const uint32_t fighterID, const std::string blueprintAuthID, const uint32_t tournamentID, const pxd::proto::AuthoredActivityReward rw, const Context& ctx, Database& db, std::unique_ptr<XayaPlayer>& a, xaya::Random& rnd, const uint32_t posInTableList, const std::string basedRewardsTableAuthId, const std::string sweetenerAuthID)
 {
   RecipeInstanceTable recipeTbl(db);
   RewardsTable rewardsTbl(db);
@@ -84,6 +84,15 @@ std::vector<uint32_t> PXLogic::GenerateActivityReward(const uint32_t fighterID, 
       newReward->MutableProto().set_tournamentid(tournamentID);
       newReward->MutableProto().set_positionintable(posInTableList);
       newReward->MutableProto().set_fighterid(fighterID);
+      
+      if(sweetenerAuthID != "")
+      {
+        newReward->MutableProto().set_sweetenerid(1);  
+      }
+      else
+      {
+        newReward->MutableProto().set_sweetenerid(0); 
+      }
 
       if((RewardType)(int)rw.type() == RewardType::CraftedRecipe)
       {
@@ -114,7 +123,7 @@ std::vector<uint32_t> PXLogic::GenerateActivityReward(const uint32_t fighterID, 
               
               for(auto& rw2: rewardsTable.second.rewards())
               {
-                  std::vector<uint32_t> newIDS = GenerateActivityReward(fighterID, blueprintAuthID, tournamentID, rw2, ctx, db, a, rnd, posInTableList2, rw.listtableid());
+                  std::vector<uint32_t> newIDS = GenerateActivityReward(fighterID, blueprintAuthID, tournamentID, rw2, ctx, db, a, rnd, posInTableList2, rw.listtableid(), sweetenerAuthID);
                   
                   for(long long unsigned int j = 0; j < newIDS.size(); j++)
                   {
@@ -131,6 +140,211 @@ std::vector<uint32_t> PXLogic::GenerateActivityReward(const uint32_t fighterID, 
   }
 
   return iDS;
+}
+
+void PXLogic::ResolveSweetener(std::unique_ptr<XayaPlayer>& a, std::string sweetenerAuthID, const uint32_t fighterID, const uint32_t rewardID, Database& db, const Context& ctx, xaya::Random& rnd)
+{
+  FighterTable fighters(db);
+     
+  pxd::proto::SweetenerBlueprint sweetenerBlueprint;
+  for(auto swb: ctx.RoConfig()->sweetenerblueprints())
+  {
+    if(swb.second.authoredid() == sweetenerAuthID)
+    {
+        sweetenerBlueprint = swb.second;
+        break;
+    }
+  } 
+
+  auto fighterDb = fighters.GetById (fighterID, ctx.RoConfig ());
+    
+  if(sweetenerBlueprint.requiredsweetness() <= fighterDb->GetProto().highestappliedsweetener())
+  {
+      LOG (WARNING) << "Already applied equal or higher sweetener to this fighter " << fighterID;
+      fighterDb->SetStatus(pxd::FighterStatus::Available);
+      fighterDb.reset();
+      return;          
+  }            
+    
+  fighterDb->MutableProto().set_highestappliedsweetener(sweetenerBlueprint.requiredsweetness());   
+  fighterDb->SetStatus(pxd::FighterStatus::Available);
+  fighterDb.reset();  
+    
+  // rewards apply  
+  if(sweetenerBlueprint.rewardchoices(rewardID).rewardstableid() != "")
+  {
+    pxd::proto::ActivityReward rewardTableDb;
+    
+    const auto& rewardsList = ctx.RoConfig()->activityrewards();
+    bool rewardsSolved = false;
+    
+    for(const auto& rewardsTable: rewardsList)
+    {
+        if(rewardsTable.second.authoredid() == sweetenerBlueprint.rewardchoices(rewardID).rewardstableid())
+        {
+            rewardTableDb = rewardsTable.second;
+            rewardsSolved = true;
+            break;
+        }
+    }  
+
+    if(rewardsSolved == false)
+    {
+        LOG (WARNING) << "Could not resolve reward table with id: " << sweetenerBlueprint.rewardchoices(rewardID).rewardstableid();
+        return;            
+    }    
+
+    uint32_t totalWeight = 0;
+    for(auto& rw: rewardTableDb.rewards())
+    {
+       totalWeight += (uint32_t)rw.weight();
+    }
+
+    LOG (WARNING) << "Rolling for total possible awards: " << sweetenerBlueprint.rewardchoices(rewardID).baserollcount();
+    
+    for(int roll = 0; roll < (int)sweetenerBlueprint.rewardchoices(rewardID).baserollcount(); ++roll)
+    {
+        int rolCurNum = 0;
+        
+        if(totalWeight != 0)
+        {
+          rnd.NextInt(totalWeight);
+        }
+        
+        int accumulatedWeight = 0;
+        int posInTableList = 0;
+        for(auto& rw: rewardTableDb.rewards())
+        {
+            accumulatedWeight += rw.weight();
+            
+            if(rolCurNum <= accumulatedWeight)
+            {
+               GenerateActivityReward(fighterID, "", 0, rw, ctx, db, a, rnd, posInTableList, sweetenerBlueprint.rewardchoices(rewardID).rewardstableid(), sweetenerAuthID);
+            }
+            
+            posInTableList++;
+        }
+    }       
+  }
+  
+  // moves rewards
+  
+  if(sweetenerBlueprint.rewardchoices(rewardID).moverewardstableid() != "")
+  {
+    pxd::proto::ActivityReward rewardTableDb;
+    
+    const auto& rewardsList = ctx.RoConfig()->activityrewards();
+    bool rewardsSolved = false;
+    
+    for(const auto& rewardsTable: rewardsList)
+    {
+        if(rewardsTable.second.authoredid() == sweetenerBlueprint.rewardchoices(rewardID).moverewardstableid())
+        {
+            rewardTableDb = rewardsTable.second;
+            rewardsSolved = true;
+            break;
+        }
+    }  
+
+    if(rewardsSolved == false)
+    {
+        LOG (WARNING) << "Could not resolve reward table with id: " << sweetenerBlueprint.rewardchoices(rewardID).moverewardstableid();
+        return;            
+    }    
+
+    uint32_t totalWeight = 0;
+    for(auto& rw: rewardTableDb.rewards())
+    {
+       totalWeight += (uint32_t)rw.weight();
+    }
+
+    LOG (WARNING) << "Rolling for total possible awards: " << sweetenerBlueprint.rewardchoices(rewardID).moverollcount();
+    
+    for(int roll = 0; roll < (int)sweetenerBlueprint.rewardchoices(rewardID).moverollcount(); ++roll)
+    {
+        int rolCurNum = 0;
+        
+        if(totalWeight != 0)
+        {
+          rnd.NextInt(totalWeight);
+        }
+        
+        int accumulatedWeight = 0;
+        int posInTableList = 0;
+        for(auto& rw: rewardTableDb.rewards())
+        {
+            accumulatedWeight += rw.weight();
+            
+            if(rolCurNum <= accumulatedWeight)
+            {
+               GenerateActivityReward(fighterID, "", 0, rw, ctx, db, a, rnd, posInTableList, sweetenerBlueprint.rewardchoices(rewardID).moverewardstableid(), sweetenerAuthID);
+            }
+            
+            posInTableList++;
+        }
+    }       
+  }  
+  
+  // armor rewards
+  
+  if(sweetenerBlueprint.rewardchoices(rewardID).armorrewardstableid() != "")
+  {
+    pxd::proto::ActivityReward rewardTableDb;
+    
+    const auto& rewardsList = ctx.RoConfig()->activityrewards();
+    bool rewardsSolved = false;
+    
+    for(const auto& rewardsTable: rewardsList)
+    {
+        if(rewardsTable.second.authoredid() == sweetenerBlueprint.rewardchoices(rewardID).armorrewardstableid())
+        {
+            rewardTableDb = rewardsTable.second;
+            rewardsSolved = true;
+            break;
+        }
+    }  
+
+    if(rewardsSolved == false)
+    {
+        LOG (WARNING) << "Could not resolve reward table with id: " << sweetenerBlueprint.rewardchoices(rewardID).armorrewardstableid();
+        return;            
+    }    
+
+    uint32_t totalWeight = 0;
+    for(auto& rw: rewardTableDb.rewards())
+    {
+       totalWeight += (uint32_t)rw.weight();
+    }
+
+    LOG (WARNING) << "Rolling for total possible awards: " << sweetenerBlueprint.rewardchoices(rewardID).armorrollcount();
+    
+    for(int roll = 0; roll < (int)sweetenerBlueprint.rewardchoices(rewardID).armorrollcount(); ++roll)
+    {
+        int rolCurNum = 0;
+        
+        if(totalWeight != 0)
+        {
+          rnd.NextInt(totalWeight);
+        }
+        
+        int accumulatedWeight = 0;
+        int posInTableList = 0;
+        for(auto& rw: rewardTableDb.rewards())
+        {
+            accumulatedWeight += rw.weight();
+            
+            if(rolCurNum <= accumulatedWeight)
+            {
+               GenerateActivityReward(fighterID, "", 0, rw, ctx, db, a, rnd, posInTableList, sweetenerBlueprint.rewardchoices(rewardID).armorrewardstableid(), sweetenerAuthID);
+            }
+            
+            posInTableList++;
+        }
+    }       
+  }    
+
+  a->CalculatePrestige(ctx.RoConfig());  
+ 
 }
 
 void PXLogic::ResolveDeconstruction(std::unique_ptr<XayaPlayer>& a, const uint32_t fighterID, Database& db, const Context& ctx, xaya::Random& rnd)
@@ -291,7 +505,7 @@ void PXLogic::ResolveExpedition(std::unique_ptr<XayaPlayer>& a, const std::strin
             
             if(rolCurNum <= accumulatedWeight)
             {
-               GenerateActivityReward(fighterID, blueprintAuthID, 0, rw, ctx, db, a, rnd, posInTableList, basedRewardsTableAuthId);
+               GenerateActivityReward(fighterID, blueprintAuthID, 0, rw, ctx, db, a, rnd, posInTableList, basedRewardsTableAuthId, "");
             }
             
              posInTableList++;
@@ -366,6 +580,8 @@ void PXLogic::ResolveCookingRecepie(std::unique_ptr<XayaPlayer>& a, const uint32
         auto newFighter = fighters.CreateNew (a->GetName(), recepieID, ctx.RoConfig(), rnd);
         a->CalculatePrestige(ctx.RoConfig());
         
+        LOG (WARNING) << "Cooked new fighter with id: " << newFighter->GetId();
+        
         /**
         recipeTbl.DeleteById(recepieID);  
         
@@ -434,7 +650,17 @@ void PXLogic::TickAndResolveOngoings(Database& db, const Context& ctx, xaya::Ran
                   ongoings->erase(it); 
                   erasingDone = false;
                   break;                  
-                }                  
+                }  
+
+                if((pxd::OngoingType)it->type() == pxd::OngoingType::COOK_SWEETENER)
+                {
+                  LOG (INFO) << "Resolving oingoing operation for pxd::OngoingType::COOK_SWEETENER";
+                    
+                  ResolveSweetener(a, it->appliedgoodykeyname(), it->fighterdatabaseid(), it->rewardid(), db, ctx, rnd);
+                  ongoings->erase(it); 
+                  erasingDone = false;
+                  break;                  
+                }                 
             }          
         }
       }
@@ -443,12 +669,12 @@ void PXLogic::TickAndResolveOngoings(Database& db, const Context& ctx, xaya::Ran
     }    
 }
 
-uint32_t PXLogic::ExecuteOneMoveAgainstAnother(const Context& ctx, std::string lmv, std::string rmv)
+double PXLogic::ExecuteOneMoveAgainstAnother(const Context& ctx, std::string lmv, std::string rmv)
 {
     const auto& moveList = ctx.RoConfig()->fightermoveblueprints();
     
-    uint32_t lmt = 0;
-    uint32_t rmt = 0;
+    double lmt = 0;
+    double rmt = 0;
     
     for(auto& moveCandidate: moveList)
     {
@@ -470,7 +696,7 @@ uint32_t PXLogic::ExecuteOneMoveAgainstAnother(const Context& ctx, std::string l
     
     if(lmt == rmt)
     {
-        return 50;
+        return 0.5;
     }
     
     pxd::MoveType lmtM = (pxd::MoveType)lmt;
@@ -483,9 +709,9 @@ uint32_t PXLogic::ExecuteOneMoveAgainstAnother(const Context& ctx, std::string l
                 case pxd::MoveType::Speedy:
                     return 0;
                 case pxd::MoveType::Tricky:
-                    return 100;
+                    return 1;
                 case pxd::MoveType::Distance:
-                    return 100;
+                    return 1;
                 case pxd::MoveType::Blocking:
                     return 0;
                 case pxd::MoveType::Heavy:
@@ -496,15 +722,15 @@ uint32_t PXLogic::ExecuteOneMoveAgainstAnother(const Context& ctx, std::string l
              switch (rmtM)
              {
                 case pxd::MoveType::Heavy:
-                    return 100;
+                    return 1;
                 case pxd::MoveType::Tricky:
                     return 0;
                 case pxd::MoveType::Distance:
                     return 0;
                 case pxd::MoveType::Blocking:
-                    return 100;
+                    return 1;
                 case pxd::MoveType::Speedy:
-                    return 100;                    
+                    return 1;                    
              }
              return 0;
         case pxd::MoveType::Tricky:
@@ -513,9 +739,9 @@ uint32_t PXLogic::ExecuteOneMoveAgainstAnother(const Context& ctx, std::string l
                 case pxd::MoveType::Heavy:
                     return 0;
                 case pxd::MoveType::Speedy:
-                    return 100;
+                    return 1;
                 case pxd::MoveType::Distance:
-                    return 100;
+                    return 1;
                 case pxd::MoveType::Blocking:
                     return 0;
                 case pxd::MoveType::Tricky:
@@ -528,28 +754,28 @@ uint32_t PXLogic::ExecuteOneMoveAgainstAnother(const Context& ctx, std::string l
                 case pxd::MoveType::Heavy:
                     return 0;
                 case pxd::MoveType::Speedy:
-                    return 100;
+                    return 1;
                 case pxd::MoveType::Tricky:
                     return 0;
                 case pxd::MoveType::Blocking:
-                    return 100;
+                    return 1;
                 case pxd::MoveType::Distance:
-                    return 100;                    
+                    return 1;                    
              }
              return 0;   
         case pxd::MoveType::Blocking:
              switch (rmtM)
              {
                 case pxd::MoveType::Heavy:
-                    return 100;
+                    return 1;
                 case pxd::MoveType::Speedy:
                     return 0;
                 case pxd::MoveType::Tricky:
-                    return 100;
+                    return 1;
                 case pxd::MoveType::Distance:
                     return 0;
                 case pxd::MoveType::Blocking:
-                    return 100;                    
+                    return 1;                    
              }
              return 0;                
         default:
@@ -565,31 +791,32 @@ uint32_t PXLogic::ExecuteOneMoveAgainstAnother(const Context& ctx, std::string l
  * For now set to 15 for everyone.
  */
 
-void PXLogic::CreateEloRating(const Context& ctx, uint32_t& ratingA, uint32_t& ratingB, uint32_t& scoreA, uint32_t& scoreB, uint32_t& expectedA, 
-uint32_t& expectedB, uint32_t& newRatingA, uint32_t& newRatingB)
+void PXLogic::CreateEloRating(const Context& ctx, double& ratingA, double& ratingB, double& scoreA, double& scoreB, double& expectedA, 
+double& expectedB, double& newRatingA, double& newRatingB)
 {    
+  LOG (WARNING) << "Elo in" << ratingA << " " << ratingB << " " << scoreA << " " << scoreB << " " << expectedA << " " << expectedB << " " << newRatingA << " " << newRatingB;
+
   int KFACTOR = ctx.RoConfig()->params().elok_factor();
   float ALMS = ctx.RoConfig()->params().alms();
   
-  expectedA = 100 / (100 + (std::pow(10, ( ratingB - ratingA) / 40000)) );
-  expectedB = 100 / (100 + (std::pow(10, ( ratingA - ratingB) / 40000)) );
+  expectedA = 1 / (1 + (std::pow(10, ( ratingB - ratingA) / 400)) );
+  expectedB = 1 / (1 + (std::pow(10, ( ratingA - ratingB) / 400)) );
   
   if (scoreA == 0)
   {
-      ratingA = ratingA + (ALMS * (KFACTOR * ( scoreA - expectedA )));
-      ratingB = ratingB + (KFACTOR * ( scoreB - expectedB )); 
+      newRatingA = ratingA + (ALMS * (KFACTOR * ( scoreA - expectedA )));
+      newRatingB = ratingB + (KFACTOR * ( scoreB - expectedB )); 
   }
   else if (scoreB == 0)
   {
-      ratingA = ratingA + (KFACTOR * ( scoreA - expectedA ));
-      ratingB = ratingB + (ALMS  * (KFACTOR * ( scoreB - expectedB )));
+      newRatingA = ratingA + (KFACTOR * ( scoreA - expectedA ));
+      newRatingB = ratingB + (ALMS  * (KFACTOR * ( scoreB - expectedB )));
   }  
   else
   {
-      ratingA = ratingA + (KFACTOR * ( scoreA - expectedA ));
-      ratingB = ratingB + (KFACTOR * ( scoreB - expectedB ));      
+      newRatingA = ratingA + (KFACTOR * ( scoreA - expectedA ));
+      newRatingB = ratingB + (KFACTOR * ( scoreB - expectedB ));      
   }
-  
 }
 
 void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random& rnd)
@@ -610,7 +837,7 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
       
       std::map<std::string, std::vector<uint32_t>> teams;
       std::vector<std::pair<uint32_t,uint32_t>> fighterPairs;
-      std::map<std::string, uint32_t> participatingPlayerTotalScore;
+      std::map<std::string, double> participatingPlayerTotalScore;
 
       std::map<uint32_t, proto::TournamentResult*> fighterResults;
       //Lets collect teams
@@ -729,29 +956,30 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
                     lhsMovesUnshuffled.erase(randomMove);
                  }    
 
-                 int rScore = 0;
-                 int lScore = 0;
+                 double rScore = 0;
+                 double lScore = 0;
                  
                  int count = rhsMoves.size();
                  
                  if(lhsMoves.size() < rhsMoves.size())
                  {
                      count = lhsMoves.size();
-                     rScore += (rhsMoves.size() - lhsMoves.size())  * 100;
+                     rScore += (rhsMoves.size() - lhsMoves.size())  * 1;
                  }
                  else
                  {
-                    lScore += (lhsMoves.size() - rhsMoves.size())  * 100; 
+                    lScore += (lhsMoves.size() - rhsMoves.size())  * 1; 
                  }
                  
                  for(int g = 0; g < count; g++)
                  {
                      std::string rmove = rhsMoves[g];
-                     std::string lmove = rhsMoves[g];
+                     std::string lmove = lhsMoves[g];
                      
-                     uint32_t result = ExecuteOneMoveAgainstAnother(ctx, lmove, rmove);
+                     double result = ExecuteOneMoveAgainstAnother(ctx, lmove, rmove);
+
                      rScore += result;
-                     lScore += 100 - result;
+                     lScore += 1 - result;
                  }
                  
                  uint32_t winner  = 0;
@@ -766,14 +994,14 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
 
                  //Rating and rewards calculation starts now
                  
-                 uint32_t ratingA = lhs->GetProto().rating() * 100;
-                 uint32_t ratingB = rhs->GetProto().rating() * 100;                 
+                 double ratingA = lhs->GetProto().rating();
+                 double ratingB = rhs->GetProto().rating();                 
                 
                  pxd::MatchResultType lwin = pxd::MatchResultType::Win;
                  pxd::MatchResultType rwin = pxd::MatchResultType::Lose;
                  
-                 uint32_t scoreA = 0;
-                 uint32_t scoreB = 0;
+                 double scoreA = 0;
+                 double scoreB = 0;
                  
                  if (participatingPlayerTotalScore.find(lhs->GetOwner()) == participatingPlayerTotalScore.end())
                  {
@@ -790,8 +1018,8 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
                     case 0:
                         lwin = pxd::MatchResultType::Win;
                         rwin = pxd::MatchResultType::Lose;
-                        participatingPlayerTotalScore[lhs->GetOwner()] += 100;
-                        scoreA = 100;
+                        participatingPlayerTotalScore[lhs->GetOwner()] += 1;
+                        scoreA = 1;
                         
                         fighterResults[fPair.first]->set_losses(fighterResults[fPair.first]->losses() + 1);
                         fighterResults[fPair.second]->set_wins(fighterResults[fPair.second]->wins() + 1);
@@ -799,10 +1027,10 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
                     case 1:
                         lwin = pxd::MatchResultType::Draw;
                         rwin = pxd::MatchResultType::Draw;
-                        scoreA = 50;
-                        scoreB = 50;
-                        participatingPlayerTotalScore[lhs->GetOwner()] += 50;
-                        participatingPlayerTotalScore[rhs->GetOwner()] += 50;
+                        scoreA = 0.5;
+                        scoreB = 0.5;
+                        participatingPlayerTotalScore[lhs->GetOwner()] += 0.5;
+                        participatingPlayerTotalScore[rhs->GetOwner()] += 0.5;
                         
                         fighterResults[fPair.first]->set_draws(fighterResults[fPair.first]->draws() + 1);
                         fighterResults[fPair.second]->set_draws(fighterResults[fPair.second]->draws() + 1);                        
@@ -810,32 +1038,32 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
                     case 2:
                         lwin = pxd::MatchResultType::Lose;
                         rwin = pxd::MatchResultType::Win;
-                        scoreB = 100;
-                        participatingPlayerTotalScore[rhs->GetOwner()] += 100;
+                        scoreB = 1;
+                        participatingPlayerTotalScore[rhs->GetOwner()] += 0.5;
                         
                         fighterResults[fPair.second]->set_losses(fighterResults[fPair.second]->losses() + 1);
                         fighterResults[fPair.first]->set_wins(fighterResults[fPair.first]->wins() + 1);                        
                         break;
                  }                 
 
-                 uint32_t expectedA = 0;
-                 uint32_t expectedB = 0;
-                 uint32_t newRatingA = 0;
-                 uint32_t newRatingB = 0;
+                 double expectedA = 0;
+                 double expectedB = 0;
+                 double newRatingA = 0;
+                 double newRatingB = 0;
 
                  CreateEloRating(ctx, ratingA, ratingB, scoreA, scoreB, expectedA, expectedB, newRatingA, newRatingB);
 
-                 uint32_t lRatingDelta = lhs->GetProto().rating();
-                 uint32_t rRatingDelta = rhs->GetProto().rating();
+                 double lRatingDelta = lhs->GetProto().rating();
+                 double rRatingDelta = rhs->GetProto().rating();
                  
-                 uint32_t newRatingForLhs = newRatingA / 100;
-                 uint32_t newRatingForRhs = newRatingB / 100;
-                 
+                 uint32_t newRatingForLhs = (uint32_t)std::max(0, (int)newRatingA);
+                 uint32_t newRatingForRhs = (uint32_t)std::max(0, (int)newRatingB);
+                 //ratings unit test pls
                  lhs->MutableProto().set_rating(newRatingForLhs);
-                 lhs->MutableProto().set_rating(newRatingForRhs);
+                 rhs->MutableProto().set_rating(newRatingForRhs);
                  
-                 lRatingDelta = newRatingForLhs - lRatingDelta;
-                 rRatingDelta = newRatingForRhs - rRatingDelta;
+                 lRatingDelta = lhs->GetProto().rating() - lRatingDelta;
+                 rRatingDelta = rhs->GetProto().rating() - rRatingDelta;
                  
                  lhs->MutableProto().set_totalmatches(lhs->GetProto().totalmatches() + 1);
                  rhs->MutableProto().set_totalmatches(rhs->GetProto().totalmatches() + 1);
@@ -876,6 +1104,8 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
                      biggestScoreSoFar = participant.second;
                  }
               }
+              
+              tnm->MutableInstance().set_winnerid(winnerName);
               
               //Rewards creation goes now
               XayaPlayersTable xayaplayers(db);
@@ -921,8 +1151,6 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
                      totalWeight += (uint32_t)rw.weight();
                   }
 
-                  LOG (INFO) << "Rolling for total possible rewards: " << rollCount;
-                      
                   for(uint32_t roll = 0; roll < rollCount; ++roll)
                   {
                       int rolCurNum = 0;
@@ -940,7 +1168,7 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
                           
                           if(rolCurNum <= accumulatedWeight)
                           {
-                             GenerateActivityReward(0, "", tnm->GetId(), rw, ctx, db, a, rnd, posInTableList, rewardTableId);
+                             GenerateActivityReward(0, "", tnm->GetId(), rw, ctx, db, a, rnd, posInTableList, rewardTableId, "");
                           }
                           
                            posInTableList++;
@@ -950,12 +1178,8 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
                   a->MutableProto().set_tournamentscompleted(a->GetProto().tournamentscompleted());
                   a->MutableProto().set_tournamentswon(a->GetProto().tournamentswon());
 
-                  LOG (INFO) << "Plater rating before " << a->GetPresitge();
-
                   a->CalculatePrestige(ctx.RoConfig());
                   
-                  LOG (INFO) << "Plater rating after " << a->GetPresitge();
-
                   a.reset();
               }
 

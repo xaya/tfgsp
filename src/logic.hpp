@@ -92,11 +92,22 @@ public:
 private:
 
   /** Helper function that generates and pushes new reward instance into the database and returns unique auto ID */
-  static std::vector<uint32_t> GenerateActivityReward(const uint32_t fighterID, const std::string blueprintAuthID, const uint32_t tournamentID,  const pxd::proto::AuthoredActivityReward rw, const Context& ctx, Database& db, std::unique_ptr<XayaPlayer>& a, xaya::Random& rnd, const uint32_t posInTableList, const std::string basedRewardsTableAuthId);
+  static std::vector<uint32_t> GenerateActivityReward(const uint32_t fighterID, const std::string blueprintAuthID, 
+  const uint32_t tournamentID,  const pxd::proto::AuthoredActivityReward rw, const Context& ctx, Database& db, 
+  std::unique_ptr<XayaPlayer>& a, xaya::Random& rnd, const uint32_t posInTableList, 
+  const std::string basedRewardsTableAuthId, const std::string sweetenerAuthID);
+  
   /**
    * When cooking recepie operation reaches 0 blocks, we either
    * resolve it or reverse, based on cirsumstances */                         
   static void ResolveCookingRecepie(std::unique_ptr<XayaPlayer>& a, const uint32_t recepieID, Database& db, const Context& ctx, xaya::Random& rnd);
+
+  /**
+   * When cooking sweetener operation reaches 0 blocks, we either
+   * resolve it or cancel, based on cirsumstances */         
+  static void ResolveSweetener(std::unique_ptr<XayaPlayer>& a, std::string sweetenerAuthID, const uint32_t fighterID, const uint32_t rewardID, 
+  Database& db, const Context& ctx, xaya::Random& rnd);
+
 
   /**
    * When expedition block count operation reaches 0 blocks, we either
@@ -125,14 +136,14 @@ private:
    * between the 2 moves of fighters
    */  
 
-  static uint32_t ExecuteOneMoveAgainstAnother(const Context& ctx, std::string lmv, std::string rmv);
+  static double ExecuteOneMoveAgainstAnother(const Context& ctx, std::string lmv, std::string rmv);
   
   /**
    * Some crazy class ported as function from original code for ratings and scores calculation
    */    
   
-  static void CreateEloRating(const Context& ctx, uint32_t& ratingA, uint32_t& ratingB, uint32_t& scoreA, uint32_t& scoreB, uint32_t& expectedA, 
-uint32_t& expectedB, uint32_t& newRatingA, uint32_t& newRatingB);
+  static void CreateEloRating(const Context& ctx, double& ratingA, double& ratingB, double& scoreA, double& scoreB, double& expectedA, 
+  double& expectedB, double& newRatingA, double& newRatingB);
 
   static void EloGetNewRatings();
 

@@ -71,11 +71,19 @@ XayaPlayer::XayaPlayer (Database& d, const std::string& n, const RoConfig& cfg, 
   
   FighterTable fighterTbl(d);
   
-  fighterTbl.CreateNew (GetName(), rcp1Id, cfg, rnd);
-  fighterTbl.CreateNew (GetName(), rcp2Id, cfg, rnd);
+  auto f1 = fighterTbl.CreateNew (GetName(), rcp1Id, cfg, rnd);
+  auto f2 = fighterTbl.CreateNew (GetName(), rcp2Id, cfg, rnd);
+  
+  f1->MutableProto().set_rating(1200);
+  f2->MutableProto().set_sweetness((int)pxd::Sweetness::Bittersweet);
+  
+  f1.reset();
+  f2.reset();
   
   // And finally tutorial reward recepies      
   recipesTbl.CreateNew (GetName(), starting_recepie_guid, cfg);
+  
+  
   
   AddBalance(cfg->params().starting_crystals());  
   CalculatePrestige(cfg);
@@ -166,9 +174,9 @@ std::vector<TournamentTable::Handle> XayaPlayer::CollectTournaments(const RoConf
   return tournaments;
 }
 
-uint32_t XayaPlayer::GetFighterPercentageFromQuality(uint32_t quality, std::vector<FighterTable::Handle>& fighters)
+double XayaPlayer::GetFighterPercentageFromQuality(uint32_t quality, std::vector<FighterTable::Handle>& fighters)
 {
-  uint32_t totalFighters = 0;
+  double totalFighters = 0;
   for(const auto& fighter: fighters)
   {
      if(fighter.get()->GetProto().quality() == quality)
@@ -177,14 +185,14 @@ uint32_t XayaPlayer::GetFighterPercentageFromQuality(uint32_t quality, std::vect
      }
   }  
   
-  return (totalFighters * 100) / fighters.size();
+  return (totalFighters) / fighters.size();
 }
 
 void
 XayaPlayer::CalculatePrestige(const RoConfig& cfg)
 {
     std::vector<FighterTable::Handle> fighters = CollectInventoryFighters(cfg);
-    uint32_t totalFighters = fighters.size();
+    double totalFighters = fighters.size();
     
     if(totalFighters == 0)
     {
@@ -192,10 +200,10 @@ XayaPlayer::CalculatePrestige(const RoConfig& cfg)
       return;
     }
     
-    uint32_t getPercentageEpic  = GetFighterPercentageFromQuality(4, fighters) * cfg->params().prestige_epic_mod() * log10(totalFighters+1);
-    uint32_t getPercentageRare  = GetFighterPercentageFromQuality(3, fighters) * cfg->params().prestige_rare_mod() * log10(totalFighters+1);
-    uint32_t getPercentageUncommom  = GetFighterPercentageFromQuality(2, fighters) * cfg->params().prestige_uncommon_mod() * log10(totalFighters+1);
-    uint32_t getPercentageCommon  = GetFighterPercentageFromQuality(1, fighters) * cfg->params().prestige_common_mod() * log10(totalFighters+1);
+    double getPercentageEpic  = GetFighterPercentageFromQuality(4, fighters) * cfg->params().prestige_epic_mod() * log10(totalFighters+1);
+    double getPercentageRare  = GetFighterPercentageFromQuality(3, fighters) * cfg->params().prestige_rare_mod() * log10(totalFighters+1);
+    double getPercentageUncommom  = GetFighterPercentageFromQuality(2, fighters) * cfg->params().prestige_uncommon_mod() * log10(totalFighters+1);
+    double getPercentageCommon  = GetFighterPercentageFromQuality(1, fighters) * cfg->params().prestige_common_mod() * log10(totalFighters+1);
 
     uint32_t fighterAverage = 0;
     
@@ -211,11 +219,11 @@ XayaPlayer::CalculatePrestige(const RoConfig& cfg)
         }
     }
     
-    uint32_t averageRatingScore =  (fighterAverage) * cfg->params().prestige_avg_rating_mod() * log10(totalFighters+1);
+    double averageRatingScore =  (fighterAverage) * cfg->params().prestige_avg_rating_mod() * log10(totalFighters+1);
     
-    uint32_t winCount = GetProto().tournamentswon() * 100;
-    uint32_t totalTournaments = GetProto().tournamentscompleted() * 100;
-    uint32_t winPercent = 0;
+    double winCount = GetProto().tournamentswon();
+    double totalTournaments = GetProto().tournamentscompleted();
+    double winPercent = 0;
     
     if(totalTournaments > 0)
     {
@@ -223,10 +231,8 @@ XayaPlayer::CalculatePrestige(const RoConfig& cfg)
         winPercent *= cfg->params().prestige_tournament_performance_mod();
     }
     
-    uint32_t winPercentPrestigeMod = winPercent;
-    prestige = (int64_t)(getPercentageEpic + getPercentageRare + getPercentageUncommom + getPercentageCommon + averageRatingScore) * (100 + winPercentPrestigeMod);
-    prestige = prestige / 100;
-    
+    double winPercentPrestigeMod = winPercent;
+    prestige = (int64_t)(getPercentageEpic + getPercentageRare + getPercentageUncommom + getPercentageCommon + averageRatingScore) * (1 + winPercentPrestigeMod);
     dirtyFields = true;
 }
 

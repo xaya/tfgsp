@@ -183,8 +183,6 @@ RecipeInstance::BindFieldValues (Database::Statement& stmt) const
 
 uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xaya::Random& rnd, Database& db)
 {
-    LOG (WARNING) << "Generating custom recipe";
-    
     std::vector<pxd::proto::FighterName> potentialNames;
     const auto& fighterNames = cfg->fighternames();
     
@@ -299,8 +297,6 @@ uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xa
       generatedRecipe.set_duration(cfg->params().epic_recipe_cook_cost());
     }     
     
-    LOG (WARNING) << "name: " << fname + " " + lname;
-    
     generatedRecipe.set_fightername(fname + " " + lname);
     generatedRecipe.set_name(fname + " " + lname);
     generatedRecipe.set_fightertype(fighterType.authoredid());
@@ -379,9 +375,7 @@ uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xa
         std::string* newMove = generatedRecipe.add_moves();
         newMove->assign(generatedMoveblueprints[d].authoredid());
     }
-    
-    LOG (WARNING) << "total moves: " << generatedMoveblueprints.size() << "out of " << numberOfMoves;
-    
+
     // We generated candy needed amount based on the moves
     
     uint64_t candyPerMoveAmount = cfg->params().required_candy_per_vove();
@@ -419,7 +413,10 @@ uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xa
 
     RecipeInstanceTable rt(db);
     
-    auto handle = rt.CreateNew("", generatedRecipe, cfg);    
+    auto handle = rt.CreateNew("", generatedRecipe, cfg);  
+
+     LOG (WARNING) << "generated new recipe" << handle->GetId();
+    
     return handle->GetId();
 }
 
