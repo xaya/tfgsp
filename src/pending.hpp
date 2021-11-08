@@ -67,9 +67,19 @@ public:
   void AddCrystalPurchase (const XayaPlayer& a, std::string crystalBundleKey);
   
    /**
-   * Updates the state for a new recepie instance bundle
+   * Updates the state for a new recepie cooking action
    */    
   void AddRecepieCookingInstance (const XayaPlayer& a, int32_t duration); 
+  
+  /**
+   * Updates the state for a new sweetener cooking action
+   */    
+  void AddSweetenerCookingInstance (const XayaPlayer& a, const std::string sweetenerKeyName, int32_t duration); 
+  
+  /**
+   * Updates the state for a cooked sweetener being claimed back on fighter
+   */  
+  void AddClaimingSweetenerReward (const XayaPlayer& a, const std::string sweetenerAuthId);
   
    /**
    * Updates the state for a new recepie instance bundle
@@ -100,6 +110,26 @@ public:
    * Updates the state for a new fighter deconstruction
    */      
   void AddDeconstructionData (const XayaPlayer& a, uint32_t fighterID);   
+  
+   /**
+   * Updates the state for a deconstructed fighter reward claiming
+   */     
+  void AddDeconstructionRewardData (const XayaPlayer& a, uint32_t fighterID);
+  
+   /**
+   * Updates the state for a fighter being bought
+   */      
+  void AddFighterForBuyData (const XayaPlayer& a, uint32_t fighterID);
+
+   /**
+   * Updates the state for a fighter being sold
+   */      
+  void AddFighterForSaleData (const XayaPlayer& a, uint32_t fighterID);
+
+   /**
+   * Updates the state for a fighter being removed from sale
+   */      
+  void RemoveFromSaleData (const XayaPlayer& a, uint32_t fighterID); 
   
   /**
    * Pending state updates associated to an account.
@@ -143,10 +173,28 @@ public:
     */    
     std::vector<uint32_t> deconstructionData;    
     
+    /** Pending ids of fighters claiming deonstruction data
+    */    
+    std::vector<uint32_t> deconstructionDataClaiming; 
+
+    /** Pending ids of fighters being putted for sale
+    */    
+    std::vector<uint32_t> fightingForSale;
+
+    /** Pending ids of fighters being putted for buying
+    */    
+    std::vector<uint32_t> fightingForBuy;  
+    
+    /** Pending ids of fighters being putted for removed from sale
+    */    
+    std::vector<uint32_t> fightingRemoveSale;     
+    
     /** Pending authids of currently items purchasing
     */    
-    std::vector<std::string> purchasing;       
-
+    std::vector<std::string> purchasing;   
+ 
+    /** IAuth ids of sweeteners being claimed */
+    std::vector<std::string> sweetenerClaimingAuthIds;
   };  
   
   /** Pending updates by account name.  */

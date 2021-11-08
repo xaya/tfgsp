@@ -84,13 +84,36 @@ PendingState::AddCrystalPurchase (const XayaPlayer& a, std::string crystalBundle
 }
 
 void
+PendingState::AddClaimingSweetenerReward (const XayaPlayer& a, const std::string sweetenerAuthId)
+{
+  VLOG (1) << "Adding pending claiming sweetener reward" << a.GetName ();
+
+  auto& aState = GetXayaPlayerState (a);
+  aState.sweetenerClaimingAuthIds.push_back(sweetenerAuthId);
+}
+
+void
+PendingState::AddSweetenerCookingInstance (const XayaPlayer& a, const std::string sweetenerKeyName, int32_t duration)
+{
+  VLOG (1) << "Adding pending sweetener cooking operation for name" << a.GetName ();
+
+  auto& aState = GetXayaPlayerState (a);
+
+  proto::OngoinOperation newOp;
+  newOp.set_blocksleft(duration);
+  newOp.set_appliedgoodykeyname(sweetenerKeyName);
+  newOp.set_type((int8_t)pxd::OngoingType::COOK_SWEETENER);  
+  
+  aState.ongoings.push_back(newOp);
+}
+
+void
 PendingState::AddRecepieCookingInstance (const XayaPlayer& a, int32_t duration)
 {
   VLOG (1) << "Adding pending recepie cooking operation for name" << a.GetName ();
 
   auto& aState = GetXayaPlayerState (a);
-  aState.balance = a.GetBalance();
-  
+
   proto::OngoinOperation newOp;
   newOp.set_blocksleft(duration);
   newOp.set_type((int8_t)pxd::OngoingType::COOK_RECIPE);  
@@ -154,6 +177,42 @@ PendingState::AddTournamentLeaves (const XayaPlayer& a, uint32_t tournamentID)
 }
 
 void
+PendingState::AddFighterForBuyData (const XayaPlayer& a, uint32_t fighterID)
+{
+  VLOG (1) << "Adding fighting for buy for name" << a.GetName ();
+  
+  auto& aState = GetXayaPlayerState (a);
+  aState.fightingForBuy.push_back(fighterID);  
+}
+
+void
+PendingState::RemoveFromSaleData (const XayaPlayer& a, uint32_t fighterID)
+{
+  VLOG (1) << "Removing fighter from auction for buy for name" << a.GetName ();
+  
+  auto& aState = GetXayaPlayerState (a);
+  aState.fightingRemoveSale.push_back(fighterID);  
+}
+
+void
+PendingState::AddFighterForSaleData (const XayaPlayer& a, uint32_t fighterID)
+{
+  VLOG (1) << "Adding fighting for sale for name" << a.GetName ();
+  
+  auto& aState = GetXayaPlayerState (a);
+  aState.fightingForSale.push_back(fighterID);  
+}
+
+void
+PendingState::AddDeconstructionRewardData (const XayaPlayer& a, uint32_t fighterID)
+{
+  VLOG (1) << "Adding deconstruction reward claiming for name" << a.GetName ();
+  
+  auto& aState = GetXayaPlayerState (a);
+  aState.deconstructionDataClaiming.push_back(fighterID);  
+}
+
+void
 PendingState::AddDeconstructionData (const XayaPlayer& a, uint32_t fighterID)
 {
   VLOG (1) << "Adding pending tournament retracts for name" << a.GetName ();
@@ -161,7 +220,6 @@ PendingState::AddDeconstructionData (const XayaPlayer& a, uint32_t fighterID)
   auto& aState = GetXayaPlayerState (a);
   aState.deconstructionData.push_back(fighterID);  
 }
-
 
 void
 PendingState::AddRewardIDs (const XayaPlayer& a, std::vector<uint32_t> rewardDatabaseIds)
@@ -340,8 +398,12 @@ PendingStateUpdater::ProcessMove (const Json::Value& moveObj)
   /*If we have any recepies trying to submit for cooking, check here*/
   std::map<std::string, pxd::Quantity> fungibleItemAmountForDeduction;
   int32_t cookCost = -1;
+  uint32_t fighterID = -1;
   int32_t duration = -1;
   std::string weHaveApplibeGoodyName = "";
+  std::string sweetenerKeyName = "";
+  std::vector<uint32_t> rewardDatabaseIds;  
+  Amount price = 0;
   
   Json::Value& upd = mv["ca"];
   if(upd.isObject())
@@ -351,7 +413,17 @@ PendingStateUpdater::ProcessMove (const Json::Value& moveObj)
     
     if(ParseCookRecepie(*a, name, upd["r"], fungibleItemAmountForDeduction, cookCost, duration, weHaveApplibeGoodyName))
     {
-      state.AddRecepieCookingInstance(*a, duration);
+       state.AddRecepieCookingInstance(*a, duration);
+    }
+    
+    if(ParseSweetener(*a, name, upd["s"], fungibleItemAmountForDeduction, cookCost, fighterID, duration, sweetenerKeyName))
+    {
+       state.AddSweetenerCookingInstance(*a, sweetenerKeyName, duration);  
+    }
+    
+    if(ParseClaimSweetener(*a, name, upd["sc"], fighterID, rewardDatabaseIds))
+    {
+       state.AddClaimingSweetenerReward(*a, upd["sc"].asString());   
     }
   }
   
@@ -366,8 +438,6 @@ PendingStateUpdater::ProcessMove (const Json::Value& moveObj)
       state.AddExpeditionInstance(*a, duration);
     }  
 
-    std::vector<uint32_t> rewardDatabaseIds; 
-    
     if(ParseRewardData(*a, name, upd2["c"], rewardDatabaseIds))
     {
       state.AddRewardIDs(*a, rewardDatabaseIds);
@@ -384,24 +454,48 @@ PendingStateUpdater::ProcessMove (const Json::Value& moveObj)
     
     if(ParseTournamentEntryData(*a, name, upd3["e"], tournamentID, fighterIDS))
     {
-      state.AddTournamentEntries(*a, tournamentID, fighterIDS);  
+       state.AddTournamentEntries(*a, tournamentID, fighterIDS);  
     }
     
     if(ParseTournamentLeaveData(*a, name, upd3["l"], tournamentID))
     {
-      state.AddTournamentLeaves(*a, tournamentID);  
+       state.AddTournamentLeaves(*a, tournamentID);  
     }    
     
+    if(ParseTournamentRewardData(*a, name, upd3["c"], rewardDatabaseIds))
+    {
+       state.AddRewardIDs(*a, rewardDatabaseIds); 
+    }    
   }  
   
   Json::Value& upd4 = mv["f"];   
   
   if(upd4.isObject())
   {  
-    uint32_t fighterID = 0;
     if(ParseDeconstructData(*a, name, upd4["d"], fighterID))
     {
       state.AddDeconstructionData(*a, fighterID);  
+    }
+    
+    if(ParseDeconstructRewardData(*a, name, upd4["c"], fighterID)) 
+    {
+      state.AddDeconstructionRewardData(*a, fighterID);  
+    }    
+    
+    uint32_t durationI = -1;
+    if(ParseFighterForSaleData(*a, name, upd4["s"], fighterID, durationI, price))
+    {
+      state.AddFighterForSaleData(*a, fighterID);  
+    }   
+
+    if(ParseBuyData(*a, name, upd4["b"], fighterID)) 
+    {
+      state.AddFighterForBuyData(*a, fighterID);  
+    }        
+    
+    if(ParseRemoveBuyData(*a, name, upd4["r"], fighterID))
+    {
+      state.RemoveFromSaleData(*a, fighterID);  
     }
   }
 

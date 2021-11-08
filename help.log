@@ -1,0 +1,97 @@
+Making check in data
+make[1]: Entering directory '/home/RyuMaster/tfgsp/data'
+make[1]: Nothing to be done for 'check'.
+make[1]: Leaving directory '/home/RyuMaster/tfgsp/data'
+Making check in proto
+make[1]: Entering directory '/home/RyuMaster/tfgsp/proto'
+make  check-am
+make[2]: Entering directory '/home/RyuMaster/tfgsp/proto'
+make[2]: Nothing to be done for 'check-am'.
+make[2]: Leaving directory '/home/RyuMaster/tfgsp/proto'
+make[1]: Leaving directory '/home/RyuMaster/tfgsp/proto'
+Making check in proto2
+make[1]: Entering directory '/home/RyuMaster/tfgsp/proto2'
+make  check-am
+make[2]: Entering directory '/home/RyuMaster/tfgsp/proto2'
+make  tests.exe
+make[3]: Entering directory '/home/RyuMaster/tfgsp/proto2'
+make[3]: 'tests.exe' is up to date.
+make[3]: Leaving directory '/home/RyuMaster/tfgsp/proto2'
+make  check-TESTS
+make[3]: Entering directory '/home/RyuMaster/tfgsp/proto2'
+make[4]: Entering directory '/home/RyuMaster/tfgsp/proto2'
+PASS: tests.exe
+============================================================================
+Testsuite summary for tfd 0.4
+============================================================================
+# TOTAL: 1
+# PASS:  1
+# SKIP:  0
+# XFAIL: 0
+# FAIL:  0
+# XPASS: 0
+# ERROR: 0
+============================================================================
+make[4]: Leaving directory '/home/RyuMaster/tfgsp/proto2'
+make[3]: Leaving directory '/home/RyuMaster/tfgsp/proto2'
+make[2]: Leaving directory '/home/RyuMaster/tfgsp/proto2'
+make[1]: Leaving directory '/home/RyuMaster/tfgsp/proto2'
+Making check in database
+make[1]: Entering directory '/home/RyuMaster/tfgsp/database'
+make  tests.exe libdbtest.la \
+  dbtest.hpp
+make[2]: Entering directory '/home/RyuMaster/tfgsp/database'
+make[2]: 'tests.exe' is up to date.
+make[2]: 'libdbtest.la' is up to date.
+make[2]: Nothing to be done for 'dbtest.hpp'.
+make[2]: Leaving directory '/home/RyuMaster/tfgsp/database'
+make  check-TESTS
+make[2]: Entering directory '/home/RyuMaster/tfgsp/database'
+make[3]: Entering directory '/home/RyuMaster/tfgsp/database'
+PASS: tests.exe
+============================================================================
+Testsuite summary for tfd 0.4
+============================================================================
+# TOTAL: 1
+# PASS:  1
+# SKIP:  0
+# XFAIL: 0
+# FAIL:  0
+# XPASS: 0
+# ERROR: 0
+============================================================================
+make[3]: Leaving directory '/home/RyuMaster/tfgsp/database'
+make[2]: Leaving directory '/home/RyuMaster/tfgsp/database'
+make[1]: Leaving directory '/home/RyuMaster/tfgsp/database'
+Making check in src
+make[1]: Entering directory '/home/RyuMaster/tfgsp/src'
+make  check-am
+make[2]: Entering directory '/home/RyuMaster/tfgsp/src'
+make  tests.exe libtestutils.la \
+  testutils.hpp
+make[3]: Entering directory '/home/RyuMaster/tfgsp/src'
+make[3]: 'tests.exe' is up to date.
+make[3]: 'libtestutils.la' is up to date.
+make[3]: Nothing to be done for 'testutils.hpp'.
+make[3]: Leaving directory '/home/RyuMaster/tfgsp/src'
+make  check-TESTS
+make[3]: Entering directory '/home/RyuMaster/tfgsp/src'
+make[4]: Entering directory '/home/RyuMaster/tfgsp/src'
+FAIL: tests.exe
+============================================================================
+Testsuite summary for tfd 0.4
+============================================================================
+# TOTAL: 1
+# PASS:  0
+# SKIP:  0
+# XFAIL: 0
+# FAIL:  1
+# XPASS: 0
+# ERROR: 0
+============================================================================
+See src/test-suite.log
+============================================================================
+make[4]: Leaving directory '/home/RyuMaster/tfgsp/src'
+make[3]: Leaving directory '/home/RyuMaster/tfgsp/src'
+make[2]: Leaving directory '/home/RyuMaster/tfgsp/src'
+make[1]: Leaving directory '/home/RyuMaster/tfgsp/src'
