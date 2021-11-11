@@ -427,7 +427,7 @@ TEST_F (ValidateStateTests, SweetenerCookAndProperRewardsClaimed)
   EXPECT_EQ (pl->GetOngoingsSize (), 0);
   pl.reset();  
     
-  EXPECT_EQ (tbl4.CountForOwner("domob"), 6);
+  EXPECT_EQ (tbl4.CountForOwner("domob"), 3);
 
   ft = tbl3.GetById(4, ctx.RoConfig());
   ASSERT_TRUE (ft != nullptr); 
@@ -442,7 +442,7 @@ TEST_F (ValidateStateTests, SweetenerCookAndProperRewardsClaimed)
   
   ft = tbl3.GetById(4, ctx.RoConfig());
   ASSERT_TRUE (ft != nullptr); 
-  EXPECT_EQ(ft->GetProto().moves_size(), 8);
+  EXPECT_EQ(ft->GetProto().moves_size(), 5);
   ft.reset();  
 }
 
@@ -502,6 +502,8 @@ TEST_F (ValidateStateTests, ClaimRewardsAfterExpedition)
   EXPECT_EQ (xp->CollectInventoryFighters(ctx.RoConfig()).size(), 3);
   xp.reset();
   
+  EXPECT_EQ (tbl4.CountForOwner("domob"), 0);
+  
   Process (R"([
     {"name": "domob", "move": {"exp": {"f": {"eid": "c064e7f7-acbf-4f74-fab8-cccd7b2d4004", "fid": 4}}}}
   ])");  
@@ -528,7 +530,7 @@ TEST_F (ValidateStateTests, ClaimRewardsAfterExpedition)
   EXPECT_EQ (a->GetOngoingsSize (), 0);
   a.reset ();
   
-  EXPECT_EQ (tbl4.CountForOwner("domob"), 4);
+  EXPECT_EQ (tbl4.CountForOwner("domob"), 3);
   
   Process (R"([
     {"name": "domob", "move": {"exp": {"c": {"eid": "c064e7f7-acbf-4f74-fab8-cccd7b2d4004"}}}}
@@ -697,7 +699,7 @@ TEST_F (ValidateStateTests, ClaimRewardsWhenFullSlotsEmptySomeAndFinishClaiming)
   EXPECT_EQ (a->GetOngoingsSize (), 0);
   a.reset ();
   
-  EXPECT_EQ (tbl4.CountForOwner("domob"), 4);
+  EXPECT_EQ (tbl4.CountForOwner("domob"), 3);
   
   Process (R"([
     {"name": "domob", "move": {"exp": {"c": {"eid": "c064e7f7-acbf-4f74-fab8-cccd7b2d4004"}}}}
@@ -777,7 +779,7 @@ TEST_F (ValidateStateTests, ExpeditionTestRewards)
     UpdateState ("[]");
   }
   
-  EXPECT_EQ (tbl4.CountForOwner("domob"), 4);
+  EXPECT_EQ (tbl4.CountForOwner("domob"), 3);
 
 }
 
@@ -990,8 +992,8 @@ TEST_F (ValidateStateTests, TournamentResolvedTest)
     UpdateState ("[]");
   }
   
-  EXPECT_EQ (tbl4.CountForOwner("domob"), 8);
-  EXPECT_EQ (tbl4.CountForOwner("andy"), 11);
+  EXPECT_EQ (tbl4.CountForOwner("domob"), 7);
+  EXPECT_EQ (tbl4.CountForOwner("andy"), 10);
   
   Process (R"([
     {"name": "andy", "move": {"tm": {"c": {"tid": )" + converted + R"(}}}}
@@ -999,7 +1001,7 @@ TEST_F (ValidateStateTests, TournamentResolvedTest)
   
   UpdateState ("[]");
   
-  EXPECT_EQ (tbl4.CountForOwner("domob"), 8);
+  EXPECT_EQ (tbl4.CountForOwner("domob"), 7);
   EXPECT_EQ (tbl4.CountForOwner("andy"), 0);  
   
   tutorialTrmn = tbl5.GetById(TID, ctx.RoConfig());
@@ -1095,7 +1097,7 @@ TEST_F (ValidateStateTests, RatingSweetnessUpgrades)
   }
   
   ftA = tbl3.GetById(ftA1id, ctx.RoConfig());
-  EXPECT_EQ (ftA->GetProto().rating(), 1125);
+  EXPECT_EQ (ftA->GetProto().rating(), 1127);
   EXPECT_EQ (ftA->GetProto().sweetness(), (int)pxd::Sweetness::Bittersweet);
   ftA.reset();  
 }
@@ -1176,8 +1178,8 @@ TEST_F (ValidateStateTests, TournamentStrongerFighterWins)
     UpdateState ("[]");
   }
   
-  EXPECT_EQ (tbl4.CountForOwner("domob"), 11);
-  EXPECT_EQ (tbl4.CountForOwner("andy"), 8);
+  EXPECT_EQ (tbl4.CountForOwner("domob"), 10);
+  EXPECT_EQ (tbl4.CountForOwner("andy"), 7);
 }
 
 

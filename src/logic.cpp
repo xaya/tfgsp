@@ -78,6 +78,33 @@ std::vector<uint32_t> PXLogic::GenerateActivityReward(const uint32_t fighterID, 
     
   if((int8_t)rw.type() != (int8_t)RewardType::None)
   {
+    if((RewardType)(int)rw.type() == RewardType::List)
+    {
+        const auto& rewardsList = ctx.RoConfig()->activityrewards();
+        for(const auto& rewardsTable: rewardsList)
+        {          
+          if(rewardsTable.second.authoredid() == rw.listtableid())
+          {            
+            uint32_t posInTableList2 = 0;
+            
+            for(auto& rw2: rewardsTable.second.rewards())
+            {
+                std::vector<uint32_t> newIDS = GenerateActivityReward(fighterID, blueprintAuthID, tournamentID, rw2, ctx, db, a, rnd, posInTableList2, rw.listtableid(), sweetenerAuthID);
+                
+                for(long long unsigned int j = 0; j < newIDS.size(); j++)
+                {
+                  iDS.push_back(newIDS[j]);
+                }
+                
+                posInTableList2++;
+            }
+          }
+          
+          
+        }     
+    }      
+    else
+    {
       auto newReward = rewardsTbl.CreateNew(a->GetName());              
       newReward->MutableProto().set_expeditionid(blueprintAuthID);
       newReward->MutableProto().set_rewardid(basedRewardsTableAuthId);
@@ -110,33 +137,7 @@ std::vector<uint32_t> PXLogic::GenerateActivityReward(const uint32_t fighterID, 
           
           LOG (WARNING) << "GeneratedRecipe reward generated";
       }
-      
-      if((RewardType)(int)rw.type() == RewardType::List)
-      {
-          const auto& rewardsList = ctx.RoConfig()->activityrewards();
-          for(const auto& rewardsTable: rewardsList)
-          {   
-            
-            if(rewardsTable.second.authoredid() == rw.listtableid())
-            {            
-              uint32_t posInTableList2 = 0;
-              
-              for(auto& rw2: rewardsTable.second.rewards())
-              {
-                  std::vector<uint32_t> newIDS = GenerateActivityReward(fighterID, blueprintAuthID, tournamentID, rw2, ctx, db, a, rnd, posInTableList2, rw.listtableid(), sweetenerAuthID);
-                  
-                  for(long long unsigned int j = 0; j < newIDS.size(); j++)
-                  {
-                    iDS.push_back(newIDS[j]);
-                  }
-                  
-                  posInTableList2++;
-              }
-            }
-            
-            
-          }     
-      }
+    }
   }
 
   return iDS;
@@ -208,7 +209,7 @@ void PXLogic::ResolveSweetener(std::unique_ptr<XayaPlayer>& a, std::string sweet
         
         if(totalWeight != 0)
         {
-          rnd.NextInt(totalWeight);
+          rolCurNum = rnd.NextInt(totalWeight);
         }
         
         int accumulatedWeight = 0;
@@ -266,7 +267,7 @@ void PXLogic::ResolveSweetener(std::unique_ptr<XayaPlayer>& a, std::string sweet
         
         if(totalWeight != 0)
         {
-          rnd.NextInt(totalWeight);
+          rolCurNum = rnd.NextInt(totalWeight);
         }
         
         int accumulatedWeight = 0;
@@ -324,7 +325,7 @@ void PXLogic::ResolveSweetener(std::unique_ptr<XayaPlayer>& a, std::string sweet
         
         if(totalWeight != 0)
         {
-          rnd.NextInt(totalWeight);
+          rolCurNum = rnd.NextInt(totalWeight);
         }
         
         int accumulatedWeight = 0;
@@ -494,7 +495,7 @@ void PXLogic::ResolveExpedition(std::unique_ptr<XayaPlayer>& a, const std::strin
         
         if(totalWeight != 0)
         {
-          rnd.NextInt(totalWeight);
+          rolCurNum = rnd.NextInt(totalWeight);
         }
         
         int accumulatedWeight = 0;
@@ -669,18 +670,18 @@ void PXLogic::TickAndResolveOngoings(Database& db, const Context& ctx, xaya::Ran
     }    
 }
 
-double PXLogic::ExecuteOneMoveAgainstAnother(const Context& ctx, std::string lmv, std::string rmv)
+fpm::fixed_24_8 PXLogic::ExecuteOneMoveAgainstAnother(const Context& ctx, std::string lmv, std::string rmv)
 {
     const auto& moveList = ctx.RoConfig()->fightermoveblueprints();
     
-    double lmt = 0;
-    double rmt = 0;
+    fpm::fixed_24_8 lmt = fpm::fixed_24_8(0);
+    fpm::fixed_24_8 rmt = fpm::fixed_24_8(0);
     
     for(auto& moveCandidate: moveList)
     {
         if(moveCandidate.second.authoredid() == lmv)
         {
-            rmt = moveCandidate.second.movetype(); //in original code its vice versa, so... 0____0 rmt assigns lmv here
+            rmt = fpm::fixed_24_8(moveCandidate.second.movetype()); //in original code its vice versa, so... 0____0 rmt assigns lmv here
             break;
         }
     }
@@ -689,97 +690,97 @@ double PXLogic::ExecuteOneMoveAgainstAnother(const Context& ctx, std::string lmv
     {
         if(moveCandidate.second.authoredid() == rmv)
         {
-            lmt = moveCandidate.second.movetype();
+            lmt = fpm::fixed_24_8(moveCandidate.second.movetype());
             break;
         }
     }  
     
     if(lmt == rmt)
     {
-        return 0.5;
+        return fpm::fixed_24_8(0.5);
     }
     
-    pxd::MoveType lmtM = (pxd::MoveType)lmt;
-    pxd::MoveType rmtM = (pxd::MoveType)rmt;
+    pxd::MoveType lmtM = (pxd::MoveType)(int)lmt;
+    pxd::MoveType rmtM = (pxd::MoveType)(int)rmt;
     
     switch (lmtM)  {
         case pxd::MoveType::Heavy:
              switch (rmtM)
              {
                 case pxd::MoveType::Speedy:
-                    return 0;
+                    return fpm::fixed_24_8(0);
                 case pxd::MoveType::Tricky:
-                    return 1;
+                    return fpm::fixed_24_8(1);
                 case pxd::MoveType::Distance:
-                    return 1;
+                    return fpm::fixed_24_8(1);
                 case pxd::MoveType::Blocking:
-                    return 0;
+                    return fpm::fixed_24_8(0);
                 case pxd::MoveType::Heavy:
-                    return 0;                    
+                    return fpm::fixed_24_8(0);                    
              }
-             return 0;
+             return fpm::fixed_24_8(0);
         case pxd::MoveType::Speedy:
              switch (rmtM)
              {
                 case pxd::MoveType::Heavy:
-                    return 1;
+                    return fpm::fixed_24_8(1);
                 case pxd::MoveType::Tricky:
-                    return 0;
+                    return fpm::fixed_24_8(0);
                 case pxd::MoveType::Distance:
-                    return 0;
+                    return fpm::fixed_24_8(0);
                 case pxd::MoveType::Blocking:
-                    return 1;
+                    return fpm::fixed_24_8(1);
                 case pxd::MoveType::Speedy:
-                    return 1;                    
+                    return fpm::fixed_24_8(1);                    
              }
-             return 0;
+             return fpm::fixed_24_8(0);
         case pxd::MoveType::Tricky:
              switch (rmtM)
              {
                 case pxd::MoveType::Heavy:
-                    return 0;
+                    return fpm::fixed_24_8(0);
                 case pxd::MoveType::Speedy:
-                    return 1;
+                    return fpm::fixed_24_8(1);
                 case pxd::MoveType::Distance:
-                    return 1;
+                    return fpm::fixed_24_8(1);
                 case pxd::MoveType::Blocking:
-                    return 0;
+                    return fpm::fixed_24_8(0);
                 case pxd::MoveType::Tricky:
-                    return 0;                    
+                    return fpm::fixed_24_8(0);                    
              }
-             return 0;   
+             return fpm::fixed_24_8(0);   
         case pxd::MoveType::Distance:
              switch (rmtM)
              {
                 case pxd::MoveType::Heavy:
-                    return 0;
+                    return fpm::fixed_24_8(0);
                 case pxd::MoveType::Speedy:
-                    return 1;
+                    return fpm::fixed_24_8(1);
                 case pxd::MoveType::Tricky:
-                    return 0;
+                    return fpm::fixed_24_8(0);
                 case pxd::MoveType::Blocking:
-                    return 1;
+                    return fpm::fixed_24_8(1);
                 case pxd::MoveType::Distance:
-                    return 1;                    
+                    return fpm::fixed_24_8(1);                    
              }
-             return 0;   
+             return fpm::fixed_24_8(0);   
         case pxd::MoveType::Blocking:
              switch (rmtM)
              {
                 case pxd::MoveType::Heavy:
-                    return 1;
+                    return fpm::fixed_24_8(1);
                 case pxd::MoveType::Speedy:
-                    return 0;
+                    return fpm::fixed_24_8(0);
                 case pxd::MoveType::Tricky:
-                    return 1;
+                    return fpm::fixed_24_8(1);
                 case pxd::MoveType::Distance:
-                    return 0;
+                    return fpm::fixed_24_8(0);
                 case pxd::MoveType::Blocking:
-                    return 1;                    
+                    return fpm::fixed_24_8(1);                    
              }
-             return 0;                
+             return fpm::fixed_24_8(0);                
         default:
-            return 0;
+            return fpm::fixed_24_8(0);
     }    
 }
 
@@ -791,23 +792,24 @@ double PXLogic::ExecuteOneMoveAgainstAnother(const Context& ctx, std::string lmv
  * For now set to 15 for everyone.
  */
 
-void PXLogic::CreateEloRating(const Context& ctx, double& ratingA, double& ratingB, double& scoreA, double& scoreB, double& expectedA, 
-double& expectedB, double& newRatingA, double& newRatingB)
+void PXLogic::CreateEloRating(const Context& ctx, fpm::fixed_24_8& ratingA, fpm::fixed_24_8& ratingB, fpm::fixed_24_8& scoreA, fpm::fixed_24_8& scoreB, fpm::fixed_24_8& expectedA, 
+fpm::fixed_24_8& expectedB, fpm::fixed_24_8& newRatingA, fpm::fixed_24_8& newRatingB)
 {    
-  LOG (WARNING) << "Elo in" << ratingA << " " << ratingB << " " << scoreA << " " << scoreB << " " << expectedA << " " << expectedB << " " << newRatingA << " " << newRatingB;
-
   int KFACTOR = ctx.RoConfig()->params().elok_factor();
-  float ALMS = ctx.RoConfig()->params().alms();
+  fpm::fixed_24_8 ALMS = fpm::fixed_24_8(ctx.RoConfig()->params().alms());
   
-  expectedA = 1 / (1 + (std::pow(10, ( ratingB - ratingA) / 400)) );
-  expectedB = 1 / (1 + (std::pow(10, ( ratingA - ratingB) / 400)) );
+  fpm::fixed_24_8 val1 = fpm::fixed_24_8(( ratingB - ratingA) / 400);
+  fpm::fixed_24_8 val2 = fpm::fixed_24_8(( ratingA - ratingB) / 400);
   
-  if (scoreA == 0)
+  expectedA = 1 / (1 + (fpm::pow(fpm::fixed_24_8(10), val1)));
+  expectedB = 1 / (1 + (fpm::pow(fpm::fixed_24_8(10), val2)));
+  
+  if (scoreA == fpm::fixed_24_8(0))
   {
       newRatingA = ratingA + (ALMS * (KFACTOR * ( scoreA - expectedA )));
       newRatingB = ratingB + (KFACTOR * ( scoreB - expectedB )); 
   }
-  else if (scoreB == 0)
+  else if (scoreB == fpm::fixed_24_8(0))
   {
       newRatingA = ratingA + (KFACTOR * ( scoreA - expectedA ));
       newRatingB = ratingB + (ALMS  * (KFACTOR * ( scoreB - expectedB )));
@@ -837,7 +839,7 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
       
       std::map<std::string, std::vector<uint32_t>> teams;
       std::vector<std::pair<uint32_t,uint32_t>> fighterPairs;
-      std::map<std::string, double> participatingPlayerTotalScore;
+      std::map<std::string, fpm::fixed_24_8> participatingPlayerTotalScore;
 
       std::map<uint32_t, proto::TournamentResult*> fighterResults;
       //Lets collect teams
@@ -956,8 +958,8 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
                     lhsMovesUnshuffled.erase(randomMove);
                  }    
 
-                 double rScore = 0;
-                 double lScore = 0;
+                 fpm::fixed_24_8 rScore = fpm::fixed_24_8(0);
+                 fpm::fixed_24_8 lScore = fpm::fixed_24_8(0);
                  
                  int count = rhsMoves.size();
                  
@@ -976,7 +978,7 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
                      std::string rmove = rhsMoves[g];
                      std::string lmove = lhsMoves[g];
                      
-                     double result = ExecuteOneMoveAgainstAnother(ctx, lmove, rmove);
+                     fpm::fixed_24_8 result = ExecuteOneMoveAgainstAnother(ctx, lmove, rmove);
 
                      rScore += result;
                      lScore += 1 - result;
@@ -994,23 +996,23 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
 
                  //Rating and rewards calculation starts now
                  
-                 double ratingA = lhs->GetProto().rating();
-                 double ratingB = rhs->GetProto().rating();                 
+                 fpm::fixed_24_8 ratingA = fpm::fixed_24_8(lhs->GetProto().rating());
+                 fpm::fixed_24_8 ratingB = fpm::fixed_24_8(rhs->GetProto().rating());                 
                 
                  pxd::MatchResultType lwin = pxd::MatchResultType::Win;
                  pxd::MatchResultType rwin = pxd::MatchResultType::Lose;
                  
-                 double scoreA = 0;
-                 double scoreB = 0;
+                 fpm::fixed_24_8 scoreA = fpm::fixed_24_8(0);
+                 fpm::fixed_24_8 scoreB = fpm::fixed_24_8(0);
                  
                  if (participatingPlayerTotalScore.find(lhs->GetOwner()) == participatingPlayerTotalScore.end())
                  {
-                     participatingPlayerTotalScore.insert(std::pair<std::string, uint32_t>(lhs->GetOwner(), 0));
+                     participatingPlayerTotalScore.insert(std::pair<std::string, fpm::fixed_24_8>(lhs->GetOwner(), fpm::fixed_24_8(0)));
                  }
                  
                  if (participatingPlayerTotalScore.find(rhs->GetOwner()) == participatingPlayerTotalScore.end())
                  {
-                     participatingPlayerTotalScore.insert(std::pair<std::string, uint32_t>(rhs->GetOwner(), 0));
+                     participatingPlayerTotalScore.insert(std::pair<std::string, fpm::fixed_24_8>(rhs->GetOwner(), fpm::fixed_24_8(0)));
                  }                 
                  
                  switch (winner)  
@@ -1019,7 +1021,7 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
                         lwin = pxd::MatchResultType::Win;
                         rwin = pxd::MatchResultType::Lose;
                         participatingPlayerTotalScore[lhs->GetOwner()] += 1;
-                        scoreA = 1;
+                        scoreA = fpm::fixed_24_8(1);
                         
                         fighterResults[fPair.first]->set_losses(fighterResults[fPair.first]->losses() + 1);
                         fighterResults[fPair.second]->set_wins(fighterResults[fPair.second]->wins() + 1);
@@ -1027,10 +1029,10 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
                     case 1:
                         lwin = pxd::MatchResultType::Draw;
                         rwin = pxd::MatchResultType::Draw;
-                        scoreA = 0.5;
-                        scoreB = 0.5;
-                        participatingPlayerTotalScore[lhs->GetOwner()] += 0.5;
-                        participatingPlayerTotalScore[rhs->GetOwner()] += 0.5;
+                        scoreA = fpm::fixed_24_8(0.5);
+                        scoreB = fpm::fixed_24_8(0.5);
+                        participatingPlayerTotalScore[lhs->GetOwner()] += fpm::fixed_24_8(0.5);
+                        participatingPlayerTotalScore[rhs->GetOwner()] += fpm::fixed_24_8(0.5);
                         
                         fighterResults[fPair.first]->set_draws(fighterResults[fPair.first]->draws() + 1);
                         fighterResults[fPair.second]->set_draws(fighterResults[fPair.second]->draws() + 1);                        
@@ -1038,23 +1040,23 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
                     case 2:
                         lwin = pxd::MatchResultType::Lose;
                         rwin = pxd::MatchResultType::Win;
-                        scoreB = 1;
-                        participatingPlayerTotalScore[rhs->GetOwner()] += 0.5;
+                        scoreB = fpm::fixed_24_8(1);
+                        participatingPlayerTotalScore[rhs->GetOwner()] += fpm::fixed_24_8(0.5);
                         
                         fighterResults[fPair.second]->set_losses(fighterResults[fPair.second]->losses() + 1);
                         fighterResults[fPair.first]->set_wins(fighterResults[fPair.first]->wins() + 1);                        
                         break;
                  }                 
 
-                 double expectedA = 0;
-                 double expectedB = 0;
-                 double newRatingA = 0;
-                 double newRatingB = 0;
+                 fpm::fixed_24_8 expectedA = fpm::fixed_24_8(0);
+                 fpm::fixed_24_8 expectedB = fpm::fixed_24_8(0);
+                 fpm::fixed_24_8 newRatingA = fpm::fixed_24_8(0);
+                 fpm::fixed_24_8 newRatingB = fpm::fixed_24_8(0);
 
                  CreateEloRating(ctx, ratingA, ratingB, scoreA, scoreB, expectedA, expectedB, newRatingA, newRatingB);
 
-                 double lRatingDelta = lhs->GetProto().rating();
-                 double rRatingDelta = rhs->GetProto().rating();
+                 fpm::fixed_24_8 lRatingDelta = fpm::fixed_24_8(lhs->GetProto().rating());
+                 fpm::fixed_24_8 rRatingDelta = fpm::fixed_24_8(rhs->GetProto().rating());
                  
                  uint32_t newRatingForLhs = (uint32_t)std::max(0, (int)newRatingA);
                  uint32_t newRatingForRhs = (uint32_t)std::max(0, (int)newRatingB);
@@ -1086,15 +1088,15 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
                    rhs->MutableProto().set_matcheslost(rhs->GetProto().matcheslost() + 1);  
                  }             
 
-                 fighterResults[fPair.second]->set_ratingdelta(fighterResults[fPair.second]->ratingdelta() + rRatingDelta);
-                 fighterResults[fPair.first]->set_ratingdelta(fighterResults[fPair.first]->ratingdelta() + lRatingDelta);                                   
+                 fighterResults[fPair.second]->set_ratingdelta(fighterResults[fPair.second]->ratingdelta() + (int)rRatingDelta);
+                 fighterResults[fPair.first]->set_ratingdelta(fighterResults[fPair.first]->ratingdelta() + (int)lRatingDelta);                                   
                       
                  rhs.reset();
                  lhs.reset();
               }
               
               std::string winnerName = "";
-              uint32_t biggestScoreSoFar = 0;
+              fpm::fixed_24_8 biggestScoreSoFar = fpm::fixed_24_8(0);
               
               for(const auto& participant: participatingPlayerTotalScore)
               {
@@ -1157,7 +1159,7 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
                       
                       if(totalWeight != 0)
                       {
-                        rnd.NextInt(totalWeight);
+                        rolCurNum = rnd.NextInt(totalWeight);
                       }
                       
                       int accumulatedWeight = 0;

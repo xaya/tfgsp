@@ -38,6 +38,9 @@
 #include <memory>
 #include <string>
 
+#include <fpm/fixed.hpp>
+#include <fpm/math.hpp>
+
 namespace pxd
 {
 
@@ -136,14 +139,14 @@ private:
    * between the 2 moves of fighters
    */  
 
-  static double ExecuteOneMoveAgainstAnother(const Context& ctx, std::string lmv, std::string rmv);
+  static fpm::fixed_24_8 ExecuteOneMoveAgainstAnother(const Context& ctx, std::string lmv, std::string rmv);
   
   /**
    * Some crazy class ported as function from original code for ratings and scores calculation
    */    
   
-  static void CreateEloRating(const Context& ctx, double& ratingA, double& ratingB, double& scoreA, double& scoreB, double& expectedA, 
-  double& expectedB, double& newRatingA, double& newRatingB);
+  static void CreateEloRating(const Context& ctx, fpm::fixed_24_8& ratingA, fpm::fixed_24_8& ratingB, fpm::fixed_24_8& scoreA, fpm::fixed_24_8& scoreB, fpm::fixed_24_8& expectedA, 
+  fpm::fixed_24_8& expectedB, fpm::fixed_24_8& newRatingA, fpm::fixed_24_8& newRatingB);
 
   static void EloGetNewRatings();
 

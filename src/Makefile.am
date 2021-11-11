@@ -30,6 +30,9 @@ libtf_la_SOURCES = \
   params.cpp \
   pending.cpp
 libtfheaders = \
+  fpm/fixed.hpp \
+  fpm/ios.hpp \
+  fpm/math.hpp \
   context.hpp \
   forks.hpp \
   gamestatejson.hpp \
