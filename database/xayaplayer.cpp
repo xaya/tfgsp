@@ -97,19 +97,15 @@ XayaPlayer::XayaPlayer (Database& d, const Database::Result<XayaPlayerResult>& r
   roster_slots = cfg->params().max_fighter_inventory_amount();
   
   prestige = res.Get<XayaPlayerResult::prestige> ();
-
-  VLOG (1) << "Created account instance for " << name << " from database";
 }
 
 XayaPlayer::~XayaPlayer ()
 {
   if (!dirtyFields && !data.IsDirty () && !inv.IsDirty())
   {
-      VLOG (1) << "Account instance " << name << " is not dirty";
       return;
   }
 
-  VLOG (1) << "Updating account " << name << " in the database";
   CHECK_GE (GetBalance (), 0);
 
   auto stmt = db.Prepare (R"(
@@ -267,7 +263,9 @@ PlayerRoleToString (const PlayerRole f)
     case PlayerRole::EXCHANGEADMIN:
       return "e";
     case PlayerRole::ADMINISTRATOR:
-      return "a";      
+      return "a";   
+    case PlayerRole::INVALID:
+      return "i";        
     default:
       LOG (FATAL) << "Invalid faction: " << static_cast<int> (f);
     }
@@ -275,11 +273,7 @@ PlayerRoleToString (const PlayerRole f)
 
 void
 XayaPlayer::SetRole (const PlayerRole f)
-{
-  CHECK (role == PlayerRole::INVALID)
-      << "Account " << name << " already has a role";
-  CHECK (f != PlayerRole::INVALID)
-      << "Setting account " << name << " to NULL role";
+{  
   role = f;
   dirtyFields = true;
 }

@@ -84,39 +84,45 @@ PendingState::AddCrystalPurchase (const XayaPlayer& a, std::string crystalBundle
 }
 
 void
-PendingState::AddClaimingSweetenerReward (const XayaPlayer& a, const std::string sweetenerAuthId)
+PendingState::AddClaimingSweetenerReward (const XayaPlayer& a, const std::string sweetenerAuthId, int32_t fighterID)
 {
   VLOG (1) << "Adding pending claiming sweetener reward" << a.GetName ();
 
   auto& aState = GetXayaPlayerState (a);
   aState.sweetenerClaimingAuthIds.push_back(sweetenerAuthId);
+  aState.sweetenerClaimingFightersIds.push_back(fighterID);
 }
 
 void
-PendingState::AddSweetenerCookingInstance (const XayaPlayer& a, const std::string sweetenerKeyName, int32_t duration)
+PendingState::AddSweetenerCookingInstance (const XayaPlayer& a, const std::string sweetenerKeyName, int32_t duration, int32_t fighterID)
 {
   VLOG (1) << "Adding pending sweetener cooking operation for name" << a.GetName ();
 
   auto& aState = GetXayaPlayerState (a);
-
+  
+  aState.balance = a.GetBalance();
+  
   proto::OngoinOperation newOp;
   newOp.set_blocksleft(duration);
   newOp.set_appliedgoodykeyname(sweetenerKeyName);
+  newOp.set_fighterdatabaseid(fighterID);
   newOp.set_type((int8_t)pxd::OngoingType::COOK_SWEETENER);  
   
   aState.ongoings.push_back(newOp);
 }
 
 void
-PendingState::AddRecepieCookingInstance (const XayaPlayer& a, int32_t duration)
+PendingState::AddRecepieCookingInstance (const XayaPlayer& a, int32_t duration, int32_t recepieID)
 {
   VLOG (1) << "Adding pending recepie cooking operation for name" << a.GetName ();
 
   auto& aState = GetXayaPlayerState (a);
+  aState.balance = a.GetBalance();
 
   proto::OngoinOperation newOp;
   newOp.set_blocksleft(duration);
   newOp.set_type((int8_t)pxd::OngoingType::COOK_RECIPE);  
+  newOp.set_recipeid(recepieID);
   
   aState.ongoings.push_back(newOp);
 }
@@ -124,24 +130,26 @@ PendingState::AddRecepieCookingInstance (const XayaPlayer& a, int32_t duration)
 void
 PendingState::AddPurchasing (const XayaPlayer& a, std::string authID)
 {
-  VLOG (1) << "Adding pending recepie cooking operation for name" << a.GetName ();
+  VLOG (1) << "Adding pending Purchasingoperation for name" << a.GetName ();
   
   auto& aState = GetXayaPlayerState (a);
+  aState.balance = a.GetBalance();
   aState.purchasing.push_back(authID);
 }
 
 
 void
-PendingState::AddExpeditionInstance (const XayaPlayer& a, int32_t duration)
+PendingState::AddExpeditionInstance (const XayaPlayer& a, int32_t duration, std::string expeditionID, int32_t fighterID)
 {
   VLOG (1) << "Adding pending expedition operation for name" << a.GetName ();
 
   auto& aState = GetXayaPlayerState (a);
-  aState.balance = a.GetBalance();
-  
+
   proto::OngoinOperation newOp;
   newOp.set_blocksleft(duration);
   newOp.set_type((int8_t)pxd::OngoingType::EXPEDITION);  
+  newOp.set_expeditionblueprintid(expeditionID);
+  newOp.set_fighterdatabaseid(fighterID);
   
   aState.ongoings.push_back(newOp);
 }
@@ -168,12 +176,24 @@ PendingState::AddTournamentEntries (const XayaPlayer& a, uint32_t tournamentID, 
 }
 
 void
-PendingState::AddTournamentLeaves (const XayaPlayer& a, uint32_t tournamentID)
+PendingState::AddTournamentLeaves (const XayaPlayer& a, uint32_t tournamentID, std::vector<uint32_t> fighterIDS)
 {
   VLOG (1) << "Adding pending tournament retracts for name" << a.GetName ();
   
   auto& aState = GetXayaPlayerState (a);
-  aState.tournamentLeaves.push_back(tournamentID);  
+  
+  const auto mit = aState.tournamentLeaves.find (tournamentID);
+  if (mit == aState.tournamentLeaves.end ())
+  {
+    aState.tournamentLeaves.insert(std::pair<uint32_t, std::vector<uint32_t>>(tournamentID, fighterIDS));  
+  }
+  else
+  {
+    for(const auto& val: fighterIDS)
+    {
+      aState.tournamentLeaves[tournamentID].push_back(val); 
+    }
+  }
 }
 
 void
@@ -222,12 +242,45 @@ PendingState::AddDeconstructionData (const XayaPlayer& a, uint32_t fighterID)
 }
 
 void
-PendingState::AddRewardIDs (const XayaPlayer& a, std::vector<uint32_t> rewardDatabaseIds)
+PendingState::AddRewardIDs (const XayaPlayer& a, std::string expeditionName, std::vector<uint32_t> rewardDatabaseIds)
 {
   VLOG (1) << "Adding pending claim reward operations for name" << a.GetName ();
 
   auto& aState = GetXayaPlayerState (a);
-  aState.rewardDatabaseIds = rewardDatabaseIds;
+  
+  const auto mit = aState.rewardDatabaseIds.find (expeditionName);
+  if (mit == aState.rewardDatabaseIds.end ())
+  {
+    aState.rewardDatabaseIds.insert(std::pair<std::string, std::vector<uint32_t>>(expeditionName, rewardDatabaseIds));  
+  }
+  else
+  {
+    for(const auto& val: rewardDatabaseIds)
+    {
+      aState.rewardDatabaseIds[expeditionName].push_back(val); 
+    }
+  }
+}
+
+void
+PendingState::AddTournamentRewardIDs (const XayaPlayer& a, uint32_t tournamentID, std::vector<uint32_t> rewardDatabaseIds)
+{
+  VLOG (1) << "Adding pending claim reward operations for name" << a.GetName ();
+
+  auto& aState = GetXayaPlayerState (a);
+  
+  const auto mit = aState.rewardDatabaseIdsTournaments.find (tournamentID);
+  if (mit == aState.rewardDatabaseIdsTournaments.end ())
+  {
+    aState.rewardDatabaseIdsTournaments.insert(std::pair<uint32_t, std::vector<uint32_t>>(tournamentID, rewardDatabaseIds));  
+  }
+  else
+  {
+    for(const auto& val: rewardDatabaseIds)
+    {
+      aState.rewardDatabaseIdsTournaments[tournamentID].push_back(val); 
+    }
+  }
 }
 
 Json::Value
@@ -261,27 +314,91 @@ PendingState::XayaPlayerState::ToJson () const
       res["balance"] = balance;       
   }  
 
+  bool addBalance = false;
+
   if(ongoings.size() > 0)
   {
       Json::Value operations(Json::arrayValue);
       for(const auto& op: ongoings) 
       {
-          operations.append((int8_t)op.type());
+          Json::Value ongOBJ(Json::objectValue);
+          ongOBJ["ival"] = -1;
+          ongOBJ["sval"] = "";         
+          ongOBJ["type"] = (int8_t)op.type();  
+          
+          if((int8_t)op.type() == (int8_t)pxd::OngoingType::EXPEDITION)
+          {        
+            ongOBJ["sval"] = op.expeditionblueprintid();
+            ongOBJ["ival"] = IntToJson (op.fighterdatabaseid());
+          }
+          
+          if((int8_t)op.type() == (int8_t)pxd::OngoingType::COOK_RECIPE)
+          {        
+            ongOBJ["ival"] = IntToJson (op.recipeid());
+            addBalance = true;
+          }       
+
+          if((int8_t)op.type() == (int8_t)pxd::OngoingType::COOK_SWEETENER)
+          {     
+            ongOBJ["ival"] = IntToJson (op.fighterdatabaseid());
+            ongOBJ["sval"] = op.appliedgoodykeyname();
+            addBalance = true;
+          }              
+          
+          operations.append(ongOBJ);
       }  
 
       res["ongoings"] = operations;        
-  }  
+  }
+
+  if(addBalance)
+  {
+      res["balance"] = balance;
+  }
     
   if(rewardDatabaseIds.size() > 0)
   {
     Json::Value dtbrw(Json::arrayValue);
     for(const auto& rw: rewardDatabaseIds) 
     {
-      dtbrw.append(rw);
-    }  
+      Json::Value rwOBJ(Json::objectValue);
+      rwOBJ["type"] = rw.first;
       
+      Json::Value idsArr(Json::arrayValue);
+      for(const auto& vv: rw.second) 
+      {
+      idsArr.append(vv);
+      }
+      
+      rwOBJ["ids"] = idsArr;
+      
+      dtbrw.append(rwOBJ);
+    }  
+        
     res["claimingrewards"] = dtbrw;  
   }
+  
+  if(rewardDatabaseIdsTournaments.size() > 0)
+  {
+    Json::Value dtbrw(Json::arrayValue);
+    for(const auto& rw: rewardDatabaseIdsTournaments) 
+    {
+      Json::Value rwOBJ(Json::objectValue);
+      rwOBJ["type"] = IntToJson(rw.first);
+      
+      Json::Value idsArr(Json::arrayValue);
+      for(const auto& vv: rw.second) 
+      {
+      idsArr.append(vv);
+      }
+      
+      rwOBJ["ids"] = idsArr;
+      
+      dtbrw.append(rwOBJ);
+    }  
+        
+    res["claimingrewardstournament"] = dtbrw;  
+  }  
   
   if(tournamentEntries.size() > 0)
   {
@@ -309,11 +426,21 @@ PendingState::XayaPlayerState::ToJson () const
     Json::Value trnmentr(Json::arrayValue);
     for(const auto& rw: tournamentLeaves) 
     {
-      trnmentr.append(rw);
+      Json::Value trnmentr2(Json::arrayValue);
+      Json::Value trnm(Json::objectValue);
+      trnm["id"] = rw.first;
+      
+      for(const auto& val: rw.second)
+      {
+        trnmentr2.append(val);
+      }
+      
+      trnm["fids"] = trnmentr2;
+      trnmentr.append(trnm);
     }  
       
     res["tournamentleaves"] = trnmentr;      
-  }  
+  } 
   
   if(deconstructionData.size() > 0)
   {
@@ -324,6 +451,71 @@ PendingState::XayaPlayerState::ToJson () const
     }  
       
     res["deconstruction"] = fghttrs;      
+  }    
+  
+  if(purchasing.size() > 0)
+  {
+    Json::Value purchasingArr(Json::arrayValue);
+    for(const auto& pp: purchasing) 
+    {
+      purchasingArr.append(pp);
+    }  
+      
+    res["purchasing"] = purchasingArr;   
+    res["balance"] = balance;    
+  }  
+  
+  if(sweetenerClaimingAuthIds.size() > 0)
+  {
+    Json::Value sweetClaimingArr(Json::arrayValue);
+    for(const auto& sclm: sweetenerClaimingAuthIds) 
+    {
+      sweetClaimingArr.append(sclm);
+    }  
+      
+    res["sweetclmauth"] = sweetClaimingArr;         
+    
+    Json::Value sweetClaimingFighterArr(Json::arrayValue);
+    for(const auto& sclm: sweetenerClaimingFightersIds) 
+    {
+      sweetClaimingFighterArr.append(sclm);
+    }  
+      
+    res["sweetclmfghtr"] = sweetClaimingFighterArr;       
+  }
+  
+  if(fightingForSale.size() > 0)
+  {
+    Json::Value forSaleArr(Json::arrayValue);
+    for(const auto& fs: fightingForSale) 
+    {
+      forSaleArr.append(fs);
+    }  
+      
+    res["forsale"] = forSaleArr;   
+    res["balance"] = balance;        
+  }
+  
+  if(fightingForBuy.size() > 0)
+  {
+    Json::Value forBuyArr(Json::arrayValue);
+    for(const auto& fb: fightingForBuy) 
+    {
+      forBuyArr.append(fb);
+    }  
+      
+    res["forbuy"] = forBuyArr;          
+  }  
+  
+  if(fightingRemoveSale.size() > 0)
+  {
+    Json::Value forRemoveArr(Json::arrayValue);
+    for(const auto& fr: fightingRemoveSale) 
+    {
+      forRemoveArr.append(fr);
+    }  
+      
+    res["forremove"] = forRemoveArr;          
   }    
   
   return res;
@@ -389,7 +581,6 @@ PendingStateUpdater::ProcessMove (const Json::Value& moveObj)
           << " does not exist, ignoring pending move " << moveObj;          
       return;
     }
-  const bool xayaPlayerInit = a->IsInitialised ();
 
   CoinTransferBurn coinOps;
   if (ParseCoinTransferBurn (*a, mv, coinOps, burnt))
@@ -413,17 +604,18 @@ PendingStateUpdater::ProcessMove (const Json::Value& moveObj)
     
     if(ParseCookRecepie(*a, name, upd["r"], fungibleItemAmountForDeduction, cookCost, duration, weHaveApplibeGoodyName))
     {
-       state.AddRecepieCookingInstance(*a, duration);
+       state.AddRecepieCookingInstance(*a, duration, upd["r"]["rid"].asInt());
     }
     
     if(ParseSweetener(*a, name, upd["s"], fungibleItemAmountForDeduction, cookCost, fighterID, duration, sweetenerKeyName))
     {
-       state.AddSweetenerCookingInstance(*a, sweetenerKeyName, duration);  
+       state.AddSweetenerCookingInstance(*a, sweetenerKeyName, duration, fighterID);  
     }
     
-    if(ParseClaimSweetener(*a, name, upd["sc"], fighterID, rewardDatabaseIds))
+    std::string sweetenerAuthId = "";
+    if(ParseClaimSweetener(*a, name, upd["sc"], fighterID, rewardDatabaseIds, sweetenerAuthId))
     {
-       state.AddClaimingSweetenerReward(*a, upd["sc"].asString());   
+       state.AddClaimingSweetenerReward(*a, sweetenerAuthId, fighterID);   
     }
   }
   
@@ -435,12 +627,14 @@ PendingStateUpdater::ProcessMove (const Json::Value& moveObj)
 
     if(ParseExpeditionData(*a, name, upd2["f"], expeditionBlueprint, fighter, duration, weHaveApplibeGoodyName))
     {
-      state.AddExpeditionInstance(*a, duration);
+      state.AddExpeditionInstance(*a, duration, expeditionBlueprint.authoredid(), fighter->GetId());
     }  
 
-    if(ParseRewardData(*a, name, upd2["c"], rewardDatabaseIds))
+    std::string expeditionID = "";
+    
+    if(ParseRewardData(*a, name, upd2["c"], rewardDatabaseIds, expeditionID))
     {
-      state.AddRewardIDs(*a, rewardDatabaseIds);
+      state.AddRewardIDs(*a, expeditionID, rewardDatabaseIds);
     }  
     
   }
@@ -451,20 +645,22 @@ PendingStateUpdater::ProcessMove (const Json::Value& moveObj)
   {   
     uint32_t tournamentID = 0;
     std::vector<uint32_t> fighterIDS;   
+    std::vector<uint32_t> fighterIDSL; 
     
     if(ParseTournamentEntryData(*a, name, upd3["e"], tournamentID, fighterIDS))
     {
        state.AddTournamentEntries(*a, tournamentID, fighterIDS);  
     }
     
-    if(ParseTournamentLeaveData(*a, name, upd3["l"], tournamentID))
+    if(ParseTournamentLeaveData(*a, name, upd3["l"], tournamentID, fighterIDSL))
     {
-       state.AddTournamentLeaves(*a, tournamentID);  
+       state.AddTournamentLeaves(*a, tournamentID, fighterIDSL);  
     }    
     
-    if(ParseTournamentRewardData(*a, name, upd3["c"], rewardDatabaseIds))
+    
+    if(ParseTournamentRewardData(*a, name, upd3["c"], rewardDatabaseIds, tournamentID))
     {
-       state.AddRewardIDs(*a, rewardDatabaseIds); 
+       state.AddTournamentRewardIDs(*a, tournamentID, rewardDatabaseIds); 
     }    
   }  
   
@@ -510,18 +706,18 @@ PendingStateUpdater::ProcessMove (const Json::Value& moveObj)
       state.AddCrystalPurchase(*a, bundleKeyCode);
   }  
   
-  if(!ParseGoodyPurchase(mv, cost, name, fungibleName, a->GetBalance()))
+  if(ParseGoodyPurchase(mv, cost, name, fungibleName, a->GetBalance()))
   {
-      state.AddPurchasing(*a, mv["pg"].asString());
+      state.AddPurchasing(*a, mv["pg"].asString());  
   }
   
-  if(!ParseSweetenerPurchase(mv, cost, name, fungibleName, a->GetBalance()))
+  if(ParseSweetenerPurchase(mv, cost, name, fungibleName, a->GetBalance()))
   {
       state.AddPurchasing(*a, mv["ps"].asString());
   }  
   
   std::map<std::string, uint64_t> fungibles;
-  if(!ParseGoodyBundlePurchase(mv, cost, name, fungibles, a->GetBalance()))
+  if(ParseGoodyBundlePurchase(mv, cost, name, fungibles, a->GetBalance()))
   {
       state.AddPurchasing(*a, mv["pgb"].asString());
   }  
@@ -532,12 +728,6 @@ PendingStateUpdater::ProcessMove (const Json::Value& moveObj)
      in parallel).  */
      
   a.reset ();
-
-  /* If the account is not initialised yet, any other action is invalid anyway.
-     If this is the init move itself, they would be actually fine, but we
-     ignore this edge case for pending processing.  */
-  if (!xayaPlayerInit)
-    return;
 }
 
 /* ************************************************************************** */

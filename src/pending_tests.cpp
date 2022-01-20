@@ -346,6 +346,32 @@ TEST_F (PendingStateUpdaterTests, PurchaseCrystals)
   )");
 }
 
+TEST_F (PendingStateUpdaterTests, TestSweetenerCollect)
+{
+    auto a = xayaplayers.CreateNew ("testy2", ctx.RoConfig(), rnd);
+    state.AddClaimingSweetenerReward (*a, "authyauth", 14);
+    a.reset();
+    
+    ExpectStateJson (R"(
+    {
+      "xayaplayers":
+        [
+          {
+            "name": "testy2",
+			"sweetclmauth" : 
+			[
+              "authyauth"
+			],
+			"sweetclmfghtr" : 
+			[
+              14
+			]            
+          }
+        ]
+    }
+  )");    
+}
+
 TEST_F (PendingStateUpdaterTests, SubmitRecepieInstance)
 {
   auto a = xayaplayers.CreateNew ("testy2", ctx.RoConfig(), rnd);
@@ -367,7 +393,14 @@ TEST_F (PendingStateUpdaterTests, SubmitRecepieInstance)
         [
           {
             "name": "testy2",
-            "ongoings": [1]
+			"ongoings" : 
+			[
+				{
+					"ival" : 1,
+					"sval" : "",
+					"type" : 1
+				}
+			]
           }
         ]
     }
@@ -391,7 +424,14 @@ TEST_F (PendingStateUpdaterTests, SubmitExpedition)
         [
           {
             "name": "domob",
-            "ongoings": [2]
+			"ongoings" : 
+			[
+				{
+					"ival" : 4,
+					"sval" : "c064e7f7-acbf-4f74-fab8-cccd7b2d4004",
+					"type" : 2
+				}
+			]
           }
         ]
     }
@@ -459,22 +499,33 @@ TEST_F (PendingStateUpdaterTests, ExpeditionGetRewards)
 {
   auto a = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
   
+  std::string expeditionName = "tst";
   std::vector<uint32_t> rewardDatabaseIds;
   rewardDatabaseIds.push_back(1);
   rewardDatabaseIds.push_back(4);
    
-  state.AddRewardIDs (*a, rewardDatabaseIds);
+  state.AddRewardIDs (*a, expeditionName, rewardDatabaseIds);
   a.reset ();
    
   ExpectStateJson (R"(
     {
-      "xayaplayers":
-        [
-          {
-            "name": "domob",
-            "claimingrewards": [1, 4]
-          }
-        ]
+    "xayaplayers" : 
+	[
+		{
+			"claimingrewards" : 
+			[
+				{
+					"ids" : 
+					[
+						1,
+						4
+					],
+					"type" : "tst"
+				}
+			],
+			"name" : "domob"
+		}
+	]
     }
   )"); 
   
@@ -508,7 +559,19 @@ TEST_F (PendingStateUpdaterTests, SubmitRecepieInstanceMultiple)
         [
           {
             "name": "testy2",
-            "ongoings": [1, 1]
+			"ongoings" : 
+			[
+				{
+					"ival" : 1,
+					"sval" : "",
+					"type" : 1
+				},
+				{
+					"ival" : 2,
+					"sval" : "",
+					"type" : 1
+				}                
+			]
           }
         ]
     }
@@ -525,12 +588,7 @@ TEST_F (PendingStateUpdaterTests, SubmitRecepieNotExistingInPlayerInventory)
   
   ExpectStateJson (R"(
     {
-        "xayaplayers" :
-        [
-                {
-                        "name" : "testy2"
-                }
-        ]
+          "xayaplayers" : []
     }
   )");
 }

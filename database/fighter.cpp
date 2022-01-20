@@ -66,13 +66,22 @@ FighterInstance::FighterInstance (Database& d, const std::string& o, uint32_t r,
   
   std::map<pxd::ArmorType, std::string> slotsUsed;
   
+  std::vector<std::pair<std::string, pxd::proto::FighterMoveBlueprint>> sortedMoveBlueprintTypesmap;
+  for (auto itr = fighterMoveBlueprintList.begin(); itr != fighterMoveBlueprintList.end(); ++itr)
+      sortedMoveBlueprintTypesmap.push_back(*itr);
+
+  sort(sortedMoveBlueprintTypesmap.begin(), sortedMoveBlueprintTypesmap.end(), [=](std::pair<std::string, pxd::proto::FighterMoveBlueprint>& a, std::pair<std::string, pxd::proto::FighterMoveBlueprint>& b)
+  {
+      return a.first < b.first;
+  } 
+  );   
     
   for(auto& move: recepie->GetProto().moves())
   {
        std::string* newmove = MutableProto().add_moves();
        newmove->assign(move);
        
-       for(auto& moveBlueprint: fighterMoveBlueprintList)
+       for(auto& moveBlueprint: sortedMoveBlueprintTypesmap)
        {
            if(moveBlueprint.second.authoredid() == move)
            {   
@@ -94,7 +103,17 @@ FighterInstance::FighterInstance (Database& d, const std::string& o, uint32_t r,
        
        std::vector<std::string> animationsToChoiceFrom;
        
-       for(auto& animation: animations)
+        std::vector<std::pair<std::string, pxd::proto::Animation>> sortedAnimations;
+        for (auto itr = animations.begin(); itr != animations.end(); ++itr)
+            sortedAnimations.push_back(*itr);
+
+        sort(sortedAnimations.begin(), sortedAnimations.end(), [=](std::pair<std::string, pxd::proto::Animation>& a, std::pair<std::string, pxd::proto::Animation>& b)
+        {
+            return a.first < b.first;
+        } 
+        );        
+       
+       for(auto& animation: sortedAnimations)
        {
            if(animation.second.quality() == recepie->GetProto().quality())
            {

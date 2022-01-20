@@ -69,27 +69,32 @@ public:
    /**
    * Updates the state for a new recepie cooking action
    */    
-  void AddRecepieCookingInstance (const XayaPlayer& a, int32_t duration); 
+  void AddRecepieCookingInstance (const XayaPlayer& a, int32_t duration, int32_t recepieID); 
   
   /**
    * Updates the state for a new sweetener cooking action
    */    
-  void AddSweetenerCookingInstance (const XayaPlayer& a, const std::string sweetenerKeyName, int32_t duration); 
+  void AddSweetenerCookingInstance (const XayaPlayer& a, const std::string sweetenerKeyName, int32_t duration, int32_t fighterID); 
   
   /**
    * Updates the state for a cooked sweetener being claimed back on fighter
    */  
-  void AddClaimingSweetenerReward (const XayaPlayer& a, const std::string sweetenerAuthId);
+  void AddClaimingSweetenerReward (const XayaPlayer& a, const std::string sweetenerAuthId, int32_t fighterID);
   
    /**
    * Updates the state for a new recepie instance bundle
    */    
-  void AddExpeditionInstance (const XayaPlayer& a, int32_t duration);   
+  void AddExpeditionInstance (const XayaPlayer& a, int32_t duration, std::string expeditionID, int32_t fighterID);   
   
    /**
    * Updates the state for a new pending rewards
    */      
-  void AddRewardIDs (const XayaPlayer& a, std::vector<uint32_t> rewardDatabaseIds);
+  void AddRewardIDs (const XayaPlayer& a, std::string expeditionName, std::vector<uint32_t> rewardDatabaseIds);
+  
+   /**
+   * Updates the state for a new pending rewards
+   */      
+  void AddTournamentRewardIDs (const XayaPlayer& a, uint32_t tournamentID, std::vector<uint32_t> rewardDatabaseIds);  
   
    /**
    * Updates the state for a new pending tournament entries
@@ -99,7 +104,7 @@ public:
    /**
    * Updates the state for a new pending tournament leaves
    */      
-  void AddTournamentLeaves (const XayaPlayer& a, uint32_t tournamentID);  
+  void AddTournamentLeaves (const XayaPlayer& a, uint32_t tournamentID, std::vector<uint32_t> fighterIDS);  
   
     /**
    * Updates the state for a new pending purchases of fungible items
@@ -157,7 +162,10 @@ public:
     Json::Value ToJson () const;
     
     /** IDs of rewards currently pending for claiming */
-    std::vector<uint32_t> rewardDatabaseIds;
+    std::map<std::string, std::vector<uint32_t>> rewardDatabaseIds;
+    
+    /** IDs of tournaments rewards currently pending for claiming */
+    std::map<uint32_t, std::vector<uint32_t>> rewardDatabaseIdsTournaments;    
     
     /** List of the tournament entries which are pending for the
         not yet started tournaments to enter
@@ -167,7 +175,7 @@ public:
     /** Pending ids of tournaments player currently is trying
         to leave out
     */    
-    std::vector<uint32_t> tournamentLeaves;
+    std::map<uint32_t, std::vector<uint32_t>> tournamentLeaves;
     
     /** Pending ids of fighters player currently  being deconstructed
     */    
@@ -195,6 +203,9 @@ public:
  
     /** IAuth ids of sweeteners being claimed */
     std::vector<std::string> sweetenerClaimingAuthIds;
+    
+    /** IAuth ids of sweetener fighters attached when being claimed */
+    std::vector<std::uint32_t> sweetenerClaimingFightersIds;    
   };  
   
   /** Pending updates by account name.  */

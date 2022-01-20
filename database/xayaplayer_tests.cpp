@@ -73,7 +73,7 @@ TEST_F (XayaPlayerTests, DefaultData)
 {
   auto a = tbl.CreateNew ("foobar", *cfg, rnd);
   EXPECT_EQ (a->GetName (), "foobar");
-  EXPECT_FALSE (a->IsInitialised ());
+
   EXPECT_EQ (a->GetRole (), PlayerRole::INVALID);
   EXPECT_EQ (a->GetBalance (), 50);
 }
@@ -85,7 +85,7 @@ TEST_F (XayaPlayerTests, UpdateFields)
   a.reset ();
 
   a = tbl.GetByName ("foobar", *cfg);
-  EXPECT_TRUE (a->IsInitialised ());
+
   EXPECT_EQ (a->GetRole (), PlayerRole::PLAYER);
 }
 
@@ -169,7 +169,6 @@ TEST_F (XayaPlayersTableTests, GetByName)
   auto h = tbl.GetByName ("foo", *cfg);
   ASSERT_TRUE (h != nullptr);
   EXPECT_EQ (h->GetName (), "foo");
-  EXPECT_FALSE (h->IsInitialised ());
 
   EXPECT_TRUE (tbl.GetByName ("bar", *cfg) == nullptr);
 }

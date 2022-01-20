@@ -805,8 +805,6 @@ TEST_F (GameStartTests, Before)
     {"daniel", 55},
     {"andy", 10'050},
   });
-
-  EXPECT_FALSE (xayaplayers.GetByName ("domob", ctx.RoConfig())->IsInitialised ());
 }
 
 TEST_F (GameStartTests, After)
@@ -817,7 +815,7 @@ TEST_F (GameStartTests, After)
   ])");
 
   auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
-  EXPECT_TRUE (a->IsInitialised ());
+
   EXPECT_EQ (a->GetRole(), PlayerRole::PLAYER);
 }
 

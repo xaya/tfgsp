@@ -37,7 +37,7 @@ class AccountsTest (PXTest):
     self.sendMove ("domob", {"x": "foobar"})
     self.generate (1)
     accounts = self.getAccounts ()
-    self.assertEqual (accounts["domob"].getRole (), None)
+
     assert "andy" not in accounts
 
     self.mainLogger.info ("Initialising basic accounts...")

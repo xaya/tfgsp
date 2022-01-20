@@ -186,7 +186,17 @@ uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xa
     std::vector<pxd::proto::FighterName> potentialNames;
     const auto& fighterNames = cfg->fighternames();
     
-    for (const auto& fighter : fighterNames)
+    std::vector<std::pair<std::string, pxd::proto::FighterName>> sortedNamesTypesmap;
+    for (auto itr = fighterNames.begin(); itr != fighterNames.end(); ++itr)
+        sortedNamesTypesmap.push_back(*itr);
+
+    sort(sortedNamesTypesmap.begin(), sortedNamesTypesmap.end(), [=](std::pair<std::string, pxd::proto::FighterName>& a, std::pair<std::string, pxd::proto::FighterName>& b)
+    {
+        return a.first < b.first;
+    } 
+    );        
+    
+    for (const auto& fighter : sortedNamesTypesmap)
     {
         if((Quality)(int)fighter.second.quality() == quality)
         {
@@ -230,7 +240,7 @@ uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xa
         for(long long unsigned int e =0; e < position0names.size(); e++)
         {
           int probabilityTreshhold = position0names[e].probability() * 1000;
-          int rolCurNum = rnd.NextInt(1000);
+          int rolCurNum = rnd.NextInt(50000);
           
           if(rolCurNum < probabilityTreshhold)
           {
@@ -245,7 +255,7 @@ uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xa
         for(long long unsigned int e =0; e < position1names.size(); e++) // long long unsigned int to surpess warning V___V
         {
           int probabilityTreshhold = position1names[e].probability() * 1000;
-          int rolCurNum = rnd.NextInt(1000); //20000, as in proto file max prob. is 1
+          int rolCurNum = rnd.NextInt(50000);
           
           if(rolCurNum < probabilityTreshhold)
           {
@@ -259,12 +269,23 @@ uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xa
     bool typeSolved = false;
     const auto& fighterTypes = cfg->fightertype();
     
+    std::vector<std::pair<std::string, pxd::proto::FighterType>> sortedfighterTypesmap;
+    for (auto itr = fighterTypes.begin(); itr != fighterTypes.end(); ++itr)
+        sortedfighterTypesmap.push_back(*itr);
+
+    sort(sortedfighterTypesmap.begin(), sortedfighterTypesmap.end(), [=](std::pair<std::string, pxd::proto::FighterType>& a, std::pair<std::string, pxd::proto::FighterType>& b)
+    {
+        return a.first < b.first;
+    } 
+    );    
+        
     while(typeSolved == false)
     {
-        for (const auto& fighter : fighterTypes)
+        for (const auto& fighter : sortedfighterTypesmap)
         {
           int probabilityTreshhold = fighter.second.probability() * 1000;
-          int rolCurNum = rnd.NextInt(20000);  //20000, as in proto file max prob. is 20
+          
+          int rolCurNum = rnd.NextInt(50000);
 
           if(rolCurNum < probabilityTreshhold)
           {
@@ -334,6 +355,17 @@ uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xa
     }    
         
     std::vector<pxd::proto::FighterMoveBlueprint> generatedMoveblueprints;
+    
+    std::vector<std::pair<std::string, pxd::proto::FighterMoveBlueprint>> sortedMoveBlueprintTypesmap;
+    for (auto itr = moveBlueprints.begin(); itr != moveBlueprints.end(); ++itr)
+        sortedMoveBlueprintTypesmap.push_back(*itr);
+
+    sort(sortedMoveBlueprintTypesmap.begin(), sortedMoveBlueprintTypesmap.end(), [=](std::pair<std::string, pxd::proto::FighterMoveBlueprint>& a, std::pair<std::string, pxd::proto::FighterMoveBlueprint>& b)
+    {
+        return a.first < b.first;
+    } 
+    );     
+    
     for(int g = 0; g < numberOfMoves; g++)
     {
         bool randomMoveSolved = false;
@@ -348,13 +380,14 @@ uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xa
                 }
                 
                 int probabilityTreshhold = probableMove.probability() * 1000;
+                
                 int rolCurNum = rnd.NextInt(30000);  //30000, as in proto file max prob. is 30     
 
                 if(rolCurNum < probabilityTreshhold)
                 {                 
                   randomMoveSolved = true;
                   
-                  for(auto& moveBlp: moveBlueprints)
+                  for(auto& moveBlp: sortedMoveBlueprintTypesmap)
                   {       
                     if( (Quality)(uint32_t)moveBlp.second.quality() == quality)
                     {                        
@@ -384,7 +417,7 @@ uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xa
     
     for(const auto& move: generatedRecipe.moves())
     {
-        for(auto& moveBlp: moveBlueprints)
+        for(auto& moveBlp: sortedMoveBlueprintTypesmap)
         {
           if(moveBlp.second.authoredid() == move)
           {

@@ -167,11 +167,6 @@ namespace
 
 using ValidateStateTests = PXLogicTests;
 
-TEST_F (ValidateStateTests, AncientAccountFaction)
-{
-  EXPECT_DEATH (xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->SetRole (PlayerRole::INVALID), "to NULL role");
-}    
-
 TEST_F (ValidateStateTests, RecepieInstanceFullCycleTest)
 {
   xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (100);
@@ -200,7 +195,7 @@ TEST_F (ValidateStateTests, RecepieInstanceFullCycleTest)
   EXPECT_EQ (a->GetOngoingsSize (), 0);
   EXPECT_EQ (a->CollectInventoryFighters(ctx.RoConfig()).size(), 3);
   
-  EXPECT_EQ (a->GetBalance (), 125);
+  EXPECT_EQ (a->GetBalance (), 135);
   
   auto r = tbl2.GetById(1); 
   EXPECT_EQ (r->GetProto().name(), "First Recipe");
@@ -210,6 +205,80 @@ TEST_F (ValidateStateTests, RecepieInstanceFullCycleTest)
   EXPECT_EQ (a->GetInventory().GetFungibleCount("Common_Icing"), 0);
   
 }   
+
+TEST_F (ValidateStateTests, RecepieInstanceGeneratedFullCycleTest)
+{
+  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (100);
+  
+  auto rcpID = pxd::RecipeInstance::Generate(pxd::Quality::Common, ctx.RoConfig(), rnd, db);
+  auto r = tbl2.GetById(rcpID);
+  
+  
+  EXPECT_EQ (r->GetProto().duration(), 15); //todo, read 15 just from config of common file
+
+  auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  r->SetOwner(a->GetName());
+  
+  for(auto& rC: r->GetProto().requiredcandy())
+  {
+    a->GetInventory().SetFungibleCount(BaseMoveProcessor::GetCandyKeyNameFromID(rC.candytype(), ctx), rC.amount());
+  }
+  
+  a.reset();
+  r.reset();   
+   
+  std::ostringstream s;
+  s << rcpID;
+  std::string converted(s.str());    
+   
+  Process (R"([
+    {"name": "domob", "move": {"ca": {"r": {"rid": )"+converted+R"(, "fid": 0}}}}
+  ])");  
+
+  a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  ASSERT_TRUE (a != nullptr);
+
+  EXPECT_EQ (a->GetOngoingsSize (), 1);
+  a.reset ();
+
+  UpdateState ("[]");
+  
+  a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  ASSERT_TRUE (a != nullptr);  
+  
+  EXPECT_EQ (a->GetOngoingsSize (), 1);
+  a.reset ();
+  
+  for (unsigned i = 0; i < 15; ++i) //todo same as 15 up above
+  {
+    UpdateState ("[]");
+  }    
+  
+  a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  EXPECT_EQ (a->GetOngoingsSize (), 0);
+  EXPECT_EQ (a->CollectInventoryFighters(ctx.RoConfig()).size(), 3);
+  a.reset();
+
+  r = tbl2.GetById(rcpID); 
+  EXPECT_EQ (r->GetOwner(), "");
+  r.reset();
+}   
+
+TEST_F (ValidateStateTests, RecepieInstanceGeneratedDifferentNamesTest)
+{
+  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (100);
+  
+  auto rcpID = pxd::RecipeInstance::Generate(pxd::Quality::Common, ctx.RoConfig(), rnd, db);
+  auto r = tbl2.GetById(rcpID);
+  
+  auto rcpID2 = pxd::RecipeInstance::Generate(pxd::Quality::Common, ctx.RoConfig(), rnd, db);
+  auto r2 = tbl2.GetById(rcpID2);
+  
+  EXPECT_NE(r->GetProto().name(), r2->GetProto().name());
+  r.reset();
+  r2.reset();
+}   
+
 
 TEST_F (ValidateStateTests, RecepieWithApplicableGoodieTest)
 {
@@ -246,7 +315,7 @@ TEST_F (ValidateStateTests, RecepieWithApplicableGoodieTest)
   EXPECT_EQ (a->GetOngoingsSize (), 0);
   EXPECT_EQ (a->CollectInventoryFighters(ctx.RoConfig()).size(), 3);
   
-  EXPECT_EQ (a->GetBalance (), 125);
+  EXPECT_EQ (a->GetBalance (), 135);
   
   auto r = tbl2.GetById(2); 
   EXPECT_EQ (r->GetProto().name(), "Second Recipe");
@@ -351,7 +420,7 @@ TEST_F (ValidateStateTests, GeneratedRecipeMakeSureItWorks)
   EXPECT_EQ (r->GetProto().authoredid(), "generated");
   
   EXPECT_EQ (r->GetProto().moves_size(), 3);
-  EXPECT_EQ (r->GetProto().requiredcandy_size(), 1);
+  EXPECT_EQ (r->GetProto().requiredcandy_size(), 2);
 } 
 
 TEST_F (ValidateStateTests, RecepieInstanceFailWithMissingIngridients)
@@ -1180,6 +1249,14 @@ TEST_F (ValidateStateTests, TournamentStrongerFighterWins)
   
   EXPECT_EQ (tbl4.CountForOwner("domob"), 10);
   EXPECT_EQ (tbl4.CountForOwner("andy"), 7);
+
+  tutorialTrmn = tbl5.GetById(TID, ctx.RoConfig());
+  
+  for(const auto result: tutorialTrmn->GetInstance().results())
+  {
+     EXPECT_LT(result.ratingdelta(), 100000);
+     EXPECT_GE(result.ratingdelta(), -100000);
+  }   
 }
 
 

@@ -299,7 +299,7 @@ BaseMoveProcessor::TrySweetenerPurchase (const std::string& name, const Json::Va
   VLOG (1) << "Attempting to purchase sweetener through move: " << cmd;
   
   const auto player = xayaplayers.GetByName (name, ctx.RoConfig());
-  CHECK (player != nullptr && player->IsInitialised ());
+  CHECK (player != nullptr);
 
   if (cmd.isObject ())
   {
@@ -327,7 +327,7 @@ BaseMoveProcessor::TryGoodyPurchase (const std::string& name, const Json::Value&
   VLOG (1) << "Attempting to purchase goody through move: " << cmd;
   
   const auto player = xayaplayers.GetByName (name, ctx.RoConfig());
-  CHECK (player != nullptr && player->IsInitialised ());
+  CHECK (player != nullptr);
 
   if (cmd.isObject ())
   {
@@ -356,7 +356,7 @@ BaseMoveProcessor::TryGoodyBundlePurchase (const std::string& name, const Json::
   VLOG (1) << "Attempting to purchase goody bundle through move: " << cmd;
   
   const auto player = xayaplayers.GetByName (name, ctx.RoConfig());
-  CHECK (player != nullptr && player->IsInitialised ());
+  CHECK (player != nullptr);
 
   if (cmd.isObject ())
   {
@@ -388,7 +388,7 @@ BaseMoveProcessor::TryCrystalPurchase (const std::string& name, const Json::Valu
   VLOG (1) << "Attempting to purchase crystal bundle through move: " << cmd;
 
   const auto player = xayaplayers.GetByName (name, ctx.RoConfig());
-  CHECK (player != nullptr && player->IsInitialised ());
+  CHECK (player != nullptr);
 
   if (cmd.isObject ())
   {
@@ -677,20 +677,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
 
   /* We are trying all kind of fighter related actions*/
   TryFighterAction (name, mv["f"]);     
-  
-  /* If there is no account (after potentially updating/initialising it),
-     then let's not try to process any more updates.  This explicitly
-     enforces that accounts have to be initialised before doing anything
-     else, even if perhaps some changes wouldn't actually require access
-     to an account in their processing.  */
-  if (!xayaplayers.GetByName (name, ctx.RoConfig ())->IsInitialised ())
-    {
-      VLOG (1)
-          << "Account " << name << " is not yet initialised,"
-          << " ignoring parts of the move " << moveObj;
-      return;
-    }
-    
+      
   /* If any burnt or paid-to-dev coins are left, it means probably something
      has gone wrong and the user overpaid due to a frontend bug.  */
   LOG_IF (WARNING, paidToDev > 0 || burnt > 0)
@@ -699,7 +686,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
       << burnt << " burnt CHI satoshi left";
 }
 
-  bool BaseMoveProcessor::ParseTournamentRewardData(const XayaPlayer& a, const std::string& name, const Json::Value& tournament, std::vector<uint32_t>& rewardDatabaseIds)
+  bool BaseMoveProcessor::ParseTournamentRewardData(const XayaPlayer& a, const std::string& name, const Json::Value& tournament, std::vector<uint32_t>& rewardDatabaseIds, uint32_t& tournamentID)
   {
     if (!tournament.isObject ())
     return false;
@@ -709,7 +696,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
         return false;
     }
     
-    const uint32_t tournamentID = tournament["tid"].asInt();
+    tournamentID = tournament["tid"].asInt();
     auto tournamentData = tournamentsTbl.GetById(tournamentID, ctx.RoConfig ());
     
     if(tournamentData == nullptr)
@@ -729,9 +716,10 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
       if(rw->GetProto().tournamentid() == tournamentID)
       {
         totalEntries++;
-        rewardDatabaseIds.push_back(rw->GetId());
-        tryAndStep = res.Step ();
+        rewardDatabaseIds.push_back(rw->GetId());  
       }
+      
+      tryAndStep = res.Step ();
     }
    
     if(totalEntries <= 0)
@@ -743,7 +731,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     return true;
   }        
   
-  bool BaseMoveProcessor::ParseRewardData(const XayaPlayer& a, const std::string& name, const Json::Value& expedition, std::vector<uint32_t>& rewardDatabaseIds)
+  bool BaseMoveProcessor::ParseRewardData(const XayaPlayer& a, const std::string& name, const Json::Value& expedition, std::vector<uint32_t>& rewardDatabaseIds, std::string& expeditionID)
   {
     if (!expedition.isObject ())
     return false;
@@ -753,7 +741,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
         return false;
     }
     
-    const std::string expeditionID = expedition["eid"].asString ();
+    expeditionID = expedition["eid"].asString ();
     
     pxd::proto::ExpeditionBlueprint expeditionBlueprint;
     const auto& expeditionList = ctx.RoConfig()->expeditionblueprints();
@@ -796,8 +784,9 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
       {
         totalEntries++;
         rewardDatabaseIds.push_back(rw->GetId());
-        tryAndStep = res.Step ();
       }
+      
+      tryAndStep = res.Step ();
     }
    
     if(totalEntries <= 0)
@@ -809,7 +798,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     return true;
   }      
   
-  bool BaseMoveProcessor::ParseTournamentLeaveData(const XayaPlayer& a, const std::string& name, const Json::Value& tournament, uint32_t& tournamentID)
+  bool BaseMoveProcessor::ParseTournamentLeaveData(const XayaPlayer& a, const std::string& name, const Json::Value& tournament, uint32_t& tournamentID, std::vector<uint32_t>& fighterIDS)
   {
     if (!tournament.isObject ())
     {
@@ -832,6 +821,11 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
       LOG (WARNING) << "Asking for non-existant tournament with id: " << tournamentID;
       return false;
     }    
+
+    for(auto ft: tournamentData->GetInstance().fighters())
+    {
+        fighterIDS.push_back(ft);
+    }
     
     const auto chain = ctx.Chain ();
     if(tournamentData->GetProto().authoredid() == "cbd2e78a-37ce-b864-793d-8dd27788a774" && chain == xaya::Chain::MAIN)
@@ -1151,6 +1145,15 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
       fighterDb.reset();
       return false;              
     }    
+    
+    uint32_t totalF = fighters.CountForOwner(a.GetName());
+    
+    if(totalF == 1)
+    {
+      LOG (WARNING) << "Can not remove last roster fighter: " << totalF;
+      fighterDb.reset();
+      return false;           
+    }
 
     fighterDb.reset(); 
     return true;    
@@ -1416,7 +1419,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
   }  
   
   bool
-  BaseMoveProcessor::ParseClaimSweetener(const XayaPlayer& a, const std::string& name, const Json::Value& sweetener, uint32_t& fighterID, std::vector<uint32_t>& rewardDatabaseIds)
+  BaseMoveProcessor::ParseClaimSweetener(const XayaPlayer& a, const std::string& name, const Json::Value& sweetener, uint32_t& fighterID, std::vector<uint32_t>& rewardDatabaseIds, std::string& sweetenerAuthId)
   {
     if (!sweetener.isObject ())
     {
@@ -1465,9 +1468,17 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
       {
         totalEntries++;
         rewardDatabaseIds.push_back(rw->GetId());
-        tryAndStep = res.Step ();
+        sweetenerAuthId = rw->GetProto().sweetenerid();
       }
+      
+      tryAndStep = res.Step ();
     }
+    
+    if(sweetenerAuthId == "")
+    {
+        LOG (WARNING) << "Could not resolve sweetenerID for fighter: " << fighterDb->GetId();
+        return false;              
+    }      
    
     if(totalEntries <= 0)
     {
@@ -1485,7 +1496,6 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
   {
     if (!sweetener.isObject ())
     {
-       LOG (WARNING) << "sweetener is not an object";
        return false;
     } 
 
@@ -1655,22 +1665,22 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
         return false;           
     }
 
-    if(itemInventoryRecipe->GetProto().quality() == 0)
+    if(itemInventoryRecipe->GetProto().quality() == 1)
     {
         cookCost = ctx.RoConfig()->params().common_recipe_cook_cost();
     }
     
-    if(itemInventoryRecipe->GetProto().quality() == 1)
+    if(itemInventoryRecipe->GetProto().quality() == 2)
     {
         cookCost = ctx.RoConfig()->params().uncommon_recipe_cook_cost();
     }
 
-    if(itemInventoryRecipe->GetProto().quality() == 2)
+    if(itemInventoryRecipe->GetProto().quality() == 3)
     {
         cookCost = ctx.RoConfig()->params().rare_recipe_cook_cost();
     }
 
-    if(itemInventoryRecipe->GetProto().quality() == 3)
+    if(itemInventoryRecipe->GetProto().quality() == 4)
     {
         cookCost = ctx.RoConfig()->params().epic_recipe_cook_cost();
     }  
@@ -1747,9 +1757,11 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
   void MoveProcessor::MaybeClaimTournamentReward (const std::string& name, const Json::Value& tournament)
   {  
       std::vector<uint32_t> rewardDatabaseIds;      
+      uint32_t tournamentID = 0;
+      
       auto a = xayaplayers.GetByName (name, ctx.RoConfig ());
       
-      if(!ParseTournamentRewardData(*a, name, tournament, rewardDatabaseIds))
+      if(!ParseTournamentRewardData(*a, name, tournament, rewardDatabaseIds, tournamentID))
       {
           a.reset();
           return;
@@ -1763,7 +1775,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
   {
       auto a = xayaplayers.GetByName (name, ctx.RoConfig ());
 
-      uint32_t curRecipeSlots = recipeTbl.CountForOwner(a->GetName());
+      uint32_t curRecipeSlots = recipeTbl.CountForOwner(a->GetName()) + fighters.CountForOwner(a->GetName());
       uint32_t maxRecipeSlots = ctx.RoConfig()->params().max_recipe_inventory_amount();
       
       const auto& rewardsList = ctx.RoConfig()->activityrewards();
@@ -1806,6 +1818,12 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
                   rewardData.reset();
                   continue;
               }
+              
+              auto ourRec = recipeTbl.GetById(rewardData->GetProto().generatedrecipeid());
+              ourRec->SetOwner(a->GetName());
+              
+              LOG (INFO) << "Granted " << " recipe " << rewardData->GetProto().generatedrecipeid() << " reward";
+              ourRec.reset();              
           }
           
           else if((pxd::RewardType)(int)rewardTableDb.rewards(rewardData->GetProto().positionintable()).type() == pxd::RewardType::Candy)
@@ -1816,15 +1834,6 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
               
               LOG (INFO) << "Granted " << rewardTableDb.rewards(rewardData->GetProto().positionintable()).quantity() << " candy " << candyName << " reward";
           }          
-          
-          else if((pxd::RewardType)(int)rewardTableDb.rewards(rewardData->GetProto().positionintable()).type() == pxd::RewardType::CraftedRecipe)
-          {         
-              auto ourRec = recipeTbl.GetById(rewardData->GetProto().generatedrecipeid());
-              ourRec->SetOwner(a->GetName());
-              
-              LOG (INFO) << "Granted " << " recipe " << rewardData->GetProto().generatedrecipeid() << " reward";
-              ourRec.reset();
-          }
           
           else if((pxd::RewardType)(int)rewardTableDb.rewards(rewardData->GetProto().positionintable()).type() == pxd::RewardType::GeneratedRecipe)
           {
@@ -1895,8 +1904,8 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
   {      
       std::vector<uint32_t> rewardDatabaseIds;      
       auto a = xayaplayers.GetByName (name, ctx.RoConfig ());
-      
-      if(!ParseRewardData(*a, name, expedition, rewardDatabaseIds))      
+      std::string expeditionID = "";
+      if(!ParseRewardData(*a, name, expedition, rewardDatabaseIds, expeditionID))      
       {
           a.reset();
           return;
@@ -1917,22 +1926,15 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     }
     
     uint32_t tournamentID = 0;
+    std::vector<uint32_t> fighterIDS;
 
-    if(!ParseTournamentLeaveData(*a, name, tournament, tournamentID))      
+    if(!ParseTournamentLeaveData(*a, name, tournament, tournamentID, fighterIDS))      
     {
       a.reset();
       return;
     }
 
-    auto tournamentData = tournamentsTbl.GetById(tournamentID, ctx.RoConfig ());
-    
-    std::vector<uint32_t> fighterIDS;
-    
-    for(auto ft: tournamentData->GetInstance().fighters())
-    {
-        fighterIDS.push_back(ft);
-    }
-    
+    auto tournamentData = tournamentsTbl.GetById(tournamentID, ctx.RoConfig ());   
     for(long long unsigned int r = 0; r < fighterIDS.size(); r++)
     {
         auto fighter = fighters.GetById (fighterIDS[r], ctx.RoConfig ());
@@ -2239,8 +2241,9 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
     
     uint32_t fighterID = -1; 
     std::vector<uint32_t> rewardDatabaseIds;  
+    std::string sweetenerAuthId = "";
     
-    if(!ParseClaimSweetener(*a, name, sweetener, fighterID, rewardDatabaseIds)) return;    
+    if(!ParseClaimSweetener(*a, name, sweetener, fighterID, rewardDatabaseIds, sweetenerAuthId)) return;    
     
     a.reset();    
     ClaimRewardsInnerLogic(name, rewardDatabaseIds); 
@@ -2359,7 +2362,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 
     auto a = xayaplayers.GetByName (name, ctx.RoConfig ());
     CHECK (a != nullptr);
-    if (a->IsInitialised ())
+    if (a->GetRole () != PlayerRole::INVALID)
     {
       LOG (WARNING) << "Account " << name << " is already initialised";
       return;

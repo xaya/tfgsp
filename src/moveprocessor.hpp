@@ -187,7 +187,7 @@ protected:
    */    
   
   bool ParseClaimSweetener(const XayaPlayer& a, const std::string& name, const Json::Value& sweetener, uint32_t& fighterID, 
-  std::vector<uint32_t>& rewardDatabaseIds);
+  std::vector<uint32_t>& rewardDatabaseIds, std::string& sweetenerAuthId);
       
   /**
    * Tries to parse a move that sets recepie for cooking
@@ -243,19 +243,19 @@ protected:
    * Tries to parse a move that withdraws fighters from the tournament
    */ 
  
-  bool ParseTournamentLeaveData(const XayaPlayer& a, const std::string& name, const Json::Value& tournament, uint32_t& tournamentID);
+  bool ParseTournamentLeaveData(const XayaPlayer& a, const std::string& name, const Json::Value& tournament, uint32_t& tournamentID, std::vector<uint32_t>& fighterIDS);
      
    /**
    * Tries to parse a move that collects reward data
    */    
    
-  bool ParseRewardData(const XayaPlayer& a, const std::string& name, const Json::Value& expedition, std::vector<uint32_t>& rewardDatabaseIds);
+  bool ParseRewardData(const XayaPlayer& a, const std::string& name, const Json::Value& expedition, std::vector<uint32_t>& rewardDatabaseIds, std::string& expeditionID);
   
    /**
    * Tries to parse a move that collects tournament reward data
    */    
    
-  bool ParseTournamentRewardData(const XayaPlayer& a, const std::string& name, const Json::Value& tournament, std::vector<uint32_t>& rewardDatabaseIds);  
+  bool ParseTournamentRewardData(const XayaPlayer& a, const std::string& name, const Json::Value& tournament, std::vector<uint32_t>& rewardDatabaseIds, uint32_t& tournamentID);  
   
   /**
    * Function checks if fungible item is inside players inventory

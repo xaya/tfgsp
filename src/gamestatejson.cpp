@@ -328,11 +328,7 @@ template <>
   Json::Value bal(Json::objectValue);
   bal["available"] = IntToJson (a.GetBalance ());
   res["balance"] = bal;
-
-  if (a.IsInitialised ())
-  {
-      res["role"] = PlayerRoleToString (a.GetRole ());
-  }
+  res["role"] = PlayerRoleToString (a.GetRole ());
 
   res["inventory"] = Convert (a.GetInventory ());
   
@@ -347,6 +343,20 @@ template <>
       recJsonObj.append (h->GetId());
       stepLoop = ourRecepies.Step ();
   }
+  
+  // Becase for ONGOING_COOKING we set recepie owner to "",
+  // here we need to add those additionally, as else they
+  // will be missing from the front-end roster until fighter
+  // is cooked
+  
+  for(auto& ongoing: pb.ongoings())
+  {
+    if((pxd::OngoingType)ongoing.type() == pxd::OngoingType::COOK_RECIPE)
+    {
+       recJsonObj.append (ongoing.recipeid()); 
+    }
+  }
+
   res["recepies"] = recJsonObj;
     
   Json::Value ongoingOps(Json::arrayValue);
@@ -355,6 +365,7 @@ template <>
   {
       Json::Value ongOB(Json::objectValue);
       ongOB["type"] = ongoing.type();
+      ongOB["blocksleft"] = IntToJson(ongoing.blocksleft());
       
       if((pxd::OngoingType)(int)ongoing.type() == pxd::OngoingType::COOK_RECIPE)
       {
@@ -366,9 +377,12 @@ template <>
         ongOB["fighterdatabaseid"] = ongoing.fighterdatabaseid();
         ongOB["expeditionblueprintid"] = ongoing.expeditionblueprintid();
       }
+      
+      ongoingOps.append(ongOB);
   }
   
   res["ongoings"] = ongoingOps;
+  res["prestige"] = IntToJson (a.GetPresitge());
 
   return res;
 }

@@ -229,12 +229,6 @@ public:
       return GetProto().ongoings().size();
   }
 
-  bool
-  IsInitialised () const
-  {
-    return role != PlayerRole::INVALID;
-  }
-
   /**
    * Updates the account balance by the given (signed) amount.  This should
    * be used instead of manually editing the proto, so that there is a single

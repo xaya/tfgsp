@@ -81,7 +81,18 @@ std::vector<uint32_t> PXLogic::GenerateActivityReward(const uint32_t fighterID, 
     if((RewardType)(int)rw.type() == RewardType::List)
     {
         const auto& rewardsList = ctx.RoConfig()->activityrewards();
-        for(const auto& rewardsTable: rewardsList)
+     
+        std::vector<std::pair<std::string, pxd::proto::ActivityReward>> sortedActivityRewardTypesmap;
+        for (auto itr = rewardsList.begin(); itr != rewardsList.end(); ++itr)
+            sortedActivityRewardTypesmap.push_back(*itr);
+
+        sort(sortedActivityRewardTypesmap.begin(), sortedActivityRewardTypesmap.end(), [=](std::pair<std::string, pxd::proto::ActivityReward>& a, std::pair<std::string, pxd::proto::ActivityReward>& b)
+        {
+            return a.first < b.first;
+        } 
+        );  
+    
+        for(const auto& rewardsTable: sortedActivityRewardTypesmap)
         {          
           if(rewardsTable.second.authoredid() == rw.listtableid())
           {            
@@ -539,22 +550,22 @@ void PXLogic::ResolveCookingRecepie(std::unique_ptr<XayaPlayer>& a, const uint32
             return;
         }
         
-        if(recepie->GetProto().quality() == 0)
+        if(recepie->GetProto().quality() == 1)
         {
             cookCost = ctx.RoConfig()->params().common_recipe_cook_cost();
         }
         
-        if(recepie->GetProto().quality() == 1)
+        if(recepie->GetProto().quality() == 2)
         {
             cookCost = ctx.RoConfig()->params().uncommon_recipe_cook_cost();
         }
 
-        if(recepie->GetProto().quality() == 2)
+        if(recepie->GetProto().quality() == 3)
         {
             cookCost = ctx.RoConfig()->params().rare_recipe_cook_cost();
         }
 
-        if(recepie->GetProto().quality() == 3)
+        if(recepie->GetProto().quality() == 4)
         {
             cookCost = ctx.RoConfig()->params().epic_recipe_cook_cost();
         } 
@@ -611,7 +622,14 @@ void PXLogic::TickAndResolveOngoings(Database& db, const Context& ctx, xaya::Ran
       
       for (auto it = ongoings->begin(); it != ongoings->end(); it++)
       {
+          if(it->blocksleft() <= 15) //HACK
+          {
             it->set_blocksleft(it->blocksleft() - 1);
+          }
+          else
+          {
+              it->set_blocksleft(14); //HACK
+          }
       }            
       
       while(erasingDone == false)
@@ -844,47 +862,72 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
       std::map<uint32_t, proto::TournamentResult*> fighterResults;
       //Lets collect teams
       
-      for(auto participantFighter : tnm->GetInstance().fighters())
+      if((pxd::TournamentState)(int)tnm->GetInstance().state() == pxd::TournamentState::Running)
       {
-          auto fighter = fighters.GetById (participantFighter, ctx.RoConfig ());
-          std::string owner = fighter->GetOwner();
-          
-          if (teams.find(owner) == teams.end())
-          {
-            std::vector<uint32_t> newTeam;
-            newTeam.push_back(participantFighter);
+        for(auto participantFighter : tnm->GetInstance().fighters())
+        {
+            auto fighter = fighters.GetById (participantFighter, ctx.RoConfig ());
+            std::string owner = fighter->GetOwner();
             
-            teams.insert(std::pair<std::string, std::vector<uint32_t>>(owner, newTeam));  
-          }
-          else
-          {
-            teams[owner].push_back(participantFighter);
-          }
-          
-          fighter.reset();
-      }
-      
-      tnm->MutableInstance().set_teamsjoined(teams.size());
-      
-      //Lets populate pairs now
-      
-      for(auto element1 = teams.begin() ; element1 != teams.end() ; ++element1) 
-      {
-          for(auto element2 = std::next(element1) ; element2 != teams.end() ; ++element2) 
-          {                    
-              for(long long unsigned int e1 = 0; e1 < element1->second.size(); e1++)
-              {
-                for(long long unsigned int e2 = 0; e2 < element2->second.size(); e2++)
+            if (teams.find(owner) == teams.end())
+            {
+              std::vector<uint32_t> newTeam;
+              newTeam.push_back(participantFighter);
+              
+              teams.insert(std::pair<std::string, std::vector<uint32_t>>(owner, newTeam));  
+            }
+            else
+            {
+              teams[owner].push_back(participantFighter);
+            }
+            
+            fighter.reset();
+        }
+        
+        tnm->MutableInstance().set_teamsjoined(teams.size());
+        
+        //Lets populate pairs now
+        
+        for(auto element1 = teams.begin() ; element1 != teams.end() ; ++element1) 
+        {
+            for(auto element2 = std::next(element1) ; element2 != teams.end() ; ++element2) 
+            {                    
+                for(long long unsigned int e1 = 0; e1 < element1->second.size(); e1++)
                 {
-                    std::pair<uint32_t,uint32_t>  newPair= std::make_pair(element1->second[e1], element2->second[e2]);
-                    fighterPairs.push_back(newPair);
-                }
-              }                      
-          }
+                  for(long long unsigned int e2 = 0; e2 < element2->second.size(); e2++)
+                  {
+                      std::pair<uint32_t,uint32_t>  newPair= std::make_pair(element1->second[e1], element2->second[e2]);
+                      fighterPairs.push_back(newPair);
+                  }
+                }                      
+            }
+        }
       }
 
       if((pxd::TournamentState)(int)tnm->GetInstance().state() == pxd::TournamentState::Listed)
-      {
+      {          
+        for(auto participantFighter : tnm->GetInstance().fighters())
+        {
+            auto fighter = fighters.GetById (participantFighter, ctx.RoConfig ());
+            std::string owner = fighter->GetOwner();
+            
+            if (teams.find(owner) == teams.end())
+            {
+              std::vector<uint32_t> newTeam;
+              newTeam.push_back(participantFighter);
+              
+              teams.insert(std::pair<std::string, std::vector<uint32_t>>(owner, newTeam));  
+            }
+            else
+            {
+              teams[owner].push_back(participantFighter);
+            }
+            
+            fighter.reset();
+        }
+        
+        tnm->MutableInstance().set_teamsjoined(teams.size());          
+          
         if((int)tnm->GetProto().teamcount() * (int)tnm->GetProto().teamsize() == tnm->GetInstance().fighters_size())
         {
           tnm->MutableInstance().set_state((int)pxd::TournamentState::Running);
@@ -899,7 +942,14 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
       {
           if((int)tnm->GetInstance().blocksleft() > 0)
           {
-            tnm->MutableInstance().set_blocksleft((int)tnm->GetInstance().blocksleft() - 1);
+            if((int)tnm->GetInstance().blocksleft() <= 15) //HACK
+            {
+              tnm->MutableInstance().set_blocksleft((int)tnm->GetInstance().blocksleft() - 1);
+            }
+            else
+            {
+              tnm->MutableInstance().set_blocksleft(14);  //HACK
+            }
           }
           
           if(tnm->GetInstance().blocksleft() == 0)
@@ -1233,8 +1283,18 @@ void PXLogic::ReopenMissingTournaments(Database& db, const Context& ctx)
 {
     TournamentTable tournamentsDatabase(db);   
     const auto& tournamentList = ctx.RoConfig()->tournamentbluprints();
+    
+    std::vector<std::pair<std::string, pxd::proto::TournamentBlueprint>> sortedTournamentListTypesmap;
+    for (auto itr = tournamentList.begin(); itr != tournamentList.end(); ++itr)
+        sortedTournamentListTypesmap.push_back(*itr);
 
-    for(const auto& tournamentBP: tournamentList)
+    sort(sortedTournamentListTypesmap.begin(), sortedTournamentListTypesmap.end(), [=](std::pair<std::string, pxd::proto::TournamentBlueprint>& a, std::pair<std::string, pxd::proto::TournamentBlueprint>& b)
+    {
+        return a.first < b.first;
+    } 
+    );      
+
+    for(const auto& tournamentBP: sortedTournamentListTypesmap)
     {
         bool weNeedToCreateNewInstance = true;
         
@@ -1315,9 +1375,9 @@ PXLogic::GetInitialStateBlock (unsigned& height,
   switch (chain)
     {
     case xaya::Chain::MAIN:
-      height = 3'287'584;
+      height = 3'504'140;
       hashHex
-          = "49d2346ee661056c8b233491d2d56a47719d6a42f2b0a83316dfc21ca493ec4d";
+          = "e7786a4209005e4f53800073c7a7fbdb4295e27964ebe54244007b5937aba4c0";
       break;
 
     case xaya::Chain::TEST:
