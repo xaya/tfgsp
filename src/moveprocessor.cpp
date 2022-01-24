@@ -1037,6 +1037,17 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     }  
 
     uint32_t slots = fighters.CountForOwner(a.GetName());
+    uint32_t slots_already_cooking = 0;
+    
+    for(const auto& ongoing: a.GetProto().ongoings())
+    {
+        if(ongoing.type() == (uint32_t)pxd::OngoingType::COOK_RECIPE)
+        {
+            slots_already_cooking++;
+        }
+    } 
+    
+    slots += slots_already_cooking;
 
     if(slots > ctx.RoConfig()->params().max_fighter_inventory_amount())
     {
@@ -1775,7 +1786,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
   {
       auto a = xayaplayers.GetByName (name, ctx.RoConfig ());
 
-      uint32_t curRecipeSlots = recipeTbl.CountForOwner(a->GetName()) + fighters.CountForOwner(a->GetName());
+      uint32_t curRecipeSlots = recipeTbl.CountForOwner(a->GetName());
       uint32_t maxRecipeSlots = ctx.RoConfig()->params().max_recipe_inventory_amount();
       
       const auto& rewardsList = ctx.RoConfig()->activityrewards();
