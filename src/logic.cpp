@@ -1138,8 +1138,8 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
                    rhs->MutableProto().set_matcheslost(rhs->GetProto().matcheslost() + 1);  
                  }             
 
-                 fighterResults[fPair.second]->set_ratingdelta(fighterResults[fPair.second]->ratingdelta() + (int)rRatingDelta);
-                 fighterResults[fPair.first]->set_ratingdelta(fighterResults[fPair.first]->ratingdelta() + (int)lRatingDelta);                                   
+                 fighterResults[fPair.second]->set_ratingdelta(fighterResults[fPair.second]->ratingdelta() + (int)lRatingDelta);
+                 fighterResults[fPair.first]->set_ratingdelta(fighterResults[fPair.first]->ratingdelta() + (int)rRatingDelta);                                   
                       
                  rhs.reset();
                  lhs.reset();

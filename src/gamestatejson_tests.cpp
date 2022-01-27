@@ -237,7 +237,7 @@ TEST_F (XayaPlayersJsonTests, FighterInstance)
                                         "authoredid" : "0090580c-04ef-9d84-e883-32f52c977b98"
                                 }
                         ],
-                        "name" : "First Recipe",
+                        "name" : "Sour Gummi Brawler",
                         "owner" : "foo",
                         "quality" : 1,
                         "rating" : 1000,
@@ -276,7 +276,7 @@ TEST_F (XayaPlayersJsonTests, FighterInstance)
                                         "authoredid" : "0090580c-04ef-9d84-e883-32f52c977b98"
                                 }
                         ],
-                        "name" : "Second Recipe",
+                        "name" : "Caramel Kicker",
                         "owner" : "foo",
                         "quality" : 1,
                         "rating" : 1000,
@@ -315,7 +315,7 @@ TEST_F (XayaPlayersJsonTests, FighterInstance)
                                         "authoredid" : "0090580c-04ef-9d84-e883-32f52c977b98"
                                 }
                         ],
-                        "name" : "First Recipe",
+                        "name" : "Sour Gummi Brawler",
                         "owner" : "foo",
                         "quality" : 1,
                         "rating" : 1000,

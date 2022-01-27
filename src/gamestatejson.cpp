@@ -193,23 +193,9 @@ template <>
   if(pb.tournamentinstanceid() > 0)
   {
     TournamentTable tournamentsDatabase(db);
-    auto resDD = tournamentsDatabase.QueryAll ();
-
-    bool tryAndStep = resDD.Step();
-    while (tryAndStep)
-    {
-      auto tnm = tournamentsDatabase.GetFromResult (resDD, ctx.RoConfig ());
-      for(auto participantFighter : tnm->GetInstance().fighters())
-      {
-        if(participantFighter == fighter.GetId())
-        {
-            res["blocksleft"] = IntToJson (tnm->GetInstance().blocksleft());
-        }
-      }
-      
-      tnm.reset();
-      tryAndStep = resDD.Step ();      
-    }
+    auto tnm = tournamentsDatabase.GetById (pb.tournamentinstanceid(), ctx.RoConfig ());
+    res["blocksleft"] = IntToJson (tnm->GetInstance().blocksleft());
+    tnm.reset();
   }
 
   Json::Value deconstructsArray(Json::arrayValue);

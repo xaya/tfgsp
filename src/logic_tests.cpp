@@ -512,7 +512,24 @@ TEST_F (ValidateStateTests, SweetenerCookAndProperRewardsClaimed)
   ft = tbl3.GetById(4, ctx.RoConfig());
   ASSERT_TRUE (ft != nullptr); 
   EXPECT_EQ(ft->GetProto().moves_size(), 5);
-  ft.reset();  
+
+  // Additional test for bugfix, where we force maximum 1 lvl of sweetness upgrade per UpdateSweetness check
+  ft->MutableProto().set_rating(1900); 
+  ft->UpdateSweetness();
+  EXPECT_EQ(ft->GetProto().sweetness(), (int)pxd::Sweetness::Semi_Sweet);
+  ft.reset(); 
+  
+  for (unsigned i = 0; i < 4; ++i)
+  {
+    UpdateState ("[]");
+  }  
+
+  ft = tbl3.GetById(4, ctx.RoConfig());
+  ASSERT_TRUE (ft != nullptr); 
+  EXPECT_EQ(ft->GetProto().sweetness(), (int)pxd::Sweetness::Semi_Sweet);
+  ft.reset(); 
+  // end
+  
 }
 
 TEST_F (ValidateStateTests, ExpeditionInstanceSolveTwiceTest)
