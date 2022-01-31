@@ -1094,6 +1094,58 @@ TEST_F (ValidateStateTests, TournamentResolvedTest)
   EXPECT_EQ (tutorialTrmn->GetInstance().results_size(), 4);
 }
 
+TEST_F (ValidateStateTests, FighterSacrifice)
+{
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
+  xp.reset();
+
+  auto r0f = tbl2.CreateNew("domob", "5864a19b-c8c0-2d34-eaef-9455af0baf2c", ctx.RoConfig());
+  int r0fid = r0f->GetId();
+  r0f.reset();  
+
+  auto r0 = tbl2.CreateNew("domob", "c1e9a4e1-cf55-6084-8bf2-778678387353", ctx.RoConfig());
+  int rA1idx = r0->GetId();
+  r0.reset();  
+  
+  auto ft = tbl3.CreateNew ("domob", r0fid, ctx.RoConfig(), rnd);
+  int ftA1idx = ft->GetId();
+  ft.reset();  
+  
+  xp = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  xp->GetInventory().SetFungibleCount("Epic_Gold Candy Ribbon", 150);
+  xp->GetInventory().SetFungibleCount("Epic_Silver Icing", 130);
+  xp->GetInventory().SetFungibleCount("Epic_Bronze Jawbreaker", 125);
+  xp->GetInventory().SetFungibleCount("Rare_Hard Candy", 130);
+  xp->GetInventory().SetFungibleCount("Common_Candy Button", 175);
+  xp->GetInventory().SetFungibleCount("Uncommon_Cotton Candy", 150);
+  xp->GetInventory().SetFungibleCount("Uncommon_Peppermint", 125);
+  xp->GetInventory().SetFungibleCount("Common_Ring Pop", 150);
+  
+  xp->GetInventory().SetFungibleCount("Rare_Toffee Chunk", 175);
+  xp->GetInventory().SetFungibleCount("Rare_Candy Loops", 150);
+  xp->GetInventory().SetFungibleCount("Uncommon_Banana Chew", 125);
+  xp->GetInventory().SetFungibleCount("Uncommon_Jelly Bean", 150);
+  
+  xp.reset();
+
+  std::ostringstream s1;
+  s1 << rA1idx;
+  std::string converted1(s1.str()); 
+
+  std::ostringstream s2;
+  s2 << ftA1idx;
+  std::string converted2(s2.str());       
+
+  Process (R"([
+    {"name": "domob", "move": {"ca": {"r": {"rid": )" +converted1+ R"(, "fid": )"+converted2+R"(}}}}
+  ])"); 
+  
+  xp = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  EXPECT_EQ (xp->GetOngoingsSize (), 0);
+  xp.reset();
+    
+}
+
 TEST_F (ValidateStateTests, RatingSweetnessUpgrades)
 {
   auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);

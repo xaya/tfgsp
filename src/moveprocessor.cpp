@@ -1658,7 +1658,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     }   
 
     const uint32_t recepieID = (uint32_t)recepie["rid"].asInt();
-    //const uint32_t fighterID = recepie["fid"].asInt();
+    const uint32_t fighterID = recepie["fid"].asInt();
     
     auto& playerInventory = a.GetInventory();
     
@@ -1717,6 +1717,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
         if(InventoryHasItem(candyInventoryName, playerInventory, candyNeeds.amount()) == false)
         {
             playerHasEnoughIngridients = false;
+            LOG (WARNING) << "Missing " << candyInventoryName << "needs" << candyNeeds.amount();
         }
         
         pxd::Quantity quantity = candyNeeds.amount();
@@ -1738,6 +1739,43 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
         LOG (WARNING) << "Not enough slots to host a new fighter for " << recepieID;
         return false;         
     }
+    
+    if (itemInventoryRecipe->GetProto().requiredfighterquality() > 0 && fighterID <= 0)
+    {
+        LOG (WARNING) << "[CookRecipe] A fighter is required! " << recepieID;
+        return false;  
+    }
+    if (itemInventoryRecipe->GetProto().requiredfighterquality() > 0 && fighterID > 0)
+    {
+        auto fighter = fighters.GetById(fighterID, ctx.RoConfig());
+        
+        if(fighter == nullptr)
+        {
+          LOG (WARNING) << "Wrong fighter ID " << fighterID;
+          return false; 
+        }
+        
+        if(fighter->GetOwner() != a.GetName())
+        {
+          LOG (WARNING) << "Fighter does not belong to player " << fighterID;
+          fighter.reset();
+          return false;             
+        }
+        
+        if((pxd::FighterStatus)(int)fighter->GetStatus() != pxd::FighterStatus::Available) 
+        {
+          LOG (WARNING) << "Fighter status is not available: " << fighterID;
+          fighter.reset();
+          return false;              
+        }       
+        
+        if(fighter->GetProto().quality() < itemInventoryRecipe->GetProto().requiredfighterquality())
+        {
+          LOG (WARNING) << "Fighter quality is too low " << fighterID;
+          fighter.reset();
+          return false;             
+        }        
+    }    
     
     float reductionPercent = 1;
     const auto& goodiesList = ctx.RoConfig()->goodies();
@@ -2334,7 +2372,13 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
       
     a->AddBalance(-cookCost);
     
-    //TODO REMOVE FIGHTER
+    const uint32_t fighterID = recepie["fid"].asInt();
+    if(fighterID > 0)
+    {
+        auto fighter = fighters.GetById(fighterID, ctx.RoConfig());
+        fighters.DeleteById(fighter->GetId());
+        a->CalculatePrestige(ctx.RoConfig());
+    }
 
     proto::OngoinOperation* newOp = a->MutableProto().add_ongoings();
 
