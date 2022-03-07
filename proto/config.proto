@@ -1,0 +1,188 @@
+/*
+    GSP for the tf blockchain game
+    Copyright (C) 2019-2020  Autonomous Worlds Ltd
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+syntax = "proto2";
+option cc_enable_arenas = true;
+
+import "proto/activity_rewards.proto";
+import "proto/animation.proto";
+import "proto/candy.proto";
+import "proto/crafted_recipe.proto";
+import "proto/crystal_bundle.proto";
+import "proto/expedition_blueprint.proto";
+import "proto/fighter_move_blueprint.proto";
+import "proto/fighter_name.proto";
+import "proto/fighter_type.proto";
+import "proto/goody.proto";
+import "proto/goody_bundle.proto";
+import "proto/sweetener_blueprint.proto";
+import "proto/tournament_blueprint.proto";
+
+package pxd.proto;
+
+/**
+ * A stage in the burnsale schedule.
+ */
+message BurnsaleStage
+{
+
+  /** Amount of vCHI to be sold in the stage.  */
+  optional uint64 amount_sold = 1;
+
+  /** Price of one coin in CHI satoshi.  */
+  optional uint64 price_sat = 2;
+
+}
+
+/**
+ * Basic parameters of the game.
+ */
+message Params
+{
+
+  /** The address to which developer payments should be sent.  */
+  optional string dev_addr = 1;
+
+  /** Whether or not god mode is enabled.  */
+  optional bool god_mode = 2;
+  
+ /** Data about the burnsale schedule.  */
+  repeated BurnsaleStage burnsale_stages = 3;  
+  
+  optional string starting_recipes = 4;
+  
+  optional uint32 elok_factor = 5;
+  
+  optional float alms = 6;
+  
+  optional uint32 starting_crystals = 7;
+  
+  optional uint32 required_candy_per_vove = 8;
+  
+  optional uint32 exchange_listing_fee = 9;
+  
+  optional float exchange_sale_percentage = 10;
+  
+  optional uint32 common_recipe_cook_cost = 11;
+  
+  optional uint32 uncommon_recipe_cook_cost = 12;
+  
+  optional uint32 rare_recipe_cook_cost = 13;
+  
+  optional uint32 epic_recipe_cook_cost = 14;
+  
+  optional uint32 common_cook_duration = 15;
+  
+  optional uint32 uncommon_cook_duration = 16;
+  
+  optional uint32 rare_cook_duration = 17;
+  
+  optional uint32 epic_cook_duration = 18;
+  
+  optional uint32 common_move_count = 19;
+  
+  optional uint32 uncommon_move_count = 20;
+  
+  optional uint32 rare_move_count = 21;
+  
+  optional uint32 epic_move_count = 22;
+  
+  optional uint32 max_recipe_inventory_amount = 23;
+  
+  optional uint32 max_fighter_inventory_amount = 24;
+  
+  optional uint32 deconstruction_blocks = 25;
+  
+  optional float deconstruction_return_percent = 26;
+  
+  map<string, string> fungible_items = 27;
+  
+  optional uint32 base_prestige = 28;
+  
+  optional uint32 prestige_epic_mod = 29;
+  
+  optional uint32 prestige_rare_mod = 30;
+  
+  optional uint32 prestige_uncommon_mod = 31;
+  
+  optional uint32 prestige_common_mod = 32;
+  
+  optional uint32 prestige_total_treats_mod = 33;
+  
+  optional uint32 prestige_avg_rating_mod = 34;
+  
+  optional float prestige_tournament_performance_mod = 35;
+}
+
+/* ************************************************************************** */
+
+/**
+ * The hardcoded "configuration data" for tf.  This includes all data
+ * that describes read-only aspects of the game, like known item or vehicle
+ * types and stats for them.
+ *
+ * An instance of this proto is populated from text format encoded in
+ * roconfig/<files>.pb.text and made available to all parts of the code.
+ */
+message ConfigData
+{
+  /** Basic parameters.  */
+  optional Params params = 1;
+   
+  map<string, ActivityReward> activityrewards = 2;
+  
+  map<string, Animation> animations = 3;
+  
+  map<string, Candy> candies = 4;
+  
+  map<string, CrystalBundle> crystalbundles = 5;
+  
+  map<string, ExpeditionBlueprint> expeditionblueprints = 6;
+  
+  map<string, FighterMoveBlueprint> fightermoveblueprints = 7;
+  
+  map<string, FighterName> fighternames = 8;
+  
+  map<string, FighterType> fightertype = 9;
+  
+  map<string, Goody> goodies = 10;
+  
+  map<string, GoodyBundle> goodybundles = 11;
+  
+  map<string, CraftedRecipe> recepies = 12;  
+  
+  map<string, SweetenerBlueprint> sweetenerblueprints = 13;
+  
+  map<string, TournamentBlueprint> tournamentbluprints = 14;
+
+  /**
+   * The testnet-specific configuration data.  This is merged into the main
+   * configuration when running on testnet or regtest.
+   */
+  optional ConfigData testnet_merge = 100;
+
+  /**
+   * The regtest-specific configuration data.  This is merged into the testnet
+   * data by the RoConfig-helper class when running on regtest.
+   *
+   * Safe zones and prizes in there will completely replace the values
+   * in the mainnet config, instead of being added to them.
+   */
+  optional ConfigData regtest_merge = 101;
+
+}
