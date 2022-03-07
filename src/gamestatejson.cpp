@@ -132,6 +132,7 @@ template <>
   res["status"] = (int)fighter.GetStatus();
   res["recipeid"] = pb.recipeid();
   res["name"] = pb.name();
+  res["isaccountbound"] = pb.isaccountbound ();
   res["id"] = fighter.GetId();
   res["expeditioninstanceid"] = pb.expeditioninstanceid();
   res["tournamentinstanceid"] = IntToJson (pb.tournamentinstanceid());
@@ -342,6 +343,14 @@ template <>
        recJsonObj.append (ongoing.recipeid()); 
     }
   }
+  
+  for(auto& ongoing: pb.ongoings())
+  {
+    if((pxd::OngoingType)ongoing.type() == pxd::OngoingType::COOK_SWEETENER)
+    {
+       recJsonObj.append (ongoing.recipeid()); 
+    }
+  }  
 
   res["recepies"] = recJsonObj;
     
@@ -357,6 +366,11 @@ template <>
       {
         ongOB["recipeid"] = ongoing.recipeid();
       }
+      
+      if((pxd::OngoingType)(int)ongoing.type() == pxd::OngoingType::COOK_SWEETENER)
+      {
+        ongOB["recipeid"] = ongoing.recipeid();
+      }      
       
       if((pxd::OngoingType)(int)ongoing.type() == pxd::OngoingType::EXPEDITION)
       {
@@ -479,9 +493,23 @@ Json::Value
 GameStateJson::CrystalBundles()
 {
   const auto& bundles = ctx.RoConfig ()->crystalbundles();
+  
+  /*For testing purpose, we want to have constant hash of full state 
+   string, hence its imporant to keep sorting order here deterministic*/
+  
+  std::vector<std::pair<std::string, pxd::proto::CrystalBundle>> sortedCrystalBundle;
+  for (auto itr = bundles.begin(); itr != bundles.end(); ++itr)
+      sortedCrystalBundle.push_back(*itr);
+
+  sort(sortedCrystalBundle.begin(), sortedCrystalBundle.end(), [=](std::pair<std::string, pxd::proto::CrystalBundle>& a, std::pair<std::string, pxd::proto::CrystalBundle>& b)
+  {
+      return a.first < b.first;
+  } 
+  );    
+  
   Json::Value res(Json::arrayValue);
   
-  for (auto& bundle: bundles)
+  for (auto& bundle: sortedCrystalBundle)
   {
       res.append(bundle.first);
   }

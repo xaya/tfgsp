@@ -193,6 +193,7 @@ TEST_F (XayaPlayersUpdateTests, RecepieInstanceSheduleTest)
   a->GetInventory().SetFungibleCount("Common_Icing", 1);  
   a.reset();
   
+  tbl2.GetById(1)->SetOwner("domob");
   
   auto r0 = tbl2.CreateNew("domob", "5864a19b-c8c0-2d34-eaef-9455af0baf2c", ctx.RoConfig());
   r0.reset();    
@@ -223,6 +224,9 @@ TEST_F (XayaPlayersUpdateTests, RecepieInstanceInsufficientResources)
 {
   xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (100);
 
+  tbl2.GetById(1)->SetOwner("domob");
+  tbl2.GetById(2)->SetOwner("domob");
+  
   auto r0 = tbl2.CreateNew("domob", "5864a19b-c8c0-2d34-eaef-9455af0baf2c", ctx.RoConfig());
   r0.reset();  
 
@@ -283,6 +287,35 @@ TEST_F (XayaPlayersUpdateTests, ExpeditionInstanceSheduleTest)
   auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
   ASSERT_TRUE (a != nullptr);
   EXPECT_EQ (a->GetOngoingsSize (), 1);
+}
+
+TEST_F (XayaPlayersUpdateTests, ExpeditionMultipleInstanceSheduleTest)
+{
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
+  xp->GetInventory().SetFungibleCount("Common_Gumdrop", 1);
+  xp->GetInventory().SetFungibleCount("Common_Icing", 1);    
+  
+  auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
+  ft.reset();
+  
+  ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
+  int myID = ft->GetId();
+  ft.reset();  
+  
+  EXPECT_EQ (xp->CollectInventoryFighters(ctx.RoConfig()).size(), 4);
+  xp.reset();
+  
+  std::ostringstream s;
+  s << myID;
+  std::string converted(s.str());  
+  
+  Process (R"([
+    {"name": "domob", "move": {"exp": {"f": {"eid": "c064e7f7-acbf-4f74-fab8-cccd7b2d4004", "fid": [4,)" + converted + R"(]}}}}
+  ])");  
+  
+  auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  ASSERT_TRUE (a != nullptr);
+  EXPECT_EQ (a->GetOngoingsSize (), 2);
 }
 
 TEST_F (XayaPlayersUpdateTests, ExpeditionInstanceSheduleTestWrongData1)
@@ -537,13 +570,19 @@ TEST_F (CoinOperationTests, PutFighterForSaleAndThenBuy)
     {"name": "domob", "move": {"a": {"x": 42, "init": {"role": "p"}}}}
   ])");
   
+  auto ft = tbl3.GetById(4, ctx.RoConfig());
+  ASSERT_TRUE (ft != nullptr);
+  ft->MutableProto().set_isaccountbound(false);
+  ft.reset();  
+  
   Process (R"([
     {"name": "domob", "move": {"f": {"s": {"fid": 4, "d": 3, "p": 500}}}}
   ])");
   
   int secondsInOneDay = 24 * 60 * 60;
   int blocksInOneDay = secondsInOneDay / 30;  
-  auto ft = tbl3.GetById(4, ctx.RoConfig());
+  
+  ft = tbl3.GetById(4, ctx.RoConfig());
   ASSERT_TRUE (ft != nullptr);
 
   EXPECT_EQ (ft->GetStatus(), pxd::FighterStatus::Exchange);
@@ -584,9 +623,15 @@ TEST_F (CoinOperationTests, PutFighterForSaleAndThenBuy)
 
 TEST_F (CoinOperationTests, PutFighterForSaleAndThenRemove)
 {
+
    Process (R"([
     {"name": "domob", "move": {"a": {"x": 42, "init": {"role": "p"}}}}
   ])");
+  
+  auto ft = tbl3.GetById(4, ctx.RoConfig());
+  ASSERT_TRUE (ft != nullptr);
+  ft->MutableProto().set_isaccountbound(false);
+  ft.reset();  
   
   Process (R"([
     {"name": "domob", "move": {"f": {"s": {"fid": 4, "d": 3, "p": 500}}}}
@@ -594,7 +639,7 @@ TEST_F (CoinOperationTests, PutFighterForSaleAndThenRemove)
   
   int secondsInOneDay = 24 * 60 * 60;
   int blocksInOneDay = secondsInOneDay / 30;  
-  auto ft = tbl3.GetById(4, ctx.RoConfig());
+  ft = tbl3.GetById(4, ctx.RoConfig());
   ASSERT_TRUE (ft != nullptr);
 
   EXPECT_EQ (ft->GetStatus(), pxd::FighterStatus::Exchange);

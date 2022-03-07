@@ -18,6 +18,9 @@
 
 #include "moveprocessor.hpp"
 
+#include <fpm/fixed.hpp>
+#include <fpm/math.hpp>
+
 #include "burnsale.hpp"
 
 #include "forks.hpp"
@@ -296,9 +299,9 @@ BaseMoveProcessor::TrySweetenerPurchase (const std::string& name, const Json::Va
   const auto& cmd = mv["ps"];
   if (!cmd.isString ()) return;
 
-  VLOG (1) << "Attempting to purchase sweetener through move: " << cmd;
+  LOG (WARNING) << "Attempting to purchase sweetener through move: " << cmd;
   
-  const auto player = xayaplayers.GetByName (name, ctx.RoConfig());
+  auto player = xayaplayers.GetByName (name, ctx.RoConfig());
   CHECK (player != nullptr);
 
   if (cmd.isObject ())
@@ -313,9 +316,10 @@ BaseMoveProcessor::TrySweetenerPurchase (const std::string& name, const Json::Va
   {
       return;
   }
-  
+   LOG (WARNING) << "GOOD: " << cmd << " as cost " << cost;
   player->AddBalance (-cost); 
   player->GetInventory().AddFungibleCount(fungibleName, 1);
+  player.reset();
 }
 
 void
@@ -917,6 +921,13 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
       return false;               
     }    
     
+    if(fighterDb->GetProto().isaccountbound() == true)
+    {
+      LOG (WARNING) << "Can not sale account bound fighter: " << a.GetName();
+      fighterDb.reset();
+      return false;               
+    }      
+    
     if((pxd::FighterStatus)(int)fighterDb->GetStatus() != pxd::FighterStatus::Available) 
     {
       LOG (WARNING) << "Fighter status is not available: " << fighterID;
@@ -1321,7 +1332,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     return true;
   }
   
-  bool BaseMoveProcessor::ParseExpeditionData(const XayaPlayer& a, const std::string& name, const Json::Value& expedition, pxd::proto::ExpeditionBlueprint& expeditionBlueprint, FighterTable::Handle& fighter, int32_t& duration, std::string& weHaveApplibeGoodyName)
+  bool BaseMoveProcessor::ParseExpeditionData(const XayaPlayer& a, const std::string& name, const Json::Value& expedition, pxd::proto::ExpeditionBlueprint& expeditionBlueprint, std::vector<int>& fightersIds, int32_t& duration, std::string& weHaveApplibeGoodyName)
   {
     if (!expedition.isObject ())
     return false;
@@ -1331,100 +1342,128 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
         return false;
     }
     
-    if(!expedition["fid"].isInt())
+    if(!expedition["fid"].isInt() && !expedition["fid"].isArray())
     {
         return false;
     }    
 
     const std::string expeditionID = expedition["eid"].asString ();
-    const int fighterID = expedition["fid"].asInt();
     
-    fighter = fighters.GetById (fighterID, ctx.RoConfig ());
-    
-    if(fighter == nullptr)
+    if(expedition["fid"].isInt())
     {
-        LOG (WARNING) << "Could not resolve fighter with id: " << fighterID;
-        return false;           
+      fightersIds.push_back(expedition["fid"].asInt()); 
     }
-    
-    if(a.GetName() != fighter->GetOwner())
+    else
     {
-        LOG (WARNING) << "Fighter does not belong to the player, fighter id is: " << fighterID;
-        fighter.reset();
-        return false;         
-    }
-    
-    const auto& expeditionList = ctx.RoConfig()->expeditionblueprints();
-    bool blueprintSolved = false;
-    
-    for(const auto& expedition: expeditionList)
-    {
-        if(expedition.second.authoredid() == expeditionID)
+        for(auto ft: expedition["fid"])
         {
-            expeditionBlueprint = expedition.second;
-            blueprintSolved = true;
-            break;
+            fightersIds.push_back(ft.asInt());
         }
     }
     
-    if(blueprintSolved == false)
+    for(long long unsigned int s =0; s < fightersIds.size(); s++)
     {
-        LOG (WARNING) << "Could not resolve expedition blueprint with authID: " << expeditionID;
-        fighter.reset();
-        return false;              
+      auto fighterDD = fighters.GetById (fightersIds[s], ctx.RoConfig ());
+      
+      if(fighterDD == nullptr)
+      {
+          LOG (WARNING) << "Could not resolve fighter with id: " << fightersIds[s]  << " with incoming as " << expedition;
+          return false;           
+      }
+      
+      if(a.GetName() != fighterDD->GetOwner())
+      {
+          LOG (WARNING) << "Fighter does not belong to the player, fighter id is: " << fightersIds[s];
+          fighterDD.reset();
+          return false;         
+      }
+      
+      const auto& expeditionList = ctx.RoConfig()->expeditionblueprints();
+      bool blueprintSolved = false;
+      
+      for(const auto& expedition: expeditionList)
+      {
+          if(expedition.second.authoredid() == expeditionID)
+          {
+              expeditionBlueprint = expedition.second;
+              blueprintSolved = true;
+              break;
+          }
+      }
+      
+      if(blueprintSolved == false)
+      {
+          LOG (WARNING) << "Could not resolve expedition blueprint with authID: " << expeditionID;
+          fighterDD.reset();
+          return false;              
+      }
+      
+      const auto chain = ctx.Chain ();
+      if(expeditionBlueprint.authoredid() == "c064e7f7-acbf-4f74-fab8-cccd7b2d4004" && chain == xaya::Chain::MAIN)
+      {
+          LOG (WARNING) << "Could not resolve tutorial expedition twice " << expeditionID;
+          fighterDD.reset();
+          return false;            
+      }
+      
+      if(fighterDD->GetProto().sweetness() < expeditionBlueprint.minsweetness())
+      {
+          LOG (WARNING) << "Trying to join expedition but fighter doesn't meet sweetness requirements: " << fightersIds[s];
+          fighterDD.reset();
+          return false;              
+      }
+      
+      if(fighterDD->GetProto().sweetness() > expeditionBlueprint.maxsweetness())
+      {
+          LOG (WARNING) << "Trying to join expedition but fighter doesn't meet sweetness requirements: " << fightersIds[s];
+          fighterDD.reset();
+          return false;              
+      }    
+      
+      if(fighterDD->GetStatus() != FighterStatus::Available)
+      {
+          LOG (WARNING) << "Trying to join expedition but fighter isn't available : " << fightersIds[s];
+          fighterDD.reset();
+          return false;              
+      }     
+      
+      fighterDD.reset();
+    
     }
-    
-    const auto chain = ctx.Chain ();
-    if(expeditionBlueprint.authoredid() == "c064e7f7-acbf-4f74-fab8-cccd7b2d4004" && chain == xaya::Chain::MAIN)
-    {
-        LOG (WARNING) << "Could not resolve tutorial expedition twice " << expeditionID;
-        fighter.reset();
-        return false;            
-    }
-    
-    if(fighter->GetProto().sweetness() < expeditionBlueprint.minsweetness())
-    {
-        LOG (WARNING) << "Trying to join expedition but fighter doesn't meet sweetness requirements: " << fighterID;
-        fighter.reset();
-        return false;              
-    }
-    
-    if(fighter->GetProto().sweetness() > expeditionBlueprint.maxsweetness())
-    {
-        LOG (WARNING) << "Trying to join expedition but fighter doesn't meet sweetness requirements: " << fighterID;
-        fighter.reset();
-        return false;              
-    }    
-    
-    if(fighter->GetStatus() != FighterStatus::Available)
-    {
-        LOG (WARNING) << "Trying to join expedition but fighter isn't available : " << fighterID;
-        fighter.reset();
-        return false;              
-    }     
     
     const auto& goodiesList = ctx.RoConfig()->goodies();
-    float reductionPercent = 1;
     
-    for(const auto& goodie: goodiesList)
+     std::vector<std::pair<std::string, pxd::proto::Goody>> sortedGoodyTypesmap;
+        for (auto itr = goodiesList.begin(); itr != goodiesList.end(); ++itr)
+            sortedGoodyTypesmap.push_back(*itr);
+
+    sort(sortedGoodyTypesmap.begin(), sortedGoodyTypesmap.end(), [=](std::pair<std::string, pxd::proto::Goody>& a, std::pair<std::string, pxd::proto::Goody>& b)
+    {
+        return a.first < b.first;
+    } 
+    );        
+    
+    fpm::fixed_24_8 reductionPercent = fpm::fixed_24_8(1);
+    
+    for(const auto& goodie: sortedGoodyTypesmap)
     {
         if(a.GetInventory().GetFungibleCount(goodie.first) > 0)
         {
             if(goodie.second.goodytype() == (int8_t)pxd::GoodyType::Espresso)
             {
                 weHaveApplibeGoodyName = goodie.first;
-                reductionPercent = (float)goodie.second.reductionpercent();
+                reductionPercent = fpm::fixed_24_8(goodie.second.reductionpercent());
                 break;
             }
         }
     }
-    int32_t effective_duration = expeditionBlueprint.duration();
+    fpm::fixed_24_8 effective_duration = fpm::fixed_24_8(expeditionBlueprint.duration());
     if(weHaveApplibeGoodyName != "")
     {
         effective_duration = effective_duration * reductionPercent;
     }    
     
-    duration = effective_duration;
+    duration = (int32_t)effective_duration;
     
     return true;    
   }  
@@ -1635,7 +1674,14 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
         LOG (WARNING) << "Fighter isn't sweet enough " << fighterID;
         fighterDb.reset();
         return false;          
-     }          
+     }   
+
+     if(sweetenerBlueprint.requiredsweetness() != (fighterDb->GetProto().highestappliedsweetener()+1))
+     {
+        LOG (WARNING) << "Can sweeten only to next level first, no jumps over " << fighterID;
+        fighterDb.reset();
+        return false;          
+     }         
      
      fighterDb.reset();
      return true;   
@@ -1657,8 +1703,8 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
         return false;
     }   
 
-    const uint32_t recepieID = (uint32_t)recepie["rid"].asInt();
-    const uint32_t fighterID = recepie["fid"].asInt();
+    const int32_t recepieID = (uint32_t)recepie["rid"].asInt();
+    const int32_t fighterID = recepie["fid"].asInt();
     
     auto& playerInventory = a.GetInventory();
     
@@ -1777,28 +1823,39 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
         }        
     }    
     
-    float reductionPercent = 1;
+    fpm::fixed_24_8 reductionPercent = fpm::fixed_24_8(1);
     const auto& goodiesList = ctx.RoConfig()->goodies();
-    for(const auto& goodie: goodiesList)
+    
+     std::vector<std::pair<std::string, pxd::proto::Goody>> sortedGoodyTypesmap;
+        for (auto itr = goodiesList.begin(); itr != goodiesList.end(); ++itr)
+            sortedGoodyTypesmap.push_back(*itr);
+
+    sort(sortedGoodyTypesmap.begin(), sortedGoodyTypesmap.end(), [=](std::pair<std::string, pxd::proto::Goody>& a, std::pair<std::string, pxd::proto::Goody>& b)
+    {
+        return a.first < b.first;
+    } 
+    );     
+    
+    for(const auto& goodie: sortedGoodyTypesmap)
     {
         if(playerInventory.GetFungibleCount(goodie.first) > 0)
         {
             if(goodie.second.goodytype() == (int8_t)pxd::GoodyType::PressureCooker)
             {
                 weHaveApplibeGoodyName = goodie.first;
-                reductionPercent = (float)goodie.second.reductionpercent();
+                reductionPercent = fpm::fixed_24_8(goodie.second.reductionpercent());
                 break;
             }
         }
     }
     
-    int32_t effective_duration = itemInventoryRecipe->GetProto().duration();;
+    fpm::fixed_24_8 effective_duration = fpm::fixed_24_8(itemInventoryRecipe->GetProto().duration());
     if(weHaveApplibeGoodyName != "")
     {
         effective_duration = effective_duration * reductionPercent;
     }    
 
-    duration = effective_duration;
+    duration = (int32_t)effective_duration;
 
     return true;    
   }
@@ -1827,6 +1884,8 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
       uint32_t curRecipeSlots = recipeTbl.CountForOwner(a->GetName());
       uint32_t maxRecipeSlots = ctx.RoConfig()->params().max_recipe_inventory_amount();
       
+      std::vector<uint32_t> markedToRemove;
+      
       const auto& rewardsList = ctx.RoConfig()->activityrewards();
       for(const auto& rw: rewardDatabaseIds)
       {
@@ -1853,7 +1912,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
           if(rewardsSolved == false)
           {
               LOG (ERROR) << "Fatal error, could not solve: " << rewardData->GetProto().rewardid();
-              rewards.DeleteById(rw);
+              markedToRemove.push_back(rw);
               rewardData.reset();
               continue;
           }
@@ -1863,7 +1922,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
               if(curRecipeSlots >= maxRecipeSlots)
               {
                   LOG (INFO) << "Can not grant recipe, maxomus lots reached  of" << curRecipeSlots << " where max is " << maxRecipeSlots;
-                  rewards.DeleteById(rw);
+                  markedToRemove.push_back(rw);
                   rewardData.reset();
                   continue;
               }
@@ -1947,6 +2006,11 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
       }      
       
       a.reset();
+      
+      for(auto entry: markedToRemove)
+      {
+          rewards.DeleteById(entry);
+      }
   }
   
   void MoveProcessor::MaybeClaimReward (const std::string& name, const Json::Value& expedition)
@@ -1997,7 +2061,8 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
           {
               if (*it == fighterIDS[r])
               {
-                  tournamentData->MutableInstance().mutable_fighters()->erase(it);
+                  auto& mF = *tournamentData->MutableInstance().mutable_fighters();
+                  mF.erase(it);
                   break;
               }
           }
@@ -2036,6 +2101,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     std::vector<uint32_t> rewardDatabaseIds;
     auto res = rewards.QueryForOwner(a->GetName());
     
+    auto fighterDb = fighters.GetById (fighterID, ctx.RoConfig ());  
     bool tryAndStep = res.Step();
     while (tryAndStep)
     {
@@ -2045,7 +2111,10 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
       {
         for(const auto& reward: rw->GetProto().deconstructions())
         {
-           a->GetInventory().AddFungibleCount(reward.candytype(), reward.quantity()); 
+          if(fighterDb->GetProto().isaccountbound() == false)
+          {
+             a->GetInventory().AddFungibleCount(reward.candytype(), reward.quantity()); 
+          }
         }
           
         rewardDatabaseIds.push_back(rw->GetId());
@@ -2055,6 +2124,8 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
       tryAndStep = res.Step ();
     }      
     
+    fighterDb.reset();
+    
     for(const auto& rw: rewardDatabaseIds)
     {
       rewards.DeleteById(rw);
@@ -2063,6 +2134,8 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     fighters.DeleteById(fighterID);
     a->CalculatePrestige(ctx.RoConfig());
     a.reset();
+    
+    
   } 
 
 void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json::Value& fighter)
@@ -2246,35 +2319,45 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
     std::string weHaveApplibeGoodyName = "";
     int32_t duration = -1;
     pxd::proto::ExpeditionBlueprint expeditionBlueprint;
-    FighterTable::Handle fighter;
+    std::vector<int> fighter;
     
     if(!ParseExpeditionData(*a, name, expedition, expeditionBlueprint, fighter, duration, weHaveApplibeGoodyName)) return;
     
-    proto::OngoinOperation* newOp = a->MutableProto().add_ongoings();
-    
-    newOp->set_type((uint32_t)pxd::OngoingType::EXPEDITION);
-    newOp->set_fighterdatabaseid(expedition["fid"].asInt());
-    newOp->set_expeditionblueprintid(expedition["eid"].asString ());
+    for(auto& ft: fighter)
+    {
+      auto fighterDD = fighters.GetById (ft, ctx.RoConfig ());
+        
+      proto::OngoinOperation* newOp = a->MutableProto().add_ongoings();
+      
+      newOp->set_type((uint32_t)pxd::OngoingType::EXPEDITION);
+      newOp->set_fighterdatabaseid(ft);
+      newOp->set_expeditionblueprintid(expedition["eid"].asString ());
 
-    fighter->SetStatus(FighterStatus::Expedition);
-    fighter->MutableProto().set_expeditioninstanceid(expedition["eid"].asString ());
+      fighterDD->SetStatus(FighterStatus::Expedition);
+      fighterDD->MutableProto().set_expeditioninstanceid(expedition["eid"].asString ());
+      
+      if(weHaveApplibeGoodyName != "")
+      {
+          newOp->set_appliedgoodykeyname(weHaveApplibeGoodyName);
+      }
+      
+      /** We need to make it at least 1 block, else if will make no sense executing immediately logic flow wise*/
+      if(duration < 1)
+      {
+          duration = 1;
+      }    
+          
+      newOp->set_blocksleft(duration);    
+      LOG (INFO) << "Expedition " << expedition << " submitted succesfully ";
+      fighterDD.reset();
+    }
     
     if(weHaveApplibeGoodyName != "")
     {
-        a->GetInventory().AddFungibleCount(weHaveApplibeGoodyName, -1);
-        newOp->set_appliedgoodykeyname(weHaveApplibeGoodyName);
-    }
-    
-    /** We need to make it at least 1 block, else if will make no sense executing immediately logic flow wise*/
-    if(duration < 1)
-    {
-        duration = 1;
+      a->GetInventory().AddFungibleCount(weHaveApplibeGoodyName, -1);
     }    
-        
-    newOp->set_blocksleft(duration);    
     
     a.reset();
-    LOG (INFO) << "Expedition " << expedition << " submitted succesfully ";
   }    
   
   void
@@ -2329,14 +2412,17 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
   
     auto fighterDb = fighters.GetById (fighterID, ctx.RoConfig ());
     fighterDb->SetStatus(pxd::FighterStatus::Cooking);
-    fighterDb.reset();
+    
     
     proto::OngoinOperation* newOp = a->MutableProto().add_ongoings();
 
     newOp->set_type((uint32_t)pxd::OngoingType::COOK_SWEETENER);
+    newOp->set_recipeid(fighterDb->GetProto().recipeid());
     newOp->set_appliedgoodykeyname(sweetener["sid"].asString());
     newOp->set_rewardid(sweetener["rid"].asInt());
     newOp->set_fighterdatabaseid(fighterID);
+    
+    fighterDb.reset();
     
     /** We need to make it at least 1 block, else if will make no sense executing immediately logic flow wise*/
     if(duration < 1)
@@ -2372,12 +2458,16 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
       
     a->AddBalance(-cookCost);
     
-    const uint32_t fighterID = recepie["fid"].asInt();
+    const int32_t fighterID = recepie["fid"].asInt();
     if(fighterID > 0)
     {
         auto fighter = fighters.GetById(fighterID, ctx.RoConfig());
-        fighters.DeleteById(fighter->GetId());
-        a->CalculatePrestige(ctx.RoConfig());
+        
+        if(fighter != nullptr)
+        {
+          fighters.DeleteById(fighter->GetId());
+          a->CalculatePrestige(ctx.RoConfig());
+        }
     }
 
     proto::OngoinOperation* newOp = a->MutableProto().add_ongoings();
@@ -2401,6 +2491,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
         duration = 1;
     }    
 
+    LOG (WARNING) << "Settign duration as " << duration;
     newOp->set_blocksleft(duration);
 
     a->CalculatePrestige(ctx.RoConfig());

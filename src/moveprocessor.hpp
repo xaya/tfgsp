@@ -199,7 +199,7 @@ protected:
    * Tries to parse a move that send fighter on the expedition
    */    
  
-  bool ParseExpeditionData(const XayaPlayer& a, const std::string& name, const Json::Value& expedition, pxd::proto::ExpeditionBlueprint& expeditionBlueprint, FighterTable::Handle& fighter, int32_t& duration, std::string& weHaveApplibeGoodyName);
+  bool ParseExpeditionData(const XayaPlayer& a, const std::string& name, const Json::Value& expedition, pxd::proto::ExpeditionBlueprint& expeditionBlueprint, std::vector<int>& fightersIds, int32_t& duration, std::string& weHaveApplibeGoodyName);
  
    /**
    * Tries to parse a move that send fighter on the tournament

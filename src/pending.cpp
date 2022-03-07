@@ -44,6 +44,33 @@ PendingState::GetXayaPlayerState (const XayaPlayer& a)
   if (mit == xayaplayers.end ())
     {
       const auto ins = xayaplayers.emplace (name, XayaPlayerState ());
+      
+      ins.first->second.balance = a.GetBalance();
+      ins.first->second.onChainBalance = a.GetBalance();
+      
+      /*lets be double sure we are having correctly ordered map to avoid forks*/
+      
+      std::vector<std::pair<std::string, uint64_t>> sortedFungibles;
+      for (const auto& entry : a.GetInventory().GetFungible ())
+        sortedFungibles.push_back(std::pair<std::string, uint64_t>(entry.first, entry.second));
+
+      sort(sortedFungibles.begin(), sortedFungibles.end(), [=](std::pair<std::string, uint64_t>& a, std::pair<std::string, uint64_t>& b)
+      {
+        return a.first < b.first;
+      } 
+      );        
+      
+      std::map<std::string, uint64_t> currentFungibleSetCC;
+
+      for(auto& entry: sortedFungibles)
+      {
+          currentFungibleSetCC.insert(std::pair<std::string, uint64_t>(entry.first, entry.second));
+      }      
+      
+      ins.first->second.currentFungibleSet = currentFungibleSetCC;
+      std::map<std::string, uint64_t> fungiblesCopy(currentFungibleSetCC);
+      ins.first->second.onChainFungibleSet = fungiblesCopy;
+      
       CHECK (ins.second);
       VLOG (1)
           << "Account " << name << " was not yet pending, adding pending entry";
@@ -74,12 +101,12 @@ PendingState::AddCoinTransferBurn (const XayaPlayer& a, const CoinTransferBurn& 
 }
 
 void
-PendingState::AddCrystalPurchase (const XayaPlayer& a, std::string crystalBundleKey)
+PendingState::AddCrystalPurchase (const XayaPlayer& a, std::string crystalBundleKey, Amount crystalAmount)
 {
   VLOG (1) << "Adding pending crystal purchase operation for " << a.GetName ();
 
   auto& aState = GetXayaPlayerState (a);
-  aState.balance = a.GetBalance();
+  aState.balance += crystalAmount;
   aState.crystalpurchace.push_back(crystalBundleKey);
 }
 
@@ -94,13 +121,13 @@ PendingState::AddClaimingSweetenerReward (const XayaPlayer& a, const std::string
 }
 
 void
-PendingState::AddSweetenerCookingInstance (const XayaPlayer& a, const std::string sweetenerKeyName, int32_t duration, int32_t fighterID)
+PendingState::AddSweetenerCookingInstance (const XayaPlayer& a, const std::string sweetenerKeyName, int32_t duration, int32_t fighterID, Amount cookingCost, std::map<std::string, pxd::Quantity> fungibleItemAmountForDeduction)
 {
   VLOG (1) << "Adding pending sweetener cooking operation for name" << a.GetName ();
 
   auto& aState = GetXayaPlayerState (a);
   
-  aState.balance = a.GetBalance();
+  aState.balance -= cookingCost;
   
   proto::OngoinOperation newOp;
   newOp.set_blocksleft(duration);
@@ -108,50 +135,63 @@ PendingState::AddSweetenerCookingInstance (const XayaPlayer& a, const std::strin
   newOp.set_fighterdatabaseid(fighterID);
   newOp.set_type((int8_t)pxd::OngoingType::COOK_SWEETENER);  
   
+  for(auto& item: fungibleItemAmountForDeduction)
+  {
+      aState.currentFungibleSet[item.first] -= item.second;
+  }
+  
   aState.ongoings.push_back(newOp);
 }
 
 void
-PendingState::AddRecepieCookingInstance (const XayaPlayer& a, int32_t duration, int32_t recepieID)
+PendingState::AddRecepieCookingInstance (const XayaPlayer& a, int32_t duration, int32_t recepieID, Amount cookingCost, std::map<std::string, pxd::Quantity> fungibleItemAmountForDeduction)
 {
   VLOG (1) << "Adding pending recepie cooking operation for name" << a.GetName ();
 
   auto& aState = GetXayaPlayerState (a);
-  aState.balance = a.GetBalance();
+  aState.balance -= cookingCost;
 
   proto::OngoinOperation newOp;
   newOp.set_blocksleft(duration);
   newOp.set_type((int8_t)pxd::OngoingType::COOK_RECIPE);  
   newOp.set_recipeid(recepieID);
   
+  for(auto& item: fungibleItemAmountForDeduction)
+  {
+      aState.currentFungibleSet[item.first] -= item.second;
+  }  
+  
   aState.ongoings.push_back(newOp);
 }
 
 void
-PendingState::AddPurchasing (const XayaPlayer& a, std::string authID)
+PendingState::AddPurchasing (const XayaPlayer& a, std::string authID, Amount purchaseCost)
 {
   VLOG (1) << "Adding pending Purchasingoperation for name" << a.GetName ();
   
   auto& aState = GetXayaPlayerState (a);
-  aState.balance = a.GetBalance();
+  aState.balance -= purchaseCost;
   aState.purchasing.push_back(authID);
 }
 
 
 void
-PendingState::AddExpeditionInstance (const XayaPlayer& a, int32_t duration, std::string expeditionID, int32_t fighterID)
+PendingState::AddExpeditionInstance (const XayaPlayer& a, int32_t duration, std::string expeditionID, std::vector<int> fighterID)
 {
   VLOG (1) << "Adding pending expedition operation for name" << a.GetName ();
 
   auto& aState = GetXayaPlayerState (a);
 
-  proto::OngoinOperation newOp;
-  newOp.set_blocksleft(duration);
-  newOp.set_type((int8_t)pxd::OngoingType::EXPEDITION);  
-  newOp.set_expeditionblueprintid(expeditionID);
-  newOp.set_fighterdatabaseid(fighterID);
-  
-  aState.ongoings.push_back(newOp);
+  for(auto& ft : fighterID)
+  {
+    proto::OngoinOperation newOp;
+    newOp.set_blocksleft(duration);
+    newOp.set_type((int8_t)pxd::OngoingType::EXPEDITION);  
+    newOp.set_expeditionblueprintid(expeditionID);
+    newOp.set_fighterdatabaseid(ft);
+    
+    aState.ongoings.push_back(newOp);
+  }
 }
 
 void
@@ -310,11 +350,8 @@ PendingState::XayaPlayerState::ToJson () const
           bundles.append(bundle);
       }  
 
-      res["crystalbundles"] = bundles;   
-      res["balance"] = balance;       
+      res["crystalbundles"] = bundles;         
   }  
-
-  bool addBalance = false;
 
   if(ongoings.size() > 0)
   {
@@ -335,14 +372,12 @@ PendingState::XayaPlayerState::ToJson () const
           if((int8_t)op.type() == (int8_t)pxd::OngoingType::COOK_RECIPE)
           {        
             ongOBJ["ival"] = IntToJson (op.recipeid());
-            addBalance = true;
           }       
 
           if((int8_t)op.type() == (int8_t)pxd::OngoingType::COOK_SWEETENER)
           {     
             ongOBJ["ival"] = IntToJson (op.fighterdatabaseid());
             ongOBJ["sval"] = op.appliedgoodykeyname();
-            addBalance = true;
           }              
           
           operations.append(ongOBJ);
@@ -351,11 +386,13 @@ PendingState::XayaPlayerState::ToJson () const
       res["ongoings"] = operations;        
   }
 
-  if(addBalance)
+  if(balance != onChainBalance)
   {
-      res["balance"] = balance;
+    res["balance"] = balance;
   }
-    
+  
+  
+
   if(rewardDatabaseIds.size() > 0)
   {
     Json::Value dtbrw(Json::arrayValue);
@@ -461,8 +498,7 @@ PendingState::XayaPlayerState::ToJson () const
       purchasingArr.append(pp);
     }  
       
-    res["purchasing"] = purchasingArr;   
-    res["balance"] = balance;    
+    res["purchasing"] = purchasingArr;       
   }  
   
   if(sweetenerClaimingAuthIds.size() > 0)
@@ -492,8 +528,7 @@ PendingState::XayaPlayerState::ToJson () const
       forSaleArr.append(fs);
     }  
       
-    res["forsale"] = forSaleArr;   
-    res["balance"] = balance;        
+    res["forsale"] = forSaleArr;          
   }
   
   if(fightingForBuy.size() > 0)
@@ -517,6 +552,33 @@ PendingState::XayaPlayerState::ToJson () const
       
     res["forremove"] = forRemoveArr;          
   }    
+  
+  std::map<std::string, uint64_t> affectedMap;
+  for(auto& item : currentFungibleSet)
+  {
+    for(auto& item2 : onChainFungibleSet)
+    { 
+      if(item.first == item2.first && item.second != item2.second)
+      {
+       affectedMap.insert(std::pair<std::string, uint64_t>(item.first, item.second)); 
+      }
+    }
+  }
+  
+  if(affectedMap.size() > 0)
+  {
+    Json::Value affectedItemsArr(Json::arrayValue);
+    
+    for(const auto& it: affectedMap) 
+    {
+      Json::Value item(Json::objectValue);  
+      item["name"] = it.first;
+      item["value"] = it.second;
+      affectedItemsArr.append(item);
+    }  
+      
+    res["itemchange"] = affectedItemsArr;                
+  }
   
   return res;
 }
@@ -604,12 +666,12 @@ PendingStateUpdater::ProcessMove (const Json::Value& moveObj)
     
     if(ParseCookRecepie(*a, name, upd["r"], fungibleItemAmountForDeduction, cookCost, duration, weHaveApplibeGoodyName))
     {
-       state.AddRecepieCookingInstance(*a, duration, upd["r"]["rid"].asInt());
+       state.AddRecepieCookingInstance(*a, duration, upd["r"]["rid"].asInt(), cookCost, fungibleItemAmountForDeduction);
     }
     
     if(ParseSweetener(*a, name, upd["s"], fungibleItemAmountForDeduction, cookCost, fighterID, duration, sweetenerKeyName))
     {
-       state.AddSweetenerCookingInstance(*a, sweetenerKeyName, duration, fighterID);  
+       state.AddSweetenerCookingInstance(*a, sweetenerKeyName, duration, fighterID, cookCost, fungibleItemAmountForDeduction);  
     }
     
     std::string sweetenerAuthId = "";
@@ -623,11 +685,11 @@ PendingStateUpdater::ProcessMove (const Json::Value& moveObj)
   if(upd2.isObject())
   {   
     pxd::proto::ExpeditionBlueprint expeditionBlueprint;
-    FighterTable::Handle fighter; 
+    std::vector<int> fighter; 
 
     if(ParseExpeditionData(*a, name, upd2["f"], expeditionBlueprint, fighter, duration, weHaveApplibeGoodyName))
     {
-      state.AddExpeditionInstance(*a, duration, expeditionBlueprint.authoredid(), fighter->GetId());
+      state.AddExpeditionInstance(*a, duration, expeditionBlueprint.authoredid(), fighter);
     }  
 
     std::string expeditionID = "";
@@ -703,25 +765,26 @@ PendingStateUpdater::ProcessMove (const Json::Value& moveObj)
   
   if(ParseCrystalPurchase(mv, bundleKeyCode, cost, crystalAmount, name, paidToDev))
   {
-      state.AddCrystalPurchase(*a, bundleKeyCode);
+      state.AddCrystalPurchase(*a, bundleKeyCode, crystalAmount);
   }  
   
-  if(ParseGoodyPurchase(mv, cost, name, fungibleName, a->GetBalance()))
+  auto& aState = state.GetXayaPlayerState (*a);
+  if(ParseGoodyPurchase(mv, cost, name, fungibleName, aState.balance))
   {
-      state.AddPurchasing(*a, mv["pg"].asString());  
+      state.AddPurchasing(*a, mv["pg"].asString(), cost);  
   }
   
-  if(ParseSweetenerPurchase(mv, cost, name, fungibleName, a->GetBalance()))
+  if(ParseSweetenerPurchase(mv, cost, name, fungibleName, aState.balance))
   {
-      state.AddPurchasing(*a, mv["ps"].asString());
+      state.AddPurchasing(*a, mv["ps"].asString(), cost);
   }  
   
   std::map<std::string, uint64_t> fungibles;
-  if(ParseGoodyBundlePurchase(mv, cost, name, fungibles, a->GetBalance()))
+  if(ParseGoodyBundlePurchase(mv, cost, name, fungibles, aState.balance))
   {
-      state.AddPurchasing(*a, mv["pgb"].asString());
+      state.AddPurchasing(*a, mv["pgb"].asString(), cost);
   }  
-
+  
   /* Release the account again.  It is not needed anymore, and some of
      the further operations may allocate another Account handle for
      the current name (while it is not allowed to have two active ones

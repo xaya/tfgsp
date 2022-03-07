@@ -63,6 +63,7 @@ FighterInstance::FighterInstance (Database& d, const std::string& o, uint32_t r,
   MutableProto().set_sweetness(0 + recepie->GetProto().quality());
   MutableProto().set_name(recepie->GetProto().fightername());
   MutableProto().set_highestappliedsweetener(0 + recepie->GetProto().quality());
+  MutableProto().set_isaccountbound(recepie->GetProto().isaccountbound());
   
   std::map<pxd::ArmorType, std::string> slotsUsed;
   
@@ -189,8 +190,8 @@ void FighterInstance::UpdateSweetness()
     {
         if((pxd::Sweetness)(int)GetProto().sweetness() != pxd::Sweetness::Super_Sweet)
         {
-            MutableProto().set_sweetness((int)pxd::Sweetness::Super_Sweet);
-            return;
+              MutableProto().set_sweetness((int)pxd::Sweetness::Super_Sweet);
+              return;
         }
     }
     
@@ -199,19 +200,6 @@ void FighterInstance::UpdateSweetness()
     if(GetProto().rating() >= srate)
     {
         pxd::Sweetness newSW = (pxd::Sweetness)(((GetProto().rating() - 1000) / 100.0) + 1);
-        
-        /*In order to fix that bug, where fighter jumps over 1 sweetness level, we always
-        force upgrade to be maximum of 1 level during the sweetness update stage*/
-        
-        pxd::Sweetness oldSWLevel = (pxd::Sweetness)GetProto().sweetness(); 
-        if(newSW != oldSWLevel)
-        {
-            if((int)newSW > (int)oldSWLevel)
-            {
-            newSW = (pxd::Sweetness)(((int)oldSWLevel)+1);
-            }
-        }
-        
         MutableProto().set_sweetness((int)newSW);
     } 
 }

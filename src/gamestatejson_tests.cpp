@@ -148,12 +148,12 @@ TEST_F (XayaPlayersJsonTests, UninitialisedBalance)
                         "minted" : 0,
                         "name" : "bar",
                         "ongoings" : [],
+                        "prestige" : 954,
                         "recepies" :
                         [
-                                6,
-                                7,
                                 10
-                        ]
+                        ],
+                        "role" : "i"
                 },
                 {
                         "balance" :
@@ -174,15 +174,15 @@ TEST_F (XayaPlayersJsonTests, UninitialisedBalance)
                         "minted" : 0,
                         "name" : "foo",
                         "ongoings" : [],
+                        "prestige" : 954,
                         "recepies" :
                         [
-                                1,
-                                2,
                                 5
                         ],
                         "role" : "p"
                 }
         ]
+
 
   })");
 }
@@ -349,12 +349,12 @@ TEST_F (XayaPlayersJsonTests, RecipeInstance)
                 {
                         "authoredid" : "5864a19b-c8c0-2d34-eaef-9455af0baf2c",
                         "did" : 1,
-                        "owner" : "foo"
+                        "owner" : ""
                 },
                 {
                         "authoredid" : "ba0121ba-e8a6-7e64-9bc1-71dfeca27daa",
                         "did" : 2,
-                        "owner" : "foo"
+                        "owner" : ""
                 },
                 {
                         "authoredid" : "1bbc7d99-7fce-24a4-c9a3-dfaf4b744efa",

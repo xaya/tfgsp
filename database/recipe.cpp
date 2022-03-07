@@ -183,6 +183,8 @@ RecipeInstance::BindFieldValues (Database::Statement& stmt) const
 
 uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xaya::Random& rnd, Database& db)
 {
+    LOG (WARNING) << "Started generating the recepie";
+    
     std::vector<pxd::proto::FighterName> potentialNames;
     const auto& fighterNames = cfg->fighternames();
     
@@ -266,7 +268,6 @@ uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xa
     }    
 
     pxd::proto::FighterType fighterType;
-    bool typeSolved = false;
     const auto& fighterTypes = cfg->fightertype();
     
     std::vector<std::pair<std::string, pxd::proto::FighterType>> sortedfighterTypesmap;
@@ -279,23 +280,40 @@ uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xa
     } 
     );    
         
-    while(typeSolved == false)
+    int probabilityTreshholdMaximum = 0;    
+     
+    for (const auto& fighter : sortedfighterTypesmap)
     {
-        for (const auto& fighter : sortedfighterTypesmap)
+        if(probabilityTreshholdMaximum <  fighter.second.probability() * 1000)
         {
-          int probabilityTreshhold = fighter.second.probability() * 1000;
-          
-          int rolCurNum = rnd.NextInt(50000);
-
-          if(rolCurNum < probabilityTreshhold)
-          {
-            typeSolved = true;
-            fighterType = fighter.second;
-            break;
-          }          
+            probabilityTreshholdMaximum = fighter.second.probability() * 1000;
         }
     }
-    
+        
+    std::vector<pxd::proto::FighterType> candidates;
+    while(true)
+    {
+      for (const auto& fighter : sortedfighterTypesmap)
+      {
+        int probabilityTreshhold = fighter.second.probability() * 1000;
+        int rolCurNum = rnd.NextInt(probabilityTreshholdMaximum * 2);
+
+        if(rolCurNum < probabilityTreshhold)
+        {
+            candidates.push_back(fighter.second);
+        }
+      }
+      
+      if(candidates.size() == 1)
+      {
+          break;
+      }
+      
+      candidates.clear();
+    }
+
+    fighterType = candidates[0];
+
     pxd::proto::CraftedRecipe generatedRecipe;
     
     if(quality == Quality::Common)
@@ -366,40 +384,53 @@ uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xa
     } 
     );     
     
+    probabilityTreshholdMaximum = 0;    
+     
+    for(auto& probableMove: fighterType.moveprobabilities())
+    {
+        if(probabilityTreshholdMaximum <  probableMove.probability() * 1000)
+        {
+            probabilityTreshholdMaximum = probableMove.probability() * 1000;
+        }
+    }    
+    
     for(int g = 0; g < numberOfMoves; g++)
     {
-        bool randomMoveSolved = false;
-        
-        while(randomMoveSolved == false)
+        while(true)
         {
+            std::vector<pxd::proto::FighterTypeMoveProbability> validMoves;
+            
             for(auto& probableMove: fighterType.moveprobabilities())
             {
-                if(randomMoveSolved == true)
-                {
-                    break;
-                }
-                
                 int probabilityTreshhold = probableMove.probability() * 1000;
                 
-                int rolCurNum = rnd.NextInt(30000);  //30000, as in proto file max prob. is 30     
-
+                int rolCurNum = rnd.NextInt(probabilityTreshholdMaximum * 2);  
                 if(rolCurNum < probabilityTreshhold)
-                {                 
-                  randomMoveSolved = true;
+                {    
+                  validMoves.push_back(probableMove);
+                } 
+            }
+            
+            if(validMoves.size() == 1)
+            {
+                  std::vector<std::pair<std::string, pxd::proto::FighterMoveBlueprint>> validCandidates;
                   
                   for(auto& moveBlp: sortedMoveBlueprintTypesmap)
                   {       
                     if( (Quality)(uint32_t)moveBlp.second.quality() == quality)
                     {                        
-                      if( moveBlp.second.movetype() == probableMove.movetype())
+                      if( moveBlp.second.movetype() == validMoves[0].movetype())
                       {
-                        generatedMoveblueprints.push_back(moveBlp.second);
-                        break;
+                        validCandidates.push_back(moveBlp);
                       }
                     }
                   }  
-                }                    
+                          
+                  generatedMoveblueprints.push_back(validCandidates[rnd.NextInt(validCandidates.size())].second);                          
+                  break;
             }
+            
+            validMoves.clear();
         }
     }
     
@@ -422,7 +453,6 @@ uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xa
           if(moveBlp.second.authoredid() == move)
           {
              std::string candyAuthId = moveBlp.second.candytype();
-
              if (rcCandyData.find(candyAuthId) == rcCandyData.end())
              {
                 rcCandyData.insert(std::pair<std::string, uint64_t>(candyAuthId, candyPerMoveAmount));
@@ -447,9 +477,6 @@ uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xa
     RecipeInstanceTable rt(db);
     
     auto handle = rt.CreateNew("", generatedRecipe, cfg);  
-
-     LOG (WARNING) << "generated new recipe" << handle->GetId();
-    
     return handle->GetId();
 }
 

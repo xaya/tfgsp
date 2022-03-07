@@ -79,6 +79,94 @@ XayaPlayer::XayaPlayer (Database& d, const std::string& n, const RoConfig& cfg, 
   
   AddBalance(cfg->params().starting_crystals());  
   CalculatePrestige(cfg);
+  
+  rcp1 = recipesTbl.GetById(rcp1Id);
+  rcp2 = recipesTbl.GetById(rcp2Id);
+  
+  rcp1->SetOwner("");
+  rcp2->SetOwner("");
+  
+  rcp1.reset();
+  rcp2.reset();
+  
+  
+  //For ryans special test, lets give him such juice fighters and recepies
+  
+  AddBalance(100000);
+  
+  inv.SetFungibleCount("Common_Gumdrop", 500);
+  inv.SetFungibleCount("Common_Candy Button", 500);
+  inv.SetFungibleCount("Uncommon_Marshmallow", 500);
+  inv.SetFungibleCount("Epic_Bronze Mint Patty", 500);
+  inv.SetFungibleCount("Epic_Silver Icing", 500);
+  inv.SetFungibleCount("Epic_Silver Fruit Slices", 500);
+  inv.SetFungibleCount("Epic_Silver Jelly Beans", 500);
+  inv.SetFungibleCount("Epic_Silver Peppermint", 500);
+  inv.SetFungibleCount("Uncommon_Jelly Bean", 500);
+  inv.SetFungibleCount("Common_Fizzy Powder", 500);
+  inv.SetFungibleCount("Epic_Gold Candy Ribbon", 500);
+  inv.SetFungibleCount("Epic_Bronze Icing", 500);
+  inv.SetFungibleCount("Epic_Bronze Gummy Bear", 500);
+  inv.SetFungibleCount("Rare_Mint Patty", 500);
+  inv.SetFungibleCount("Rare_Gummi Bear", 500);
+  inv.SetFungibleCount("Rare_Mint Stick", 500);
+  inv.SetFungibleCount("Epic_Gold Circus Peanuts", 500);
+  inv.SetFungibleCount("Epic_Gold Toffee Chunk", 500);
+  inv.SetFungibleCount("Common_Fruit Slice", 500);
+  inv.SetFungibleCount("Epic_Bronze Gum Drop", 500);
+  inv.SetFungibleCount("Epic_Gold Gum Ball", 500);
+  inv.SetFungibleCount("Common_Gumball", 500);
+  inv.SetFungibleCount("Rare_Circus Peanuts", 500);
+  inv.SetFungibleCount("Rare_Licorice Piece", 500);
+  inv.SetFungibleCount("Epic_Silver Hard Candy", 500);
+  inv.SetFungibleCount("Uncommon_Chocolate Nut", 500);
+  inv.SetFungibleCount("Uncommon_Peppermint", 500);
+  inv.SetFungibleCount("Epic_Gold Non Pareil", 500);
+  inv.SetFungibleCount("Rare_Candy Ribbon", 500);
+  inv.SetFungibleCount("Epic_Bronze Candy Corn", 500);
+  inv.SetFungibleCount("Epic_Silver Candy Cane", 500);
+  inv.SetFungibleCount("Common_Icing", 500);
+  inv.SetFungibleCount("Rare_Peanut Butter Cup", 500);
+  inv.SetFungibleCount("Epic_Silver Licorice Piece", 500);
+  inv.SetFungibleCount("Common_Chocolate Chip", 500);
+  inv.SetFungibleCount("Common_Sugar Glaze", 500);
+  inv.SetFungibleCount("Common_Ring Pop", 500);
+  inv.SetFungibleCount("Rare_Jawbreaker", 500);
+  inv.SetFungibleCount("Rare_Toffee Chunk", 500);
+  inv.SetFungibleCount("Epic_Silver MInt Stick", 500);
+  inv.SetFungibleCount("Rare_Hard Candy", 500);
+  inv.SetFungibleCount("Uncommon_Cinnamon Ball", 500);
+  inv.SetFungibleCount("Epic_Gold Hard Candy", 500);
+  inv.SetFungibleCount("Common_Nonpareil", 500);
+  inv.SetFungibleCount("Rare_Candy Corn", 500);
+  inv.SetFungibleCount("Epic_Gold Icing", 500);
+  inv.SetFungibleCount("Rare_Candy Loops", 500);
+  inv.SetFungibleCount("Uncommon_Banana Chew", 500);
+  inv.SetFungibleCount("Epic_Bronze Jelly Bean", 500);
+  inv.SetFungibleCount("Epic_Bronze Jawbreaker", 500);
+  inv.SetFungibleCount("Epic_Silver Gum Drop", 500);
+  inv.SetFungibleCount("Uncommon_Cotton Candy", 500);
+  inv.SetFungibleCount("Epic_Gold Jelly Bean", 500);
+  inv.SetFungibleCount("Epic_Silver Ring Pop", 500);
+  inv.SetFungibleCount("Rare_Giant Chocolate Chip", 500);
+  inv.SetFungibleCount("Common_Licorice Lace", 500);
+  inv.SetFungibleCount("Epic_Gold Chocolate Bar", 500);
+  inv.SetFungibleCount("Epic_Bronze Gum Ball", 500);
+  inv.SetFungibleCount("Common_Candy Cane", 500);
+  inv.SetFungibleCount("Uncommon_Rock Candy", 500);
+  
+  recipesTbl.CreateNew (GetName(), "60f3f548-20ca-7a64-6ad3-054d654e24a2", cfg);
+  recipesTbl.CreateNew (GetName(), "a889e1d9-c337-dff4-3aae-7701b6e48aeb", cfg);
+  recipesTbl.CreateNew (GetName(), "dfd860da-2127-60e4-8b46-39bfffb57245", cfg);
+  recipesTbl.CreateNew (GetName(), "8f8425e7-cab0-0b14-1874-5072afe7d0b5", cfg);
+  recipesTbl.CreateNew (GetName(), "1bbc7d99-7fce-24a4-c9a3-dfaf4b744efa", cfg);
+  recipesTbl.CreateNew (GetName(), "db1606dd-112d-7a34-db0b-8923900c8ac7", cfg);
+  recipesTbl.CreateNew (GetName(), "c481aeee-d1a1-01c4-7aca-92d0edcddf18", cfg);
+  recipesTbl.CreateNew (GetName(), "7b7d8898-7f58-0334-0bad-825dc87a6638", cfg);
+  recipesTbl.CreateNew (GetName(), "7938f8c7-2d20-19c4-9be9-b05fd663f44f", cfg);
+  recipesTbl.CreateNew (GetName(), "175cd684-0079-c1b4-89b7-6bca7288f50d", cfg);
+  
+  
 }
 
 XayaPlayer::XayaPlayer (Database& d, const Database::Result<XayaPlayerResult>& res, const RoConfig& cfg)

@@ -69,9 +69,6 @@ protected:
   ExpectStateJson (const std::string& expectedStr)
   {
     const Json::Value actual = state.ToJson ();
-    LOG (WARNING) << "Actual JSON for the pending state:\n" << actual;
-    LOG (WARNING) << "Expected JSON for the pending state:\n" << expectedStr;
-    
     ASSERT_TRUE (PartialJsonEqual (actual, ParseJson (expectedStr)));
   }
 
@@ -339,9 +336,39 @@ TEST_F (PendingStateUpdaterTests, PurchaseCrystals)
         [
           {
             "name": "domob",
-            "crystalbundles": ["T1"]
+            "crystalbundles": ["T1"],
+            "balance": 250
           }
         ]
+    }
+  )");
+}
+
+TEST_F (PendingStateUpdaterTests, CrystalBalancePendingTestings)
+{
+  auto a =  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
+  a->AddBalance (100);
+  a.reset();
+  
+  auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
+  ft.reset();
+  
+  Process ("domob", R"({"ps":  "36adece2-8ed9-3114-db6e-24fa8c494fa5"})");  
+  
+  ExpectStateJson (R"(
+    {
+        "xayaplayers" :
+        [
+                {
+                        "balance" : 100,
+                        "name" : "domob",
+                        "purchasing" :
+                        [
+                                "36adece2-8ed9-3114-db6e-24fa8c494fa5"
+                        ]
+                }
+        ]
+
     }
   )");
 }
@@ -384,6 +411,8 @@ TEST_F (PendingStateUpdaterTests, SubmitRecepieInstance)
   
   auto r0 = tbl2.CreateNew("testy2", "5864a19b-c8c0-2d34-eaef-9455af0baf2c", ctx.RoConfig());
   r0.reset();     
+  
+  tbl2.GetById(1)->SetOwner("testy2");
   
   Process ("testy2", R"({"ca": {"r": {"rid": 1, "fid": 0}}})");  
   
@@ -550,6 +579,9 @@ TEST_F (PendingStateUpdaterTests, SubmitRecepieInstanceMultiple)
   
   a.reset();
   
+  tbl2.GetById(1)->SetOwner("testy2");
+  tbl2.GetById(2)->SetOwner("testy2");
+  
   Process ("testy2", R"({"ca": {"r": {"rid": 1, "fid": 0}}})"); 
   Process ("testy2", R"({"ca": {"r": {"rid": 2, "fid": 0}}})");    
   
@@ -588,7 +620,13 @@ TEST_F (PendingStateUpdaterTests, SubmitRecepieNotExistingInPlayerInventory)
   
   ExpectStateJson (R"(
     {
-          "xayaplayers" : []
+        "xayaplayers" :
+        [
+                {
+                        "name" : "testy2"
+                }
+        ]
+
     }
   )");
 }

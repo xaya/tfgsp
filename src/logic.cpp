@@ -18,6 +18,7 @@
 #include <cmath>
 #include <utility>
 
+#include <xayautil/hash.hpp>
 #include "logic.hpp"
 #include "database/reward.hpp"
 
@@ -232,6 +233,7 @@ void PXLogic::ResolveSweetener(std::unique_ptr<XayaPlayer>& a, std::string sweet
             if(rolCurNum <= accumulatedWeight)
             {
                GenerateActivityReward(fighterID, "", 0, rw, ctx, db, a, rnd, posInTableList, sweetenerBlueprint.rewardchoices(rewardID).rewardstableid(), sweetenerAuthID);
+               break;
             }
             
             posInTableList++;
@@ -290,6 +292,7 @@ void PXLogic::ResolveSweetener(std::unique_ptr<XayaPlayer>& a, std::string sweet
             if(rolCurNum <= accumulatedWeight)
             {
                GenerateActivityReward(fighterID, "", 0, rw, ctx, db, a, rnd, posInTableList, sweetenerBlueprint.rewardchoices(rewardID).moverewardstableid(), sweetenerAuthID);
+               break;
             }
             
             posInTableList++;
@@ -328,8 +331,6 @@ void PXLogic::ResolveSweetener(std::unique_ptr<XayaPlayer>& a, std::string sweet
        totalWeight += (uint32_t)rw.weight();
     }
 
-    LOG (WARNING) << "Rolling for total possible awards: " << sweetenerBlueprint.rewardchoices(rewardID).armorrollcount();
-    
     for(int roll = 0; roll < (int)sweetenerBlueprint.rewardchoices(rewardID).armorrollcount(); ++roll)
     {
         int rolCurNum = 0;
@@ -348,6 +349,7 @@ void PXLogic::ResolveSweetener(std::unique_ptr<XayaPlayer>& a, std::string sweet
             if(rolCurNum <= accumulatedWeight)
             {
                GenerateActivityReward(fighterID, "", 0, rw, ctx, db, a, rnd, posInTableList, sweetenerBlueprint.rewardchoices(rewardID).armorrewardstableid(), sweetenerAuthID);
+               break;
             }
             
             posInTableList++;
@@ -518,6 +520,7 @@ void PXLogic::ResolveExpedition(std::unique_ptr<XayaPlayer>& a, const std::strin
             if(rolCurNum <= accumulatedWeight)
             {
                GenerateActivityReward(fighterID, blueprintAuthID, 0, rw, ctx, db, a, rnd, posInTableList, basedRewardsTableAuthId, "");
+               break;
             }
             
              posInTableList++;
@@ -600,6 +603,9 @@ void PXLogic::ResolveCookingRecepie(std::unique_ptr<XayaPlayer>& a, const uint32
         now, jere ideally we want to erase it. but, for example, fighter object stores recepie ID,
         and I am not sure will it be ever used somewhere else again? so, FOR NOW, lets not delete,
         just keep empty owner so it marks this as used this way
+        
+        UPD: Its used in sweetener cauldron display, for example, so defo need to keep ID as fighter
+        object references it
         */
     }        
 }
@@ -615,29 +621,29 @@ void PXLogic::TickAndResolveOngoings(Database& db, const Context& ctx, xaya::Ran
     while (tryAndStep)
     {
       auto a = xayaplayers.GetFromResult (res, ctx.RoConfig ());
-      auto ongoings = a->MutableProto().mutable_ongoings();
+      auto& ongoings = *a->MutableProto().mutable_ongoings();
       
       
       bool erasingDone = false;
       
-      for (auto it = ongoings->begin(); it != ongoings->end(); it++)
+      for (auto it = ongoings.begin(); it != ongoings.end(); it++)
       {
-          if(it->blocksleft() <= 15) //HACK
+          if(it->blocksleft() <= 4) //HACK
           {
-            it->set_blocksleft(it->blocksleft() - 1);
+              it->set_blocksleft(it->blocksleft() - 1);
           }
           else
           {
-              it->set_blocksleft(14); //HACK
+              it->set_blocksleft(3); //HACK
           }
       }            
       
       while(erasingDone == false)
       {
         erasingDone = true;
-        ongoings = a->MutableProto().mutable_ongoings();
+        ongoings = *a->MutableProto().mutable_ongoings();
         
-        for (auto it = ongoings->begin(); it != ongoings->end(); it++)
+        for (auto it = ongoings.begin(); it != ongoings.end(); it++)
         {
             if(it->blocksleft() == 0)
             {
@@ -646,7 +652,7 @@ void PXLogic::TickAndResolveOngoings(Database& db, const Context& ctx, xaya::Ran
                   LOG (INFO) << "Resolving oingoing operation for pxd::OngoingType::COOK_RECIPE";
                   
                   ResolveCookingRecepie(a, (uint32_t)it->recipeid(), db, ctx, rnd);
-                  ongoings->erase(it);
+                  ongoings.erase(it);
                   erasingDone = false;
                   break;
                 }
@@ -656,7 +662,7 @@ void PXLogic::TickAndResolveOngoings(Database& db, const Context& ctx, xaya::Ran
                   LOG (INFO) << "Resolving oingoing operation for pxd::OngoingType::EXPEDITION";
                   
                   ResolveExpedition(a, it->expeditionblueprintid(), (uint32_t)it->fighterdatabaseid(), db, ctx, rnd);
-                  ongoings->erase(it);
+                  ongoings.erase(it);
                   erasingDone = false;
                   break;
                 }     
@@ -666,7 +672,7 @@ void PXLogic::TickAndResolveOngoings(Database& db, const Context& ctx, xaya::Ran
                   LOG (INFO) << "Resolving oingoing operation for pxd::OngoingType::DECONSTRUCTION";
                     
                   ResolveDeconstruction(a, (uint32_t)it->fighterdatabaseid(), db, ctx, rnd);
-                  ongoings->erase(it); 
+                  ongoings.erase(it); 
                   erasingDone = false;
                   break;                  
                 }  
@@ -676,7 +682,7 @@ void PXLogic::TickAndResolveOngoings(Database& db, const Context& ctx, xaya::Ran
                   LOG (INFO) << "Resolving oingoing operation for pxd::OngoingType::COOK_SWEETENER";
                     
                   ResolveSweetener(a, it->appliedgoodykeyname(), it->fighterdatabaseid(), it->rewardid(), db, ctx, rnd);
-                  ongoings->erase(it); 
+                  ongoings.erase(it); 
                   erasingDone = false;
                   break;                  
                 }                 
@@ -942,13 +948,13 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
       {
           if((int)tnm->GetInstance().blocksleft() > 0)
           {
-            if((int)tnm->GetInstance().blocksleft() <= 15) //HACK
+            if((int)tnm->GetInstance().blocksleft() <= 4) //HACK
             {
               tnm->MutableInstance().set_blocksleft((int)tnm->GetInstance().blocksleft() - 1);
             }
             else
             {
-              tnm->MutableInstance().set_blocksleft(14);  //HACK
+              tnm->MutableInstance().set_blocksleft(3);  //HACK
             }
           }
           
@@ -1221,6 +1227,7 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
                           if(rolCurNum <= accumulatedWeight)
                           {
                              GenerateActivityReward(0, "", tnm->GetId(), rw, ctx, db, a, rnd, posInTableList, rewardTableId, "");
+                             break;
                           }
                           
                            posInTableList++;
@@ -1359,6 +1366,7 @@ PXLogic::UpdateState (Database& db, xaya::Random& rnd,
 #ifdef ENABLE_SLOW_ASSERTS
   ValidateStateSlow (db, ctx);
 #endif // ENABLE_SLOW_ASSERTS
+
 }
 
 void
@@ -1375,9 +1383,9 @@ PXLogic::GetInitialStateBlock (unsigned& height,
   switch (chain)
     {
     case xaya::Chain::MAIN:
-      height = 3'504'140;
+      height = 3'635'984;
       hashHex
-          = "e7786a4209005e4f53800073c7a7fbdb4295e27964ebe54244007b5937aba4c0";
+          = "4148dd9c0cd1adfc9e60c4f0ac0005f9ef69c343dc272fb8e5452c1df08dcb60";
       break;
 
     case xaya::Chain::TEST:
@@ -1418,6 +1426,21 @@ PXLogic::UpdateState (xaya::SQLiteDatabase& db, const Json::Value& blockData)
   SQLiteGameDatabase dbObj(db, *this);
   UpdateState (dbObj, GetContext ().GetRandom (),
                GetChain (), blockData);
+               
+          
+  Json::Value fState = GetStateAsJson(db);
+  
+  Json::StreamWriterBuilder builder;
+  builder["indentation"] = "";
+  const std::string seriVal = Json::writeString(builder, fState);
+  
+  xaya::uint256 heystring = xaya::SHA256::Hash(seriVal);
+  
+  const auto& blockMeta = blockData["block"];
+  const auto& heightVal = blockMeta["height"];
+  const unsigned height = heightVal.asUInt64 ();  
+  
+  LOG (WARNING) << "Gamestate hash is " << heystring.ToHex () << " for the block " << height;                  
 }
 
 Json::Value

@@ -121,6 +121,12 @@ public:
 int
 main (int argc, char** argv)
 {
+    
+  /* For some reason, front-end ignores log_dir flag, 
+  if we really need to to log to file, 
+  can use this temporarily solution*/
+  //FLAGS_log_dir  = "C:/log/";
+  
   google::InitGoogleLogging (argv[0]);
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 

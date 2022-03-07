@@ -64,17 +64,17 @@ public:
    /**
    * Updates the state for a new crystal bundle purchase.
    */  
-  void AddCrystalPurchase (const XayaPlayer& a, std::string crystalBundleKey);
+  void AddCrystalPurchase (const XayaPlayer& a, std::string crystalBundleKey, Amount crystalAmount);
   
    /**
    * Updates the state for a new recepie cooking action
    */    
-  void AddRecepieCookingInstance (const XayaPlayer& a, int32_t duration, int32_t recepieID); 
+  void AddRecepieCookingInstance (const XayaPlayer& a, int32_t duration, int32_t recepieID, Amount cookingCost, std::map<std::string, pxd::Quantity> fungibleItemAmountForDeduction); 
   
   /**
    * Updates the state for a new sweetener cooking action
    */    
-  void AddSweetenerCookingInstance (const XayaPlayer& a, const std::string sweetenerKeyName, int32_t duration, int32_t fighterID); 
+  void AddSweetenerCookingInstance (const XayaPlayer& a, const std::string sweetenerKeyName, int32_t duration, int32_t fighterID, Amount cookingCost, std::map<std::string, pxd::Quantity> fungibleItemAmountForDeduction); 
   
   /**
    * Updates the state for a cooked sweetener being claimed back on fighter
@@ -84,7 +84,7 @@ public:
    /**
    * Updates the state for a new recepie instance bundle
    */    
-  void AddExpeditionInstance (const XayaPlayer& a, int32_t duration, std::string expeditionID, int32_t fighterID);   
+  void AddExpeditionInstance (const XayaPlayer& a, int32_t duration, std::string expeditionID, std::vector<int> fighterID);   
   
    /**
    * Updates the state for a new pending rewards
@@ -109,7 +109,7 @@ public:
     /**
    * Updates the state for a new pending purchases of fungible items
    */      
-  void AddPurchasing (const XayaPlayer& a, std::string authID);
+  void AddPurchasing (const XayaPlayer& a, std::string authID, Amount purchaseCost);
   
    /**
    * Updates the state for a new fighter deconstruction
@@ -149,7 +149,16 @@ public:
     std::vector<std::string> crystalpurchace;
     
     /** Current crystal balance on the player */
-    Amount balance;    
+    Amount balance;  
+
+    /** Current crystal balance not of the pending, but one that comes from a.GetBalance() */
+    Amount onChainBalance;      
+    
+    /** Current fungibles in the player inventory*/
+    std::map<std::string, uint64_t> currentFungibleSet;
+    
+    /** Fungibles in the original player inventory*/
+    std::map<std::string, uint64_t> onChainFungibleSet;
 
     /** List of currently pending ongoing operations, which are going
     to take more then 1 block to finish*/
