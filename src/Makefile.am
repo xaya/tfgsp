@@ -1,8 +1,6 @@
 noinst_LTLIBRARIES = libtf.la
 bin_PROGRAMS = tfd
-
-EXTRA_DIST = \
-  rpc-stubs/pxd.json
+dist_data_DATA = rpc-stubs/tf-rpc.json
 
 RPC_STUBS = \
   rpc-stubs/pxrpcserverstub.h
@@ -106,5 +104,5 @@ tests_SOURCES = \
 check_HEADERS = \
   testutils.hpp
 
-rpc-stubs/pxrpcserverstub.h: $(srcdir)/rpc-stubs/pxd.json
+rpc-stubs/pxrpcserverstub.h: $(srcdir)/rpc-stubs/tf-rpc.json
 	jsonrpcstub "$<" --cpp-server=PXRpcServerStub --cpp-server-file="$@"
