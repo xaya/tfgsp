@@ -272,7 +272,7 @@ TEST_F (PendingStateUpdaterTests, CoinTransferBurn)
                   "minted" : 0,
                   "transfers" : 
                   {
-                      "domob" : 5,
+                      "domob" : 106,
                       "invalid" : 2
                   }
               },
@@ -337,7 +337,7 @@ TEST_F (PendingStateUpdaterTests, PurchaseCrystals)
           {
             "name": "domob",
             "crystalbundles": ["T1"],
-            "balance": 250
+            "balance": 450
           }
         ]
     }
@@ -360,7 +360,7 @@ TEST_F (PendingStateUpdaterTests, CrystalBalancePendingTestings)
         "xayaplayers" :
         [
                 {
-                        "balance" : 100,
+                        "balance" : 300,
                         "name" : "domob",
                         "purchasing" :
                         [

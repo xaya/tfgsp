@@ -52,7 +52,7 @@ class PendingTest (PXTest):
     sleepSome ()
     
     self.assertEqual (self.getPendingState (), {
-      "xayaplayers": [{'balance': 150, "crystalbundles": ["T1"], "name": "andy"}]
+      "xayaplayers": [{'balance': 350, "crystalbundles": ["T1"], "name": "andy"}]
     })	
 
     self.generate (1)

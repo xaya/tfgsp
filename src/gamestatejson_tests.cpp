@@ -132,7 +132,7 @@ TEST_F (XayaPlayersJsonTests, UninitialisedBalance)
                 {
                         "balance" :
                         {
-                                "available" : 92
+                                "available" : 292
                         },
                         "inventory" :
                         {
@@ -158,7 +158,7 @@ TEST_F (XayaPlayersJsonTests, UninitialisedBalance)
                 {
                         "balance" :
                         {
-                                "available" : 50
+                                "available" : 250
                         },
                         "inventory" :
                         {

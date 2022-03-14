@@ -197,7 +197,7 @@ TEST_F (ValidateStateTests, RecepieInstanceFullCycleTest)
   EXPECT_EQ (a->GetOngoingsSize (), 0);
   EXPECT_EQ (a->CollectInventoryFighters(ctx.RoConfig()).size(), 3);
   
-  EXPECT_EQ (a->GetBalance (), 135);
+  EXPECT_EQ (a->GetBalance (), 335);
   
   auto r = tbl2.GetById(1); 
   EXPECT_EQ (r->GetProto().name(), "First Recipe");
@@ -319,7 +319,7 @@ TEST_F (ValidateStateTests, RecepieWithApplicableGoodieTest)
   EXPECT_EQ (a->GetOngoingsSize (), 0);
   EXPECT_EQ (a->CollectInventoryFighters(ctx.RoConfig()).size(), 3);
   
-  EXPECT_EQ (a->GetBalance (), 135);
+  EXPECT_EQ (a->GetBalance (), 335);
   
   auto r = tbl2.GetById(2); 
   EXPECT_EQ (r->GetProto().name(), "Second Recipe");
@@ -356,7 +356,7 @@ TEST_F (ValidateStateTests, RecepieInstanceRevertIfFullRoster)
   a = xayaplayers.GetByName ("domob", ctx.RoConfig());
   EXPECT_EQ (a->CollectInventoryFighters(ctx.RoConfig()).size(), 2);
   
-  EXPECT_EQ (a->GetBalance (), 150);
+  EXPECT_EQ (a->GetBalance (), 350);
   
   auto r0 = tbl2.GetById(1); 
   EXPECT_EQ (r0->GetProto().name(), "First Recipe");
@@ -458,7 +458,7 @@ TEST_F (ValidateStateTests, RecepieInstanceFailWithMissingIngridients)
   a = xayaplayers.GetByName ("domob", ctx.RoConfig());
 
   
-  EXPECT_EQ (a->GetBalance (), 150);
+  EXPECT_EQ (a->GetBalance (), 350);
   
   auto r = tbl2.GetById(1); 
   EXPECT_EQ (r->GetProto().name(), "First Recipe");
@@ -861,6 +861,29 @@ TEST_F (ValidateStateTests, ExpeditionTestRewards)
   EXPECT_EQ (tbl4.CountForOwner("domob"), 3);
 
 }
+
+/*
+TEST_F (ValidateStateTests, ExpeditionTestForRyan)
+{
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
+  auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
+  EXPECT_EQ (ft->GetStatus(), FighterStatus::Available);
+  ft.reset();
+  EXPECT_EQ (xp->CollectInventoryFighters(ctx.RoConfig()).size(), 3);
+  xp.reset();
+  
+  for (unsigned x = 0; x < 1000; ++x)
+  { 
+    Process (R"([
+      {"name": "domob", "move": {"exp": {"f": {"eid": "93ad71bb-cd8f-dc24-7885-2c3fd0013245", "fid": 4}}}}
+    ])");  
+    
+    for (unsigned i = 0; i < 4; ++i)
+    {
+      UpdateState ("[]");
+    }  
+  }
+}*/
 
 TEST_F (ValidateStateTests, ExpeditionWithApplicableGoodieTest)
 {

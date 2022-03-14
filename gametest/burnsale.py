@@ -34,14 +34,14 @@ class BurnsaleTest (PXTest):
     self.generate (1)
 
     a = self.getAccounts ()["domob"]
-    self.assertEqual (a.getBalance (), 12345 - 10 + 50)
+    self.assertEqual (a.getBalance (), 12345 - 10 + 250)
     self.assertEqual (a.data["minted"], 12345)
 
     self.sendMove ("domob", {"vc": {"m": {}}}, burn=2000000-1.2345)
     self.generate (1)
 
     a = self.getAccounts ()["domob"]
-    self.assertEqual (a.getBalance (), 15000000000 - 10 + 50)
+    self.assertEqual (a.getBalance (), 15000000000 - 10 + 250)
     self.assertEqual (a.data["minted"], 15000000000)
 
     self.assertEqual (self.getRpc ("getmoneysupply"), {

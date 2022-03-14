@@ -414,7 +414,7 @@ TEST_F (CoinOperationTests, Invalid)
     {"name": "domob", "move": {"vc": {}}, "burnt": 1.0}
   ])");
 
-  ExpectBalances ({{"domob", 49}, {"other", 151}});
+  ExpectBalances ({{"domob", 249}, {"other", 351}});
 }
 
 TEST_F (CoinOperationTests, ExtraFieldsAreFine)
@@ -423,7 +423,7 @@ TEST_F (CoinOperationTests, ExtraFieldsAreFine)
   Process (R"([
     {"name": "domob", "move": {"vc": {"b": 10, "x": "foo"}}}
   ])");
-  ExpectBalances ({{"domob", 140}});
+  ExpectBalances ({{"domob", 340}});
 }
 
 TEST_F (CoinOperationTests, BurnAndTransfer)
@@ -449,9 +449,9 @@ TEST_F (CoinOperationTests, BurnAndTransfer)
   ])");
 
   ExpectBalances ({
-    {"domob", 130},
-    {"second", 54},
-    {"third", 55},
+    {"domob", 330},
+    {"second", 254},
+    {"third", 255},
   });
 }
 
@@ -461,7 +461,7 @@ TEST_F (CoinOperationTests, BurnAll)
   Process (R"([
     {"name": "domob", "move": {"vc": {"b": 100}}}
   ])");
-  ExpectBalances ({{"domob", 50}});
+  ExpectBalances ({{"domob", 250}});
 }
 
 TEST_F (CoinOperationTests, TransferAll)
@@ -470,7 +470,7 @@ TEST_F (CoinOperationTests, TransferAll)
   Process (R"([
     {"name": "domob", "move": {"vc": {"t": {"other": 100}}}}
   ])");
-  ExpectBalances ({{"domob", 50}, {"other", 150}});
+  ExpectBalances ({{"domob", 250}, {"other", 350}});
 }
 
 TEST_F (CoinOperationTests, SelfTransfer)
@@ -479,7 +479,7 @@ TEST_F (CoinOperationTests, SelfTransfer)
   Process (R"([
     {"name": "domob", "move": {"vc": {"t": {"domob": 90, "other": 20}}}}
   ])");
-  ExpectBalances ({{"domob", 130}, {"other", 70}});
+  ExpectBalances ({{"domob", 330}, {"other", 270}});
 }
 
 TEST_F (CoinOperationTests, Minting)
@@ -491,7 +491,7 @@ TEST_F (CoinOperationTests, Minting)
     {"name": "andy", "move": {"vc": {"m": {}}}, "burnt": 2.00019999}
   ])");
 
-  ExpectBalances ({{"domob", 10'000'000'050}});
+  ExpectBalances ({{"domob", 10'000'000'250}});
 
   MoneySupply ms(db);
   EXPECT_EQ (ms.Get ("burnsale"), 10'000'010'000);
@@ -504,7 +504,7 @@ TEST_F (CoinOperationTests, BurnsaleBalance)
     {"name": "domob", "move": {"vc": {"b": 10}}, "burnt": 1}
   ])");
 
-  ExpectBalances ({{"domob", 1040}});
+  ExpectBalances ({{"domob", 1240}});
   EXPECT_EQ (xayaplayers.GetByName ("domob", ctx.RoConfig())->GetProto ().burnsale_balance (),
              1'000);
 }
@@ -522,8 +522,8 @@ TEST_F (CoinOperationTests, MintBeforeBurnBeforeTransfer)
   ])");
 
   ExpectBalances ({
-    {"domob", 40},
-    {"other", 70},
+    {"domob", 240},
+    {"other", 270},
   });
 
   Process (R"([
@@ -536,8 +536,8 @@ TEST_F (CoinOperationTests, MintBeforeBurnBeforeTransfer)
   ])");
 
   ExpectBalances ({
-    {"domob", 120},
-    {"other", 90},
+    {"domob", 320},
+    {"other", 290},
   });
 
   MoneySupply ms(db);
@@ -557,10 +557,10 @@ TEST_F (CoinOperationTests, TransferOrder)
   ])");
 
   ExpectBalances ({
-    {"domob", 39},
-    {"a", 151},
-    {"middle", 0},
-    {"z", 60},
+    {"domob", 140},
+    {"a", 351},
+    {"middle", 349},
+    {"z", 260},
   });
 }
 
@@ -590,7 +590,7 @@ TEST_F (CoinOperationTests, PutFighterForSaleAndThenBuy)
   EXPECT_EQ (ft->GetProto().exchangeprice(), 500);
   ft.reset();
   
-  ExpectBalances ({{"domob", 40}});
+  ExpectBalances ({{"domob", 240}});
   
   Process (R"([
     {"name": "andy", "move": {"a": {"x": 42, "init": {"role": "p"}}}}
@@ -647,7 +647,7 @@ TEST_F (CoinOperationTests, PutFighterForSaleAndThenRemove)
   EXPECT_EQ (ft->GetProto().exchangeprice(), 500);
   ft.reset();
   
-  ExpectBalances ({{"domob", 40}});
+  ExpectBalances ({{"domob", 240}});
 
   Process (R"([
     {"name": "domob", "move": {"f": {"r": {"fid": 4}}}}
@@ -684,7 +684,7 @@ TEST_F (CoinOperationTests, PutFighterForSaleCrazyPrices)
   EXPECT_EQ (ft->GetStatus(), pxd::FighterStatus::Available);
   ft.reset();  
   
-  ExpectBalances ({{"domob", 50}});
+  ExpectBalances ({{"domob", 250}});
 }
 
 TEST_F (CoinOperationTests, PurchaseStuff)
@@ -701,7 +701,7 @@ TEST_F (CoinOperationTests, PurchaseStuff)
       }
   }])", 1 * COIN);
 
-  ExpectBalances ({{"domob", 150}});
+  ExpectBalances ({{"domob", 350}});
 
   Process (R"([
     {"name": "domob", "move": {"pg": "ca3378db-cd54-e514-7ae8-23705781bb9d"}}
@@ -711,7 +711,7 @@ TEST_F (CoinOperationTests, PurchaseStuff)
   EXPECT_EQ (a->GetInventory().GetFungibleCount("Goodie_PressureCooker_1"), 1);
   a.reset();
   
-  ExpectBalances ({{"domob", 50}});
+  ExpectBalances ({{"domob", 250}});
   
   ProcessWithDevPayment (R"([{
     "name": "domob",
@@ -729,13 +729,13 @@ TEST_F (CoinOperationTests, PurchaseStuff)
       }
   }])", 1 * COIN);
 
-  ExpectBalances ({{"domob", 250}});
+  ExpectBalances ({{"domob", 450}});
   
     Process (R"([
     {"name": "domob", "move": {"pgb": "645a9411-d8f1-3e24-aa12-f3f79665dca2"}}
   ])");
   
-  ExpectBalances ({{"domob", 75}});
+  ExpectBalances ({{"domob", 275}});
   
   a = xayaplayers.GetByName ("domob", ctx.RoConfig());
   EXPECT_EQ (a->GetInventory().GetFungibleCount("Goodie_PressureCooker_1"), 2);
@@ -746,7 +746,7 @@ TEST_F (CoinOperationTests, PurchaseStuff)
     {"name": "domob", "move": {"ps": "36adece2-8ed9-3114-db6e-24fa8c494fa5"}}
   ])");  
   
-  ExpectBalances ({{"domob", 25}});
+  ExpectBalances ({{"domob", 225}});
   
   a = xayaplayers.GetByName ("domob", ctx.RoConfig());
   EXPECT_EQ (a->GetInventory().GetFungibleCount("Goodie_PressureCooker_1"), 2);
@@ -769,7 +769,7 @@ TEST_F (CoinOperationTests, PurchaseCrystalsWrongData)
       }
   }])", 1 * COIN);
 
-  ExpectBalances ({{"domob", 50}});
+  ExpectBalances ({{"domob", 250}});
 }
 
 TEST_F (CoinOperationTests, PurchaseCrystalsInsufficientCoin)
@@ -786,7 +786,7 @@ TEST_F (CoinOperationTests, PurchaseCrystalsInsufficientCoin)
       }
   }])", 0.25 * COIN);
 
-  ExpectBalances ({{"domob", 50}});
+  ExpectBalances ({{"domob", 250}});
 }
 
 TEST_F (CoinOperationTests, PurchaseCrystalsTwiceInARow)
@@ -811,7 +811,7 @@ TEST_F (CoinOperationTests, PurchaseCrystalsTwiceInARow)
       }
   }])", 1 * COIN);  
 
-  ExpectBalances ({{"domob", 250}});
+  ExpectBalances ({{"domob", 450}});
 }
 
 /* ************************************************************************** */
@@ -846,9 +846,9 @@ TEST_F (GameStartTests, Before)
   ])");
 
   ExpectBalances ({
-    {"domob", 135},
-    {"daniel", 55},
-    {"andy", 10'050},
+    {"domob", 335},
+    {"daniel", 255},
+    {"andy", 10'250},
   });
 }
 
