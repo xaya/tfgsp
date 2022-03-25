@@ -762,6 +762,7 @@ PendingStateUpdater::ProcessMove (const Json::Value& moveObj)
   Amount cost = 0;
   Amount crystalAmount  = 0;
   std::string fungibleName = "";
+  uint64_t uses = 0;
   
   if(ParseCrystalPurchase(mv, bundleKeyCode, cost, crystalAmount, name, paidToDev))
   {
@@ -769,7 +770,7 @@ PendingStateUpdater::ProcessMove (const Json::Value& moveObj)
   }  
   
   auto& aState = state.GetXayaPlayerState (*a);
-  if(ParseGoodyPurchase(mv, cost, name, fungibleName, aState.balance))
+  if(ParseGoodyPurchase(mv, cost, name, fungibleName, aState.balance, uses))
   {
       state.AddPurchasing(*a, mv["pg"].asString(), cost);  
   }

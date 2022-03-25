@@ -57,6 +57,12 @@ public:
   GameStateJson (const GameStateJson&) = delete;
   void operator= (const GameStateJson&) = delete;
   
+  /** To track against the forks, lets send those to 
+  front-end to compare **/
+  
+  inline static std::string latestKnownStateHash = "";
+  inline static uint64_t latestKnownStateBlock = 0;     
+  
   /**
    * Returns the JSON data representing all accounts in the game state.
    */

@@ -1424,9 +1424,10 @@ PXLogic::UpdateState (xaya::SQLiteDatabase& db, const Json::Value& blockData)
   
   const auto& blockMeta = blockData["block"];
   const auto& heightVal = blockMeta["height"];
-  const unsigned height = heightVal.asUInt64 ();  
+  const uint64_t height = heightVal.asUInt64 ();  
   
-  LOG (WARNING) << "Gamestate hash is " << heystring.ToHex () << " for the block " << height;                  
+  GameStateJson::latestKnownStateHash = heystring.ToHex ();
+  GameStateJson::latestKnownStateBlock = height;                 
 }
 
 Json::Value

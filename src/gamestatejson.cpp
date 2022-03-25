@@ -32,7 +32,6 @@
 
 namespace pxd
 {
-    
 template <typename T, typename R>
   Json::Value
   GameStateJson::ResultsAsArray(T& tbl, Database::Result<R> res) const
@@ -529,6 +528,10 @@ GameStateJson::FullState()
   res["rewards"] = Rewards();
   res["recepies"] = Recepies();
   res["tournaments"] = Tournaments();
+   
+  
+  res["statehex"] = latestKnownStateHash; 
+  res["stateblock"] = latestKnownStateBlock;
   
   return res;
 }  

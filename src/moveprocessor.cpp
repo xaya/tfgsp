@@ -179,7 +179,7 @@ BaseMoveProcessor::ParseGoodyBundlePurchase(const Json::Value& mv, Amount& cost,
 }
 
 bool
-BaseMoveProcessor::ParseGoodyPurchase(const Json::Value& mv, Amount& cost, const std::string& name, std::string& fungibleName, Amount balance)
+BaseMoveProcessor::ParseGoodyPurchase(const Json::Value& mv, Amount& cost, const std::string& name, std::string& fungibleName, Amount balance, uint64_t& uses)
 {
   const auto& cmd = mv["pg"];
   
@@ -196,6 +196,7 @@ BaseMoveProcessor::ParseGoodyPurchase(const Json::Value& mv, Amount& cost, const
       if(gd.second.authoredid() == cmd.asString())
       {
           cost = gd.second.price();
+          uses = gd.second.uses();
           fungibleName = gd.first;
           exists = true;
           break;
@@ -341,13 +342,14 @@ BaseMoveProcessor::TryGoodyPurchase (const std::string& name, const Json::Value&
   
   Amount cost = 0;
   std::string fungibleName = "";
-  if(!ParseGoodyPurchase(mv, cost, name, fungibleName, player->GetBalance()))
+  uint64_t uses = 0;
+  if(!ParseGoodyPurchase(mv, cost, name, fungibleName, player->GetBalance(), uses))
   {
       return;
   }
   
   player->AddBalance(-cost); 
-  player->GetInventory().AddFungibleCount(fungibleName, 1);
+  player->GetInventory().AddFungibleCount(fungibleName, uses);
   
 }
 

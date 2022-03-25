@@ -161,7 +161,7 @@ protected:
    * Tries to parse a move that purchases goody
    */       
    
-  bool ParseGoodyPurchase(const Json::Value& mv, Amount& cost, const std::string& name, std::string& fungibleName, Amount balance);
+  bool ParseGoodyPurchase(const Json::Value& mv, Amount& cost, const std::string& name, std::string& fungibleName, Amount balance, uint64_t& uses);
   
   /**
    * Tries to parse a move that purchases sweetener

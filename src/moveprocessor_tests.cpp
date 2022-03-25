@@ -708,7 +708,7 @@ TEST_F (CoinOperationTests, PurchaseStuff)
   ])");
 
   auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
-  EXPECT_EQ (a->GetInventory().GetFungibleCount("Goodie_PressureCooker_1"), 1);
+  EXPECT_EQ (a->GetInventory().GetFungibleCount("Goodie_PressureCooker_1"), 3);
   a.reset();
   
   ExpectBalances ({{"domob", 250}});
@@ -738,7 +738,7 @@ TEST_F (CoinOperationTests, PurchaseStuff)
   ExpectBalances ({{"domob", 275}});
   
   a = xayaplayers.GetByName ("domob", ctx.RoConfig());
-  EXPECT_EQ (a->GetInventory().GetFungibleCount("Goodie_PressureCooker_1"), 2);
+  EXPECT_EQ (a->GetInventory().GetFungibleCount("Goodie_PressureCooker_1"), 4);
   EXPECT_EQ (a->GetInventory().GetFungibleCount("Goodie_Espresso_1"), 1);
   a.reset();
 
@@ -749,7 +749,7 @@ TEST_F (CoinOperationTests, PurchaseStuff)
   ExpectBalances ({{"domob", 225}});
   
   a = xayaplayers.GetByName ("domob", ctx.RoConfig());
-  EXPECT_EQ (a->GetInventory().GetFungibleCount("Goodie_PressureCooker_1"), 2);
+  EXPECT_EQ (a->GetInventory().GetFungibleCount("Goodie_PressureCooker_1"), 4);
   EXPECT_EQ (a->GetInventory().GetFungibleCount("Goodie_Espresso_1"), 1);
   EXPECT_EQ (a->GetInventory().GetFungibleCount("Sweetener_R6"), 1);
   a.reset();  

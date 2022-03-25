@@ -91,7 +91,7 @@ public:
    * Scans all fighters, finds ones on the exchange, tests if expired, delists
    */    
   static void CheckFightersForSale(Database& db, const Context& ctx);
-
+  
 private:
 
   /** Helper function that generates and pushes new reward instance into the database and returns unique auto ID */
