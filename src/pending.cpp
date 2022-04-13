@@ -282,22 +282,25 @@ PendingState::AddDeconstructionData (const XayaPlayer& a, uint32_t fighterID)
 }
 
 void
-PendingState::AddRewardIDs (const XayaPlayer& a, std::string expeditionName, std::vector<uint32_t> rewardDatabaseIds)
+PendingState::AddRewardIDs (const XayaPlayer& a, std::vector<std::string> expeditionIDArray, std::vector<uint32_t> rewardDatabaseIds)
 {
   VLOG (1) << "Adding pending claim reward operations for name" << a.GetName ();
 
   auto& aState = GetXayaPlayerState (a);
   
-  const auto mit = aState.rewardDatabaseIds.find (expeditionName);
-  if (mit == aState.rewardDatabaseIds.end ())
+  for(auto& expeditionName: expeditionIDArray)
   {
-    aState.rewardDatabaseIds.insert(std::pair<std::string, std::vector<uint32_t>>(expeditionName, rewardDatabaseIds));  
-  }
-  else
-  {
-    for(const auto& val: rewardDatabaseIds)
+    const auto mit = aState.rewardDatabaseIds.find (expeditionName);
+    if (mit == aState.rewardDatabaseIds.end ())
     {
-      aState.rewardDatabaseIds[expeditionName].push_back(val); 
+      aState.rewardDatabaseIds.insert(std::pair<std::string, std::vector<uint32_t>>(expeditionName, rewardDatabaseIds));  
+    }
+    else
+    {
+      for(const auto& val: rewardDatabaseIds)
+      {
+        aState.rewardDatabaseIds[expeditionName].push_back(val); 
+      }
     }
   }
 }
@@ -692,11 +695,11 @@ PendingStateUpdater::ProcessMove (const Json::Value& moveObj)
       state.AddExpeditionInstance(*a, duration, expeditionBlueprint.authoredid(), fighter);
     }  
 
-    std::string expeditionID = "";
+    std::vector<std::string> expeditionIDArray;
     
-    if(ParseRewardData(*a, name, upd2["c"], rewardDatabaseIds, expeditionID))
+    if(ParseRewardData(*a, name, upd2["c"], rewardDatabaseIds, expeditionIDArray))
     {
-      state.AddRewardIDs(*a, expeditionID, rewardDatabaseIds);
+      state.AddRewardIDs(*a, expeditionIDArray, rewardDatabaseIds);
     }  
     
   }

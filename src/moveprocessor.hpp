@@ -249,7 +249,7 @@ protected:
    * Tries to parse a move that collects reward data
    */    
    
-  bool ParseRewardData(const XayaPlayer& a, const std::string& name, const Json::Value& expedition, std::vector<uint32_t>& rewardDatabaseIds, std::string& expeditionID);
+  bool ParseRewardData(const XayaPlayer& a, const std::string& name, const Json::Value& expedition, std::vector<uint32_t>& rewardDatabaseIds, std::vector<std::string>& expeditionIDArray);
   
    /**
    * Tries to parse a move that collects tournament reward data

@@ -737,69 +737,86 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     return true;
   }        
   
-  bool BaseMoveProcessor::ParseRewardData(const XayaPlayer& a, const std::string& name, const Json::Value& expedition, std::vector<uint32_t>& rewardDatabaseIds, std::string& expeditionID)
+  bool BaseMoveProcessor::ParseRewardData(const XayaPlayer& a, const std::string& name, const Json::Value& expedition, std::vector<uint32_t>& rewardDatabaseIds, std::vector<std::string>& expeditionIDArray)
   {
     if (!expedition.isObject ())
     return false;
 
-    if(!expedition["eid"].isString())
+    if(!expedition["eid"].isString() && !expedition["eid"].isArray())
     {
         return false;
     }
     
-    expeditionID = expedition["eid"].asString ();
+    std::vector<std::string> authIds;
     
-    pxd::proto::ExpeditionBlueprint expeditionBlueprint;
-    const auto& expeditionList = ctx.RoConfig()->expeditionblueprints();
-    bool blueprintSolved = false;
-    
-    for(const auto& expedition: expeditionList)
+    if(expedition["eid"].isString())
     {
-        if(expedition.second.authoredid() == expeditionID)
-        {
-            expeditionBlueprint = expedition.second;
-            blueprintSolved = true;
-            break;
-        }
+      authIds.push_back(expedition["eid"].asString ());   
     }
-    
-    if(blueprintSolved == false)
+    else
     {
-        LOG (WARNING) << "Could not resolve expedition blueprint with authID: " << expeditionID;
-        return false;              
-    }    
-    
-    for(const auto& ongoing: a.GetProto().ongoings())
-    {
-        if(ongoing.expeditionblueprintid() == expeditionID && ongoing.type() == (uint32_t)pxd::OngoingType::EXPEDITION)
-        {
-          LOG (WARNING) << "Could not get rewards, expedition is in process: " << expeditionID;
-          return false;                
-        }
-    }
-    
-    auto res = rewards.QueryForOwner(a.GetName());
-    
-    int totalEntries = 0;
-    bool tryAndStep = res.Step();
-    while (tryAndStep)
-    {
-      auto rw = rewards.GetFromResult (res, ctx.RoConfig ());
-      
-      if(rw->GetProto().expeditionid() == expeditionID)
+      for(auto& eID: expedition["eid"])
       {
-        totalEntries++;
-        rewardDatabaseIds.push_back(rw->GetId());
+        authIds.push_back(eID.asString ());   
+      }
+    }
+    
+    for(auto expeditionID : authIds)
+    {
+      expeditionIDArray.push_back(expeditionID);
+      
+      pxd::proto::ExpeditionBlueprint expeditionBlueprint;
+      const auto& expeditionList = ctx.RoConfig()->expeditionblueprints();
+      bool blueprintSolved = false;
+      
+      for(const auto& expedition: expeditionList)
+      {
+          if(expedition.second.authoredid() == expeditionID)
+          {
+              expeditionBlueprint = expedition.second;
+              blueprintSolved = true;
+              break;
+          }
       }
       
-      tryAndStep = res.Step ();
+      if(blueprintSolved == false)
+      {
+          LOG (WARNING) << "Could not resolve expedition blueprint with authID: " << expeditionID;
+          return false;              
+      }    
+      
+      for(const auto& ongoing: a.GetProto().ongoings())
+      {
+          if(ongoing.expeditionblueprintid() == expeditionID && ongoing.type() == (uint32_t)pxd::OngoingType::EXPEDITION)
+          {
+            LOG (WARNING) << "Could not get rewards, expedition is in process: " << expeditionID;
+            return false;                
+          }
+      }
+      
+      auto res = rewards.QueryForOwner(a.GetName());
+      
+      int totalEntries = 0;
+      bool tryAndStep = res.Step();
+      while (tryAndStep)
+      {
+        auto rw = rewards.GetFromResult (res, ctx.RoConfig ());
+        
+        if(rw->GetProto().expeditionid() == expeditionID)
+        {
+          totalEntries++;
+          rewardDatabaseIds.push_back(rw->GetId());
+        }
+        
+        tryAndStep = res.Step ();
+      }
+     
+      if(totalEntries <= 0)
+      {
+          LOG (WARNING) << "Could not find any relevan rewards for expedition: " << expeditionID;
+          return false;              
+      }   
     }
-   
-    if(totalEntries <= 0)
-    {
-        LOG (WARNING) << "Could not find any relevan rewards for expedition: " << expeditionID;
-        return false;              
-    }   
     
     return true;
   }      
@@ -2018,9 +2035,10 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
   void MoveProcessor::MaybeClaimReward (const std::string& name, const Json::Value& expedition)
   {      
       std::vector<uint32_t> rewardDatabaseIds;      
+      std::vector<std::string> expeditionIDArray;
+      
       auto a = xayaplayers.GetByName (name, ctx.RoConfig ());
-      std::string expeditionID = "";
-      if(!ParseRewardData(*a, name, expedition, rewardDatabaseIds, expeditionID))      
+      if(!ParseRewardData(*a, name, expedition, rewardDatabaseIds, expeditionIDArray))      
       {
           a.reset();
           return;

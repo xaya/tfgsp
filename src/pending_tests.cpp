@@ -528,12 +528,13 @@ TEST_F (PendingStateUpdaterTests, ExpeditionGetRewards)
 {
   auto a = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
   
-  std::string expeditionName = "tst";
+  std::vector<std::string> expeditionIDArray;
+  expeditionIDArray.push_back("tst");
   std::vector<uint32_t> rewardDatabaseIds;
   rewardDatabaseIds.push_back(1);
   rewardDatabaseIds.push_back(4);
    
-  state.AddRewardIDs (*a, expeditionName, rewardDatabaseIds);
+  state.AddRewardIDs (*a, expeditionIDArray, rewardDatabaseIds);
   a.reset ();
    
   ExpectStateJson (R"(

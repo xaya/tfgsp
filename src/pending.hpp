@@ -89,7 +89,7 @@ public:
    /**
    * Updates the state for a new pending rewards
    */      
-  void AddRewardIDs (const XayaPlayer& a, std::string expeditionName, std::vector<uint32_t> rewardDatabaseIds);
+  void AddRewardIDs (const XayaPlayer& a, std::vector<std::string> expeditionIDArray, std::vector<uint32_t> rewardDatabaseIds);
   
    /**
    * Updates the state for a new pending rewards
