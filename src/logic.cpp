@@ -840,8 +840,6 @@ fpm::fixed_24_8& expectedB, fpm::fixed_24_8& newRatingA, fpm::fixed_24_8& newRat
 
 void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random& rnd)
 {
-    LOG (INFO) << "Processing tournaments...";
-    
     TournamentTable tournamentsDatabase(db);
     FighterTable fighters(db);
     
@@ -1327,11 +1325,6 @@ PXLogic::UpdateState (Database& db, xaya::Random& rnd,
                       const Context& ctx, const Json::Value& blockData)
 {
     
-  /** We process tournaments super super early, to make sure if we have some closed, next function bellow will
-   ** open fresh ones for new block immedaitely. Also later move processor will not interfere with block counts logic
-  */
-  ProcessTournaments(db, ctx, rnd);    
-    
   /** We run this very early, as we want to create tournament instances from blueprints ASAP.
   We are going to open tournaments instances if blueprint is not present ir game or already full and running */
   ReopenMissingTournaments(db, ctx);  
@@ -1348,6 +1341,10 @@ PXLogic::UpdateState (Database& db, xaya::Random& rnd,
   /** We need to see if any fighters is on exchange, and if its expiration
       is already off and we need to de-lest it automatically*/
   CheckFightersForSale(db, ctx);
+  
+  /** We process tournaments lastly, to make sure participiant count updates properly
+  */
+  ProcessTournaments(db, ctx, rnd);   
 
 #ifdef ENABLE_SLOW_ASSERTS
   ValidateStateSlow (db, ctx);
