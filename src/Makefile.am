@@ -46,7 +46,9 @@ tfd_CXXFLAGS = \
   $(XAYAGAME_CFLAGS) $(CHARON_CFLAGS) \
   $(JSON_CFLAGS) $(MHD_CLFGAS) \
   $(GLOG_CFLAGS) $(GFLAGS_CFLAGS) $(PROTOBUF_CFLAGS)
+  
 tfd_LDADD = \
+  $(top_builddir)/libwinsane/libwinsane.la \
   $(builddir)/libtf.la \
   $(top_builddir)/database/libdatabase.la \
   $(XAYAGAME_LIBS) $(CHARON_LIBS) \

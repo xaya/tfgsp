@@ -38,6 +38,16 @@
 #include <iostream>
 #include <memory>
 
+#include <locale>
+#include <codecvt>
+#include <string>
+
+              // This is free and unencumbered software released into the public domain.
+#include <fcntl.h>
+#include <io.h>
+#include <windows.h>                  
+
+                                
 namespace
 {
 
@@ -118,6 +128,16 @@ public:
 
 } // anonymous namespace
 
+__attribute__((constructor))
+void
+winsane_init(void)
+{
+    _setmode(0, _O_BINARY);
+    _setmode(1, _O_BINARY);
+    SetConsoleCP(CP_UTF8);  // maybe will work someday
+    SetConsoleOutputCP(CP_UTF8);
+}
+
 int
 main (int argc, char** argv)
 {
@@ -126,17 +146,17 @@ main (int argc, char** argv)
   if we really need to to log to file, 
   can use this temporarily solution*/
   //FLAGS_log_dir  = "C:/log/";
-  
+
   google::InitGoogleLogging (argv[0]);
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   LOG (INFO)
       << "Running tf version " << PACKAGE_VERSION
       << " (" << "GIT_VERSION" << ")";
-
+      
   gflags::SetUsageMessage ("Run tf game daemon");
   gflags::SetVersionString (PACKAGE_VERSION);
-  gflags::ParseCommandLineFlags (&argc, &argv, true);
+  gflags::ParseCommandLineFlags (&argc, &argv, false);
 
 #ifdef ENABLE_SLOW_ASSERTS
   LOG (WARNING)
@@ -186,8 +206,22 @@ main (int argc, char** argv)
       config.GameRpcPort = FLAGS_game_rpc_port;
       config.GameRpcListenLocally = FLAGS_game_rpc_listen_locally;
     }
+    
+    
   config.EnablePruning = FLAGS_enable_pruning;
+  
+  
+  
   config.DataDirectory = FLAGS_datadir;
+  
+  bool nonAnsiDetected = false;
+  for (auto& c: config.DataDirectory ) 
+  {
+    if (static_cast<unsigned char>(c) > 127) 
+    {
+       c = 'n';
+    }
+  }       
 
   /* We need support for coin burns, which was implemented in
      https://github.com/xaya/xaya/pull/103 and is included in

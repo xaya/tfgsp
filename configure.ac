@@ -69,6 +69,7 @@ AC_SUBST(CHARON_PREFIX, /usr/local)
 AC_CONFIG_FILES([
   Makefile \
   data/Makefile \
+  libwinsane/Makefile \
   database/Makefile \
   gametest/Makefile \
   proto/Makefile \

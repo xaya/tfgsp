@@ -19080,7 +19080,7 @@ GMP_LIBS=-lgmp
 CHARON_PREFIX=/usr/local
 
 
-ac_config_files="$ac_config_files Makefile data/Makefile database/Makefile gametest/Makefile proto/Makefile proto2/Makefile src/Makefile"
+ac_config_files="$ac_config_files Makefile data/Makefile libwinsane/Makefile database/Makefile gametest/Makefile proto/Makefile proto2/Makefile src/Makefile"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -20196,6 +20196,7 @@ do
     "libtool") CONFIG_COMMANDS="$CONFIG_COMMANDS libtool" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
     "data/Makefile") CONFIG_FILES="$CONFIG_FILES data/Makefile" ;;
+    "libwinsane/Makefile") CONFIG_FILES="$CONFIG_FILES libwinsane/Makefile" ;;
     "database/Makefile") CONFIG_FILES="$CONFIG_FILES database/Makefile" ;;
     "gametest/Makefile") CONFIG_FILES="$CONFIG_FILES gametest/Makefile" ;;
     "proto/Makefile") CONFIG_FILES="$CONFIG_FILES proto/Makefile" ;;
