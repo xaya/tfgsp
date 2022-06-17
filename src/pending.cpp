@@ -491,7 +491,18 @@ PendingState::XayaPlayerState::ToJson () const
     }  
       
     res["deconstruction"] = fghttrs;      
-  }    
+  }   
+
+  if(deconstructionDataClaiming.size() > 0)
+  {
+    Json::Value fghttrs(Json::arrayValue);
+    for(const auto& rw: deconstructionDataClaiming) 
+    {
+      fghttrs.append(rw);
+    }  
+      
+    res["deconstructionClaiming"] = fghttrs;      
+  }     
   
   if(purchasing.size() > 0)
   {
