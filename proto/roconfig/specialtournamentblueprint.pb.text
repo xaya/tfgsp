@@ -1,0 +1,420 @@
+tournamentbluprints:
+{
+  key: "Tournament_1stTourney"
+  value:
+  {
+    AuthoredId: "cbd2e78a-37ce-b864-793d-8dd27788a774"
+    Name: "An Overlord's First Challenge"
+    Duration: 2
+    TeamCount: 2
+    TeamSize: 2
+    MinSweetness: 1
+    MaxSweetness: 10
+    MaxRewardQuality: 2
+    BaseRewardsTableId: "e6d106ef-38e1-67d4-db02-fd1fde4d94a1"
+    BaseRollCount: 1
+    WinnerRewardsTableId: "4c95fe23-e5e4-15d4-2a99-dbac2f3daeed"
+    WinnerRollCount: 1
+    JoinCost: 0
+  }
+}
+tournamentbluprints:
+{
+  key: "Tournament_Rank4a"
+  value:
+  {
+    AuthoredId: "99258908-ce4f-50e4-2880-99f0027b8d2b"
+    Name: "The Cotton Candy Qualifiers"
+    Duration: 60
+    TeamCount: 3
+    TeamSize: 3
+    MinSweetness: 4
+    MaxSweetness: 6
+    MaxRewardQuality: 2
+    BaseRewardsTableId: "facf013d-6328-82a4-8b61-32db1c3c5282"
+    BaseRollCount: 2
+    WinnerRewardsTableId: "facf013d-6328-82a4-8b61-32db1c3c5282"
+    WinnerRollCount: 4
+    JoinCost: 0
+  }
+}
+tournamentbluprints:
+{
+  key: "Tournament_Rank4b"
+  value:
+  {
+    AuthoredId: "e17e19da-139b-c484-2bc2-6eec8d407c8a"
+    Name: "The Cotton Candy Cup"
+    Duration: 125
+    TeamCount: 4
+    TeamSize: 4
+    MinSweetness: 4
+    MaxSweetness: 6
+    MaxRewardQuality: 2
+    BaseRewardsTableId: "facf013d-6328-82a4-8b61-32db1c3c5282"
+    BaseRollCount: 3
+    WinnerRewardsTableId: "facf013d-6328-82a4-8b61-32db1c3c5282"
+    WinnerRollCount: 5
+    JoinCost: 0
+  }
+}
+tournamentbluprints:
+{
+  key: "Tournament_Rank3a"
+  value:
+  {
+    AuthoredId: "eedb6522-2311-3ef4-c999-d3ec275ea496"
+    Name: "The Jelly Bean Quickie"
+    Duration: 60
+    TeamCount: 2
+    TeamSize: 2
+    MinSweetness: 3
+    MaxSweetness: 5
+    MaxRewardQuality: 2
+    BaseRewardsTableId: "f222e20f-3157-f314-6803-692d4ea1c9f2"
+    BaseRollCount: 2
+    WinnerRewardsTableId: "f222e20f-3157-f314-6803-692d4ea1c9f2"
+    WinnerRollCount: 4
+    JoinCost: 0
+  }
+}
+tournamentbluprints:
+{
+  key: "Tournament_Rank3b"
+  value:
+  {
+    AuthoredId: "f6cbb7e0-a2f3-3e14-2be5-477eeefe8963"
+    Name: "The Jelly Bean Grand"
+    Duration: 125
+    TeamCount: 4
+    TeamSize: 4
+    MinSweetness: 3
+    MaxSweetness: 5
+    MaxRewardQuality: 2
+    BaseRewardsTableId: "f222e20f-3157-f314-6803-692d4ea1c9f2"
+    BaseRollCount: 3
+    WinnerRewardsTableId: "f222e20f-3157-f314-6803-692d4ea1c9f2"
+    WinnerRollCount: 5
+    JoinCost: 0
+  }
+}
+tournamentbluprints:
+{
+  key: "Tournament_Rank9b"
+  value:
+  {
+    AuthoredId: "06819c56-b599-d864-dbed-b1df4513ca11"
+    Name: "The Silver Candy Cane Final Round"
+    Duration: 1400
+    TeamCount: 10
+    TeamSize: 10
+    MinSweetness: 9
+    MaxSweetness: 10
+    MaxRewardQuality: 4
+    BaseRewardsTableId: "53f146c5-6d06-d7e4-e970-5dd72dbef229"
+    BaseRollCount: 3
+    WinnerRewardsTableId: "53f146c5-6d06-d7e4-e970-5dd72dbef229"
+    WinnerRollCount: 5
+    JoinCost: 0
+  }
+}
+tournamentbluprints:
+{
+  key: "Tournament_Rank2a"
+  value:
+  {
+    AuthoredId: "1dbea2e9-1abf-8524-5bb9-4c27d7d4f631"
+    Name: "The Gumdrop Open"
+    Duration: 15
+    TeamCount: 3
+    TeamSize: 3
+    MinSweetness: 2
+    MaxSweetness: 4
+    MaxRewardQuality: 1
+    BaseRewardsTableId: "bd3bfc25-5636-a704-a96e-59473e39a368"
+    BaseRollCount: 2
+    WinnerRewardsTableId: "bd3bfc25-5636-a704-a96e-59473e39a368"
+    WinnerRollCount: 4
+    JoinCost: 0
+  }
+}
+tournamentbluprints:
+{
+  key: "Tournament_Rank2b"
+  value:
+  {
+    AuthoredId: "0c7385d1-d807-1634-4ae1-9eb4e9991b17"
+    Name: "The Gumdrop Finals"
+    Duration: 30
+    TeamCount: 4
+    TeamSize: 4
+    MinSweetness: 2
+    MaxSweetness: 4
+    MaxRewardQuality: 1
+    BaseRewardsTableId: "bd3bfc25-5636-a704-a96e-59473e39a368"
+    BaseRollCount: 3
+    WinnerRewardsTableId: "bd3bfc25-5636-a704-a96e-59473e39a368"
+    WinnerRollCount: 5
+    JoinCost: 0
+  }
+}
+tournamentbluprints:
+{
+  key: "Tournament_Rank8b"
+  value:
+  {
+    AuthoredId: "77a516a8-4824-fbf4-ca26-42d18e610a7a"
+    Name: "The Bronze Jawbreaker Team Challenge"
+    Duration: 1400
+    TeamCount: 5
+    TeamSize: 4
+    MinSweetness: 8
+    MaxSweetness: 10
+    MaxRewardQuality: 4
+    BaseRewardsTableId: "ba99802e-6d0c-3da4-b9b1-99fc8105e54a"
+    BaseRollCount: 3
+    WinnerRewardsTableId: "ba99802e-6d0c-3da4-b9b1-99fc8105e54a"
+    WinnerRollCount: 5
+    JoinCost: 0
+  }
+}
+tournamentbluprints:
+{
+  key: "Tournament_Rank1a"
+  value:
+  {
+    AuthoredId: "e694d5f8-e454-7774-ca76-fc2637a9407f"
+    Name: "The Chocolate Chip Training Rounds"
+    Duration: 15
+    TeamCount: 2
+    TeamSize: 2
+    MinSweetness: 1
+    MaxSweetness: 3
+    MaxRewardQuality: 1
+    BaseRewardsTableId: "be507768-f89e-7114-3a40-655521f5ecad"
+    BaseRollCount: 2
+    WinnerRewardsTableId: "be507768-f89e-7114-3a40-655521f5ecad"
+    WinnerRollCount: 4
+    JoinCost: 0
+  }
+}
+tournamentbluprints:
+{
+  key: "Tournament_Rank7a"
+  value:
+  {
+    AuthoredId: "ec723560-ccfa-c984-89a6-f578b5387ce9"
+    Name: "The Buttercup Junior Bowl"
+    Duration: 350
+    TeamCount: 4
+    TeamSize: 4
+    MinSweetness: 7
+    MaxSweetness: 9
+    MaxRewardQuality: 3
+    BaseRewardsTableId: "6c280e9c-2326-ce44-895c-b350dd01543a"
+    BaseRollCount: 2
+    WinnerRewardsTableId: "6c280e9c-2326-ce44-895c-b350dd01543a"
+    WinnerRollCount: 4
+    JoinCost: 0
+  }
+}
+tournamentbluprints:
+{
+  key: "Tournament_Rank7b"
+  value:
+  {
+    AuthoredId: "fbc32cb0-c5f4-4884-1a53-f38f1c57e357"
+    Name: "The Buttercup Grand Melee"
+    Duration: 700
+    TeamCount: 5
+    TeamSize: 4
+    MinSweetness: 7
+    MaxSweetness: 9
+    MaxRewardQuality: 3
+    BaseRewardsTableId: "6c280e9c-2326-ce44-895c-b350dd01543a"
+    BaseRollCount: 3
+    WinnerRewardsTableId: "6c280e9c-2326-ce44-895c-b350dd01543a"
+    WinnerRollCount: 5
+    JoinCost: 0
+  }
+}
+tournamentbluprints:
+{
+  key: "Tournament_Rank9a"
+  value:
+  {
+    AuthoredId: "8dc57404-ec23-94d4-3919-5ed9e5d4e37f"
+    Name: "The Silver Candy Cane Series"
+    Duration: 700
+    TeamCount: 5
+    TeamSize: 5
+    MinSweetness: 9
+    MaxSweetness: 10
+    MaxRewardQuality: 4
+    BaseRewardsTableId: "53f146c5-6d06-d7e4-e970-5dd72dbef229"
+    BaseRollCount: 2
+    WinnerRewardsTableId: "53f146c5-6d06-d7e4-e970-5dd72dbef229"
+    WinnerRollCount: 4
+    JoinCost: 0
+  }
+}
+tournamentbluprints:
+{
+  key: "Tournament_Rank6a"
+  value:
+  {
+    AuthoredId: "1af67bae-6ab2-29e4-9b62-805c73901881"
+    Name: "The Gummi Bear Warm up"
+    Duration: 350
+    TeamCount: 3
+    TeamSize: 3
+    MinSweetness: 6
+    MaxSweetness: 8
+    MaxRewardQuality: 3
+    BaseRewardsTableId: "6ca739e1-18c3-9b04-4bb6-cb38d82462ea"
+    BaseRollCount: 2
+    WinnerRewardsTableId: "6ca739e1-18c3-9b04-4bb6-cb38d82462ea"
+    WinnerRollCount: 4
+    JoinCost: 0
+  }
+}
+tournamentbluprints:
+{
+  key: "Tournament_Rank6b"
+  value:
+  {
+    AuthoredId: "b714d4e1-b463-dd14-c943-b3d8a3677a0e"
+    Name: "The Gummi Bear Melee"
+    Duration: 700
+    TeamCount: 4
+    TeamSize: 4
+    MinSweetness: 6
+    MaxSweetness: 8
+    MaxRewardQuality: 3
+    BaseRewardsTableId: "6ca739e1-18c3-9b04-4bb6-cb38d82462ea"
+    BaseRollCount: 3
+    WinnerRewardsTableId: "6ca739e1-18c3-9b04-4bb6-cb38d82462ea"
+    WinnerRollCount: 5
+    JoinCost: 0
+  }
+}
+tournamentbluprints:
+{
+  key: "Tournament_Rank1b"
+  value:
+  {
+    AuthoredId: "5569ff18-4504-0a54-8b54-518ad7501db8"
+    Name: "The Chocolate Chip Pee Wee Cup "
+    Duration: 30
+    TeamCount: 3
+    TeamSize: 4
+    MinSweetness: 1
+    MaxSweetness: 3
+    MaxRewardQuality: 1
+    BaseRewardsTableId: "be507768-f89e-7114-3a40-655521f5ecad"
+    BaseRollCount: 3
+    WinnerRewardsTableId: "be507768-f89e-7114-3a40-655521f5ecad"
+    WinnerRollCount: 5
+    JoinCost: 0
+  }
+}
+tournamentbluprints:
+{
+  key: "Tournament_Rank8a"
+  value:
+  {
+    AuthoredId: "9ab085a2-2247-adc4-1857-68c3a31b20c3"
+    Name: "The Bronze Jawbreaker Deathmatch"
+    Duration: 700
+    TeamCount: 4
+    TeamSize: 4
+    MinSweetness: 8
+    MaxSweetness: 10
+    MaxRewardQuality: 4
+    BaseRewardsTableId: "ba99802e-6d0c-3da4-b9b1-99fc8105e54a"
+    BaseRollCount: 2
+    WinnerRewardsTableId: "ba99802e-6d0c-3da4-b9b1-99fc8105e54a"
+    WinnerRollCount: 4
+    JoinCost: 0
+  }
+}
+tournamentbluprints:
+{
+  key: "Tournament_Rank5a"
+  value:
+  {
+    AuthoredId: "34c5d1a4-0245-3104-6a35-e765865124b1"
+    Name: "The Peppermint Casual Cup"
+    Duration: 350
+    TeamCount: 3
+    TeamSize: 3
+    MinSweetness: 5
+    MaxSweetness: 7
+    MaxRewardQuality: 3
+    BaseRewardsTableId: "d73e36c9-4533-0ff4-cb72-2137ae467bd8"
+    BaseRollCount: 2
+    WinnerRewardsTableId: "d73e36c9-4533-0ff4-cb72-2137ae467bd8"
+    WinnerRollCount: 4
+    JoinCost: 0
+  }
+}
+tournamentbluprints:
+{
+  key: "Tournament_Rank5b"
+  value:
+  {
+    AuthoredId: "06cb83c5-def7-cbc4-4956-b53f755c075a"
+    Name: "The Peppermint Pro Bowl"
+    Duration: 700
+    TeamCount: 4
+    TeamSize: 4
+    MinSweetness: 5
+    MaxSweetness: 7
+    MaxRewardQuality: 3
+    BaseRewardsTableId: "d73e36c9-4533-0ff4-cb72-2137ae467bd8"
+    BaseRollCount: 3
+    WinnerRewardsTableId: "d73e36c9-4533-0ff4-cb72-2137ae467bd8"
+    WinnerRollCount: 5
+    JoinCost: 0
+  }
+}
+tournamentbluprints:
+{
+  key: "Tournament_Rank10a"
+  value:
+  {
+    AuthoredId: "e1cb93b2-3ba6-9494-6bd6-9e81994480ee"
+    Name: "The Golden Candy Ribbon Preliminaries"
+    Duration: 1400
+    TeamCount: 10
+    TeamSize: 10
+    MinSweetness: 10
+    MaxSweetness: 10
+    MaxRewardQuality: 4
+    BaseRewardsTableId: "a8c278b1-2a20-db84-d9ca-977c84fe9cb8"
+    BaseRollCount: 2
+    WinnerRewardsTableId: "a8c278b1-2a20-db84-d9ca-977c84fe9cb8"
+    WinnerRollCount: 4
+    JoinCost: 0
+  }
+}
+tournamentbluprints:
+{
+  key: "Tournament_Rank10b"
+  value:
+  {
+    AuthoredId: "dd89aedb-06c1-1964-d90b-b5977ee61c4c"
+    Name: "The Golden Candy Ribbon Champion's Royale"
+    Duration: 2800
+    TeamCount: 20
+    TeamSize: 20
+    MinSweetness: 10
+    MaxSweetness: 10
+    MaxRewardQuality: 4
+    BaseRewardsTableId: "a8c278b1-2a20-db84-d9ca-977c84fe9cb8"
+    BaseRollCount: 3
+    WinnerRewardsTableId: "a8c278b1-2a20-db84-d9ca-977c84fe9cb8"
+    WinnerRollCount: 5
+    JoinCost: 0
+  }
+}

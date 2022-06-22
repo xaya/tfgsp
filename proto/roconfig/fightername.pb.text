@@ -7090,6 +7090,46 @@ fighternames:
     Probability: 1
   }
 }
+
+fighternames:
+{
+  key: "FighterName_Epic_First_Extra1"
+  value:
+  {
+    AuthoredId: "2b799869-2168-b5d4-b9a1-4db949c635e7"
+    Name: "Ultra"
+    Position: 1
+    Quality: 4
+    Probability: 1
+  }
+}
+
+fighternames:
+{
+  key: "FighterName_Epic_First_Extra2"
+  value:
+  {
+    AuthoredId: "2b799869-2168-b5d4-b9a1-4db949c635e8"
+    Name: "Hyper"
+    Position: 1
+    Quality: 4
+    Probability: 1
+  }
+}
+
+fighternames:
+{
+  key: "FighterName_Epic_First_Extra3"
+  value:
+  {
+    AuthoredId: "2b799869-2168-b5d4-b9a1-4db949c635e9"
+    Name: "Grand"
+    Position: 1
+    Quality: 4
+    Probability: 1
+  }
+}
+
 fighternames:
 {
   key: "FighterName_Uncommon_First_SirFresh"

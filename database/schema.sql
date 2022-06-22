@@ -45,6 +45,32 @@ CREATE TABLE IF NOT EXISTS `tournaments` (
   `instance` BLOB NOT NULL  
 );
 
+-- Right now this is used for tracking stuff like last tournament time and easy access to last CHI crystal prices
+CREATE TABLE IF NOT EXISTS `globaldata` (
+
+  -- Always 0, as we have only 1 entry
+  `id` INTEGER PRIMARY KEY,
+
+  -- Time when last special tournament calculation started
+  `lasttournamenttime` TIMESTAMP NOT NULL,
+  
+  -- Crystal prices in CHI multiplier, by default is 1, updated via g/tfr
+  `chimultiplier` INTEGER NOT NULL
+);
+
+-- Data for the special tournaments instances in the game.
+CREATE TABLE IF NOT EXISTS `specialtournaments` (
+
+  -- The recipe ID, which is assigned based on libxayagame's AutoIds.
+  `id` INTEGER PRIMARY KEY,
+  
+  -- Special Tournament tier, used for easy unit-tests query
+  `tier` INTEGER NOT NULL,  
+  
+  -- Additional data encoded as a TournamentBlueprint protocol buffer.
+  `proto` BLOB NOT NULL 
+);
+
 -- Data for the recipe instances in the game.
 CREATE TABLE IF NOT EXISTS `recepies` (
 

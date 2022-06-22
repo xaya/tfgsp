@@ -17,8 +17,10 @@ libdatabase_la_SOURCES = \
   reward.cpp \
   activity.cpp \
   moneysupply.cpp \
+  globaldata.cpp \
   xayaplayer.cpp \
   tournament.cpp \
+  specialtournament.cpp \
   recipe.cpp \
   fighter.cpp \
   uniquehandles.cpp \
@@ -31,10 +33,12 @@ noinst_HEADERS = \
   amount.hpp \
   activity.hpp \
   tournament.hpp \
+  specialtournament.hpp \
   recipe.hpp \
   fighter.hpp fighter.tpp\
   xayaplayer.hpp xayaplayer.tpp \
   moneysupply.hpp \
+  globaldata.hpp \
   uniquehandles.hpp uniquehandles.tpp
 
 check_LTLIBRARIES = libdbtest.la

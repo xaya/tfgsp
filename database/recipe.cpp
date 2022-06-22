@@ -183,7 +183,7 @@ RecipeInstance::BindFieldValues (Database::Statement& stmt) const
 
 uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xaya::Random& rnd, Database& db)
 {
-    LOG (WARNING) << "Started generating the recepie";
+    LOG (WARNING) << "Started generating the recepie with quality" << (int)quality;
     
     std::vector<pxd::proto::FighterName> potentialNames;
     const auto& fighterNames = cfg->fighternames();
@@ -227,13 +227,13 @@ uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xa
     
     if(position0names.size() == 0)
     {
-        LOG (ERROR) << "The script would and in infinite loop";
+        LOG (ERROR) << "psnm0 The script would and in infinite loop for quality" << (int)quality;
         return 0;
     }
     
     if(position1names.size() == 0)
     {
-        LOG (ERROR) << "The script would and in infinite loop";
+        LOG (ERROR) << "psnm1 The script would and in infinite loop for quality" << (int)quality;
         return 0;
     }    
     

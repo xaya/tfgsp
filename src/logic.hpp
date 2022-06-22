@@ -133,6 +133,11 @@ private:
    * Scans all tournaments to either start them or finilize
    */  
   static void ProcessTournaments(Database& db, const Context& ctx, xaya::Random& rnd); 
+  
+  /**
+   * Scans all tournaments to either start them or finilize
+   */  
+  static void ProcessSpecialTournaments(Database& db, const Context& ctx, xaya::Random& rnd);   
 
   /**
    * When fighters are fighting against each other in tournament, used to calculate results

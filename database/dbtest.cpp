@@ -19,6 +19,8 @@
 #include "dbtest.hpp"
 
 #include "moneysupply.hpp"
+#include "globaldata.hpp"
+
 #include "schema.hpp"
 
 #include <glog/logging.h>
@@ -51,6 +53,9 @@ DBTestWithSchema::DBTestWithSchema ()
 
   MoneySupply ms(db);
   ms.InitialiseDatabase ();
+  
+  GlobalData gd(db);
+  gd.InitialiseDatabase ();   
 }
 
 TemporaryDatabaseChanges::TemporaryDatabaseChanges (Database& d,

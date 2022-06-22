@@ -21,6 +21,8 @@
 #include <xayautil/hash.hpp>
 #include "logic.hpp"
 #include "database/reward.hpp"
+#include "database/globaldata.hpp"
+#include "database/specialtournament.hpp"
 
 #include "proto/tournament_result.pb.h"
 
@@ -838,6 +840,80 @@ fpm::fixed_24_8& expectedB, fpm::fixed_24_8& newRatingA, fpm::fixed_24_8& newRat
   }
 }
 
+void PXLogic::ProcessSpecialTournaments(Database& db, const Context& ctx, xaya::Random& rnd)
+{
+    bool needToProcess = false;
+    int32_t totalFightersInSpecialTournament = 0;
+    
+    FighterTable fighters(db);
+    auto res = fighters.QueryAll ();
+
+    bool tryAndStep = res.Step();
+    while (tryAndStep)
+    {
+        auto fghtr = fighters.GetFromResult (res, ctx.RoConfig ());  
+        
+        if((pxd::FighterStatus)(int)fghtr->GetStatus() == pxd::FighterStatus::SpecialTournament)
+        {
+            totalFightersInSpecialTournament++;
+        }            
+        
+        fghtr.reset();
+        tryAndStep = res.Step ();
+    }
+    
+    SpecialTournamentTable specialTournamentsDatabase(db);
+    
+    if(totalFightersInSpecialTournament == 0)
+    {
+        /* This is our very first special tournament running instance. In this case,
+           lets create all tournament tiers and prepopulate them with random treats
+           initially as under company holder name */
+           
+        std::vector<pxd::Quality> qualities= {pxd::Quality::Common, pxd::Quality::Common, pxd::Quality::Uncommon, pxd::Quality::Uncommon, pxd::Quality::Rare, pxd::Quality::Rare, pxd::Quality::Epic};
+        
+        for(int32_t tTier = 1; tTier < 8; tTier++)
+        {
+            auto specFreshEntry = specialTournamentsDatabase.CreateNew(tTier, ctx.RoConfig());
+            
+            for(int32_t nTreate = 0; nTreate < 6; nTreate++)
+            {
+                const auto id0 = pxd::RecipeInstance::Generate(qualities[tTier-1], ctx.RoConfig(), rnd, db);
+                std::string fName = "xayatf" + tTier;
+                
+                auto fighterToHoldCrown = fighters.CreateNew (fName, id0, ctx.RoConfig (), rnd);
+                fighterToHoldCrown->SetStatus(pxd::FighterStatus::SpecialTournament);
+                fighterToHoldCrown->MutableProto().set_specialtournamentinstanceid(specFreshEntry->GetId());
+                fighterToHoldCrown.reset();               
+            }
+        }                
+    }
+    
+    GlobalData gd(db);
+    
+    int64_t currentTime = ctx.Timestamp();
+    int64_t lastTournamentTime = gd.GetLastTournamentTime();
+    int64_t timeDiff = currentTime - lastTournamentTime;
+    
+    if(timeDiff > 25 * 60 * 60)
+    {
+       needToProcess = true;
+    }
+    
+    if(needToProcess)
+    {
+       /** We need to resolved all the special tournaments
+           Usual rules apply, plus defender gets 3 points initially
+           for holding the crown. Also, if several participants wins,
+           one with more points gets to be the be crown holder. If we
+           has a draw, crown holder always wins, and between players,
+           we decide with a random dice drop then, which should be 
+           extremely rare case, so does not matter too much **/
+        
+        
+    }
+}
+
 void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random& rnd)
 {
     TournamentTable tournamentsDatabase(db);
@@ -1342,9 +1418,13 @@ PXLogic::UpdateState (Database& db, xaya::Random& rnd,
       is already off and we need to de-lest it automatically*/
   CheckFightersForSale(db, ctx);
   
-  /** We process tournaments lastly, to make sure participiant count updates properly
+  /** We process tournaments almost lastly, to make sure participiant count updates properly
   */
   ProcessTournaments(db, ctx, rnd);   
+  
+  /** Finally, we see if we need to resolve our special tournament */
+
+  ProcessSpecialTournaments(db, ctx, rnd);     
 
 #ifdef ENABLE_SLOW_ASSERTS
   ValidateStateSlow (db, ctx);
@@ -1366,9 +1446,9 @@ PXLogic::GetInitialStateBlock (unsigned& height,
   switch (chain)
     {
     case xaya::Chain::MAIN:
-      height = 3'635'984;
+      height = 3'939'758;
       hashHex
-          = "4148dd9c0cd1adfc9e60c4f0ac0005f9ef69c343dc272fb8e5452c1df08dcb60";
+          = "7e3871c0d2ab89b7ef27a2c8e4e95b2ae9cae33c9245574fd110aa5b77f68c74";
       break;
 
     case xaya::Chain::TEST:
@@ -1395,6 +1475,9 @@ PXLogic::InitialiseState (xaya::SQLiteDatabase& db)
 
   MoneySupply ms(dbObj);
   ms.InitialiseDatabase ();
+  
+  GlobalData gd(dbObj);
+  gd.InitialiseDatabase ();  
 
   /* The initialisation uses up some auto IDs, namely for placed buildings.
      We start "regular" IDs at a later value to avoid shifting them always

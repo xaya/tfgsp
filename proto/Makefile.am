@@ -15,6 +15,7 @@ ROCONFIG_TEXT_PROTOS = \
   roconfig/goodybundle.pb.text \
   roconfig/sweetenerblueprint.pb.text \
   roconfig/tournamentblueprint.pb.text \
+  roconfig/specialtournamentblueprint.pb.text \
   roconfig/testnet.pb.text
 
 BUILT_SOURCES = \
@@ -45,6 +46,7 @@ PROTOS = \
   goody_bundle.proto \
   sweetener_blueprint.proto \
   tournament_blueprint.proto \
+  specialtournament_blueprint.proto \
   xaya_player.proto \
   ongoing.proto \
   fighter.proto

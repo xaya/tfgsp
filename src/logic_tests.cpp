@@ -391,7 +391,7 @@ TEST_F (ValidateStateTests, UnitTestExpeditionFailsOnMainNet)
   ft = tbl3.GetById(2, ctx.RoConfig());
   ft.reset();
   
-  EXPECT_EQ (tbl2.CountForOwner(""), 2);    
+  EXPECT_EQ (tbl2.CountForOwner(""), 44);    
 }
 
 TEST_F (ValidateStateTests, GeneratedRecipeMakeSureItWorks)
@@ -418,7 +418,7 @@ TEST_F (ValidateStateTests, GeneratedRecipeMakeSureItWorks)
   ft = tbl3.GetById(2, ctx.RoConfig());
   ft.reset();
   
-  EXPECT_EQ (tbl2.CountForOwner(""), 3);
+  EXPECT_EQ (tbl2.CountForOwner(""), 45);
   auto res = tbl2.QueryForOwner("");
   ASSERT_TRUE (res.Step ());
   ASSERT_TRUE (res.Step ());
@@ -643,7 +643,7 @@ TEST_F (ValidateStateTests, ClaimRewardsTestAllRewardTypesBeingAwardedProperly)
   ft = tbl3.GetById(4, ctx.RoConfig());
   ft.reset();
   
-  EXPECT_EQ (tbl2.CountForOwner(""), 3);
+  EXPECT_EQ (tbl2.CountForOwner(""), 45);
   auto res = tbl2.QueryForOwner("");
   ASSERT_TRUE (res.Step ());
   ASSERT_TRUE (res.Step ());
@@ -685,7 +685,7 @@ auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
   ft = tbl3.GetById(4, ctx.RoConfig());
   ft.reset();
   
-  EXPECT_EQ (tbl2.CountForOwner(""), 3);
+  EXPECT_EQ (tbl2.CountForOwner(""), 45);
   auto res = tbl2.QueryForOwner("");
   ASSERT_TRUE (res.Step ());
   ASSERT_TRUE (res.Step ());
@@ -1252,7 +1252,7 @@ TEST_F (ValidateStateTests, RatingSweetnessUpgrades)
   }
   
   ftA = tbl3.GetById(ftA1id, ctx.RoConfig());
-  EXPECT_EQ (ftA->GetProto().rating(), 1127);
+  EXPECT_EQ (ftA->GetProto().rating(), 1143);
   EXPECT_EQ (ftA->GetProto().sweetness(), (int)pxd::Sweetness::Bittersweet);
   ftA.reset();  
 }
