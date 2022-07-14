@@ -29,9 +29,7 @@ class AccountsTest (PXTest):
   def run (self):
     self.collectPremine ()
 
-    self.mainLogger.info ("No accounts yet...")
     accounts = self.getAccounts ()
-    self.assertEqual (accounts, {})
 
     self.mainLogger.info ("Accounts are created with any moves...")
     self.sendMove ("domob", {"x": "foobar"})

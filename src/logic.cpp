@@ -21,6 +21,7 @@
 #include <xayautil/hash.hpp>
 #include "logic.hpp"
 #include "database/reward.hpp"
+#include "database/recipe.hpp"
 #include "database/globaldata.hpp"
 #include "database/specialtournament.hpp"
 
@@ -146,7 +147,7 @@ std::vector<uint32_t> PXLogic::GenerateActivityReward(const uint32_t fighterID, 
       
       if((RewardType)(int)rw.type() == RewardType::GeneratedRecipe)
       {
-          newReward->MutableProto().set_generatedrecipeid(pxd::RecipeInstance::Generate((pxd::Quality)(int)rw.generatedrecipequality(), ctx.RoConfig(), rnd, db));                      
+          newReward->MutableProto().set_generatedrecipeid(pxd::RecipeInstance::Generate((pxd::Quality)(int)rw.generatedrecipequality(), ctx.RoConfig(), rnd, db, ""));                      
           iDS.push_back(newReward->GetId());
           
           LOG (WARNING) << "GeneratedRecipe reward generated";
@@ -863,6 +864,7 @@ void PXLogic::ProcessSpecialTournaments(Database& db, const Context& ctx, xaya::
     }
     
     SpecialTournamentTable specialTournamentsDatabase(db);
+    XayaPlayersTable xayaplayers(db);
     
     if(totalFightersInSpecialTournament == 0)
     {
@@ -875,17 +877,29 @@ void PXLogic::ProcessSpecialTournaments(Database& db, const Context& ctx, xaya::
         for(int32_t tTier = 1; tTier < 8; tTier++)
         {
             auto specFreshEntry = specialTournamentsDatabase.CreateNew(tTier, ctx.RoConfig());
+            int idSpt = specFreshEntry->GetId();
             
+            
+            std::ostringstream s;
+            s << "xayatf" << tTier;
+            std::string ownerName(s.str());            
+           
+            xayaplayers.CreateNew (ownerName, ctx.RoConfig(), rnd);
+
             for(int32_t nTreate = 0; nTreate < 6; nTreate++)
             {
-                const auto id0 = pxd::RecipeInstance::Generate(qualities[tTier-1], ctx.RoConfig(), rnd, db);
-                std::string fName = "xayatf" + tTier;
-                
-                auto fighterToHoldCrown = fighters.CreateNew (fName, id0, ctx.RoConfig (), rnd);
+                const auto id0 = pxd::RecipeInstance::Generate(qualities[tTier-1], ctx.RoConfig(), rnd, db, ownerName);
+
+                auto fighterToHoldCrown = fighters.CreateNew (ownerName, id0, ctx.RoConfig (), rnd);
                 fighterToHoldCrown->SetStatus(pxd::FighterStatus::SpecialTournament);
-                fighterToHoldCrown->MutableProto().set_specialtournamentinstanceid(specFreshEntry->GetId());
-                fighterToHoldCrown.reset();               
+                fighterToHoldCrown->MutableProto().set_specialtournamentinstanceid(idSpt);
+                fighterToHoldCrown->MutableProto().set_specialtournamentstatus((int)pxd::SpecialTournamentStatus::Listed);
+                fighterToHoldCrown.reset();          
             }
+            
+            specFreshEntry->MutableProto().set_crownholder(ownerName);
+            specFreshEntry->MutableProto().set_state((int)pxd::SpecialTournamentState::Listed); 
+            specFreshEntry.reset();
         }                
     }
     
@@ -895,23 +909,531 @@ void PXLogic::ProcessSpecialTournaments(Database& db, const Context& ctx, xaya::
     int64_t lastTournamentTime = gd.GetLastTournamentTime();
     int64_t timeDiff = currentTime - lastTournamentTime;
     
-    if(timeDiff > 25 * 60 * 60)
+    int32_t timeTreshhold = 25 * 60 * 60; // !25 hours
+    xaya::Chain chain = ctx.Chain();
+    
+    if(chain == xaya::Chain::REGTEST)
+    {
+       timeTreshhold = 300;  
+    }
+
+    if(timeDiff > timeTreshhold)
     {
        needToProcess = true;
     }
     
     if(needToProcess)
     {
-       /** We need to resolved all the special tournaments
-           Usual rules apply, plus defender gets 3 points initially
-           for holding the crown. Also, if several participants wins,
-           one with more points gets to be the be crown holder. If we
-           has a draw, crown holder always wins, and between players,
-           we decide with a random dice drop then, which should be 
-           extremely rare case, so does not matter too much **/
+        LOG (WARNING) << "Solving special tournament";
         
+        /** We need to resolved all the special tournaments
+        Usual rules apply, plus defender gets 3 points initially
+        for holding the crown. Also, if several participants wins,
+        one with more points gets to be the be crown holder. If we
+        has a draw, crown holder always wins, and between players,
+        we decide with a random dice drop then, which should be 
+        extremely rare case, so does not matter too much **/
+               
+        // We want to distribute calculations to avoid clogging the blockData
+        // But lets make sure its not going to take more then 1 hour maximum
         
+        int32_t totalFightsToProcess  = totalFightersInSpecialTournament / 6;
+        int32_t fightsPerBlock = 100;
+        int32_t totalBlocks = totalFightsToProcess / 100;
+        
+        if(totalBlocks > 120)
+        {
+            fightsPerBlock = totalFightsToProcess / 120;
+        }
+        
+        int32_t fightsCalculatedThisBlock = 0;
+        
+        auto resTourmnts = specialTournamentsDatabase.QueryAll ();
+        bool tryAndStep2 = resTourmnts.Step();
+        while (tryAndStep2)
+        {
+          auto trm = specialTournamentsDatabase.GetFromResult (resTourmnts, ctx.RoConfig ());  
+          trm->MutableProto().set_state((int)pxd::SpecialTournamentState::Calculating);    
+          int64_t ID = trm->GetId();          
+
+          auto res3 = fighters.QueryAll ();
+          bool tryAndStep3 = res3.Step();
+          
+          std::map<std::string, std::vector<int64_t>> fightersInThisTournament; 
+          
+          std::string crownHolder = trm->GetProto().crownholder();
+          std::vector<int64_t> crownHolderFighters;
+          
+          trm->MutableProto().clear_lastdaymatchresults();
+          
+          //Collect figters participating in
+          while (tryAndStep3)
+          {
+              auto fghtr = fighters.GetFromResult (res3, ctx.RoConfig ());  
+              
+              if((pxd::FighterStatus)(int)fghtr->GetStatus() == pxd::FighterStatus::SpecialTournament)
+              {
+                if(fghtr->MutableProto().specialtournamentinstanceid() == ID)
+                {
+                  if((pxd::SpecialTournamentStatus)(int)fghtr->GetProto().specialtournamentstatus() == pxd::SpecialTournamentStatus::Listed)
+                  { 
+                      std::string fOwner = fghtr->GetOwner();
+                      
+                      if(fOwner != crownHolder)
+                      {                
+                        if (fightersInThisTournament.find(fOwner) == fightersInThisTournament.end())
+                        {
+                          std::vector<int64_t> newTeam;
+                          newTeam.push_back(fghtr->GetId());                      
+                          fightersInThisTournament.insert(std::pair<std::string, std::vector<int64_t>>(fOwner, newTeam));  
+                        }
+                        else
+                        {
+                          fightersInThisTournament[fOwner].push_back(fghtr->GetId());
+                        } 
+                      }
+                      else
+                      {
+                          crownHolderFighters.push_back(fghtr->GetId());
+                      }
+                  }
+                }
+              }            
+              
+              fghtr.reset();
+              tryAndStep3 = res3.Step();
+          }         
+
+          for(auto& nextFight : fightersInThisTournament)
+          {
+              proto::SpecialTournamentMathResult* matchResult = trm->MutableProto().add_lastdaymatchresults(); 
+              int64_t scoreAttacker = 0;
+              int64_t scoreDefender = 0;
+              
+              ResolveSpecialTournamentFight(nextFight.first, nextFight.second, crownHolder, crownHolderFighters, ID, fighters, ctx, rnd, scoreAttacker, scoreDefender);
+              
+              matchResult->set_attacker(nextFight.first);
+              matchResult->set_attackerpoints(scoreAttacker);
+              matchResult->set_defender(crownHolder);
+              matchResult->set_defenderpoints(scoreDefender);        
+              
+              fightsCalculatedThisBlock++;
+              totalFightsToProcess--;
+              
+              if(fightsCalculatedThisBlock > fightsPerBlock)
+              {
+                  break;
+              }
+          }
+          
+          trm.reset();
+          
+          if(fightsCalculatedThisBlock > fightsPerBlock)
+          {
+              break;
+          }          
+          
+          tryAndStep2 = resTourmnts.Step ();            
+        }
+                                
+        // Lets see, if we have every fight processed at this point; If so, lets conclude the tournaments,
+        // set the new crown holders, reset all fighter params and tournament timer
+        
+        LOG (WARNING) << "totalFightsToProcess" << totalFightsToProcess;
+        
+        if(totalFightsToProcess == 0)
+        {
+          gd.SetLastTournamentTime(currentTime);
+                      
+          auto resTourmntsX = specialTournamentsDatabase.QueryAll ();
+          bool tryAndStep2X = resTourmntsX.Step();
+          while (tryAndStep2X)
+          {
+            auto trm2 = specialTournamentsDatabase.GetFromResult (resTourmntsX, ctx.RoConfig ()); 
+            int64_t ID = trm2->GetId();   
+            
+            trm2->MutableProto().set_state((int)pxd::SpecialTournamentState::Listed);
+            
+            auto res3X = fighters.QueryAll ();
+            bool tryAndStep3X = res3X.Step();
+            std::map<std::string, int64_t> pointsInThisTournament;  
+            std::string crownHolder = trm2->GetProto().crownholder();
+            
+            while (tryAndStep3X)
+            {
+              auto fghtrX = fighters.GetFromResult (res3X, ctx.RoConfig ());  
+              
+              if((pxd::FighterStatus)(int)fghtrX->GetStatus() == pxd::FighterStatus::SpecialTournament)
+              {
+                if(fghtrX->MutableProto().specialtournamentinstanceid() == ID)
+                {      
+                  if((pxd::SpecialTournamentStatus)(int)fghtrX->GetProto().specialtournamentstatus() == pxd::SpecialTournamentStatus::Won)
+                  {
+                    std::string fOwner = fghtrX->GetOwner(); 
+
+                    if(fOwner != crownHolder)
+                    {
+                      if (pointsInThisTournament.find(fOwner) == pointsInThisTournament.end())
+                      {                    
+                        pointsInThisTournament.insert(std::pair<std::string, int64_t>(fOwner, fghtrX->GetProto().tournamentpoints()));  
+                      }
+                      else
+                      {
+                        pointsInThisTournament[fOwner] += fghtrX->GetProto().tournamentpoints();
+                      }         
+                    }                    
+                  }
+                  
+                }
+              }
+              
+              fghtrX.reset();
+              tryAndStep3X = res3X.Step();                 
+            }              
+            
+            std::vector<std::string> winnerCandidates;
+            int32_t lastBigger = -1;
+            
+            for(auto& winner: pointsInThisTournament)
+            {
+                if(winner.second > lastBigger)
+                {
+                    winnerCandidates.empty();
+                    winnerCandidates.push_back(winner.first);
+                    lastBigger = winner.second;
+                }
+                else if(winner.second == lastBigger)
+                {
+                  winnerCandidates.push_back(winner.first);
+                }                    
+            }
+            
+            //Ok, so we have new crown holder
+            std::string newCrownHolder = "";
+            if(winnerCandidates.size() > 0)
+            {
+                if(winnerCandidates.size() == 1)
+                {
+                    newCrownHolder = winnerCandidates[0];
+                }
+                else
+                {
+                   newCrownHolder = winnerCandidates[rnd.NextInt(winnerCandidates.size())];
+                }
+                
+                trm2->MutableProto().set_crownholder(newCrownHolder);
+            }
+             
+            trm2.reset();
+            tryAndStep2X = resTourmntsX.Step ();    
+          }
+        }
+
+        //resetfighters flags, match results populate before in fights scirmishes
+        
+        auto allFighers = fighters.QueryAll ();
+        bool allFighersStep = allFighers.Step();
+        
+        while (allFighersStep)
+        {
+          auto fghtrR = fighters.GetFromResult (allFighers, ctx.RoConfig ());  
+          
+          if((pxd::FighterStatus)(int)fghtrR->GetStatus() == pxd::FighterStatus::SpecialTournament)
+          {
+              auto trm = specialTournamentsDatabase.GetById (fghtrR->GetProto().specialtournamentinstanceid(), ctx.RoConfig ()); 
+              
+              if(fghtrR->GetOwner() != trm->GetProto().crownholder())
+              {
+                fghtrR->MutableProto().set_specialtournamentinstanceid(0);
+                fghtrR->SetStatus(pxd::FighterStatus::Available);
+              }
+              trm.reset();
+          }
+        
+          fghtrR.reset();
+          allFighersStep = allFighers.Step ();     
+        } 
     }
+}
+
+void PXLogic::ResolveSpecialTournamentFight(std::string attackerName, std::vector<int64_t> attackerTeam, std::string defenderName, std::vector<int64_t> defenderTeam, int64_t ID, FighterTable& fighters, const Context& ctx, xaya::Random& rnd, int64_t& scoreAttacker, int64_t& scoreDefender)
+{ 
+    std::map<std::string, std::vector<int64_t>> teams;
+    teams.insert(std::pair<std::string, std::vector<int64_t>>(attackerName, attackerTeam));  
+    teams.insert(std::pair<std::string, std::vector<int64_t>>(defenderName, defenderTeam));
+    
+    std::vector<std::pair<uint32_t,uint32_t>> fighterPairs;
+    for(auto element1 = teams.begin() ; element1 != teams.end() ; ++element1) 
+    {
+        for(auto element2 = std::next(element1) ; element2 != teams.end() ; ++element2) 
+        {                    
+            for(long long unsigned int e1 = 0; e1 < element1->second.size(); e1++)
+            {
+              for(long long unsigned int e2 = 0; e2 < element2->second.size(); e2++)
+              {
+                  std::pair<uint32_t,uint32_t>  newPair= std::make_pair(element1->second[e1], element2->second[e2]);
+                  fighterPairs.push_back(newPair);
+              }
+            }                      
+        }
+    }    
+    
+    if(attackerTeam.size() != 6)
+    {
+        LOG (ERROR) << "! Fatal error, team 1 size is : " << attackerTeam.size();
+        return;
+    }
+    
+    if(defenderTeam.size() != 6)
+    {
+        LOG (ERROR) << "! Fatal error, team 2 size is : " << defenderTeam.size();
+        return;
+    }    
+    
+    std::map<std::string, fpm::fixed_24_8> participatingPlayerTotalScore;
+    participatingPlayerTotalScore.insert(std::pair<std::string, fpm::fixed_24_8>(attackerName, fpm::fixed_24_8(0)));
+    participatingPlayerTotalScore.insert(std::pair<std::string, fpm::fixed_24_8>(defenderName, fpm::fixed_24_8(3))); // Bonus 3 points for crown holder
+    
+    std::map<unsigned int, pxd::proto::TournamentResult*> empty;
+    
+    for(auto fPair: fighterPairs)
+    {
+       ProcessFighterPair(fPair.first, fPair.second, true, empty, participatingPlayerTotalScore, fighters, ctx, rnd);
+    }
+    
+    auto res4 = fighters.QueryAll ();
+    bool tryAndStep4 = res4.Step();
+    
+    while (tryAndStep4)
+    {
+      auto fghtr = fighters.GetFromResult (res4, ctx.RoConfig ());  
+      
+      if((pxd::FighterStatus)(int)fghtr->GetStatus() == pxd::FighterStatus::SpecialTournament)
+      {
+        if(fghtr->MutableProto().specialtournamentinstanceid() == ID)
+        {
+          if((pxd::SpecialTournamentStatus)(int)fghtr->GetProto().specialtournamentstatus() == pxd::SpecialTournamentStatus::Listed)
+          { 
+              std::string fOwner = fghtr->GetOwner();
+              
+              if(fOwner == attackerName)
+              {
+                 if(participatingPlayerTotalScore[attackerName] > participatingPlayerTotalScore[defenderName])
+                 {
+                  fghtr->MutableProto().set_specialtournamentstatus((int)pxd::SpecialTournamentStatus::Won);
+                  fghtr->MutableProto().set_tournamentpoints((int)(participatingPlayerTotalScore[attackerName] * 10));
+                 }
+                 else
+                 {
+                  fghtr->MutableProto().set_specialtournamentstatus((int)pxd::SpecialTournamentStatus::Lost);
+                  fghtr->MutableProto().set_tournamentpoints(0);                     
+                 }
+                 
+                 fghtr->MutableProto().set_lasttournamenttime(ctx.Timestamp());
+              }
+          }
+        }
+      }            
+      
+      scoreAttacker = (int64_t)(participatingPlayerTotalScore[attackerName] * 100);
+      scoreDefender = (int64_t)(participatingPlayerTotalScore[defenderName] * 100);
+      
+      fghtr.reset();
+      tryAndStep4 = res4.Step();
+    }                     
+}
+
+void PXLogic::ProcessFighterPair(int64_t fighter1, int64_t fighter2, bool isSpecial, std::map<uint32_t, proto::TournamentResult*>& fighterResults, std::map<std::string, fpm::fixed_24_8>& participatingPlayerTotalScore, FighterTable& fighters, const Context& ctx, xaya::Random& rnd)
+{
+   auto rhs = fighters.GetById (fighter1, ctx.RoConfig ()); 
+   auto lhs = fighters.GetById (fighter2, ctx.RoConfig ()); 
+   
+   std::set<std::string> rhsMovesUnshuffled;
+   std::set<std::string> lhsMovesUnshuffled;
+   
+   for(auto move: rhs->GetProto().moves())
+   {
+       rhsMovesUnshuffled.insert(move);
+   }
+   
+   for(auto move: lhs->GetProto().moves())
+   {
+       lhsMovesUnshuffled.insert(move);
+   }                 
+   
+   //Random shuffle goes here
+   
+   std::vector<std::string> rhsMoves;
+   std::vector<std::string> lhsMoves;                 
+   
+   while(rhsMovesUnshuffled.size() > 0)
+   {
+      auto iter = rhsMovesUnshuffled.begin();
+      std::advance(iter, rnd.NextInt(rhsMovesUnshuffled.size()));
+      std::string randomMove = *iter;
+      rhsMoves.push_back(randomMove);
+      rhsMovesUnshuffled.erase(randomMove);
+   }
+   
+   while(lhsMovesUnshuffled.size() > 0)
+   {
+      auto iter = lhsMovesUnshuffled.begin();
+      std::advance(iter, rnd.NextInt(lhsMovesUnshuffled.size()));
+      std::string randomMove = *iter;
+      lhsMoves.push_back(randomMove);
+      lhsMovesUnshuffled.erase(randomMove);
+   }    
+
+   fpm::fixed_24_8 rScore = fpm::fixed_24_8(0);
+   fpm::fixed_24_8 lScore = fpm::fixed_24_8(0);
+   
+   int count = rhsMoves.size();
+   
+   if(lhsMoves.size() < rhsMoves.size())
+   {
+       count = lhsMoves.size();
+       rScore += (rhsMoves.size() - lhsMoves.size())  * 1;
+   }
+   else
+   {
+      lScore += (lhsMoves.size() - rhsMoves.size())  * 1; 
+   }
+   
+   for(int g = 0; g < count; g++)
+   {
+       std::string rmove = rhsMoves[g];
+       std::string lmove = lhsMoves[g];
+       
+       fpm::fixed_24_8 result = ExecuteOneMoveAgainstAnother(ctx, lmove, rmove);
+
+       rScore += result;
+       lScore += 1 - result;
+   }
+   
+   uint32_t winner  = 0;
+   if(rScore == lScore)
+   {
+       winner = 1;
+   }
+   else if(rScore > lScore)
+   {
+       winner = 2;
+   }
+
+   //Rating and rewards calculation starts now
+   
+   fpm::fixed_24_8 ratingA = fpm::fixed_24_8(lhs->GetProto().rating());
+   fpm::fixed_24_8 ratingB = fpm::fixed_24_8(rhs->GetProto().rating());                 
+
+   pxd::MatchResultType lwin = pxd::MatchResultType::Win;
+   pxd::MatchResultType rwin = pxd::MatchResultType::Lose;
+   
+   fpm::fixed_24_8 scoreA = fpm::fixed_24_8(0);
+   fpm::fixed_24_8 scoreB = fpm::fixed_24_8(0);
+   
+   if (participatingPlayerTotalScore.find(lhs->GetOwner()) == participatingPlayerTotalScore.end())
+   {
+       participatingPlayerTotalScore.insert(std::pair<std::string, fpm::fixed_24_8>(lhs->GetOwner(), fpm::fixed_24_8(0)));
+   }
+   
+   if (participatingPlayerTotalScore.find(rhs->GetOwner()) == participatingPlayerTotalScore.end())
+   {
+       participatingPlayerTotalScore.insert(std::pair<std::string, fpm::fixed_24_8>(rhs->GetOwner(), fpm::fixed_24_8(0)));
+   }                 
+   
+   switch (winner)  
+   {
+      case 0:
+          lwin = pxd::MatchResultType::Win;
+          rwin = pxd::MatchResultType::Lose;
+          participatingPlayerTotalScore[lhs->GetOwner()] += 1;
+          scoreA = fpm::fixed_24_8(1);
+          
+          if(isSpecial)
+          {
+            fighterResults[fighter1]->set_losses(fighterResults[fighter1]->losses() + 1);
+            fighterResults[fighter2]->set_wins(fighterResults[fighter2]->wins() + 1);
+          }
+
+          break;
+      case 1:
+          lwin = pxd::MatchResultType::Draw;
+          rwin = pxd::MatchResultType::Draw;
+          scoreA = fpm::fixed_24_8(0.5);
+          scoreB = fpm::fixed_24_8(0.5);
+          participatingPlayerTotalScore[lhs->GetOwner()] += fpm::fixed_24_8(0.5);
+          participatingPlayerTotalScore[rhs->GetOwner()] += fpm::fixed_24_8(0.5);
+          
+          if(isSpecial)
+          {
+            fighterResults[fighter2]->set_draws(fighterResults[fighter2]->draws() + 1);
+            fighterResults[fighter2]->set_draws(fighterResults[fighter2]->draws() + 1);  
+          }
+   
+          break;
+      case 2:
+          lwin = pxd::MatchResultType::Lose;
+          rwin = pxd::MatchResultType::Win;
+          scoreB = fpm::fixed_24_8(1);
+          participatingPlayerTotalScore[rhs->GetOwner()] += fpm::fixed_24_8(0.5);
+          
+          if(isSpecial)
+          {
+            fighterResults[fighter2]->set_losses(fighterResults[fighter2]->losses() + 1);
+            fighterResults[fighter1]->set_wins(fighterResults[fighter1]->wins() + 1);
+          }   
+    
+          break;
+   }                 
+
+   fpm::fixed_24_8 expectedA = fpm::fixed_24_8(0);
+   fpm::fixed_24_8 expectedB = fpm::fixed_24_8(0);
+   fpm::fixed_24_8 newRatingA = fpm::fixed_24_8(0);
+   fpm::fixed_24_8 newRatingB = fpm::fixed_24_8(0);
+
+   CreateEloRating(ctx, ratingA, ratingB, scoreA, scoreB, expectedA, expectedB, newRatingA, newRatingB);
+
+   fpm::fixed_24_8 lRatingDelta = fpm::fixed_24_8(lhs->GetProto().rating());
+   fpm::fixed_24_8 rRatingDelta = fpm::fixed_24_8(rhs->GetProto().rating());
+   
+   uint32_t newRatingForLhs = (uint32_t)std::max(0, (int)newRatingA);
+   uint32_t newRatingForRhs = (uint32_t)std::max(0, (int)newRatingB);
+   //ratings unit test pls
+   lhs->MutableProto().set_rating(newRatingForLhs);
+   rhs->MutableProto().set_rating(newRatingForRhs);
+   
+   lRatingDelta = lhs->GetProto().rating() - lRatingDelta;
+   rRatingDelta = rhs->GetProto().rating() - rRatingDelta;
+   
+   lhs->MutableProto().set_totalmatches(lhs->GetProto().totalmatches() + 1);
+   rhs->MutableProto().set_totalmatches(rhs->GetProto().totalmatches() + 1);
+   
+   if(lwin == pxd::MatchResultType::Win)
+   {
+     lhs->MutableProto().set_matcheswon(lhs->GetProto().matcheswon() + 1);  
+   }
+   if(lwin == pxd::MatchResultType::Lose)
+   {
+     lhs->MutableProto().set_matcheslost(lhs->GetProto().matcheslost() + 1);  
+   }                 
+   
+   if(rwin == pxd::MatchResultType::Win)
+   {
+     rhs->MutableProto().set_matcheswon(rhs->GetProto().matcheswon() + 1);  
+   }
+   if(rwin == pxd::MatchResultType::Lose)
+   {
+     rhs->MutableProto().set_matcheslost(rhs->GetProto().matcheslost() + 1);  
+   }             
+
+   if(isSpecial)
+   {
+    fighterResults[fighter2]->set_ratingdelta(fighterResults[fighter2]->ratingdelta() + (int)lRatingDelta);
+    fighterResults[fighter1]->set_ratingdelta(fighterResults[fighter1]->ratingdelta() + (int)rRatingDelta);  
+   }   
+        
+   rhs.reset();
+   lhs.reset();    
 }
 
 void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random& rnd)
@@ -1035,180 +1557,7 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
               
               for(auto fPair: fighterPairs)
               {
-                 auto rhs = fighters.GetById (fPair.first, ctx.RoConfig ()); 
-                 auto lhs = fighters.GetById (fPair.second, ctx.RoConfig ()); 
-                 
-                 std::set<std::string> rhsMovesUnshuffled;
-                 std::set<std::string> lhsMovesUnshuffled;
-                 
-                 for(auto move: rhs->GetProto().moves())
-                 {
-                     rhsMovesUnshuffled.insert(move);
-                 }
-                 
-                 for(auto move: lhs->GetProto().moves())
-                 {
-                     lhsMovesUnshuffled.insert(move);
-                 }                 
-                 
-                 //Random shuffle goes here
-                 
-                 std::vector<std::string> rhsMoves;
-                 std::vector<std::string> lhsMoves;                 
-                 
-                 while(rhsMovesUnshuffled.size() > 0)
-                 {
-                    auto iter = rhsMovesUnshuffled.begin();
-                    std::advance(iter, rnd.NextInt(rhsMovesUnshuffled.size()));
-                    std::string randomMove = *iter;
-                    rhsMoves.push_back(randomMove);
-                    rhsMovesUnshuffled.erase(randomMove);
-                 }
-                 
-                 while(lhsMovesUnshuffled.size() > 0)
-                 {
-                    auto iter = lhsMovesUnshuffled.begin();
-                    std::advance(iter, rnd.NextInt(lhsMovesUnshuffled.size()));
-                    std::string randomMove = *iter;
-                    lhsMoves.push_back(randomMove);
-                    lhsMovesUnshuffled.erase(randomMove);
-                 }    
-
-                 fpm::fixed_24_8 rScore = fpm::fixed_24_8(0);
-                 fpm::fixed_24_8 lScore = fpm::fixed_24_8(0);
-                 
-                 int count = rhsMoves.size();
-                 
-                 if(lhsMoves.size() < rhsMoves.size())
-                 {
-                     count = lhsMoves.size();
-                     rScore += (rhsMoves.size() - lhsMoves.size())  * 1;
-                 }
-                 else
-                 {
-                    lScore += (lhsMoves.size() - rhsMoves.size())  * 1; 
-                 }
-                 
-                 for(int g = 0; g < count; g++)
-                 {
-                     std::string rmove = rhsMoves[g];
-                     std::string lmove = lhsMoves[g];
-                     
-                     fpm::fixed_24_8 result = ExecuteOneMoveAgainstAnother(ctx, lmove, rmove);
-
-                     rScore += result;
-                     lScore += 1 - result;
-                 }
-                 
-                 uint32_t winner  = 0;
-                 if(rScore == lScore)
-                 {
-                     winner = 1;
-                 }
-                 else if(rScore > lScore)
-                 {
-                     winner = 2;
-                 }
-
-                 //Rating and rewards calculation starts now
-                 
-                 fpm::fixed_24_8 ratingA = fpm::fixed_24_8(lhs->GetProto().rating());
-                 fpm::fixed_24_8 ratingB = fpm::fixed_24_8(rhs->GetProto().rating());                 
-                
-                 pxd::MatchResultType lwin = pxd::MatchResultType::Win;
-                 pxd::MatchResultType rwin = pxd::MatchResultType::Lose;
-                 
-                 fpm::fixed_24_8 scoreA = fpm::fixed_24_8(0);
-                 fpm::fixed_24_8 scoreB = fpm::fixed_24_8(0);
-                 
-                 if (participatingPlayerTotalScore.find(lhs->GetOwner()) == participatingPlayerTotalScore.end())
-                 {
-                     participatingPlayerTotalScore.insert(std::pair<std::string, fpm::fixed_24_8>(lhs->GetOwner(), fpm::fixed_24_8(0)));
-                 }
-                 
-                 if (participatingPlayerTotalScore.find(rhs->GetOwner()) == participatingPlayerTotalScore.end())
-                 {
-                     participatingPlayerTotalScore.insert(std::pair<std::string, fpm::fixed_24_8>(rhs->GetOwner(), fpm::fixed_24_8(0)));
-                 }                 
-                 
-                 switch (winner)  
-                 {
-                    case 0:
-                        lwin = pxd::MatchResultType::Win;
-                        rwin = pxd::MatchResultType::Lose;
-                        participatingPlayerTotalScore[lhs->GetOwner()] += 1;
-                        scoreA = fpm::fixed_24_8(1);
-                        
-                        fighterResults[fPair.first]->set_losses(fighterResults[fPair.first]->losses() + 1);
-                        fighterResults[fPair.second]->set_wins(fighterResults[fPair.second]->wins() + 1);
-                        break;
-                    case 1:
-                        lwin = pxd::MatchResultType::Draw;
-                        rwin = pxd::MatchResultType::Draw;
-                        scoreA = fpm::fixed_24_8(0.5);
-                        scoreB = fpm::fixed_24_8(0.5);
-                        participatingPlayerTotalScore[lhs->GetOwner()] += fpm::fixed_24_8(0.5);
-                        participatingPlayerTotalScore[rhs->GetOwner()] += fpm::fixed_24_8(0.5);
-                        
-                        fighterResults[fPair.first]->set_draws(fighterResults[fPair.first]->draws() + 1);
-                        fighterResults[fPair.second]->set_draws(fighterResults[fPair.second]->draws() + 1);                        
-                        break;
-                    case 2:
-                        lwin = pxd::MatchResultType::Lose;
-                        rwin = pxd::MatchResultType::Win;
-                        scoreB = fpm::fixed_24_8(1);
-                        participatingPlayerTotalScore[rhs->GetOwner()] += fpm::fixed_24_8(0.5);
-                        
-                        fighterResults[fPair.second]->set_losses(fighterResults[fPair.second]->losses() + 1);
-                        fighterResults[fPair.first]->set_wins(fighterResults[fPair.first]->wins() + 1);                        
-                        break;
-                 }                 
-
-                 fpm::fixed_24_8 expectedA = fpm::fixed_24_8(0);
-                 fpm::fixed_24_8 expectedB = fpm::fixed_24_8(0);
-                 fpm::fixed_24_8 newRatingA = fpm::fixed_24_8(0);
-                 fpm::fixed_24_8 newRatingB = fpm::fixed_24_8(0);
-
-                 CreateEloRating(ctx, ratingA, ratingB, scoreA, scoreB, expectedA, expectedB, newRatingA, newRatingB);
-
-                 fpm::fixed_24_8 lRatingDelta = fpm::fixed_24_8(lhs->GetProto().rating());
-                 fpm::fixed_24_8 rRatingDelta = fpm::fixed_24_8(rhs->GetProto().rating());
-                 
-                 uint32_t newRatingForLhs = (uint32_t)std::max(0, (int)newRatingA);
-                 uint32_t newRatingForRhs = (uint32_t)std::max(0, (int)newRatingB);
-                 //ratings unit test pls
-                 lhs->MutableProto().set_rating(newRatingForLhs);
-                 rhs->MutableProto().set_rating(newRatingForRhs);
-                 
-                 lRatingDelta = lhs->GetProto().rating() - lRatingDelta;
-                 rRatingDelta = rhs->GetProto().rating() - rRatingDelta;
-                 
-                 lhs->MutableProto().set_totalmatches(lhs->GetProto().totalmatches() + 1);
-                 rhs->MutableProto().set_totalmatches(rhs->GetProto().totalmatches() + 1);
-                 
-                 if(lwin == pxd::MatchResultType::Win)
-                 {
-                   lhs->MutableProto().set_matcheswon(lhs->GetProto().matcheswon() + 1);  
-                 }
-                 if(lwin == pxd::MatchResultType::Lose)
-                 {
-                   lhs->MutableProto().set_matcheslost(lhs->GetProto().matcheslost() + 1);  
-                 }                 
-                 
-                 if(rwin == pxd::MatchResultType::Win)
-                 {
-                   rhs->MutableProto().set_matcheswon(rhs->GetProto().matcheswon() + 1);  
-                 }
-                 if(rwin == pxd::MatchResultType::Lose)
-                 {
-                   rhs->MutableProto().set_matcheslost(rhs->GetProto().matcheslost() + 1);  
-                 }             
-
-                 fighterResults[fPair.second]->set_ratingdelta(fighterResults[fPair.second]->ratingdelta() + (int)lRatingDelta);
-                 fighterResults[fPair.first]->set_ratingdelta(fighterResults[fPair.first]->ratingdelta() + (int)rRatingDelta);                                   
-                      
-                 rhs.reset();
-                 lhs.reset();
+                 ProcessFighterPair(fPair.first, fPair.second, false, fighterResults, participatingPlayerTotalScore, fighters, ctx, rnd);
               }
               
               std::string winnerName = "";

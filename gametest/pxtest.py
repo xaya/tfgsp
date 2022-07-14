@@ -73,7 +73,7 @@ class PXTest (XayaGameTest):
     name_update's will fail for some reason.
     """
 
-    for i in range (10):
+    for i in range (20):
       self.rpc.xaya.sendtoaddress (self.rpc.xaya.getnewaddress (), 100)
     self.generate (1)
 

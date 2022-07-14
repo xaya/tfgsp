@@ -20,14 +20,13 @@
 #define PXD_MOVEPROCESSOR_HPP
 
 #include "context.hpp"
-
-
 #include "proto/config.pb.h"
 
 #include "database/database.hpp"
 #include "database/xayaplayer.hpp"
 #include "database/fighter.hpp"
 #include "database/tournament.hpp"
+#include "database/specialtournament.hpp"
 #include "database/recipe.hpp"
 #include "database/reward.hpp"
 #include "database/moneysupply.hpp"
@@ -103,6 +102,9 @@ protected:
   
   /** Access handle tournaments database instances*/
   TournamentTable tournamentsTbl;     
+  
+  /** Access handle special tournaments database instances*/
+  SpecialTournamentTable specialTournamentsTbl;       
   
   explicit BaseMoveProcessor (Database& d, const Context& c);
 
@@ -202,10 +204,17 @@ protected:
   bool ParseExpeditionData(const XayaPlayer& a, const std::string& name, const Json::Value& expedition, pxd::proto::ExpeditionBlueprint& expeditionBlueprint, std::vector<int>& fightersIds, int32_t& duration, std::string& weHaveApplibeGoodyName);
  
    /**
-   * Tries to parse a move that send fighter on the tournament
+   * Tries to parse a move that send fighters on the tournament
    */ 
  
   bool ParseTournamentEntryData(const XayaPlayer& a, const std::string& name, const Json::Value& tournament, uint32_t& tournamentID, std::vector<uint32_t>& fighterIDS);
+ 
+   /**
+   * Tries to parse a move that send fighter on the special tournament
+   */ 
+ 
+  bool ParseSpecialTournamentEntryData(const XayaPlayer& a, const std::string& name, const Json::Value& tournament, uint32_t& tournamentID, std::vector<uint32_t>& fighterIDS);
+  
  
   /**
    * Tries to parse a move that deconstructs fighter
@@ -245,6 +254,12 @@ protected:
  
   bool ParseTournamentLeaveData(const XayaPlayer& a, const std::string& name, const Json::Value& tournament, uint32_t& tournamentID, std::vector<uint32_t>& fighterIDS);
      
+   /**
+   * Tries to parse a move that withdraws fighters from the special tournament
+   */ 
+ 
+  bool ParseSpecialTournamentLeaveData(const XayaPlayer& a, const std::string& name, const Json::Value& tournament, uint32_t& tournamentID, std::vector<uint32_t>& fighterIDS);
+          
    /**
    * Tries to parse a move that collects reward data
    */    
@@ -386,6 +401,16 @@ private:
   */    
   void MaybeLeaveTournament (const std::string& name, const Json::Value& tournament);    
   
+  /**
+  * Tries to send the fighters for the special tournament
+  */    
+  void MaybeEnterSpecialTournament (const std::string& name, const Json::Value& tournament);  
+  
+  /**
+  * Tries to withdraw the fighters from the special tournament
+  */    
+  void MaybeLeaveSpecialTournament (const std::string& name, const Json::Value& tournament);    
+  
    /**
    * Tries to update tutorial state even further on.
    */
@@ -407,9 +432,14 @@ private:
   void TryExpeditionAction (const std::string& name, const Json::Value& upd);
   
   /**
-   * Tries to process all kind of actions related to expeditions
+   * Tries to process all kind of actions related to tournaments
    */  
-  void TryTournamentAction (const std::string& name, const Json::Value& upd);  
+  void TryTournamentAction (const std::string& name, const Json::Value& upd);
+
+  /**
+   * Tries to process all kind of actions related to special tournaments
+   */  
+  void TrySpecialTournamentAction (const std::string& name, const Json::Value& upd);    
   
   /**
    * Tries to process all kind of actions related to fighters

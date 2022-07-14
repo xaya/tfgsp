@@ -39,7 +39,7 @@ namespace pxd
 
 BaseMoveProcessor::BaseMoveProcessor (Database& d,
                                       const Context& c)
-  : ctx(c), db(d), xayaplayers(db), recipeTbl(db), fighters(db), moneySupply(db), rewards(db), tournamentsTbl(db)
+  : ctx(c), db(d), xayaplayers(db), recipeTbl(db), fighters(db), moneySupply(db), rewards(db), tournamentsTbl(db), specialTournamentsTbl(db)
 {}
 
 bool
@@ -679,7 +679,10 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
   TryExpeditionAction (name, mv["exp"]);  
   
   /* We are trying all kind of tournament related actions*/
-  TryTournamentAction (name, mv["tm"]);   
+  TryTournamentAction (name, mv["tm"]);  
+
+  /* We are trying all kind of special tournament related actions*/
+  TrySpecialTournamentAction (name, mv["tms"]);     
 
   /* We are trying all kind of fighter related actions*/
   TryFighterAction (name, mv["f"]);     
@@ -820,6 +823,61 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     
     return true;
   }      
+  
+  bool BaseMoveProcessor::ParseSpecialTournamentLeaveData(const XayaPlayer& a, const std::string& name, const Json::Value& tournament, uint32_t& tournamentID, std::vector<uint32_t>& fighterIDS)
+  {
+    if (!tournament.isObject ())
+    {
+      VLOG (1) << "Tournament is not an object";
+      return false;
+    }
+
+    if(!tournament["tid"].isInt())
+    {
+      LOG (WARNING) << "tid is not an int";
+      return false;
+    }
+    
+    tournamentID = tournament["tid"].asInt();
+    
+    auto tournamentData = specialTournamentsTbl.GetById(tournamentID, ctx.RoConfig ());
+    
+    if(tournamentData == nullptr)
+    {
+      LOG (WARNING) << "Asking for non-existant special tournament with id: " << tournamentID;
+      return false;
+    }    
+    
+    auto res3 = fighters.QueryAll ();
+    bool tryAndStep3 = res3.Step();
+    
+    while (tryAndStep3)
+    {
+        auto fghtr = fighters.GetFromResult (res3, ctx.RoConfig ()); 
+        
+        if(fghtr->GetOwner() == name && fghtr->GetProto().specialtournamentinstanceid() == tournamentID)
+        {
+            fighterIDS.push_back(fghtr->GetId());
+        }
+        
+        fghtr.reset();
+        tryAndStep3 = res3.Step();        
+    }              
+    
+    if((pxd::SpecialTournamentState)(uint32_t)tournamentData->GetProto().state() != pxd::SpecialTournamentState::Listed)
+    {
+      LOG (WARNING) << "Asking to leave already calculating special tournament with id: " << tournamentID;
+      return false;        
+    }
+        
+    if(fighterIDS.size() != 6)
+    {
+      LOG (WARNING) << "Not all fighter are participating in the tournament with id: " << tournamentID;
+      return false;        
+    }
+
+    return true;
+  }    
   
   bool BaseMoveProcessor::ParseTournamentLeaveData(const XayaPlayer& a, const std::string& name, const Json::Value& tournament, uint32_t& tournamentID, std::vector<uint32_t>& fighterIDS)
   {
@@ -1200,6 +1258,123 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     return true;    
   }    
   
+  bool BaseMoveProcessor::ParseSpecialTournamentEntryData(const XayaPlayer& a, const std::string& name, const Json::Value& tournament, uint32_t& tournamentID, std::vector<uint32_t>& fighterIDS)
+  {
+    if (!tournament.isObject ())
+    {
+      VLOG (1) << "Special Tournament is not an object";
+      return false;
+    }
+
+    if(!tournament["tid"].isInt())
+    {
+      LOG (WARNING) << "tid is not an int";
+      return false;
+    }
+    
+    tournamentID = tournament["tid"].asInt();
+    
+    const auto& fghtrs = tournament["fc"];
+    if (!fghtrs.isArray ())
+    {
+      LOG (WARNING) << "Fighter is not array for tournament with id: " << tournamentID;
+      return false;
+    }
+    
+    auto tournamentData = specialTournamentsTbl.GetById(tournamentID, ctx.RoConfig ());
+    
+    for (const auto& ft : fghtrs)
+    {
+      if (!ft.isInt ())
+      {
+        LOG (WARNING) << "Fighter is not integer for tournament with id: " << tournamentID;
+        return false; 
+      }
+      
+      fighterIDS.push_back(ft.asInt());
+    }
+  
+    if(tournamentData == nullptr)
+    {
+      LOG (WARNING) << "Asking for non-existant special tournament with id: " << tournamentID;
+      return false;
+    }
+
+    if((pxd::SpecialTournamentState)(int)tournamentData->GetProto().state() != pxd::SpecialTournamentState::Listed)
+    {
+      LOG (WARNING) << "Special tournament is calculating, can not process move, tournament id is  " << tournamentID;
+      tournamentData.reset();
+      return false;
+    }
+    
+    if((int)fighterIDS.size() != 6)
+    {
+      LOG (WARNING) << "Tournament roster must be exactly 6 fighters, we got: " << fighterIDS.size();
+      tournamentData.reset();
+      return false;        
+    }    
+    
+    int32_t sizeBefore = fighterIDS.size();
+    
+    auto end = fighterIDS.end();
+    for (auto it = fighterIDS.begin(); it != end; ++it) {
+        end = std::remove(it + 1, end, *it);
+    }
+ 
+    fighterIDS.erase(end, fighterIDS.end());    
+
+    int32_t sizeAfter = fighterIDS.size();      
+
+    if(sizeBefore != sizeAfter)
+    {
+      LOG (WARNING) << "Roster entries must be unique values";
+      tournamentData.reset();
+      return false;            
+    }   
+    
+    //We check fighters now against entry validity
+      
+    for(long long unsigned int r = 0; r < fighterIDS.size(); r++)
+    {
+        auto fighter = fighters.GetById (fighterIDS[r], ctx.RoConfig ());
+        
+        if(fighter == nullptr)
+        {
+          LOG (WARNING) << "Fatal erorr, could not get fighter with ID" << fighterIDS[r];
+          return false;                
+        }
+        
+        if(fighter->GetOwner() != a.GetName())
+        {
+          LOG (WARNING) << "Fighter does not belong to: " << a.GetName();
+          tournamentData.reset();
+          fighter.reset();
+          return false;               
+        }
+        
+        if((pxd::FighterStatus)(int)fighter->GetStatus() != pxd::FighterStatus::Available)
+        {
+          LOG (WARNING) << "Fighter status is busy for tournament with id: " << tournamentID;
+          tournamentData.reset();
+          fighter.reset();
+          return false;              
+        }    
+
+        fighter.reset();        
+    }
+
+    if(a.GetBalance() < 10)
+    {
+      LOG (WARNING) << "Not enough crystals to join special tournament with id: " << tournamentID;
+      tournamentData.reset();
+      return false;          
+    }
+
+    tournamentData.reset();
+    
+    return true;
+  }  
+  
   bool BaseMoveProcessor::ParseTournamentEntryData(const XayaPlayer& a, const std::string& name, const Json::Value& tournament, uint32_t& tournamentID, std::vector<uint32_t>& fighterIDS)
   {
     if (!tournament.isObject ())
@@ -1256,6 +1431,24 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
       return false;        
     }    
 
+    int32_t sizeBefore = fighterIDS.size();
+    
+    auto end = fighterIDS.end();
+    for (auto it = fighterIDS.begin(); it != end; ++it) {
+        end = std::remove(it + 1, end, *it);
+    }
+ 
+    fighterIDS.erase(end, fighterIDS.end());    
+
+    int32_t sizeAfter = fighterIDS.size();      
+
+    if(sizeBefore != sizeAfter)
+    {
+      LOG (WARNING) << "Roster entries must be unique values";
+      tournamentData.reset();
+      return false;            
+    }
+    
     //We check fighters now against entry validity
       
     for(long long unsigned int r = 0; r < fighterIDS.size(); r++)
@@ -1378,6 +1571,25 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
         {
             fightersIds.push_back(ft.asInt());
         }
+        
+        //Filter dupes if any
+        
+        int32_t sizeBefore = fightersIds.size();
+        
+        auto end = fightersIds.end();
+        for (auto it = fightersIds.begin(); it != end; ++it) {
+            end = std::remove(it + 1, end, *it);
+        }
+     
+        fightersIds.erase(end, fightersIds.end());    
+
+        int32_t sizeAfter = fightersIds.size();      
+
+        if(sizeBefore != sizeAfter)
+        {
+          LOG (WARNING) << "Entry contained fighter duplicate ids for " << expedition;
+          return false;             
+        }            
     }
     
     for(long long unsigned int s =0; s < fightersIds.size(); s++)
@@ -2282,7 +2494,90 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
   
     a.reset();  
     a2.reset();
-  }          
+  }   
+
+  void MoveProcessor::MaybeEnterSpecialTournament (const std::string& name, const Json::Value& tournament)
+  { 
+    auto a = xayaplayers.GetByName (name, ctx.RoConfig ());
+    
+    if(a == nullptr)
+    {
+      LOG (INFO) << "Player " << name << " not found";
+      return;
+    }
+    
+    uint32_t tournamentID = 0;
+    std::vector<uint32_t> fighterIDS;   
+    
+    if(!ParseSpecialTournamentEntryData(*a, name, tournament, tournamentID, fighterIDS))       
+    {
+      a.reset();
+      return;
+    }
+
+    auto tournamentData = specialTournamentsTbl.GetById(tournamentID, ctx.RoConfig ());
+    
+    for(long long unsigned int r = 0; r < fighterIDS.size(); r++)
+    {
+        auto fighter = fighters.GetById (fighterIDS[r], ctx.RoConfig ());
+        fighter->SetStatus(pxd::FighterStatus::SpecialTournament);
+        fighter->MutableProto().set_specialtournamentinstanceid(tournamentID);
+        fighter->MutableProto().set_specialtournamentstatus((int)pxd::SpecialTournamentStatus::Listed);
+      
+        LOG (INFO) << "Fighter " << fighterIDS[r] << " enters special tournament ";
+        
+        fighter.reset();
+    }
+
+    a->AddBalance (-10); 
+    tournamentData.reset();
+    
+    a.reset();
+    
+    LOG (INFO) << "Special Tournament " << tournamentID << " entered succesfully ";  
+  }  
+  
+  void MoveProcessor::MaybeLeaveSpecialTournament (const std::string& name, const Json::Value& tournament)
+  {    
+    auto a = xayaplayers.GetByName (name, ctx.RoConfig ());
+    
+    if(a == nullptr)
+    {
+      LOG (INFO) << "Player " << name << " not found";
+      return;
+    }
+    
+    uint32_t tournamentID = 0;
+    std::vector<uint32_t> fighterIDS;
+
+    if(!ParseSpecialTournamentLeaveData(*a, name, tournament, tournamentID, fighterIDS))      
+    {
+      a.reset();
+      return;
+    }
+
+    auto tournamentData = specialTournamentsTbl.GetById(tournamentID, ctx.RoConfig ());   
+    for(long long unsigned int r = 0; r < fighterIDS.size(); r++)
+    {
+        auto fighter = fighters.GetById (fighterIDS[r], ctx.RoConfig ());
+        
+        if(fighter->GetOwner() == name)
+        {
+          fighter->MutableProto().set_specialtournamentinstanceid(0);
+          fighter->SetStatus(pxd::FighterStatus::Available);
+          fighter->MutableProto().set_specialtournamentstatus((int)pxd::SpecialTournamentStatus::Listed);
+          
+          LOG (INFO) << "Fighter " << fighter->GetId() << " leaves tournament ";
+          
+          fighter.reset();
+        }
+    }
+
+    tournamentData.reset();    
+    a.reset();
+    
+    LOG (INFO) << "Special tournament " << tournamentID << " leaved succesfully ";  
+  }  
   
   void MoveProcessor::MaybeEnterTournament (const std::string& name, const Json::Value& tournament)
   {      
@@ -2318,7 +2613,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
         fighter.reset();
     }
 
-    a->AddBalance (tournamentData->GetProto().joincost()); 
+    a->AddBalance (-tournamentData->GetProto().joincost()); 
     tournamentData.reset();
     
     a.reset();
@@ -2596,6 +2891,20 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
     MaybeClaimReward (name, upd["c"]);    
  
   }  
+  
+  void
+  MoveProcessor::TrySpecialTournamentAction (const std::string& name,
+                                   const Json::Value& upd)
+  {
+    if (!upd.isObject ())
+      return;
+    
+    /*Trying to enter the special tournament*/
+    MaybeEnterSpecialTournament (name, upd["e"]); 
+    
+    /*Trying to leave the tournament*/
+    MaybeLeaveSpecialTournament (name, upd["l"]);         
+  }      
 
   void
   MoveProcessor::TryTournamentAction (const std::string& name,

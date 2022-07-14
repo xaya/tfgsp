@@ -21,6 +21,7 @@
 #include "database/xayaplayer.hpp"
 #include "database/fighter.hpp"
 #include "database/recipe.hpp"
+#include "database/specialtournament.hpp"
 #include "database/reward.hpp"
 #include "database/activity.hpp"
 #include "database/moneysupply.hpp"
@@ -141,6 +142,11 @@ template <>
   res["sweetness"] = IntToJson (pb.sweetness());
   res["highestappliedsweetener"] = IntToJson (pb.highestappliedsweetener());
   
+  res["specialtournamentinstanceid"] = IntToJson (pb.specialtournamentinstanceid());
+  res["specialtournamentstatus"] = IntToJson (pb.specialtournamentstatus());
+  res["tournamentpoints"] = IntToJson (pb.tournamentpoints());
+  res["lasttournamenttime"] = IntToJson (pb.lasttournamenttime());
+  
   Json::Value moves(Json::arrayValue);
   
   for (int i = 0; i < pb.moves_size (); ++i)
@@ -246,6 +252,36 @@ template <>
  
 template <>
   Json::Value
+  GameStateJson::Convert<SpecialTournamentInstance>(const SpecialTournamentInstance& tournament) const
+{
+  const auto& pb = tournament.GetProto ();
+  Json::Value res(Json::objectValue);
+  
+  res["id"] = tournament.GetId();
+  res["tier"] = IntToJson (pb.tier());
+  res["crownholder"] = pb.crownholder();
+  res["state"] = IntToJson (pb.state());
+  
+  Json::Value matchresults(Json::arrayValue);
+  
+  for(const auto& lastdaymatch: pb.lastdaymatchresults())
+  {
+     Json::Value rslt(Json::objectValue);
+     
+     rslt["attacker"] = lastdaymatch.attacker();
+     rslt["defender"] = lastdaymatch.defender();
+     rslt["attackerpoints"] = IntToJson (lastdaymatch.attackerpoints());
+     rslt["defenderpoints"] = IntToJson (lastdaymatch.defenderpoints());
+     
+     matchresults.append(rslt); 
+  }
+  
+  res["ldresults"] = matchresults;
+  return res;
+}   
+ 
+template <>
+  Json::Value
   GameStateJson::Convert<TournamentInstance>(const TournamentInstance& tournament) const
 {
   const auto& pb = tournament.GetProto ();
@@ -269,7 +305,7 @@ template <>
   
   Json::Value tResults(Json::arrayValue);
   
-  for(const auto result: tournament.GetInstance().results())
+  for(const auto& result: tournament.GetInstance().results())
   {
      Json::Value rslt(Json::objectValue);
      
@@ -489,6 +525,15 @@ GameStateJson::Tournaments()
 }
 
 Json::Value
+GameStateJson::SpecialTournaments()
+{
+  SpecialTournamentTable tbl(db);
+  Json::Value res = ResultsAsArray (tbl, tbl.QueryAll ());
+
+  return res;
+}
+
+Json::Value
 GameStateJson::CrystalBundles()
 {
   const auto& bundles = ctx.RoConfig ()->crystalbundles();
@@ -528,7 +573,7 @@ GameStateJson::FullState()
   res["rewards"] = Rewards();
   res["recepies"] = Recepies();
   res["tournaments"] = Tournaments();
-   
+  res["specialtournaments"] = SpecialTournaments();
   
   res["statehex"] = latestKnownStateHash; 
   res["stateblock"] = latestKnownStateBlock;

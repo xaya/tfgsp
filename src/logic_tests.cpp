@@ -27,6 +27,7 @@
 #include "database/dbtest.hpp"
 #include "database/xayaplayer.hpp"
 #include "database/reward.hpp"
+#include "database/specialtournament.hpp"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -61,8 +62,9 @@ protected:
   FighterTable tbl3;
   RewardsTable tbl4;
   TournamentTable tbl5;
+  SpecialTournamentTable tbl6;
   
-  PXLogicTests () : xayaplayers(db), tbl2(db), tbl3(db), tbl4(db), tbl5(db)
+  PXLogicTests () : xayaplayers(db), tbl2(db), tbl3(db), tbl4(db), tbl5(db), tbl6(db)
   {
     SetHeight (42);
   }
@@ -212,7 +214,7 @@ TEST_F (ValidateStateTests, RecepieInstanceGeneratedFullCycleTest)
 {
   xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (100);
   
-  auto rcpID = pxd::RecipeInstance::Generate(pxd::Quality::Common, ctx.RoConfig(), rnd, db);
+  auto rcpID = pxd::RecipeInstance::Generate(pxd::Quality::Common, ctx.RoConfig(), rnd, db, "");
   auto r = tbl2.GetById(rcpID);
   
   
@@ -270,10 +272,10 @@ TEST_F (ValidateStateTests, RecepieInstanceGeneratedDifferentNamesTest)
 {
   xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (100);
   
-  auto rcpID = pxd::RecipeInstance::Generate(pxd::Quality::Common, ctx.RoConfig(), rnd, db);
+  auto rcpID = pxd::RecipeInstance::Generate(pxd::Quality::Common, ctx.RoConfig(), rnd, db, "");
   auto r = tbl2.GetById(rcpID);
   
-  auto rcpID2 = pxd::RecipeInstance::Generate(pxd::Quality::Common, ctx.RoConfig(), rnd, db);
+  auto rcpID2 = pxd::RecipeInstance::Generate(pxd::Quality::Common, ctx.RoConfig(), rnd, db, "");
   auto r2 = tbl2.GetById(rcpID2);
   
   EXPECT_NE(r->GetProto().name(), r2->GetProto().name());
@@ -281,6 +283,124 @@ TEST_F (ValidateStateTests, RecepieInstanceGeneratedDifferentNamesTest)
   r2.reset();
 }   
 
+TEST_F (ValidateStateTests, DefaultSpecialTournamentsArePlottedTest)
+{
+    UpdateState ("[]");
+    
+    auto xp1 = xayaplayers.GetByName("xayatf1", ctx.RoConfig());
+    auto xp2 = xayaplayers.GetByName("xayatf2", ctx.RoConfig());
+    auto xp3 = xayaplayers.GetByName("xayatf3", ctx.RoConfig());
+    auto xp4 = xayaplayers.GetByName("xayatf4", ctx.RoConfig());
+    auto xp5 = xayaplayers.GetByName("xayatf5", ctx.RoConfig());
+    auto xp6 = xayaplayers.GetByName("xayatf6", ctx.RoConfig());
+    auto xp7 = xayaplayers.GetByName("xayatf7", ctx.RoConfig());
+    
+    EXPECT_EQ (xp1->CollectInventoryFightersFromSpecialTournament(ctx.RoConfig(), 1).size(), 6);
+    EXPECT_EQ (xp2->CollectInventoryFightersFromSpecialTournament(ctx.RoConfig(), 2).size(), 6);
+    EXPECT_EQ (xp3->CollectInventoryFightersFromSpecialTournament(ctx.RoConfig(), 3).size(), 6);
+    EXPECT_EQ (xp4->CollectInventoryFightersFromSpecialTournament(ctx.RoConfig(), 4).size(), 6);
+    EXPECT_EQ (xp5->CollectInventoryFightersFromSpecialTournament(ctx.RoConfig(), 5).size(), 6);
+    EXPECT_EQ (xp6->CollectInventoryFightersFromSpecialTournament(ctx.RoConfig(), 6).size(), 6);
+    EXPECT_EQ (xp7->CollectInventoryFightersFromSpecialTournament(ctx.RoConfig(), 7).size(), 6);
+    
+    EXPECT_EQ (xp7->CollectInventoryFightersFromSpecialTournament(ctx.RoConfig(), 1).size(), 0);
+}
+
+TEST_F (ValidateStateTests, EnterLeaveSpecialCompetitionTest)
+{
+  auto a = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
+  a->AddBalance (100); 
+  a.reset();
+
+  UpdateState ("[]");
+
+  a = xayaplayers.GetByName("domob", ctx.RoConfig());
+  EXPECT_EQ (a->CollectInventoryFightersFromSpecialTournament(ctx.RoConfig(), 1).size(), 0);
+  a.reset();
+
+  auto ft1 = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
+  int32_t ft1ID = ft1->GetId();
+  EXPECT_EQ (ft1->GetStatus(), FighterStatus::Available);
+  ft1.reset();   
+  
+  auto ft2 = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
+  int32_t ft2ID = ft2->GetId();
+  EXPECT_EQ (ft2->GetStatus(), FighterStatus::Available);
+  ft2.reset(); 
+
+  auto ft3 = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
+  int32_t ft3ID = ft3->GetId();
+  EXPECT_EQ (ft3->GetStatus(), FighterStatus::Available);
+  ft3.reset(); 
+
+  auto ft4 = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
+  int32_t ft4ID = ft4->GetId();
+  EXPECT_EQ (ft4->GetStatus(), FighterStatus::Available);
+  ft4.reset(); 
+
+  auto ft5 = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
+  int32_t ft5ID = ft5->GetId();
+  EXPECT_EQ (ft5->GetStatus(), FighterStatus::Available);
+  ft5.reset(); 
+
+  auto ft6 = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
+  int32_t ft6ID = ft6->GetId();
+  EXPECT_EQ (ft6->GetStatus(), FighterStatus::Available);
+  ft6.reset();   
+  
+  auto specialTournamentTier1 = tbl6.GetByTier(1, ctx.RoConfig());
+  ASSERT_TRUE (specialTournamentTier1 != nullptr);
+  uint32_t TID = specialTournamentTier1->GetId();
+  specialTournamentTier1.reset();    
+  
+  std::ostringstream s;
+  s << TID;
+  std::string converted(s.str());  
+  
+  std::ostringstream s1x;
+  s1x << ft1ID;
+  std::string converted1x(s1x.str()); 
+
+  std::ostringstream s2x;
+  s2x << ft2ID;
+  std::string converted2x(s2x.str());  
+  
+  std::ostringstream s3x;
+  s3x << ft3ID;
+  std::string converted3x(s3x.str()); 
+
+  std::ostringstream s4x;
+  s4x << ft4ID;
+  std::string converted4x(s4x.str()); 
+
+  std::ostringstream s5x;
+  s5x << ft5ID;
+  std::string converted5x(s5x.str()); 
+
+  std::ostringstream s6x;
+  s6x << ft6ID;
+  std::string converted6x(s6x.str());   
+  
+  Process (R"([
+    {"name": "domob", "move": {"tms": {"e": {"tid": )" + converted + R"(, "fc": [)"+converted1x+R"(,)"+converted2x + R"(,)" + converted3x + R"(,)" + converted4x + R"(,)" + converted5x + R"(,)" + converted6x + R"(]}}}}
+  ])");    
+
+  UpdateState ("[]");
+
+  a = xayaplayers.GetByName("domob", ctx.RoConfig());
+  EXPECT_EQ (a->CollectInventoryFightersFromSpecialTournament(ctx.RoConfig(), 1).size(), 6);
+  a.reset();
+  
+  Process (R"([
+    {"name": "domob", "move": {"tms": {"l": {"tid": )" + converted + R"(}}}}
+  ])");   
+
+  UpdateState ("[]");
+   
+  a = xayaplayers.GetByName("domob", ctx.RoConfig());
+  EXPECT_EQ (a->CollectInventoryFightersFromSpecialTournament(ctx.RoConfig(), 1).size(), 0);
+  a.reset();   
+}
 
 TEST_F (ValidateStateTests, RecepieWithApplicableGoodieTest)
 {
@@ -380,18 +500,39 @@ TEST_F (ValidateStateTests, UnitTestExpeditionFailsOnMainNet)
     {"name": "domob", "move": {"exp": {"f": {"eid": "00000000-0000-0000-zzzz-zzzzzzzzzzzz", "fid": 4}}}}
   ])");  
   
+  
+  EXPECT_EQ (tbl2.CountForOwner(""), 2);
+  
   for (unsigned i = 0; i < 1; ++i)
   {
     UpdateState ("[]");
   }  
   
-  auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
-  a.reset ();
-   
-  ft = tbl3.GetById(2, ctx.RoConfig());
+  EXPECT_NE (tbl2.CountForOwner(""), 17);    
+}
+
+TEST_F (ValidateStateTests, TestSpecialTournamentPrebuild)
+{  
+  ctx.SetChain (xaya::Chain::MAIN);
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
+  auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
   ft.reset();
+  xp.reset();
   
-  EXPECT_EQ (tbl2.CountForOwner(""), 44);    
+  EXPECT_EQ (tbl2.CountForOwner(""), 2);
+  
+  for (unsigned i = 0; i < 1; ++i)
+  {
+    UpdateState ("[]");
+  }  
+  
+  EXPECT_EQ (tbl2.CountForAll(), 66);
+  EXPECT_NE (tbl2.CountForOwner("xayatf1"), 6); 
+  EXPECT_NE (tbl2.CountForOwner("xayatf2"), 6);
+  EXPECT_NE (tbl2.CountForOwner("xayatf3"), 6);
+  EXPECT_NE (tbl2.CountForOwner("xayatf4"), 6);
+  EXPECT_NE (tbl2.CountForOwner("xayatf5"), 6);
+  EXPECT_NE (tbl2.CountForOwner("xayatf6"), 6);  
 }
 
 TEST_F (ValidateStateTests, GeneratedRecipeMakeSureItWorks)
@@ -418,7 +559,7 @@ TEST_F (ValidateStateTests, GeneratedRecipeMakeSureItWorks)
   ft = tbl3.GetById(2, ctx.RoConfig());
   ft.reset();
   
-  EXPECT_EQ (tbl2.CountForOwner(""), 45);
+  EXPECT_EQ (tbl2.CountForOwner(""), 17);
   auto res = tbl2.QueryForOwner("");
   ASSERT_TRUE (res.Step ());
   ASSERT_TRUE (res.Step ());
@@ -643,7 +784,7 @@ TEST_F (ValidateStateTests, ClaimRewardsTestAllRewardTypesBeingAwardedProperly)
   ft = tbl3.GetById(4, ctx.RoConfig());
   ft.reset();
   
-  EXPECT_EQ (tbl2.CountForOwner(""), 45);
+  EXPECT_EQ (tbl2.CountForOwner(""), 17);
   auto res = tbl2.QueryForOwner("");
   ASSERT_TRUE (res.Step ());
   ASSERT_TRUE (res.Step ());
@@ -685,7 +826,7 @@ auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
   ft = tbl3.GetById(4, ctx.RoConfig());
   ft.reset();
   
-  EXPECT_EQ (tbl2.CountForOwner(""), 45);
+  EXPECT_EQ (tbl2.CountForOwner(""), 17);
   auto res = tbl2.QueryForOwner("");
   ASSERT_TRUE (res.Step ());
   ASSERT_TRUE (res.Step ());
@@ -1338,7 +1479,7 @@ TEST_F (ValidateStateTests, TournamentStrongerFighterWins)
 
   tutorialTrmn = tbl5.GetById(TID, ctx.RoConfig());
   
-  for(const auto result: tutorialTrmn->GetInstance().results())
+  for(const auto& result: tutorialTrmn->GetInstance().results())
   {
      EXPECT_LT(result.ratingdelta(), 100000);
      EXPECT_GE(result.ratingdelta(), -100000);

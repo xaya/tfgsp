@@ -81,5 +81,14 @@ message Fighter
   optional bool IsAccountBound = 18;  
 
   /*Reference to the Special Tournament auto incremented table unique ID this fighter currently takes place in*/
-  optional uint32 SpecialTournamentInstanceID = 19;   
+  optional uint32 SpecialTournamentInstanceID = 19;
+
+  /*The status of the special tournament event*/
+  optional uint32 SpecialTournamentStatus = 20; 
+
+  /*The status of the special tournament event*/
+  optional uint32 TournamentPoints = 21;   
+  
+  /*Last tournament timestamp, to make sure player can participate only once per mathday*/
+  optional uint64 LastTournamentTime = 22;     
 }

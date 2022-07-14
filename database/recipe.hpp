@@ -182,7 +182,7 @@ public:
     return data.Mutable ();
   }
   
-  static uint32_t Generate(pxd::Quality quality, const RoConfig& cfg,  xaya::Random& rnd, Database& db);
+  static uint32_t Generate(pxd::Quality quality, const RoConfig& cfg,  xaya::Random& rnd, Database& db, std::string owner);
 };
 
 /**
@@ -262,6 +262,11 @@ public:
    * Counts for all recepies with a given owner
    */  
   unsigned CountForOwner (const std::string& owner);  
+  
+  /**
+   * Counts for all recepies in database table
+   */  
+  unsigned CountForAll ();    
 };
 
 } // namespace pxd

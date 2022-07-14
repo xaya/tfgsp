@@ -36,7 +36,7 @@ RecipeInstance::RecipeInstance (Database& d, const std::string& o, const std::st
       << "crafter recipe=" << cr;
  
   data.SetToDefault ();
-  
+
   for (const auto& recepie : cfg->recepies())
   {
     if(recepie.second.authoredid() == cr)
@@ -88,7 +88,7 @@ RecipeInstance::RecipeInstance (Database& d, const std::string& o, const pxd::pr
 	db(d)
 {
   VLOG (1)  << "Created new recipe instance with generated recipe";
- 
+  
   data.SetToDefault ();
   
   MutableProto().set_authoredid("generated");
@@ -181,10 +181,8 @@ RecipeInstance::BindFieldValues (Database::Statement& stmt) const
   stmt.Bind (2, owner);
 }
 
-uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xaya::Random& rnd, Database& db)
+uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xaya::Random& rnd, Database& db, std::string owner)
 {
-    LOG (WARNING) << "Started generating the recepie with quality" << (int)quality;
-    
     std::vector<pxd::proto::FighterName> potentialNames;
     const auto& fighterNames = cfg->fighternames();
     
@@ -476,8 +474,11 @@ uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xa
 
     RecipeInstanceTable rt(db);
     
-    auto handle = rt.CreateNew("", generatedRecipe, cfg);  
-    return handle->GetId();
+    auto handle = rt.CreateNew(owner, generatedRecipe, cfg); 
+    int hdata = handle->GetId();  
+    handle.reset();   
+    
+    return hdata;
 }
 
 namespace
@@ -506,6 +507,22 @@ RecipeInstanceTable::CountForOwner (const std::string& owner)
   const unsigned count = res.Get<CountResult::cnt> ();
   CHECK (!res.Step ());
 
+  return count;
+}
+
+unsigned
+RecipeInstanceTable::CountForAll ()
+{
+  auto stmt = db.Prepare (R"(
+    SELECT COUNT(*) AS `cnt`
+      FROM `recepies`
+  )");
+
+  auto res = stmt.Query<CountResult> ();
+  CHECK (res.Step ());
+  const unsigned count = res.Get<CountResult::cnt> ();
+  CHECK (!res.Step ());
+  
   return count;
 }
 

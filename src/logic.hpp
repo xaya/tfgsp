@@ -111,7 +111,6 @@ private:
   static void ResolveSweetener(std::unique_ptr<XayaPlayer>& a, std::string sweetenerAuthID, const uint32_t fighterID, const uint32_t rewardID, 
   Database& db, const Context& ctx, xaya::Random& rnd);
 
-
   /**
    * When expedition block count operation reaches 0 blocks, we either
    * resolve it or close as completed, based on cirsumstances */   
@@ -122,6 +121,10 @@ private:
    * resolve it or close as completed, based on cirsumstances */   
   static void ResolveDeconstruction(std::unique_ptr<XayaPlayer>& a, const uint32_t fighterID, Database& db, const Context& ctx, xaya::Random& rnd);
 
+  /**
+   * Resolve one instance of special tournament match 
+   * */   
+  static void ResolveSpecialTournamentFight(std::string attackerName, std::vector<int64_t> attackerTeam, std::string defenderName, std::vector<int64_t> defenderTeam, int64_t ID, FighterTable& fighters, const Context& ctx, xaya::Random& rnd, int64_t& scoreAttacker, int64_t& scoreDefender);
 
   /**
    * For every ongoing operation we reduce its block count by 1
@@ -137,7 +140,12 @@ private:
   /**
    * Scans all tournaments to either start them or finilize
    */  
-  static void ProcessSpecialTournaments(Database& db, const Context& ctx, xaya::Random& rnd);   
+  static void ProcessSpecialTournaments(Database& db, const Context& ctx, xaya::Random& rnd);  
+
+  /**
+   * Inner helper function, to resolve 1:1 clash points between 2 fighters
+   */    
+  static void ProcessFighterPair(int64_t fighter1, int64_t fighter2, bool isSpecial, std::map<uint32_t, proto::TournamentResult*>& fighterResults, std::map<std::string, fpm::fixed_24_8>& participatingPlayerTotalScore, FighterTable& fighters, const Context& ctx, xaya::Random& rnd);
 
   /**
    * When fighters are fighting against each other in tournament, used to calculate results

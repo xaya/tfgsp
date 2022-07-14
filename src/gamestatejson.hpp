@@ -105,6 +105,11 @@ public:
   Json::Value Tournaments();   
 
   /**
+   * Returns the JSON data about special tournaments.
+   */
+  Json::Value SpecialTournaments();  
+
+  /**
    * Returns the full game state JSON for the given Database handle.  The full
    * game state as JSON should mainly be used for debugging and testing, not
    * in production.  For that, more targeted RPC results should be used.

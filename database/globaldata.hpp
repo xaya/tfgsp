@@ -56,6 +56,11 @@ public:
   int64_t GetLastTournamentTime();
   
   /**
+   * Sets the timestamp of the last special tournament data held
+   */
+  void SetLastTournamentTime(int64_t newTime);  
+  
+  /**
    * Returns Crystal prices in CHI multiplier
    */
   int64_t GetChiMultiplier();  

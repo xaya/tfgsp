@@ -21,6 +21,21 @@ option cc_enable_arenas = true;
 
 package pxd.proto;
 
+message SpecialTournamentMathResult
+{
+  /*Attacker Name*/
+  optional string Attacker = 1;
+  
+  /*Defender Name, a biut redundant, as its always crown holder*/
+  optional string Defender = 2;  
+  
+  /*Attacker Total points gained*/
+  optional uint64 AttackerPoints = 3;
+
+  /*Defender Total points gained*/
+  optional uint64 DefenderPoints = 4;  
+}
+
 message SpecialTournamentBlueprint
 {
   /*Tier Id*/
@@ -31,4 +46,7 @@ message SpecialTournamentBlueprint
       
   /*Currently listed, or calculating the match results*/
   optional uint32 State = 3;  
+  
+  /*List of the results played during the last match time*/
+  repeated SpecialTournamentMathResult LastDayMatchResults = 4;  
 }

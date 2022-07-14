@@ -126,6 +126,7 @@ FighterInstance::FighterInstance (Database& d, const std::string& o, uint32_t r,
        MutableProto().set_animationid(randomAnimationElement);            
   }
 
+  recepie.reset();
   Validate ();
 }
 

@@ -17,6 +17,7 @@
 */
 
 #include "xayaplayer.hpp"
+#include "specialtournament.hpp"
 
 #include <xayautil/random.hpp>
 
@@ -153,6 +154,41 @@ std::vector<FighterTable::Handle> XayaPlayer::CollectInventoryFighters(const RoC
   {
       auto c = fightersTable.GetFromResult (res, cfg);
       fighters.push_back(std::move(c));
+  }
+  return fighters;
+}
+
+std::vector<FighterTable::Handle> XayaPlayer::CollectInventoryFightersFromSpecialTournament(const RoConfig& cfg, uint32_t specialTournamentTier)
+{
+  std::vector<FighterTable::Handle> fighters;
+  SpecialTournamentTable sptable(db);
+  
+  FighterTable fightersTable(db);
+  auto res = fightersTable.QueryForOwner (GetName());
+  while (res.Step ())
+  {
+      auto c = fightersTable.GetFromResult (res, cfg);
+      
+      if((int)c->GetStatus() == (int)pxd::FighterStatus::SpecialTournament)
+      {
+          int64_t tID = c->GetProto().specialtournamentinstanceid();
+          auto tm = sptable.GetById(tID, cfg);
+          
+          if(tm != nullptr)
+          {
+              if(tm->GetProto().tier() == specialTournamentTier)
+              {
+                fighters.push_back(std::move(c));
+              }
+          }
+          else
+          {
+              LOG (FATAL) << "Wrong special tournament instance id";   
+              return fighters;
+          }
+          
+          tm.reset();
+      }
   }
   return fighters;
 }

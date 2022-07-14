@@ -54,6 +54,18 @@ GlobalData::GetLastTournamentTime ()
   return lasttournamenttime;
 }
 
+void GlobalData::SetLastTournamentTime(int64_t newTime)
+{
+  auto stmt = db.Prepare (R"(
+    UPDATE `globaldata` SET
+      (`lasttournamenttime`) = (?1) WHERE id=0
+  )");
+
+  stmt.Reset ();
+  stmt.Bind (1, newTime);
+  stmt.Execute ();
+}
+
 int64_t
 GlobalData::GetChiMultiplier ()
 {
