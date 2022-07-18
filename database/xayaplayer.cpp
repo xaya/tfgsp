@@ -267,6 +267,14 @@ XayaPlayer::CalculatePrestige(const RoConfig& cfg)
     double winPercentPrestigeMod = winPercent;
     prestige = (int64_t)(getPercentageEpic + getPercentageRare + getPercentageUncommom + getPercentageCommon + averageRatingScore) * (1 + winPercentPrestigeMod);
     dirtyFields = true;
+    
+    MutableProto().set_valueepic(getPercentageEpic);
+    MutableProto().set_valuerare(getPercentageRare);
+    MutableProto().set_valueuncommon(getPercentageUncommom);
+    MutableProto().set_valuecommon(getPercentageCommon);
+    
+    MutableProto().set_fighteraverage(averageRatingScore);
+    MutableProto().set_tournamentperformance((1 + winPercentPrestigeMod)); 
 }
 
 void

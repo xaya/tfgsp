@@ -197,6 +197,12 @@ protected:
    
   bool ParseCookRecepie(const XayaPlayer& a, const std::string& name, const Json::Value& recepie, std::map<std::string, pxd::Quantity>& fungibleItemAmountForDeduction, int32_t& cookCost, int32_t& duration, std::string& weHaveApplibeGoodyName);
   
+  /**
+   * Tries to parse a move that collects cooked fighter
+   */       
+   
+  bool ParseCollectCookRecepie(const XayaPlayer& a, const std::string& name, const Json::Value& recepie, int32_t& fighterID);
+    
    /**
    * Tries to parse a move that send fighter on the expedition
    */    
@@ -365,6 +371,11 @@ private:
   * Tries to cook recepie instance, optionally with the fighter attached
   */  
   void MaybeCookRecepie (const std::string& name, const Json::Value& recepie);
+  
+  /**
+  * Tries to colled cooked fighter
+  */  
+  void MaybeCollectCookedRecepie (const std::string& name, const Json::Value& recepie);  
   
   /**
   * Tries to claim sweetener rewards if that is possible

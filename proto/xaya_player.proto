@@ -70,4 +70,15 @@ message XayaPlayer
    * Tournaments bookeeping entry
    */
   optional uint32 TournamentsWon = 9;    
+  
+  
+  /**
+   * Values, used in prestige calculation, to show in the front-end
+   */
+  optional uint32 ValueEpic = 10;
+  optional uint32 ValueRare = 11;  
+  optional uint32 ValueUncommon = 12;  
+  optional uint32 ValueCommon = 13;
+  optional uint32 FighterAverage = 14; 
+  optional uint32 TournamentPerformance = 15;    
 }

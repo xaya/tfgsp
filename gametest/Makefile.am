@@ -8,8 +8,7 @@ TEST_LIBRARY = \
 REGTESTS = \
   accounts.py \
   burnsale.py \
-  pending.py \
-  specialtournament.py
+  pending.py
 
 EXTRA_DIST = $(REGTESTS) $(TEST_LIBRARY)
 TESTS = $(REGTESTS)

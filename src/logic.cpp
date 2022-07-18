@@ -598,6 +598,8 @@ void PXLogic::ResolveCookingRecepie(std::unique_ptr<XayaPlayer>& a, const uint32
         auto newFighter = fighters.CreateNew (a->GetName(), recepieID, ctx.RoConfig(), rnd);
         a->CalculatePrestige(ctx.RoConfig());
         
+        newFighter->SetStatus(FighterStatus::Cooked);
+        
         LOG (WARNING) << "Cooked new fighter with id: " << newFighter->GetId();
         
         /**
@@ -1773,7 +1775,7 @@ PXLogic::UpdateState (Database& db, xaya::Random& rnd,
   
   /** Finally, we see if we need to resolve our special tournament */
 
-  ProcessSpecialTournaments(db, ctx, rnd);     
+  //ProcessSpecialTournaments(db, ctx, rnd);     
 
 #ifdef ENABLE_SLOW_ASSERTS
   ValidateStateSlow (db, ctx);
@@ -1874,11 +1876,17 @@ PXLogic::UpdateState (xaya::SQLiteDatabase& db, const Json::Value& blockData)
       finalStringForHasing += name;
   }
   
-  xaya::uint256 heystring = xaya::SHA256::Hash(finalStringForHasing);
-  
   const auto& blockMeta = blockData["block"];
   const auto& heightVal = blockMeta["height"];
-  const uint64_t height = heightVal.asUInt64 ();  
+  const uint64_t height = heightVal.asUInt64 ();    
+  
+  std::ostringstream ss;
+  ss << height;
+  std::string hStd = ss.str();
+    
+  finalStringForHasing += hStd;
+  
+  xaya::uint256 heystring = xaya::SHA256::Hash(finalStringForHasing);
   
   GameStateJson::latestKnownStateHash = heystring.ToHex ();
   GameStateJson::latestKnownStateBlock = height;                 

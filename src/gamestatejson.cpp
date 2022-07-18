@@ -418,6 +418,13 @@ template <>
   
   res["ongoings"] = ongoingOps;
   res["prestige"] = IntToJson (a.GetPresitge());
+  
+  res["valueepic"] = IntToJson (pb.valueepic ());
+  res["valuerare"] = IntToJson (pb.valuerare ());
+  res["valueuncommon"] = IntToJson (pb.valueuncommon ());
+  res["valuecommon"] = IntToJson (pb.valuecommon ());
+  res["fighteraverage"] = IntToJson (pb.fighteraverage ());
+  res["tournamentperformance"] = IntToJson (pb.tournamentperformance ());
 
   return res;
 }

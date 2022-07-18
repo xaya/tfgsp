@@ -73,7 +73,8 @@ enum class FighterStatus : int8_t
   Exchange = 3,
   Cooking = 4,
   Deconstructing = 5,
-  SpecialTournament = 6
+  SpecialTournament = 6,
+  Cooked = 7
 };
 
 /**

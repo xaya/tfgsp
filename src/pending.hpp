@@ -84,7 +84,12 @@ public:
    /**
    * Updates the state for a new recepie instance bundle
    */    
-  void AddExpeditionInstance (const XayaPlayer& a, int32_t duration, std::string expeditionID, std::vector<int> fighterID);   
+  void AddExpeditionInstance (const XayaPlayer& a, int32_t duration, std::string expeditionID, std::vector<int> fighterID);  
+
+   /**
+   * Updates the state for a collecting cooked fighter recepie
+   */    
+  void AddCookedRecepieCollectInstance(const XayaPlayer& a, int32_t fighterToCollectID);     
   
    /**
    * Updates the state for a new pending rewards
@@ -215,6 +220,10 @@ public:
     
     /** IAuth ids of sweetener fighters attached when being claimed */
     std::vector<std::uint32_t> sweetenerClaimingFightersIds;    
+    
+    /** Pending ids of fighters ready to collect
+    */    
+    std::vector<int32_t> cookedFightersToCollect;    
   };  
   
   /** Pending updates by account name.  */

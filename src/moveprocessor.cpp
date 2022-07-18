@@ -1918,6 +1918,42 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
      return true;   
   }      
   
+  bool BaseMoveProcessor::ParseCollectCookRecepie(const XayaPlayer& a, const std::string& name, const Json::Value& recepie, int32_t& fighterID)
+  {
+    if (!recepie.isObject ())
+    return false;
+   
+    if(!recepie["fid"].isInt())
+    {
+        return false;
+    }      
+
+    fighterID = recepie["fid"].asInt();    
+    auto fighter = fighters.GetById(fighterID, ctx.RoConfig());
+    
+    if(fighter == nullptr)
+    {
+      LOG (WARNING) << "Wrong fighter ID " << fighterID;
+      return false; 
+    }
+    
+    if(fighter->GetOwner() != a.GetName())
+    {
+      LOG (WARNING) << "Fighter does not belong to player " << fighterID;
+      fighter.reset();
+      return false;             
+    }
+    
+    if((pxd::FighterStatus)(int)fighter->GetStatus() != pxd::FighterStatus::Cooked) 
+    {
+      LOG (WARNING) << "Fighter status is not Cooked: " << fighterID;
+      fighter.reset();
+      return false;              
+    }  
+
+    return true;
+  }
+  
   bool
   BaseMoveProcessor::ParseCookRecepie(const XayaPlayer& a, const std::string& name, const Json::Value& recepie, std::map<std::string, pxd::Quantity>& fungibleItemAmountForDeduction, int32_t& cookCost, int32_t& duration, std::string& weHaveApplibeGoodyName)
   {
@@ -2162,6 +2198,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
               ourRec->SetOwner(a->GetName());
               
               LOG (INFO) << "Granted " << " recipe " << rewardData->GetProto().generatedrecipeid() << " reward";
+              curRecipeSlots++;
               ourRec.reset();              
           }
           
@@ -2176,10 +2213,19 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
           
           else if((pxd::RewardType)(int)rewardTableDb.rewards(rewardData->GetProto().positionintable()).type() == pxd::RewardType::GeneratedRecipe)
           {
+              if(curRecipeSlots >= maxRecipeSlots)
+              {
+                  LOG (INFO) << "Can not grant recipe, maxomus lots reached  of" << curRecipeSlots << " where max is " << maxRecipeSlots;
+                  markedToRemove.push_back(rw);
+                  rewardData.reset();
+                  continue;
+              }
+              
               auto ourRec = recipeTbl.GetById(rewardData->GetProto().generatedrecipeid());
               ourRec->SetOwner(a->GetName());  
 
               LOG (INFO) << "Granted " << " recipe " << rewardData->GetProto().generatedrecipeid() << " as reward";  
+              curRecipeSlots++;
               ourRec.reset();              
           }          
           
@@ -2747,6 +2793,28 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
     newOp->set_blocksleft(duration);    
   }  
   
+  void MoveProcessor::MaybeCollectCookedRecepie(const std::string& name, const Json::Value& recepie)
+  {     
+      auto a = xayaplayers.GetByName (name, ctx.RoConfig ());  
+      
+      if(a == nullptr)
+      {
+        LOG (INFO) << "Player " << name << " not found";
+        return;
+      }    
+      
+      int32_t fighterID = 0;
+      
+      if(!ParseCollectCookRecepie(*a, name, recepie, fighterID)) return;     
+
+      auto fighter = fighters.GetById(fighterID, ctx.RoConfig());
+        
+      if(fighter != nullptr)
+      {
+         fighter->SetStatus(pxd::FighterStatus::Available);          
+      }
+  }
+  
   void
   MoveProcessor::MaybeCookRecepie (const std::string& name, const Json::Value& recepie)
   {      
@@ -2869,6 +2937,9 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 
     /*Trying to cook recepie, optionally with the fighter */
     MaybeCookRecepie (name, upd["r"]);
+    
+    /*Trying to collect cooked recepie*/
+    MaybeCollectCookedRecepie (name, upd["cl"]);    
     
     /*Trying to cook sweetener */
     MaybeCookSweetener (name, upd["s"]);  
