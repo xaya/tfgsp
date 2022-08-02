@@ -1351,7 +1351,7 @@ void PXLogic::ProcessFighterPair(int64_t fighter1, int64_t fighter2, bool isSpec
           participatingPlayerTotalScore[lhs->GetOwner()] += 1;
           scoreA = fpm::fixed_24_8(1);
           
-          if(isSpecial)
+          if(isSpecial == false)
           {
             fighterResults[fighter1]->set_losses(fighterResults[fighter1]->losses() + 1);
             fighterResults[fighter2]->set_wins(fighterResults[fighter2]->wins() + 1);
@@ -1366,7 +1366,7 @@ void PXLogic::ProcessFighterPair(int64_t fighter1, int64_t fighter2, bool isSpec
           participatingPlayerTotalScore[lhs->GetOwner()] += fpm::fixed_24_8(0.5);
           participatingPlayerTotalScore[rhs->GetOwner()] += fpm::fixed_24_8(0.5);
           
-          if(isSpecial)
+          if(isSpecial == false)
           {
             fighterResults[fighter2]->set_draws(fighterResults[fighter2]->draws() + 1);
             fighterResults[fighter2]->set_draws(fighterResults[fighter2]->draws() + 1);  
@@ -1379,7 +1379,7 @@ void PXLogic::ProcessFighterPair(int64_t fighter1, int64_t fighter2, bool isSpec
           scoreB = fpm::fixed_24_8(1);
           participatingPlayerTotalScore[rhs->GetOwner()] += fpm::fixed_24_8(0.5);
           
-          if(isSpecial)
+          if(isSpecial == false)
           {
             fighterResults[fighter2]->set_losses(fighterResults[fighter2]->losses() + 1);
             fighterResults[fighter1]->set_wins(fighterResults[fighter1]->wins() + 1);
@@ -1428,7 +1428,7 @@ void PXLogic::ProcessFighterPair(int64_t fighter1, int64_t fighter2, bool isSpec
      rhs->MutableProto().set_matcheslost(rhs->GetProto().matcheslost() + 1);  
    }             
 
-   if(isSpecial)
+   if(isSpecial == false)
    {
     fighterResults[fighter2]->set_ratingdelta(fighterResults[fighter2]->ratingdelta() + (int)lRatingDelta);
     fighterResults[fighter1]->set_ratingdelta(fighterResults[fighter1]->ratingdelta() + (int)rRatingDelta);  
