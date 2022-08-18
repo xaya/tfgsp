@@ -282,7 +282,7 @@ TEST_F (ValidateStateTests, RecepieInstanceGeneratedDifferentNamesTest)
   r.reset();
   r2.reset();
 }   
-/*
+
 TEST_F (ValidateStateTests, DefaultSpecialTournamentsArePlottedTest)
 {
     UpdateState ("[]");
@@ -312,6 +312,7 @@ TEST_F (ValidateStateTests, EnterLeaveSpecialCompetitionTest)
   a->AddBalance (100); 
   a.reset();
 
+  UpdateState ("[]");
   UpdateState ("[]");
 
   a = xayaplayers.GetByName("domob", ctx.RoConfig());
@@ -401,7 +402,7 @@ TEST_F (ValidateStateTests, EnterLeaveSpecialCompetitionTest)
   EXPECT_EQ (a->CollectInventoryFightersFromSpecialTournament(ctx.RoConfig(), 1).size(), 0);
   a.reset();   
 }
-*/
+
 TEST_F (ValidateStateTests, RecepieWithApplicableGoodieTest)
 {
   auto a = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
@@ -510,7 +511,7 @@ TEST_F (ValidateStateTests, UnitTestExpeditionFailsOnMainNet)
   
   EXPECT_NE (tbl2.CountForOwner(""), 17);    
 }
-/*
+
 TEST_F (ValidateStateTests, TestSpecialTournamentPrebuild)
 {  
   ctx.SetChain (xaya::Chain::MAIN);
@@ -571,7 +572,7 @@ TEST_F (ValidateStateTests, GeneratedRecipeMakeSureItWorks)
   EXPECT_EQ (r->GetProto().moves_size(), 3);
   EXPECT_EQ (r->GetProto().requiredcandy_size(), 3);
 } 
-*/
+
 TEST_F (ValidateStateTests, RecepieInstanceFailWithMissingIngridients)
 {
    xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (100);
@@ -759,7 +760,7 @@ TEST_F (ValidateStateTests, ClaimRewardsAfterExpedition)
 
   EXPECT_EQ (tbl4.CountForOwner("domob"), 0);
 }
-/*
+
 TEST_F (ValidateStateTests, ClaimRewardsTestAllRewardTypesBeingAwardedProperly)
 {
   auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
@@ -804,7 +805,7 @@ TEST_F (ValidateStateTests, ClaimRewardsTestAllRewardTypesBeingAwardedProperly)
 
 TEST_F (ValidateStateTests, ClaimRewardsInvalidParams)
 {
-auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
   auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
   ft.reset();
   xp.reset();
@@ -843,7 +844,7 @@ auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
   a = xayaplayers.GetByName ("domob", ctx.RoConfig());
   EXPECT_EQ (a->GetInventory().GetFungibleCount("Common_Candy Button"), 0);
   a.reset();    
-}*/
+}
 
 TEST_F (ValidateStateTests, DeconstructionTest)
 {
@@ -1088,8 +1089,8 @@ TEST_F (ValidateStateTests, ExpeditionWithWrongTyprApplicableGoodieTest)
   EXPECT_EQ (ft->GetStatus(), FighterStatus::Expedition);
   ft.reset();
   
-  /*
-  for (unsigned i = 0; i < 14; ++i) //TODO uncomment, after 3-blocks-hack is removed after testing done
+  
+  for (unsigned i = 0; i < 14; ++i)
   {
     UpdateState ("[]");
   }
@@ -1099,7 +1100,7 @@ TEST_F (ValidateStateTests, ExpeditionWithWrongTyprApplicableGoodieTest)
   ft.reset();  
   
   a = xayaplayers.GetByName ("domob", ctx.RoConfig());
-  EXPECT_EQ (a->GetInventory().GetFungibleCount("Goodie_PressureCooker_1"), 1);*/
+  EXPECT_EQ (a->GetInventory().GetFungibleCount("Goodie_PressureCooker_1"), 1);
 
 }
 
@@ -1303,7 +1304,7 @@ TEST_F (ValidateStateTests, FighterSacrifice)
   xp.reset();
     
 }
-/*
+
 TEST_F (ValidateStateTests, RatingSweetnessUpgrades)
 {
   auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
@@ -1396,7 +1397,7 @@ TEST_F (ValidateStateTests, RatingSweetnessUpgrades)
   EXPECT_EQ (ftA->GetProto().rating(), 1143);
   EXPECT_EQ (ftA->GetProto().sweetness(), (int)pxd::Sweetness::Bittersweet);
   ftA.reset();  
-}*/
+}
 
 TEST_F (ValidateStateTests, TournamentStrongerFighterWins)
 {

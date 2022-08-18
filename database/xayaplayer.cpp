@@ -33,6 +33,8 @@ XayaPlayer::XayaPlayer (Database& d, const std::string& n, const RoConfig& cfg, 
   VLOG (1) << "Created instance for newly initialised account " << name;
   data.SetToDefault ();
   
+  MutableProto().set_specialtournamentprestigetier(1);
+
   /*Probably not needed and is just leftover from original source,
   but lets transfer administrator name role just in case*/
   

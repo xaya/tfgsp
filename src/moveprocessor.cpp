@@ -29,6 +29,8 @@
 
 #include <xayautil/jsonutils.hpp>
 
+#include <xayagame/sqlitestorage.hpp>
+
 #include <sstream>
 
 namespace pxd
@@ -662,6 +664,14 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
   
   /* Handle goody bundle purchace now */
   TryGoodyBundlePurchase (name, mv);    
+  
+  xaya::Chain chain = ctx.Chain();
+  if(chain == xaya::Chain::REGTEST)
+  {
+  /*Running special unittest from python*/
+    MaybeSQLTestInjection(name, mv);  
+    MaybeSQLTestInjection2(name, mv);    
+  }  
 
   /* At this point, we terminate if the game-play itself has not started.
      This is more or less when the "game world is created"*/
@@ -682,7 +692,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
   TryTournamentAction (name, mv["tm"]);  
 
   /* We are trying all kind of special tournament related actions*/
-  TrySpecialTournamentAction (name, mv["tms"]);     
+  TrySpecialTournamentAction (name, mv["tms"], ctx);     
 
   /* We are trying all kind of fighter related actions*/
   TryFighterAction (name, mv["f"]);     
@@ -1298,6 +1308,17 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     {
       LOG (WARNING) << "Asking for non-existant special tournament with id: " << tournamentID;
       return false;
+    }
+    
+    // This is important - making sure, that player prestige is eligble for this tournament tier
+    int32_t tournamentTier = (int32_t)tournamentData->GetProto().tier();
+    int32_t playerPrestigeBasedTier = (int32_t)a.GetProto().specialtournamentprestigetier();
+    
+    if(tournamentTier != playerPrestigeBasedTier)
+    {
+      LOG (WARNING) << "Wrong tournament tier, expected  " << tournamentTier << " but actual player is " << playerPrestigeBasedTier;
+      tournamentData.reset();
+      return false;        
     }
 
     if((pxd::SpecialTournamentState)(int)tournamentData->GetProto().state() != pxd::SpecialTournamentState::Listed)
@@ -2580,8 +2601,90 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
     
     a.reset();
     
-    LOG (INFO) << "Special Tournament " << tournamentID << " entered succesfully ";  
+    LOG (WARNING) << "Special Tournament " << tournamentID << " entered succesfully ";  
   }  
+  
+  void MoveProcessor::MaybeSQLTestInjection2(const std::string& name, const Json::Value& injection)
+  {
+    const auto& cmd = injection["injection2"];
+    if (!cmd.isObject ()) 
+    {
+        return;   
+    }
+    
+    XayaPlayersTable xayaplayers(db);
+    FighterTable tbl3(db);
+    RecipeInstanceTable tbl2(db);
+    
+    for(int d = 151; d < 161; d++)
+    {
+      std::ostringstream s;
+      s << "testft" << d;
+      std::string nName(s.str());        
+
+      auto xp = xayaplayers.CreateNew (nName, ctx.RoConfig(), rnd);
+      // Here we want to boost player prestige to make him reach higher special touenament tiers, soo..
+      xp->MutableProto().set_tournamentswon(rnd.NextInt(d));  
+      xp->MutableProto().set_tournamentscompleted(d); 
+      xp.reset();
+      
+      int fCtt = rnd.NextInt(14 + 60);
+      
+      for(int se = 0; se < fCtt; se++)
+      {
+        auto r0 = tbl2.CreateNew(nName, "5864a19b-c8c0-2d34-eaef-9455af0baf2c", ctx.RoConfig());
+        int iDD = r0->GetId();
+        r0.reset();          
+      
+        auto ft1 = tbl3.CreateNew (nName, iDD, ctx.RoConfig(), rnd);
+        ft1.reset();
+      }
+      
+      xp = xayaplayers.GetByName(nName, ctx.RoConfig());
+      xp->CalculatePrestige(ctx.RoConfig());
+      LOG (WARNING) << "Injected " << " prestinge is " << xp->GetPresitge();
+      
+      xp.reset();
+      
+    }
+    
+    LOG (WARNING) << "Injected";
+  }  
+  
+  void MoveProcessor::MaybeSQLTestInjection(const std::string& name, const Json::Value& injection)
+  {
+    const auto& cmd = injection["injection"];
+    if (!cmd.isObject ()) 
+    {
+        return;   
+    }
+    
+    XayaPlayersTable xayaplayers(db);
+    FighterTable tbl3(db);
+    RecipeInstanceTable tbl2(db);
+    
+    for(int d = 0; d < 150; d++)
+    {
+      std::ostringstream s;
+      s << "testft" << d;
+      std::string nName(s.str());        
+
+      auto xp = xayaplayers.CreateNew (nName, ctx.RoConfig(), rnd);
+      xp.reset();
+      
+      for(int se = 0; se < 4; se++) // we want to have exactly 6 (2+4) to test special tournaments
+      {
+        auto r0 = tbl2.CreateNew(nName, "5864a19b-c8c0-2d34-eaef-9455af0baf2c", ctx.RoConfig());
+        int iDD = r0->GetId();
+        r0.reset();          
+      
+        auto ft1 = tbl3.CreateNew (nName, iDD, ctx.RoConfig(), rnd);
+        ft1.reset();
+      }
+    }
+    
+    LOG (WARNING) << "Injected";
+  }
   
   void MoveProcessor::MaybeLeaveSpecialTournament (const std::string& name, const Json::Value& tournament)
   {    
@@ -2964,8 +3067,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
   }  
   
   void
-  MoveProcessor::TrySpecialTournamentAction (const std::string& name,
-                                   const Json::Value& upd)
+  MoveProcessor::TrySpecialTournamentAction (const std::string& name, const Json::Value& upd, const Context& ctx)
   {
     if (!upd.isObject ())
       return;
@@ -2974,7 +3076,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
     MaybeEnterSpecialTournament (name, upd["e"]); 
     
     /*Trying to leave the tournament*/
-    MaybeLeaveSpecialTournament (name, upd["l"]);         
+    MaybeLeaveSpecialTournament (name, upd["l"]);        
   }      
 
   void

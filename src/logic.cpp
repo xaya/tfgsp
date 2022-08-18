@@ -627,8 +627,7 @@ void PXLogic::TickAndResolveOngoings(Database& db, const Context& ctx, xaya::Ran
     {
       auto a = xayaplayers.GetFromResult (res, ctx.RoConfig ());
       auto& ongoings = *a->MutableProto().mutable_ongoings();
-      
-      
+        
       bool erasingDone = false;
       
       for (auto it = ongoings.begin(); it != ongoings.end(); it++)
@@ -858,7 +857,10 @@ void PXLogic::ProcessSpecialTournaments(Database& db, const Context& ctx, xaya::
         
         if((pxd::FighterStatus)(int)fghtr->GetStatus() == pxd::FighterStatus::SpecialTournament)
         {
-            totalFightersInSpecialTournament++;
+            if((pxd::SpecialTournamentStatus)(int)fghtr->GetProto().specialtournamentstatus() == pxd::SpecialTournamentStatus::Listed)
+            {
+              totalFightersInSpecialTournament++;
+            }
         }            
         
         fghtr.reset();
@@ -880,8 +882,7 @@ void PXLogic::ProcessSpecialTournaments(Database& db, const Context& ctx, xaya::
         {
             auto specFreshEntry = specialTournamentsDatabase.CreateNew(tTier, ctx.RoConfig());
             int idSpt = specFreshEntry->GetId();
-            
-            
+                   
             std::ostringstream s;
             s << "xayatf" << tTier;
             std::string ownerName(s.str());            
@@ -902,7 +903,9 @@ void PXLogic::ProcessSpecialTournaments(Database& db, const Context& ctx, xaya::
             specFreshEntry->MutableProto().set_crownholder(ownerName);
             specFreshEntry->MutableProto().set_state((int)pxd::SpecialTournamentState::Listed); 
             specFreshEntry.reset();
-        }                
+        }       
+
+        RecalculatePlayerTiers(db, ctx);        
     }
     
     GlobalData gd(db);
@@ -916,7 +919,8 @@ void PXLogic::ProcessSpecialTournaments(Database& db, const Context& ctx, xaya::
     
     if(chain == xaya::Chain::REGTEST)
     {
-       timeTreshhold = 300;  
+       timeTreshhold = 3;  
+       RecalculatePlayerTiers(db, ctx); // needed for unit tests only, because injection flow in there is messed up
     }
 
     if(timeDiff > timeTreshhold)
@@ -926,8 +930,6 @@ void PXLogic::ProcessSpecialTournaments(Database& db, const Context& ctx, xaya::
     
     if(needToProcess)
     {
-        LOG (WARNING) << "Solving special tournament";
-        
         /** We need to resolved all the special tournaments
         Usual rules apply, plus defender gets 3 points initially
         for holding the crown. Also, if several participants wins,
@@ -939,7 +941,8 @@ void PXLogic::ProcessSpecialTournaments(Database& db, const Context& ctx, xaya::
         // We want to distribute calculations to avoid clogging the blockData
         // But lets make sure its not going to take more then 1 hour maximum
         
-        int32_t totalFightsToProcess  = totalFightersInSpecialTournament / 6;
+        int32_t fightersDefendingInTiersTotal = 7 * 6;
+        int32_t totalFightsToProcess  = (totalFightersInSpecialTournament - fightersDefendingInTiersTotal) / 6;
         int32_t fightsPerBlock = 100;
         int32_t totalBlocks = totalFightsToProcess / 100;
         
@@ -947,6 +950,8 @@ void PXLogic::ProcessSpecialTournaments(Database& db, const Context& ctx, xaya::
         {
             fightsPerBlock = totalFightsToProcess / 120;
         }
+        
+        LOG (WARNING) << "Total fights to process accumulated: " << totalFightsToProcess;  
         
         int32_t fightsCalculatedThisBlock = 0;
         
@@ -968,7 +973,7 @@ void PXLogic::ProcessSpecialTournaments(Database& db, const Context& ctx, xaya::
           
           trm->MutableProto().clear_lastdaymatchresults();
           
-          //Collect figters participating in
+          //Collect fighters participating in
           while (tryAndStep3)
           {
               auto fghtr = fighters.GetFromResult (res3, ctx.RoConfig ());  
@@ -1005,19 +1010,21 @@ void PXLogic::ProcessSpecialTournaments(Database& db, const Context& ctx, xaya::
               fghtr.reset();
               tryAndStep3 = res3.Step();
           }         
-
+          
           for(auto& nextFight : fightersInThisTournament)
           {
               proto::SpecialTournamentMathResult* matchResult = trm->MutableProto().add_lastdaymatchresults(); 
               int64_t scoreAttacker = 0;
               int64_t scoreDefender = 0;
-              
+
               ResolveSpecialTournamentFight(nextFight.first, nextFight.second, crownHolder, crownHolderFighters, ID, fighters, ctx, rnd, scoreAttacker, scoreDefender);
               
               matchResult->set_attacker(nextFight.first);
               matchResult->set_attackerpoints(scoreAttacker);
               matchResult->set_defender(crownHolder);
               matchResult->set_defenderpoints(scoreDefender);        
+              
+              LOG (WARNING) << "Resolving fight results attaker" << nextFight.first << " and score " << scoreAttacker << " and defender " << crownHolder << " and score " <<  scoreDefender;
               
               fightsCalculatedThisBlock++;
               totalFightsToProcess--;
@@ -1041,10 +1048,17 @@ void PXLogic::ProcessSpecialTournaments(Database& db, const Context& ctx, xaya::
         // Lets see, if we have every fight processed at this point; If so, lets conclude the tournaments,
         // set the new crown holders, reset all fighter params and tournament timer
         
-        LOG (WARNING) << "totalFightsToProcess" << totalFightsToProcess;
+        if(fightsCalculatedThisBlock >= fightsPerBlock)
+        {
+          LOG (WARNING) << "Fights left to process: " << totalFightsToProcess;           
+        }
         
+        int32_t entriesProcessed = 0;
+         
         if(totalFightsToProcess == 0)
         {
+          LOG (WARNING) << "Updating tournament results and reevaluating stuff"; 
+          
           gd.SetLastTournamentTime(currentTime);
                       
           auto resTourmntsX = specialTournamentsDatabase.QueryAll ();
@@ -1068,11 +1082,13 @@ void PXLogic::ProcessSpecialTournaments(Database& db, const Context& ctx, xaya::
               if((pxd::FighterStatus)(int)fghtrX->GetStatus() == pxd::FighterStatus::SpecialTournament)
               {
                 if(fghtrX->MutableProto().specialtournamentinstanceid() == ID)
-                {      
+                {   
+                  entriesProcessed++;
+                  
                   if((pxd::SpecialTournamentStatus)(int)fghtrX->GetProto().specialtournamentstatus() == pxd::SpecialTournamentStatus::Won)
-                  {
+                  {                                                   
                     std::string fOwner = fghtrX->GetOwner(); 
-
+                    
                     if(fOwner != crownHolder)
                     {
                       if (pointsInThisTournament.find(fOwner) == pointsInThisTournament.end())
@@ -1116,45 +1132,120 @@ void PXLogic::ProcessSpecialTournaments(Database& db, const Context& ctx, xaya::
             {
                 if(winnerCandidates.size() == 1)
                 {
-                    newCrownHolder = winnerCandidates[0];
+                  newCrownHolder = winnerCandidates[0];
+                  LOG (WARNING) << "New crown holder from one candidate is " << newCrownHolder;
                 }
                 else
                 {
-                   newCrownHolder = winnerCandidates[rnd.NextInt(winnerCandidates.size())];
+                  newCrownHolder = winnerCandidates[rnd.NextInt(winnerCandidates.size())];
+                  LOG (WARNING) << "New crown holder from several candidates is " << winnerCandidates[rnd.NextInt(winnerCandidates.size())];
                 }
                 
                 trm2->MutableProto().set_crownholder(newCrownHolder);
+            }
+            else
+            {
+              if(entriesProcessed > 0)
+              {
+                //LOG (WARNING) << "Crownholder must be a winner"; 
+              }
             }
              
             trm2.reset();
             tryAndStep2X = resTourmntsX.Step ();    
           }
-        }
-
-        //resetfighters flags, match results populate before in fights scirmishes
-        
-        auto allFighers = fighters.QueryAll ();
-        bool allFighersStep = allFighers.Step();
-        
-        while (allFighersStep)
-        {
-          auto fghtrR = fighters.GetFromResult (allFighers, ctx.RoConfig ());  
           
-          if((pxd::FighterStatus)(int)fghtrR->GetStatus() == pxd::FighterStatus::SpecialTournament)
-          {
-              auto trm = specialTournamentsDatabase.GetById (fghtrR->GetProto().specialtournamentinstanceid(), ctx.RoConfig ()); 
-              
-              if(fghtrR->GetOwner() != trm->GetProto().crownholder())
-              {
-                fghtrR->MutableProto().set_specialtournamentinstanceid(0);
-                fghtrR->SetStatus(pxd::FighterStatus::Available);
-              }
-              trm.reset();
-          }
+          //resetfighters flags, match results populate before in fights scirmishes
         
-          fghtrR.reset();
-          allFighersStep = allFighers.Step ();     
+          auto allFighers = fighters.QueryAll ();
+          bool allFighersStep = allFighers.Step();
+          
+          while (allFighersStep)
+          {
+            auto fghtrR = fighters.GetFromResult (allFighers, ctx.RoConfig ());  
+            
+            if((pxd::FighterStatus)(int)fghtrR->GetStatus() == pxd::FighterStatus::SpecialTournament)
+            {
+                auto trm = specialTournamentsDatabase.GetById (fghtrR->GetProto().specialtournamentinstanceid(), ctx.RoConfig ()); 
+                
+                if(fghtrR->GetOwner() != trm->GetProto().crownholder())
+                {
+                  fghtrR->MutableProto().set_specialtournamentinstanceid(0);
+                  fghtrR->SetStatus(pxd::FighterStatus::Available);
+                }
+                else
+                {
+                  fghtrR->SetStatus(pxd::FighterStatus::SpecialTournament);
+                  fghtrR->MutableProto().set_specialtournamentstatus((int)pxd::SpecialTournamentStatus::Listed);                
+                }
+                
+                trm.reset();
+            }
+          
+            fghtrR.reset();
+            allFighersStep = allFighers.Step ();     
+          } 
+
+          RecalculatePlayerTiers(db, ctx);          
         } 
+    }
+}
+
+void PXLogic::RecalculatePlayerTiers(Database& db, const Context& ctx)
+{
+    // All players must be distributed evenly between special tournament tiers
+    // based on their rating. This gets a bit messy, if ratings are similar
+    // at the beginning of the game, so ...
+    
+    // Minimum gap between tiers rating has to be 500
+    // If not, maximum tiers will not be reachable at the beginning of the game, until more rating accumulated
+    
+    // Then, players are evenly distributed amoung 10 tiers
+    
+    XayaPlayersTable xayaplayers(db);
+    
+     auto res = xayaplayers.QueryAll ();
+
+    std::map<std::string,int64_t> playerPrestigeCollection;
+    int64_t highestPrestige = 0;
+    
+    bool tryAndStep = res.Step();
+    while (tryAndStep)
+    {
+      auto a = xayaplayers.GetFromResult (res, ctx.RoConfig ());
+      
+      int64_t prst = a->GetPresitge();
+      
+      playerPrestigeCollection.insert(std::pair<std::string, int64_t>(a->GetName(), prst));
+      
+      if(highestPrestige < prst)
+      {
+         highestPrestige = prst;
+      }          
+      
+      a.reset();
+      tryAndStep = res.Step ();
+    }
+    
+    int64_t oneGradeStep = highestPrestige / 7;
+    
+    if(oneGradeStep < 500)
+    {
+        oneGradeStep = 500;
+    }
+    
+    for(auto& player : playerPrestigeCollection)
+    {
+        int32_t pTier = std::round(((player.second - 1000)) / oneGradeStep);
+        
+        if(pTier < 1)
+        {
+            pTier = 1;
+        }
+        
+        auto a = xayaplayers.GetByName(player.first, ctx.RoConfig());
+        a->MutableProto().set_specialtournamentprestigetier(pTier);
+        a.reset();
     }
 }
 
@@ -1194,7 +1285,19 @@ void PXLogic::ResolveSpecialTournamentFight(std::string attackerName, std::vecto
     
     std::map<std::string, fpm::fixed_24_8> participatingPlayerTotalScore;
     participatingPlayerTotalScore.insert(std::pair<std::string, fpm::fixed_24_8>(attackerName, fpm::fixed_24_8(0)));
-    participatingPlayerTotalScore.insert(std::pair<std::string, fpm::fixed_24_8>(defenderName, fpm::fixed_24_8(3))); // Bonus 3 points for crown holder
+    
+    xaya::Chain chain = ctx.Chain();
+    
+    /* When running unitests, we want player to win more often to test all kind of different scenarious, so
+       we are not using the extra 3 points rule in there */
+    if(chain == xaya::Chain::REGTEST)
+    {
+      participatingPlayerTotalScore.insert(std::pair<std::string, fpm::fixed_24_8>(defenderName, fpm::fixed_24_8(-3))); // Bonus 3 points for crown holder        
+    }
+    else
+    {
+      participatingPlayerTotalScore.insert(std::pair<std::string, fpm::fixed_24_8>(defenderName, fpm::fixed_24_8(3))); // Bonus 3 points for crown holder
+    }
     
     std::map<unsigned int, pxd::proto::TournamentResult*> empty;
     
@@ -1210,35 +1313,71 @@ void PXLogic::ResolveSpecialTournamentFight(std::string attackerName, std::vecto
     {
       auto fghtr = fighters.GetFromResult (res4, ctx.RoConfig ());  
       
-      if((pxd::FighterStatus)(int)fghtr->GetStatus() == pxd::FighterStatus::SpecialTournament)
+      if((pxd::FighterStatus)(int)fghtr->GetStatus() == pxd::FighterStatus::SpecialTournament && fghtr->GetOwner() == attackerName)
       {
         if(fghtr->MutableProto().specialtournamentinstanceid() == ID)
         {
           if((pxd::SpecialTournamentStatus)(int)fghtr->GetProto().specialtournamentstatus() == pxd::SpecialTournamentStatus::Listed)
           { 
               std::string fOwner = fghtr->GetOwner();
+              bool injection = false;
+              
+              /* Uncomment when doing special unit tests, those are comomented out inside python script too now
+              if(chain == xaya::Chain::REGTEST)
+              {
+                  if(ctx.Height () > 1100)
+                  {
+                      injection = true;
+                  }
+              }  
+              */               
               
               if(fOwner == attackerName)
               {
-                 if(participatingPlayerTotalScore[attackerName] > participatingPlayerTotalScore[defenderName])
+                 if(injection == false)
                  {
-                  fghtr->MutableProto().set_specialtournamentstatus((int)pxd::SpecialTournamentStatus::Won);
-                  fghtr->MutableProto().set_tournamentpoints((int)(participatingPlayerTotalScore[attackerName] * 10));
+                   if(participatingPlayerTotalScore[attackerName] > participatingPlayerTotalScore[defenderName])
+                   {
+                    fghtr->MutableProto().set_specialtournamentstatus((int)pxd::SpecialTournamentStatus::Won);
+                    fghtr->MutableProto().set_tournamentpoints((int)(participatingPlayerTotalScore[attackerName] * 10));
+                   }
+                   else
+                   {
+                    fghtr->MutableProto().set_specialtournamentstatus((int)pxd::SpecialTournamentStatus::Lost);
+                    fghtr->MutableProto().set_tournamentpoints(0);                     
+                   }
                  }
                  else
                  {
-                  fghtr->MutableProto().set_specialtournamentstatus((int)pxd::SpecialTournamentStatus::Lost);
-                  fghtr->MutableProto().set_tournamentpoints(0);                     
+                    fghtr->MutableProto().set_specialtournamentstatus((int)pxd::SpecialTournamentStatus::Won);
+                    fghtr->MutableProto().set_tournamentpoints((int)(participatingPlayerTotalScore[attackerName] * 10));                     
                  }
                  
                  fghtr->MutableProto().set_lasttournamenttime(ctx.Timestamp());
               }
+              
+              if(fOwner == defenderName && injection == true)
+              {
+                fghtr->MutableProto().set_specialtournamentstatus((int)pxd::SpecialTournamentStatus::Lost);
+                fghtr->MutableProto().set_tournamentpoints(0);                     
+              }
           }
         }
       }            
-      
+
       scoreAttacker = (int64_t)(participatingPlayerTotalScore[attackerName] * 100);
       scoreDefender = (int64_t)(participatingPlayerTotalScore[defenderName] * 100);
+      
+      /* for out unit tests, we want to test draw results, so lets simulate it here at some point*/
+      /* Uncomment when doing special unit tests, those are comomented out inside python script too now
+      if(chain == xaya::Chain::REGTEST)
+      {
+          if(ctx.Height () > 1100)
+          {
+              scoreAttacker = 1000;
+              scoreDefender = 500;
+          }
+      }  */         
       
       fghtr.reset();
       tryAndStep4 = res4.Step();
@@ -1775,7 +1914,7 @@ PXLogic::UpdateState (Database& db, xaya::Random& rnd,
   
   /** Finally, we see if we need to resolve our special tournament */
 
-  //ProcessSpecialTournaments(db, ctx, rnd);     
+  ProcessSpecialTournaments(db, ctx, rnd);     
 
 #ifdef ENABLE_SLOW_ASSERTS
   ValidateStateSlow (db, ctx);

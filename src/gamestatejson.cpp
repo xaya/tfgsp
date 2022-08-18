@@ -425,6 +425,7 @@ template <>
   res["valuecommon"] = IntToJson (pb.valuecommon ());
   res["fighteraverage"] = IntToJson (pb.fighteraverage ());
   res["tournamentperformance"] = IntToJson (pb.tournamentperformance ());
+  res["specialtournamentprestigetier"] = IntToJson (pb.specialtournamentprestigetier ());
 
   return res;
 }

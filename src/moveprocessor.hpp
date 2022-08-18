@@ -356,6 +356,11 @@ private:
    */  
   void MaybePutFighterForSale (const std::string& name, const Json::Value& fighter);
      
+  /**
+  * Tries to run special command from pythin unittest
+  */   
+  void MaybeSQLTestInjection(const std::string& name, const Json::Value& injection);  
+  void MaybeSQLTestInjection2(const std::string& name, const Json::Value& injection);  
      
    /**
    * Tries to put the fighter for sale on the exchange
@@ -450,7 +455,7 @@ private:
   /**
    * Tries to process all kind of actions related to special tournaments
    */  
-  void TrySpecialTournamentAction (const std::string& name, const Json::Value& upd);    
+  void TrySpecialTournamentAction (const std::string& name, const Json::Value& upd, const Context& ctx);    
   
   /**
    * Tries to process all kind of actions related to fighters

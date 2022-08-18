@@ -140,7 +140,12 @@ private:
   /**
    * Scans all tournaments to either start them or finilize
    */  
-  static void ProcessSpecialTournaments(Database& db, const Context& ctx, xaya::Random& rnd);  
+  static void ProcessSpecialTournaments(Database& db, const Context& ctx, xaya::Random& rnd); 
+
+  /**
+   * For the special tournament, we need to precalculate, which tier player can participate in
+   */  
+  static void RecalculatePlayerTiers(Database& db, const Context& ctx);   
 
   /**
    * Inner helper function, to resolve 1:1 clash points between 2 fighters

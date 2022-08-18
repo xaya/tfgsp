@@ -80,5 +80,10 @@ message XayaPlayer
   optional uint32 ValueUncommon = 12;  
   optional uint32 ValueCommon = 13;
   optional uint32 FighterAverage = 14; 
-  optional uint32 TournamentPerformance = 15;    
+  optional uint32 TournamentPerformance = 15;
+  
+  /**
+   * Each time special tournament passed, for each player we re-calculate the tier he applicaple to join to
+   */  
+  optional uint32 SpecialTournamentPrestigeTier = 16;  
 }

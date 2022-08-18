@@ -42,6 +42,7 @@ FighterInstance::FighterInstance (Database& d, const std::string& o, uint32_t r,
   
   MutableProto().set_recipeid(r);
   MutableProto().set_tournamentinstanceid(0);
+  MutableProto().set_specialtournamentinstanceid(0);
   
   SetStatus(FighterStatus::Available);
 
