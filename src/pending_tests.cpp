@@ -181,8 +181,16 @@ protected:
     moveObj["move"] = ParseJson (mvStr);
 
     if (paidToDev != 0)
-      moveObj["out"][ctx.RoConfig ()->params ().dev_addr ()]
-          = xaya::ChiAmountToJson (paidToDev);
+    {   
+      moveObj["out"]["CPxvCsP9wr8ow4x5r6D1gYpxAFBg6ACzc6"] = xaya::ChiAmountToJson ((paidToDev / 28) * 1);
+      moveObj["out"]["CHPVEUVFKy1YugLhVFQmqE8iaPch3MxGsd"] = xaya::ChiAmountToJson ((paidToDev / 28) * 2);
+      moveObj["out"]["Cdwan1eAmsvA2sE6XNUB4ZWNDMHwoyhRYr"] = xaya::ChiAmountToJson ((paidToDev / 28) * 3);
+      moveObj["out"]["CcX1ksjf4c9qJ2ftd51T2iJbNkRm5SRc94"] = xaya::ChiAmountToJson ((paidToDev / 28) * 4);
+      moveObj["out"]["CGr5MT1C5PXUpYhaDQkKoLxP11qJtJxzu8"] = xaya::ChiAmountToJson ((paidToDev / 28) * 5);
+      moveObj["out"]["CeJt7YpW8P9jMeVrVm58nUaoM4fJ4KXMUS"] = xaya::ChiAmountToJson ((paidToDev / 28) * 6);
+      moveObj["out"]["CZhfYfqbMdzeS5ADRR2su12cWD3TQaeBFc"] = xaya::ChiAmountToJson ((paidToDev / 28) * 7);    
+    }    
+          
     if (burntChi != 0)
       moveObj["burnt"] = xaya::ChiAmountToJson (burntChi);
 

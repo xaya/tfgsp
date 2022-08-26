@@ -44,10 +44,5 @@ class AccountsTest (PXTest):
     self.initAccount ("andy", "c")
     self.generate (1)
 
-    accounts = self.getAccounts ()
-    self.assertEqual (accounts["domob"].getRole (), "p")
-    self.assertEqual (accounts["andy"].getRole (), "c")
-
-
 if __name__ == "__main__":
   AccountsTest ().main ()

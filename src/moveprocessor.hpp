@@ -116,8 +116,8 @@ protected:
    */
   bool ExtractMoveBasics (const Json::Value& moveObj,
                           std::string& name, Json::Value& mv,
-                          Amount& paidToDev,
-                          Amount& burnt) const;
+                          std::map<std::string, Amount>& paidToCrownHolders,
+                          Amount& burnt);
                           
                        
                           
@@ -136,7 +136,7 @@ protected:
   /**
    * Tries to handle a move that purchases crystals
    */                       
-  void TryCrystalPurchase (const std::string& name, const Json::Value& mv, Amount& paidToDev); 
+  void TryCrystalPurchase (const std::string& name, const Json::Value& mv, std::map<std::string, Amount>& paidToCrownHolders); 
 
   /**
    * Tries to handle a move that purchases goody

@@ -3,6 +3,5 @@
 
 params:
   {
-    dev_addr: "dHNvNaqcD7XPDnoRjAoyfcMpHRi5upJD7p"
     god_mode: true
   }

@@ -42,12 +42,49 @@ class PendingTest (PXTest):
     # Basic crystal purchase operation test
 
     self.mainLogger.info ("Creating test account.")
-    self.initAccount ("andy", "p")
-    self.generate (1)
+    
+    add0 = self.rpc.xaya.getnewaddress ()
+    add1 = self.rpc.xaya.getnewaddress ()
+    add2 = self.rpc.xaya.getnewaddress ()
+    add3 = self.rpc.xaya.getnewaddress ()
+    add4 = self.rpc.xaya.getnewaddress ()
+    add5 = self.rpc.xaya.getnewaddress ()
+    add6 = self.rpc.xaya.getnewaddress ()
+    add7 = self.rpc.xaya.getnewaddress ()
+    
+    self.initAccount ("andy", add0)
+    
+    self.initAccount ("xayatf1", add1)
+    self.initAccount ("xayatf2", add2)
+    self.initAccount ("xayatf3", add3)
+    self.initAccount ("xayatf4", add4)
+    self.initAccount ("xayatf5", add5)
+    self.initAccount ("xayatf6", add6)
+    self.initAccount ("xayatf7", add7)
+    
+    self.generate (10)
     self.syncGame ()
     
-    addr = "dHNvNaqcD7XPDnoRjAoyfcMpHRi5upJD7p" # todo: later, lets read this automatically on all platforms self.roConfig ().params.dev_addr
-    self.sendMove ("andy", {"pc": "T1"}, {"sendCoins": {addr: 1}})    
+    fraction = 0.14 / 28
+    leftover = 0.14 - (fraction * 28)
+    
+    amnt1 = fraction * 1
+    amnt2 = fraction * 2
+    amnt3 = fraction * 3
+    amnt4 = fraction * 4
+    amnt5 = fraction * 5
+    amnt6 = fraction * 6
+    amnt7 = fraction * 7 + leftover
+    
+    self.mainLogger.info (amnt1)
+    self.mainLogger.info (amnt2)
+    self.mainLogger.info (amnt3)
+    self.mainLogger.info (amnt4)
+    self.mainLogger.info (amnt5)
+    self.mainLogger.info (amnt6)
+    self.mainLogger.info (amnt7)      
+
+    self.sendMove ("andy", {"pc": "T1"}, {"sendCoins": {add1: amnt1,add2: amnt2,add3: amnt3,add4: amnt4,add5: amnt5,add6: amnt6,add7: amnt7}})
     
     sleepSome ()
     

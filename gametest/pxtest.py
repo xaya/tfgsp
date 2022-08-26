@@ -107,7 +107,7 @@ class PXTest (XayaGameTest):
     addr = self.roConfig ().params.dev_addr
     return self.sendMove (name, move, {"sendCoins": {addr: devAmount}})
 
-  def initAccount (self, name, role):
+  def initAccount (self, name, address):
     """
     Utility method to initialise an account.
     """
@@ -117,7 +117,7 @@ class PXTest (XayaGameTest):
         {
           "init":
             {
-              "role": role,
+              "address": address,
             },
         },
     }

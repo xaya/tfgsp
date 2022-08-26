@@ -656,9 +656,10 @@ PendingStateUpdater::ProcessMove (const Json::Value& moveObj)
 {
   std::string name, bundleKeyCode;
   Json::Value mv;
-  Amount paidToDev, burnt;
+  std::map<std::string, Amount> paidToCrownHolders;
+  Amount  burnt;
 
-  if (!ExtractMoveBasics (moveObj, name, mv, paidToDev, burnt))
+  if (!ExtractMoveBasics (moveObj, name, mv, paidToCrownHolders, burnt))
     return;
 
   auto a = xayaplayers.GetByName (name, ctx.RoConfig ());
@@ -801,6 +802,7 @@ PendingStateUpdater::ProcessMove (const Json::Value& moveObj)
   Amount crystalAmount  = 0;
   std::string fungibleName = "";
   uint64_t uses = 0;
+  Amount paidToDev;
   
   if(ParseCrystalPurchase(mv, bundleKeyCode, cost, crystalAmount, name, paidToDev))
   {

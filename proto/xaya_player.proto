@@ -31,7 +31,7 @@ message XayaPlayer
   optional uint32 notused = 1;
     
   /**
-   * Role of the XAYA name in relation to the game
+   * Role of the XAYA name in relation to the game, deperecated for TF
    */
   optional uint32 role = 2;
   
@@ -86,4 +86,9 @@ message XayaPlayer
    * Each time special tournament passed, for each player we re-calculate the tier he applicaple to join to
    */  
   optional uint32 SpecialTournamentPrestigeTier = 16;  
+  
+  /**
+   * Associated CHI address to send rewards into for special tournaments
+   */    
+  optional string address = 17; 
 }

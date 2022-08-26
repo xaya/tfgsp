@@ -92,6 +92,15 @@ public:
    */    
   static void CheckFightersForSale(Database& db, const Context& ctx);
   
+  /**
+   * Handles the actual logic for the game-state update.  This is extracted
+   * here out of UpdateState, so that it can be accessed from unit tests
+   * independently of SQLiteGame.
+   */
+  static void UpdateState (Database& db, xaya::Random& rnd,
+                           xaya::Chain chain,
+                           const Json::Value& blockData);  
+  
 private:
 
   /** Helper function that generates and pushes new reward instance into the database and returns unique auto ID */
@@ -168,14 +177,6 @@ private:
 
   static void EloGetNewRatings();
 
-  /**
-   * Handles the actual logic for the game-state update.  This is extracted
-   * here out of UpdateState, so that it can be accessed from unit tests
-   * independently of SQLiteGame.
-   */
-  static void UpdateState (Database& db, xaya::Random& rnd,
-                           xaya::Chain chain,
-                           const Json::Value& blockData);
 
   /**
    * Updates the state with a custom FameUpdater.  This is used for mocking

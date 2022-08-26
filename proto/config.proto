@@ -54,79 +54,75 @@ message BurnsaleStage
  */
 message Params
 {
-
-  /** The address to which developer payments should be sent.  */
-  optional string dev_addr = 1;
-
   /** Whether or not god mode is enabled.  */
-  optional bool god_mode = 2;
+  optional bool god_mode = 1;
   
  /** Data about the burnsale schedule.  */
-  repeated BurnsaleStage burnsale_stages = 3;  
+  repeated BurnsaleStage burnsale_stages = 2;  
   
-  optional string starting_recipes = 4;
+  optional string starting_recipes = 3;
   
-  optional uint32 elok_factor = 5;
+  optional uint32 elok_factor = 4;
   
-  optional float alms = 6;
+  optional float alms = 5;
   
-  optional uint32 starting_crystals = 7;
+  optional uint32 starting_crystals = 6;
   
-  optional uint32 required_candy_per_vove = 8;
+  optional uint32 required_candy_per_vove = 7;
   
-  optional uint32 exchange_listing_fee = 9;
+  optional uint32 exchange_listing_fee = 8;
   
-  optional float exchange_sale_percentage = 10;
+  optional float exchange_sale_percentage = 9;
   
-  optional uint32 common_recipe_cook_cost = 11;
+  optional uint32 common_recipe_cook_cost = 10;
   
-  optional uint32 uncommon_recipe_cook_cost = 12;
+  optional uint32 uncommon_recipe_cook_cost = 11;
   
-  optional uint32 rare_recipe_cook_cost = 13;
+  optional uint32 rare_recipe_cook_cost = 12;
   
-  optional uint32 epic_recipe_cook_cost = 14;
+  optional uint32 epic_recipe_cook_cost = 13;
   
-  optional uint32 common_cook_duration = 15;
+  optional uint32 common_cook_duration = 14;
   
-  optional uint32 uncommon_cook_duration = 16;
+  optional uint32 uncommon_cook_duration = 15;
   
-  optional uint32 rare_cook_duration = 17;
+  optional uint32 rare_cook_duration = 16;
   
-  optional uint32 epic_cook_duration = 18;
+  optional uint32 epic_cook_duration = 17;
   
-  optional uint32 common_move_count = 19;
+  optional uint32 common_move_count = 18;
   
-  optional uint32 uncommon_move_count = 20;
+  optional uint32 uncommon_move_count = 19;
   
-  optional uint32 rare_move_count = 21;
+  optional uint32 rare_move_count = 20;
   
-  optional uint32 epic_move_count = 22;
+  optional uint32 epic_move_count = 21;
   
-  optional uint32 max_recipe_inventory_amount = 23;
+  optional uint32 max_recipe_inventory_amount = 22;
   
-  optional uint32 max_fighter_inventory_amount = 24;
+  optional uint32 max_fighter_inventory_amount = 23;
   
-  optional uint32 deconstruction_blocks = 25;
+  optional uint32 deconstruction_blocks = 24;
   
-  optional float deconstruction_return_percent = 26;
+  optional float deconstruction_return_percent = 25;
   
-  map<string, string> fungible_items = 27;
+  map<string, string> fungible_items = 26;
   
-  optional uint32 base_prestige = 28;
+  optional uint32 base_prestige = 27;
   
-  optional uint32 prestige_epic_mod = 29;
+  optional uint32 prestige_epic_mod = 28;
   
-  optional uint32 prestige_rare_mod = 30;
+  optional uint32 prestige_rare_mod = 29;
   
-  optional uint32 prestige_uncommon_mod = 31;
+  optional uint32 prestige_uncommon_mod = 30;
   
-  optional uint32 prestige_common_mod = 32;
+  optional uint32 prestige_common_mod = 31;
   
-  optional uint32 prestige_total_treats_mod = 33;
+  optional uint32 prestige_total_treats_mod = 32;
   
-  optional uint32 prestige_avg_rating_mod = 34;
+  optional uint32 prestige_avg_rating_mod = 33;
   
-  optional float prestige_tournament_performance_mod = 35;
+  optional float prestige_tournament_performance_mod = 34;
 }
 
 /* ************************************************************************** */

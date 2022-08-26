@@ -17,6 +17,7 @@
 */
 
 #include "moveprocessor.hpp"
+#include "logic.hpp"
 
 #include "jsonutils.hpp"
 #include "testutils.hpp"
@@ -57,6 +58,58 @@ protected:
   {}
 
   /**
+   * Calls PXLogic::UpdateState with our test instances of the database,
+   * params and RNG.  The given string is parsed as JSON array and used
+   * as moves in the block data.
+   */
+  void
+  UpdateState (const std::string& movesStr)
+  {
+    UpdateStateJson (ParseJson (movesStr));
+  }
+  
+   /**
+   * Builds a blockData JSON value from the given moves.
+   */
+  Json::Value
+  BuildBlockData (const Json::Value& moves)
+  {
+    Json::Value blockData(Json::objectValue);
+    blockData["admin"] = Json::Value (Json::arrayValue);
+    blockData["moves"] = moves;
+
+    Json::Value meta(Json::objectValue);
+    meta["height"] = ctx.Height ();
+    meta["timestamp"] = 1500000000;
+    blockData["block"] = meta;
+
+    return blockData;
+  }
+  
+  
+  /**
+   * Updates the state as with UpdateState, but with moves given
+   * already as JSON value.
+   */
+  void
+  UpdateStateJson (const Json::Value& moves)
+  {
+    UpdateStateWithData (BuildBlockData (moves));
+  }
+
+  /**
+   * Calls PXLogic::UpdateState with the given block data and our params, RNG
+   * and stuff.  This is a more general variant of UpdateState(std::string),
+   * where the block data can be modified to include extra stuff (e.g. a block
+   * height of our choosing).
+   */
+  void
+  UpdateStateWithData (const Json::Value& blockData)
+  {
+    PXLogic::UpdateState (db, rnd, ctx.Chain (), blockData);
+  }  
+
+  /**
    * Processes an array of admin commands given as JSON string.
    */
   void
@@ -87,13 +140,23 @@ protected:
   {
     Json::Value val = ParseJson (str);
     for (auto& entry : val)
-      entry["out"][ctx.RoConfig()->params ().dev_addr ()]
-          = xaya::ChiAmountToJson (amount);
+    {      
+      entry["out"]["CPxvCsP9wr8ow4x5r6D1gYpxAFBg6ACzc6"] = xaya::ChiAmountToJson ((amount / 28) * 1);
+      entry["out"]["CHPVEUVFKy1YugLhVFQmqE8iaPch3MxGsd"] = xaya::ChiAmountToJson ((amount / 28) * 2);
+      entry["out"]["Cdwan1eAmsvA2sE6XNUB4ZWNDMHwoyhRYr"] = xaya::ChiAmountToJson ((amount / 28) * 3);
+      entry["out"]["CcX1ksjf4c9qJ2ftd51T2iJbNkRm5SRc94"] = xaya::ChiAmountToJson ((amount / 28) * 4);
+      entry["out"]["CGr5MT1C5PXUpYhaDQkKoLxP11qJtJxzu8"] = xaya::ChiAmountToJson ((amount / 28) * 5);
+      entry["out"]["CeJt7YpW8P9jMeVrVm58nUaoM4fJ4KXMUS"] = xaya::ChiAmountToJson ((amount / 28) * 6);
+      entry["out"]["CZhfYfqbMdzeS5ADRR2su12cWD3TQaeBFc"] = xaya::ChiAmountToJson ((amount / 28) * 7);
+      
+      Amount leftOverDueToPrecisionError = amount - ((amount / 28) * 28);
+      Amount finalAmn = ((amount / 28) * 7) + leftOverDueToPrecisionError;
+      entry["out"]["CZhfYfqbMdzeS5ADRR2su12cWD3TQaeBFc"] = xaya::ChiAmountToJson (finalAmn);
+    }
 
     MoveProcessor mvProc(db, rnd, ctx);
     mvProc.ProcessAll (val);
   }
-
 };
 
 /* ************************************************************************** */
@@ -113,10 +176,6 @@ TEST_F (MoveProcessorTests, InvalidDataFromXaya)
     [{"name": 5, "move": {}}]
   )"), "nameVal.isString");
 
-  EXPECT_DEATH (Process (R"([{
-    "name": "domob", "move": {},
-    "out": {")" + ctx.RoConfig()->params ().dev_addr () + R"(": false}
-  }])"), "JSON value for amount is not double");
 }
 
 TEST_F (MoveProcessorTests, InvalidAdminFromXaya)
@@ -164,24 +223,13 @@ using XayaPlayersUpdateTests = MoveProcessorTests;
 TEST_F (XayaPlayersUpdateTests, Initialisation)
 {
   Process (R"([
-    {"name": "domob", "move": {"a": {"x": 42, "init": {"role": "p"}}}}
+    {"name": "domob", "move": {"a": {"x": 42, "init": {"address": "CGUpAcjsb6MDktSYg8yRDxDutr7FhWtdWC"}}}}
   ])");
+  
+  UpdateState ("[]");
 
   auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
   ASSERT_TRUE (a != nullptr);
-  EXPECT_EQ (a->GetRole (), PlayerRole::PLAYER);
-}
-
-TEST_F (XayaPlayersUpdateTests, InvalidInitialisation)
-{
-  EXPECT_DEATH (Process (R"([
-    {"name": "domob", "move": {"a": {"init": {"x": 1, "role": "b"}}}},
-    {"name": "domob", "move": {"a": {"init": {"role": "x"}}}},
-    {"name": "domob", "move": {"a": {"init": {"role": "a"}}}},
-    {"name": "domob", "move": {"a": {"init": {"y": 5}}}},
-    {"name": "domob", "move": {"a": {"init": false}}},
-    {"name": "domob", "move": {"a": 42}}
-  ])"), "Invalid role value from database");
 }
 
 TEST_F (XayaPlayersUpdateTests, RecepieInstanceSheduleTest)
@@ -352,19 +400,6 @@ TEST_F (XayaPlayersUpdateTests, ExpeditionInstanceSheduleTestWrongData2)
   EXPECT_EQ (a->GetOngoingsSize (), 0);
 }
 
-TEST_F (XayaPlayersUpdateTests, InitialisationOfExistingAccount)
-{
-  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->SetRole(PlayerRole::PLAYER);
-
-  Process (R"([
-    {"name": "domob", "move": {"a": {"init": {"role": "f"}}}}
-  ])");
-
-  auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
-  ASSERT_TRUE (a != nullptr);
-  EXPECT_EQ (a->GetRole (), PlayerRole::PLAYER);
-}
-
 /* ************************************************************************** */
 
 class CoinOperationTests : public MoveProcessorTests
@@ -484,7 +519,11 @@ TEST_F (CoinOperationTests, SelfTransfer)
 
 TEST_F (CoinOperationTests, Minting)
 {
-  xayaplayers.CreateNew ("andy", ctx.RoConfig(), rnd)->SetRole(PlayerRole::PLAYER);
+  Process (R"([
+    {"name": "domob", "move": {"a": {"x": 42, "init": {"address": "CGUpAcjsb6MDktSYg8yRDxDutr7FhWtdWC"}}}}
+  ])");
+  
+  UpdateState ("[]");
 
   Process (R"([
     {"name": "domob", "move": {"vc": {"m": {}}}, "burnt": 1000000},
@@ -567,8 +606,10 @@ TEST_F (CoinOperationTests, TransferOrder)
 TEST_F (CoinOperationTests, PutFighterForSaleAndThenBuy)
 {
   Process (R"([
-    {"name": "domob", "move": {"a": {"x": 42, "init": {"role": "p"}}}}
+    {"name": "domob", "move": {"a": {"x": 42, "init": {"address": "CGUpAcjsb6MDktSYg8yRDxDutr7FhWtdWC"}}}}
   ])");
+  
+  UpdateState ("[]");
   
   auto ft = tbl3.GetById(4, ctx.RoConfig());
   ASSERT_TRUE (ft != nullptr);
@@ -593,7 +634,7 @@ TEST_F (CoinOperationTests, PutFighterForSaleAndThenBuy)
   ExpectBalances ({{"domob", 240}});
   
   Process (R"([
-    {"name": "andy", "move": {"a": {"x": 42, "init": {"role": "p"}}}}
+    {"name": "andy", "move": {"a": {"x": 42, "init": {"address": "psss"}}}}
   ])");  
   
   Process (R"([
@@ -623,10 +664,11 @@ TEST_F (CoinOperationTests, PutFighterForSaleAndThenBuy)
 
 TEST_F (CoinOperationTests, PutFighterForSaleAndThenRemove)
 {
-
-   Process (R"([
-    {"name": "domob", "move": {"a": {"x": 42, "init": {"role": "p"}}}}
+  Process (R"([
+    {"name": "domob", "move": {"a": {"x": 42, "init": {"address": "CGUpAcjsb6MDktSYg8yRDxDutr7FhWtdWC"}}}}
   ])");
+  
+  UpdateState ("[]");
   
   auto ft = tbl3.GetById(4, ctx.RoConfig());
   ASSERT_TRUE (ft != nullptr);
@@ -663,8 +705,10 @@ TEST_F (CoinOperationTests, PutFighterForSaleAndThenRemove)
 TEST_F (CoinOperationTests, PutFighterForSaleCrazyPrices)
 {
   Process (R"([
-    {"name": "domob", "move": {"a": {"x": 42, "init": {"role": "p"}}}}
+    {"name": "domob", "move": {"a": {"x": 42, "init": {"address": "CGUpAcjsb6MDktSYg8yRDxDutr7FhWtdWC"}}}}
   ])");
+  
+  UpdateState ("[]");
   
   Process (R"([
     {"name": "domob", "move": {"f": {"s": {"fid": 4, "d": 3, "p": -10}}}}
@@ -690,16 +734,18 @@ TEST_F (CoinOperationTests, PutFighterForSaleCrazyPrices)
 TEST_F (CoinOperationTests, PurchaseStuff)
 {
   Process (R"([
-    {"name": "domob", "move": {"a": {"x": 42, "init": {"role": "p"}}}}
+    {"name": "domob", "move": {"a": {"x": 42, "init": {"address": "CGUpAcjsb6MDktSYg8yRDxDutr7FhWtdWC"}}}}
   ])");
-
+  
+  UpdateState ("[]");
+  
   ProcessWithDevPayment (R"([{
     "name": "domob",
     "move":
       {
         "pc": "T1"
       }
-  }])", 1 * COIN);
+  }])", 0.14 * COIN);
 
   ExpectBalances ({{"domob", 350}});
 
@@ -719,7 +765,7 @@ TEST_F (CoinOperationTests, PurchaseStuff)
       {
         "pc": "T1"
       }
-  }])", 1 * COIN);
+  }])", 0.14 * COIN);
 
   ProcessWithDevPayment (R"([{
     "name": "domob",
@@ -727,7 +773,7 @@ TEST_F (CoinOperationTests, PurchaseStuff)
       {
         "pc": "T1"
       }
-  }])", 1 * COIN);
+  }])", 0.14 * COIN);
 
   ExpectBalances ({{"domob", 450}});
   
@@ -758,8 +804,10 @@ TEST_F (CoinOperationTests, PurchaseStuff)
 TEST_F (CoinOperationTests, PurchaseCrystalsWrongData)
 {
   Process (R"([
-    {"name": "domob", "move": {"a": {"x": 42, "init": {"role": "p"}}}}
+    {"name": "domob", "move": {"a": {"x": 42, "init": {"address": "CGUpAcjsb6MDktSYg8yRDxDutr7FhWtdWC"}}}}
   ])");
+  
+  UpdateState ("[]");
   
   ProcessWithDevPayment (R"([{
     "name": "domob",
@@ -767,7 +815,7 @@ TEST_F (CoinOperationTests, PurchaseCrystalsWrongData)
       {
         "pc": "N8"
       }
-  }])", 1 * COIN);
+  }])", 0.14 * COIN);
 
   ExpectBalances ({{"domob", 250}});
 }
@@ -775,8 +823,10 @@ TEST_F (CoinOperationTests, PurchaseCrystalsWrongData)
 TEST_F (CoinOperationTests, PurchaseCrystalsInsufficientCoin)
 {
   Process (R"([
-    {"name": "domob", "move": {"a": {"x": 42, "init": {"role": "p"}}}}
+    {"name": "domob", "move": {"a": {"x": 42, "init": {"address": "CGUpAcjsb6MDktSYg8yRDxDutr7FhWtdWC"}}}}
   ])");
+  
+  UpdateState ("[]");
   
   ProcessWithDevPayment (R"([{
     "name": "domob",
@@ -784,7 +834,7 @@ TEST_F (CoinOperationTests, PurchaseCrystalsInsufficientCoin)
       {
         "pc": "N8"
       }
-  }])", 0.25 * COIN);
+  }])", 0.28 * COIN);
 
   ExpectBalances ({{"domob", 250}});
 }
@@ -792,16 +842,10 @@ TEST_F (CoinOperationTests, PurchaseCrystalsInsufficientCoin)
 TEST_F (CoinOperationTests, PurchaseCrystalsTwiceInARow)
 {
   Process (R"([
-    {"name": "domob", "move": {"a": {"x": 42, "init": {"role": "p"}}}}
+    {"name": "domob", "move": {"a": {"x": 42, "init": {"address": "CGUpAcjsb6MDktSYg8yRDxDutr7FhWtdWC"}}}}
   ])");
   
-  ProcessWithDevPayment (R"([{
-    "name": "domob",
-    "move":
-      {
-        "pc": "T1"
-      }
-  }])", 1 * COIN);
+  UpdateState ("[]");
   
   ProcessWithDevPayment (R"([{
     "name": "domob",
@@ -809,7 +853,15 @@ TEST_F (CoinOperationTests, PurchaseCrystalsTwiceInARow)
       {
         "pc": "T1"
       }
-  }])", 1 * COIN);  
+  }])", 0.14 * COIN);
+  
+  ProcessWithDevPayment (R"([{
+    "name": "domob",
+    "move":
+      {
+        "pc": "T1"
+      }
+  }])", 0.14 * COIN);  
 
   ExpectBalances ({{"domob", 450}});
 }
@@ -842,7 +894,7 @@ TEST_F (GameStartTests, Before)
     {"name": "andy", "move": {"vc": {"m": {}}}, "burnt": 1},
     {"name": "domob", "move": {"vc": {"b": 10}}},
     {"name": "domob", "move": {"vc": {"t": {"daniel": 5}}}},
-    {"name": "domob", "move": {"a": {"init": {"role": "p"}}}}
+    {"name": "domob", "move": {"a": {"init": {"adress": "eeeee"}}}}
   ])");
 
   ExpectBalances ({
@@ -852,17 +904,7 @@ TEST_F (GameStartTests, Before)
   });
 }
 
-TEST_F (GameStartTests, After)
-{
-  ctx.SetHeight (100);
-  Process (R"([
-    {"name": "domob", "move": {"a": {"init": {"role": "p"}}}}
-  ])");
 
-  auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
-
-  EXPECT_EQ (a->GetRole(), PlayerRole::PLAYER);
-}
 
 /* ************************************************************************** */
 

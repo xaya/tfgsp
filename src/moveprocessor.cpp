@@ -44,11 +44,12 @@ BaseMoveProcessor::BaseMoveProcessor (Database& d,
   : ctx(c), db(d), xayaplayers(db), recipeTbl(db), fighters(db), moneySupply(db), rewards(db), tournamentsTbl(db), specialTournamentsTbl(db)
 {}
 
+
 bool
 BaseMoveProcessor::ExtractMoveBasics (const Json::Value& moveObj,
                                       std::string& name, Json::Value& mv,
-                                      Amount& paidToDev,
-                                      Amount& burnt) const
+                                      std::map<std::string, Amount>& paidToCrownHolders,
+                                      Amount& burnt)
 {
   VLOG (1) << "Processing move:\n" << moveObj;
   CHECK (moveObj.isObject ());
@@ -65,12 +66,113 @@ BaseMoveProcessor::ExtractMoveBasics (const Json::Value& moveObj,
   CHECK (nameVal.isString ());
   name = nameVal.asString ();
 
-  paidToDev = 0;
   const auto& outVal = moveObj["out"];
-  const auto& devAddr = ctx.RoConfig()->params ().dev_addr ();
-  if (outVal.isObject () && outVal.isMember (devAddr))
-    CHECK (xaya::ChiAmountFromJson (outVal[devAddr], paidToDev));
+  
+  std::map<std::string, int32_t> holderTier;
+  std::string tier1holderName = "";
+  
+  //Lets get names of current crown holders
+  auto res = specialTournamentsTbl.QueryAll();
+  bool tryAndStep = res.Step();
+  while (tryAndStep)
+  {
+    auto spctrm = specialTournamentsTbl.GetFromResult (res, ctx.RoConfig ());
+    std::string xName = spctrm->GetProto().crownholder();
+    
+    auto player = xayaplayers.GetByName (xName, ctx.RoConfig());
+    if(player == nullptr)
+    {
+      LOG (WARNING) << "Failed to get player with name " << xName;
+      return false;
+    }
+    
+    std::string xAddress = player->GetProto().address();
+    
+    if(xAddress == "")
+    {
+      LOG (WARNING) << "Failed to get valid address for player " << xName;
+      return false;        
+    }
+    
+    player.reset();
+    
+    paidToCrownHolders.insert(std::pair<std::string, Amount>(xAddress,0));
+    holderTier.insert(std::pair<std::string, int32_t>(xAddress,(int32_t)spctrm->GetProto().tier()));
+    
+    if((int32_t)spctrm->GetProto().tier() == 1)
+    {
+        tier1holderName = xAddress;
+    }
+        
+    spctrm.reset();
+    tryAndStep = res.Step ();
+  }  
+  
+  //Every out here must much the address of crownholder and its tier;
+  Amount smallestPayFraction = 0;
+  
+  if(outVal.isObject())
+  {
+    for(auto& outValue: paidToCrownHolders)
+    {
+      if(outValue.first == tier1holderName)
+      {
+        Amount amnt;
+        if(xaya::ChiAmountFromJson(outVal[outValue.first], amnt) == false)
+        {
+          LOG (WARNING) << "Failed to extract amount from " << outVal[outValue.first] << " for name " << outValue.first << " outValDumpBeing " << outVal ;
+          continue;         
+        }
+        
+        smallestPayFraction = amnt;
+      }
+    }
+  }
 
+  Amount totalAmountPaid = 0;
+  
+  for(auto& outValue: outVal)
+  {
+      Amount amnt;
+      if(xaya::ChiAmountFromJson(outValue, amnt) == false)
+      {
+        LOG (WARNING) << "Failed to extract amount from " << outValue;
+        continue;                     
+      }          
+      totalAmountPaid += amnt;
+  }
+  
+  Amount leftOverDueToPrecisionError = totalAmountPaid - smallestPayFraction * 28;
+    
+  if(outVal.isObject())
+  {
+    for(auto& outValue: paidToCrownHolders)
+    {
+        int32_t myTier = holderTier[outValue.first];
+        
+        Amount amnt;
+        if(xaya::ChiAmountFromJson(outVal[outValue.first], amnt) == false)
+        {
+          LOG (WARNING) << "Failed to extract amount from " << outVal[outValue.first];
+          continue;                    
+        }
+
+        if(amnt != myTier * smallestPayFraction)
+        {
+            if(myTier == 7 && amnt == myTier * smallestPayFraction + leftOverDueToPrecisionError)
+            {
+            }
+            else
+            {
+              LOG (WARNING) << "Invalid fraction paid for " << outValue.first << " he/she has tier " << myTier << " but payments was" << amnt;
+              return false;
+            }
+        }      
+        
+        paidToCrownHolders[outValue.first] = amnt;
+    }
+  }
+  
   if (moveObj.isMember ("burnt"))
     CHECK (xaya::ChiAmountFromJson (moveObj["burnt"], burnt));
   else
@@ -388,7 +490,7 @@ BaseMoveProcessor::TryGoodyBundlePurchase (const std::string& name, const Json::
 }
 
 void
-BaseMoveProcessor::TryCrystalPurchase (const std::string& name, const Json::Value& mv, Amount& paidToDev)
+BaseMoveProcessor::TryCrystalPurchase (const std::string& name, const Json::Value& mv, std::map<std::string, Amount>& paidToCrownHolders)
 {
   const auto& cmd = mv["pc"];
   if (!cmd.isString ()) return;
@@ -408,18 +510,69 @@ BaseMoveProcessor::TryCrystalPurchase (const std::string& name, const Json::Valu
   Amount cost = 0;
   Amount crystalAmount  = 0;
   std::string bundleKeyCode = "";
+  
+  Amount paidToDev = 0;
+  
+  for(auto& payFraction: paidToCrownHolders)
+  {
+      paidToDev += payFraction.second;
+  }
+  
   if(!ParseCrystalPurchase(mv, bundleKeyCode, cost, crystalAmount, name, paidToDev)) 
   {
       return;
   }
 
-
-  paidToDev -= cost; 
   player->AddBalance (crystalAmount); 
   
-  VLOG (1) << "After purchacing bundle, paid to dev left: " << paidToDev;
+  Amount fraction = paidToDev / 28;
 
-  return;
+  std::map<std::string, int32_t> holderTier;
+  
+  auto res = specialTournamentsTbl.QueryAll();
+  bool tryAndStep = res.Step();
+  while (tryAndStep)
+  {
+    auto spctrm = specialTournamentsTbl.GetFromResult (res, ctx.RoConfig ());
+    std::string xName = spctrm->GetProto().crownholder();
+    
+    auto player = xayaplayers.GetByName (xName, ctx.RoConfig());
+    if(player == nullptr)
+    {
+      LOG (ERROR) << "Failed to get player with name " << xName;
+      return;
+    }
+    
+    std::string xAddress = player->GetProto().address();
+    
+    if(xAddress == "")
+    {
+      LOG (ERROR) << "Failed to get valid address for player " << xName;
+      return;        
+    }
+    
+    player.reset();    
+    
+    holderTier.insert(std::pair<std::string, int32_t>(xAddress,(int32_t)spctrm->GetProto().tier()));
+    spctrm.reset();
+    tryAndStep = res.Step ();
+  }    
+  
+  for(auto& entry: paidToCrownHolders)
+  {
+      if(holderTier[entry.first] == 7)
+      {
+        Amount fraction = cost / 28;
+        Amount leftover = cost - fraction * 28;
+        paidToCrownHolders[entry.first] -= leftover;
+      }
+      
+      paidToCrownHolders[entry.first] -= fraction * holderTier[entry.first];
+      
+
+  }
+  
+  paidToDev -= cost;   
 }
 
   pxd::RecipeInstanceTable::Handle BaseMoveProcessor::GetRecepieObjectFromID(const uint32_t& ID, const Context& ctx)
@@ -632,8 +785,9 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
 {
   std::string name;
   Json::Value mv;
-  Amount paidToDev, burnt;
-  if (!ExtractMoveBasics (moveObj, name, mv, paidToDev, burnt))
+  std::map<std::string, Amount> paidToCrownHolders;
+  Amount  burnt;
+  if (!ExtractMoveBasics (moveObj, name, mv, paidToCrownHolders, burnt))
     return;
 
   /* Ensure that the account database entry exists.  In other words, we
@@ -652,9 +806,9 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
      are done with priority over the other operations that may require coins
      implicitly.  */
   TryCoinOperation (name, mv, burnt);
-
+  
   /* Handle crystal purchace now */
-  TryCrystalPurchase (name, mv, paidToDev);
+  TryCrystalPurchase (name, mv, paidToCrownHolders);
   
   /* Handle sweetener purchace now */
   TrySweetenerPurchase (name, mv);  
@@ -697,11 +851,18 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
   /* We are trying all kind of fighter related actions*/
   TryFighterAction (name, mv["f"]);     
       
+  Amount totalPaidLeft = 0;
+
+  for(auto& entry: paidToCrownHolders)
+  {
+    totalPaidLeft += entry.second;
+  }
+      
   /* If any burnt or paid-to-dev coins are left, it means probably something
      has gone wrong and the user overpaid due to a frontend bug.  */
-  LOG_IF (WARNING, paidToDev > 0 || burnt > 0)
+  LOG_IF (WARNING, totalPaidLeft > 0 || burnt > 0)
       << "At the end of the move, " << name
-      << " has " << paidToDev << " paid-to-dev and "
+      << " has " << totalPaidLeft << " paid-to-dev and "
       << burnt << " burnt CHI satoshi left";
 }
 
@@ -2994,41 +3155,24 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 
     auto a = xayaplayers.GetByName (name, ctx.RoConfig ());
     CHECK (a != nullptr);
-    if (a->GetRole () != PlayerRole::INVALID)
+    if (a->GetProto().address() != "")
     {
-      LOG (WARNING) << "Account " << name << " is already initialised";
+      LOG (WARNING) << "Account " << name << " address is already initialised";
       return;
     }
 
-    const auto& roleVal = init["role"];
-    if (!roleVal.isString ())
-      {
+    const auto& address = init["address"];
+    if (!address.isString ())
+    {
         LOG (WARNING)
-            << "Account initialisation does not specify role: " << init;
+            << "Account initialisation does not specify address: " << address;
         return;
-      }
-    const PlayerRole role = PlayerRoleFromString (roleVal.asString ());
-    switch (role)
-      {
-      case PlayerRole::INVALID:
-        LOG (WARNING) << "Invalid role specified for account: " << init;
-        return;
+    }
 
-      default:
-        break;
-      }
-
-    if (init.size () != 1)
-      {
-        LOG (WARNING) << "Account initialisation has extra fields: " << init;
-        return;
-      }
-
-    a->SetRole (role);
+    a->MutableProto().set_address(address.asString());
     a.reset();
     LOG (INFO)
-        << "Initialised account " << name << " to role "
-        << PlayerRoleToString (role);
+        << "Initialised account " << name << " to address " << address;
   }
   
   void
