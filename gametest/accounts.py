@@ -28,7 +28,7 @@ class AccountsTest (PXTest):
 
   def run (self):
     self.collectPremine ()
-
+     
     accounts = self.getAccounts ()
 
     self.mainLogger.info ("Accounts are created with any moves...")

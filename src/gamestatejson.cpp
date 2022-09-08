@@ -21,6 +21,7 @@
 #include "database/xayaplayer.hpp"
 #include "database/fighter.hpp"
 #include "database/recipe.hpp"
+#include "database/globaldata.hpp"
 #include "database/specialtournament.hpp"
 #include "database/reward.hpp"
 #include "database/activity.hpp"
@@ -276,7 +277,31 @@ template <>
      matchresults.append(rslt); 
   }
   
+  Json::Value defendersarray(Json::arrayValue);
+ 
+  FighterTable ftbl(db);  
+  auto resDD = ftbl.QueryAll();
+  while (resDD.Step ())
+  {
+      auto c = ftbl.GetFromResult (resDD, ctx.RoConfig ());
+      
+      if(c->GetProto().specialtournamentinstanceid() == tournament.GetId() && c->GetOwner() == pb.crownholder())
+      {
+         defendersarray.append(c->GetId());  
+      }
+  } 
+  
   res["ldresults"] = matchresults;
+  res["defenders"] = defendersarray;
+  
+  GlobalData gd(db);
+    
+  int64_t currentTime = ctx.Timestamp();
+  int64_t lastTournamentTime = gd.GetLastTournamentTime();
+  int64_t timeDiff = currentTime - lastTournamentTime;  
+    
+  res["timeuntilnext"] = IntToJson (timeDiff);
+  
   return res;
 }   
  

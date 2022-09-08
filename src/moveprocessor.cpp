@@ -1544,6 +1544,23 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
 
         fighter.reset();        
     }
+    
+    auto res3 = fighters.QueryAll ();
+    bool tryAndStep3 = res3.Step();
+    
+    while (tryAndStep3)
+    {
+        auto fghtr = fighters.GetFromResult (res3, ctx.RoConfig ()); 
+        
+        if(fghtr->GetOwner() == name && (pxd::FighterStatus)(int)fghtr->GetStatus() == pxd::FighterStatus::SpecialTournament)
+        {
+            LOG (WARNING) << "Some of the fighters are in the special tournament already: " << tournamentID;
+            fghtr.reset();
+            return false;
+        }
+        
+        tryAndStep3 = res3.Step();
+    }
 
     if(a.GetBalance() < 10)
     {

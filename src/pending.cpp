@@ -758,12 +758,24 @@ PendingStateUpdater::ProcessMove (const Json::Value& moveObj)
        state.AddTournamentLeaves(*a, tournamentID, fighterIDSL);  
     }    
     
-    
     if(ParseTournamentRewardData(*a, name, upd3["c"], rewardDatabaseIds, tournamentID))
     {
        state.AddTournamentRewardIDs(*a, tournamentID, rewardDatabaseIds); 
     }    
   }  
+  
+  Json::Value& upd3x = mv["tms"];
+  
+  if(upd3x.isObject())
+  {   
+    uint32_t tournamentID = 0;
+    std::vector<uint32_t> fighterIDS;   
+    
+    if(ParseSpecialTournamentEntryData(*a, name, upd3x["e"], tournamentID, fighterIDS))       
+    {
+       state.AddTournamentEntries(*a, tournamentID, fighterIDS);  
+    }
+  }    
   
   Json::Value& upd4 = mv["f"];   
   

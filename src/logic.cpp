@@ -2035,8 +2035,11 @@ Json::Value
 PXLogic::GetStateAsJson (const xaya::SQLiteDatabase& db)
 {
   SQLiteGameDatabase dbObj(const_cast<xaya::SQLiteDatabase&> (db), *this);
+
+  std::time_t result = std::time(nullptr);
+
   const Context ctx(GetChain (),
-                    Context::NO_HEIGHT, Context::NO_TIMESTAMP);
+                    Context::NO_HEIGHT, (int64_t)result);
   
   GameStateJson gsj(dbObj, ctx);
 

@@ -88,6 +88,11 @@ public:
   static void ReopenMissingTournaments(Database& db, const Context& ctx);
   
   /**
+   * Scans all tournaments to either start them or finilize; public for unit test access purposes
+   */  
+  static void ProcessSpecialTournaments(Database& db, const Context& ctx, xaya::Random& rnd);   
+  
+  /**
    * Scans all fighters, finds ones on the exchange, tests if expired, delists
    */    
   static void CheckFightersForSale(Database& db, const Context& ctx);
@@ -146,11 +151,6 @@ private:
    */  
   static void ProcessTournaments(Database& db, const Context& ctx, xaya::Random& rnd); 
   
-  /**
-   * Scans all tournaments to either start them or finilize
-   */  
-  static void ProcessSpecialTournaments(Database& db, const Context& ctx, xaya::Random& rnd); 
-
   /**
    * For the special tournament, we need to precalculate, which tier player can participate in
    */  
