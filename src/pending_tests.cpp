@@ -621,7 +621,7 @@ TEST_F (PendingStateUpdaterTests, SubmitSpecialTournamentEntry)
         [
                 {
                         "name" : "domob",
-                        "tournamententries" :
+                        "specialtournamententries" :
                         [
                                 {
                                         "fids" :

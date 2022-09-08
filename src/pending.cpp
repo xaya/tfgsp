@@ -223,6 +223,48 @@ PendingState::AddTournamentEntries (const XayaPlayer& a, uint32_t tournamentID, 
 }
 
 void
+PendingState::AddSpecialTournamentEntries (const XayaPlayer& a, uint32_t tournamentID, std::vector<uint32_t> fighterIDS)
+{
+  VLOG (1) << "Adding pending special tournament entries for name" << a.GetName ();
+  
+  auto& aState = GetXayaPlayerState (a);
+  
+  const auto mit = aState.specialTournamentEntries.find (tournamentID);
+  if (mit == aState.specialTournamentEntries.end ())
+  {
+    aState.specialTournamentEntries.insert(std::pair<uint32_t, std::vector<uint32_t>>(tournamentID, fighterIDS));  
+  }
+  else
+  {
+    for(const auto& val: fighterIDS)
+    {
+      aState.specialTournamentEntries[tournamentID].push_back(val); 
+    }
+  }  
+}
+
+void
+PendingState::AddSpecialTournamentLeaves (const XayaPlayer& a, uint32_t tournamentID, std::vector<uint32_t> fighterIDS)
+{
+  VLOG (1) << "Adding pending special tournament retracts for name" << a.GetName ();
+  
+  auto& aState = GetXayaPlayerState (a);
+  
+  const auto mit = aState.specialTournamentLeaves.find (tournamentID);
+  if (mit == aState.specialTournamentLeaves.end ())
+  {
+    aState.specialTournamentLeaves.insert(std::pair<uint32_t, std::vector<uint32_t>>(tournamentID, fighterIDS));  
+  }
+  else
+  {
+    for(const auto& val: fighterIDS)
+    {
+      aState.specialTournamentLeaves[tournamentID].push_back(val); 
+    }
+  }
+}
+
+void
 PendingState::AddTournamentLeaves (const XayaPlayer& a, uint32_t tournamentID, std::vector<uint32_t> fighterIDS)
 {
   VLOG (1) << "Adding pending tournament retracts for name" << a.GetName ();
@@ -467,6 +509,48 @@ PendingState::XayaPlayerState::ToJson () const
       
     res["tournamententries"] = trnmentr;      
   }
+  
+  if(specialTournamentEntries.size() > 0)
+  {
+    Json::Value trnmentr(Json::arrayValue);
+    for(const auto& rw: specialTournamentEntries) 
+    {
+      Json::Value trnmentr2(Json::arrayValue);
+      Json::Value trnm(Json::objectValue);
+      trnm["id"] = rw.first;
+      
+      for(const auto& val: rw.second)
+      {
+        trnmentr2.append(val);
+      }
+      
+      trnm["fids"] = trnmentr2;
+      trnmentr.append(trnm);
+    }  
+      
+    res["specialtournamententries"] = trnmentr;      
+  }  
+  
+  if(specialTournamentLeaves.size() > 0)
+  {
+    Json::Value trnmentr(Json::arrayValue);
+    for(const auto& rw: specialTournamentLeaves) 
+    {
+      Json::Value trnmentr2(Json::arrayValue);
+      Json::Value trnm(Json::objectValue);
+      trnm["id"] = rw.first;
+      
+      for(const auto& val: rw.second)
+      {
+        trnmentr2.append(val);
+      }
+      
+      trnm["fids"] = trnmentr2;
+      trnmentr.append(trnm);
+    }  
+      
+    res["specialtournamentleaves"] = trnmentr;      
+  }   
   
   if(tournamentLeaves.size() > 0)
   {
@@ -770,11 +854,17 @@ PendingStateUpdater::ProcessMove (const Json::Value& moveObj)
   {   
     uint32_t tournamentID = 0;
     std::vector<uint32_t> fighterIDS;   
+    std::vector<uint32_t> fighterIDSL;
     
     if(ParseSpecialTournamentEntryData(*a, name, upd3x["e"], tournamentID, fighterIDS))       
     {
-       state.AddTournamentEntries(*a, tournamentID, fighterIDS);  
+       state.AddSpecialTournamentEntries(*a, tournamentID, fighterIDS);  
     }
+    
+    if(ParseSpecialTournamentLeaveData(*a, name, upd3["l"], tournamentID, fighterIDSL))
+    {
+       state.AddSpecialTournamentLeaves(*a, tournamentID, fighterIDSL);  
+    }     
   }    
   
   Json::Value& upd4 = mv["f"];   
