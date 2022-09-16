@@ -517,7 +517,7 @@ TEST_F (PendingStateUpdaterTests, SubmitTournamentEntry)
   Process ("domob", R"({"tm": {"e": {"tid": )" + converted + R"(, "fc": [)"+converted1+R"(,)"+converted2+R"(]}}})"); 
   
   ExpectStateJson (R"(
-    {
+  {
         "xayaplayers" :
         [
                 {
@@ -536,7 +536,7 @@ TEST_F (PendingStateUpdaterTests, SubmitTournamentEntry)
                 }
         ]
 
-    }
+  }
   )");
 }
 

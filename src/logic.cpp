@@ -971,7 +971,7 @@ void PXLogic::ProcessSpecialTournaments(Database& db, const Context& ctx, xaya::
           std::string crownHolder = trm->GetProto().crownholder();
           std::vector<int64_t> crownHolderFighters;
           
-          trm->MutableProto().clear_lastdaymatchresults();
+          bool clearedOnceForNewNewResults = false;
           
           //Collect fighters participating in
           while (tryAndStep3)
@@ -1013,6 +1013,12 @@ void PXLogic::ProcessSpecialTournaments(Database& db, const Context& ctx, xaya::
           
           for(auto& nextFight : fightersInThisTournament)
           {
+              if(clearedOnceForNewNewResults == false)
+              {
+                  trm->MutableProto().clear_lastdaymatchresults();
+                  clearedOnceForNewNewResults = true;
+              }
+              
               proto::SpecialTournamentMathResult* matchResult = trm->MutableProto().add_lastdaymatchresults(); 
               int64_t scoreAttacker = 0;
               int64_t scoreDefender = 0;
@@ -1539,39 +1545,40 @@ void PXLogic::ProcessFighterPair(int64_t fighter1, int64_t fighter2, bool isSpec
    
    uint32_t newRatingForLhs = (uint32_t)std::max(0, (int)newRatingA);
    uint32_t newRatingForRhs = (uint32_t)std::max(0, (int)newRatingB);
-   //ratings unit test pls
-   lhs->MutableProto().set_rating(newRatingForLhs);
-   rhs->MutableProto().set_rating(newRatingForRhs);
    
-   lRatingDelta = lhs->GetProto().rating() - lRatingDelta;
-   rRatingDelta = rhs->GetProto().rating() - rRatingDelta;
-   
-   lhs->MutableProto().set_totalmatches(lhs->GetProto().totalmatches() + 1);
-   rhs->MutableProto().set_totalmatches(rhs->GetProto().totalmatches() + 1);
-   
-   if(lwin == pxd::MatchResultType::Win)
-   {
-     lhs->MutableProto().set_matcheswon(lhs->GetProto().matcheswon() + 1);  
-   }
-   if(lwin == pxd::MatchResultType::Lose)
-   {
-     lhs->MutableProto().set_matcheslost(lhs->GetProto().matcheslost() + 1);  
-   }                 
-   
-   if(rwin == pxd::MatchResultType::Win)
-   {
-     rhs->MutableProto().set_matcheswon(rhs->GetProto().matcheswon() + 1);  
-   }
-   if(rwin == pxd::MatchResultType::Lose)
-   {
-     rhs->MutableProto().set_matcheslost(rhs->GetProto().matcheslost() + 1);  
-   }             
-
    if(isSpecial == false)
    {
-    fighterResults[fighter2]->set_ratingdelta(fighterResults[fighter2]->ratingdelta() + (int)lRatingDelta);
-    fighterResults[fighter1]->set_ratingdelta(fighterResults[fighter1]->ratingdelta() + (int)rRatingDelta);  
-   }   
+     lhs->MutableProto().set_rating(newRatingForLhs);
+     rhs->MutableProto().set_rating(newRatingForRhs);
+     
+     lRatingDelta = lhs->GetProto().rating() - lRatingDelta;
+     rRatingDelta = rhs->GetProto().rating() - rRatingDelta;
+     
+     lhs->MutableProto().set_totalmatches(lhs->GetProto().totalmatches() + 1);
+     rhs->MutableProto().set_totalmatches(rhs->GetProto().totalmatches() + 1);
+     
+     if(lwin == pxd::MatchResultType::Win)
+     {
+       lhs->MutableProto().set_matcheswon(lhs->GetProto().matcheswon() + 1);  
+     }
+     if(lwin == pxd::MatchResultType::Lose)
+     {
+       lhs->MutableProto().set_matcheslost(lhs->GetProto().matcheslost() + 1);  
+     }                 
+     
+     if(rwin == pxd::MatchResultType::Win)
+     {
+       rhs->MutableProto().set_matcheswon(rhs->GetProto().matcheswon() + 1);  
+     }
+     if(rwin == pxd::MatchResultType::Lose)
+     {
+       rhs->MutableProto().set_matcheslost(rhs->GetProto().matcheslost() + 1);  
+     }             
+
+      fighterResults[fighter2]->set_ratingdelta(fighterResults[fighter2]->ratingdelta() + (int)lRatingDelta);
+      fighterResults[fighter1]->set_ratingdelta(fighterResults[fighter1]->ratingdelta() + (int)rRatingDelta);  
+
+   }
         
    rhs.reset();
    lhs.reset();    
@@ -1936,9 +1943,9 @@ PXLogic::GetInitialStateBlock (unsigned& height,
   switch (chain)
     {
     case xaya::Chain::MAIN:
-      height = 4'123'220;
+      height = 4'180'985;
       hashHex
-          = "719b816ec550788ee945ae9b1d4926cb28d7a1f69765659ed36b4216e36ec092";
+          = "ba8ca433e7eb9bc1a549b8b6f507ddfa14cd96b9cbfacb436d2cac700d481aec";
       break;
 
     case xaya::Chain::TEST:

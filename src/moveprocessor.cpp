@@ -545,10 +545,17 @@ BaseMoveProcessor::TryCrystalPurchase (const std::string& name, const Json::Valu
     
     std::string xAddress = player->GetProto().address();
     
+    // Its important to test that address is valid, else we must provide working substitute,
+    // or someone might use this just to hard other crown holders
+    
+    //todo
+    
     if(xAddress == "")
     {
-      LOG (ERROR) << "Failed to get valid address for player " << xName;
-      return;        
+      LOG (ERROR) << "Failed to get valid address for player, we must inject XAYA default to keep this consitant for other players " << xName;
+      xAddress = "CWXvFB9MuGVxCXohBaAStPZmJprqKL7kMm";
+      //player.reset();   
+      //return;        
     }
     
     player.reset();    
@@ -1028,6 +1035,17 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
         
         if(fghtr->GetOwner() == name && fghtr->GetProto().specialtournamentinstanceid() == tournamentID)
         {
+            
+            // If this fighter is currently also a crown holder, he cannot leave;
+            if(tournamentData->GetProto().crownholder() == fghtr->GetOwner())
+            {
+               fghtr.reset();
+               tournamentData.reset();
+               LOG (WARNING) << "Asking to leave a crown holder for special tournament with id: " << tournamentID;
+               return false;                 
+            }
+            
+            
             fighterIDS.push_back(fghtr->GetId());
         }
         
@@ -1038,12 +1056,14 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     if((pxd::SpecialTournamentState)(uint32_t)tournamentData->GetProto().state() != pxd::SpecialTournamentState::Listed)
     {
       LOG (WARNING) << "Asking to leave already calculating special tournament with id: " << tournamentID;
+      tournamentData.reset();
       return false;        
     }
         
     if(fighterIDS.size() != 6)
     {
       LOG (WARNING) << "Not all fighter are participating in the tournament with id: " << tournamentID;
+      tournamentData.reset();
       return false;        
     }
 
@@ -1541,6 +1561,14 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
           fighter.reset();
           return false;              
         }    
+        
+        if(tournamentData->GetProto().crownholder() == a.GetName())
+        {
+          LOG (WARNING) << "Can not fight in tournaments with itself: " << a.GetName();
+          tournamentData.reset();
+          fighter.reset();
+          return false;              
+        }
 
         fighter.reset();        
     }
@@ -2760,7 +2788,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
       return;
     }
 
-    auto tournamentData = specialTournamentsTbl.GetById(tournamentID, ctx.RoConfig ());
+    //auto tournamentData = specialTournamentsTbl.GetById(tournamentID, ctx.RoConfig ());
     
     for(long long unsigned int r = 0; r < fighterIDS.size(); r++)
     {
@@ -2775,7 +2803,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
     }
 
     a->AddBalance (-10); 
-    tournamentData.reset();
+    //tournamentData.reset();
     
     a.reset();
     
@@ -3175,6 +3203,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
     if (a->GetProto().address() != "")
     {
       LOG (WARNING) << "Account " << name << " address is already initialised";
+      a.reset();
       return;
     }
 
@@ -3183,6 +3212,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
     {
         LOG (WARNING)
             << "Account initialisation does not specify address: " << address;
+        a.reset();    
         return;
     }
 

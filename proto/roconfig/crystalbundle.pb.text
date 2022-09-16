@@ -24,8 +24,8 @@ crystalbundles:
   value:
   {
     AuthoredId: "0cc63ecf-fe20-41f4-cb0b-990951d403e8"
-    Quantity: 580
-    CHICost: 0.32
+    Quantity: 700
+    CHICost: 0.56
   }
 }
 crystalbundles:
@@ -35,7 +35,7 @@ crystalbundles:
   {
     AuthoredId: "59a5e6c2-c212-6a14-79a2-d640c57cf21f"
     Quantity: 1350
-    CHICost: 0.64
+    CHICost: 0.84
   }
 }
 crystalbundles:
@@ -45,7 +45,7 @@ crystalbundles:
   {
     AuthoredId: "de198dca-d270-cd64-19c2-14b7734896c8"
     Quantity: 3000
-    CHICost: 1.28
+    CHICost: 1.12
   }
 }
 crystalbundles:
@@ -55,6 +55,6 @@ crystalbundles:
   {
     AuthoredId: "5cd0fe1e-1d73-4b44-da15-f6b2bb380593"
     Quantity: 11000
-    CHICost: 2.56
+    CHICost: 2.24
   }
 }
