@@ -72,6 +72,9 @@ DEFINE_string (datadir, "",
 
 DEFINE_bool (pending_moves, true,
              "whether or not pending moves should be tracked");
+             
+DEFINE_bool (dump_state, false,
+             "whether to dump state into file or not");             
 
 class PXInstanceFactory : public xaya::CustomisedInstanceFactory
 {
@@ -209,9 +212,6 @@ main (int argc, char** argv)
     
     
   config.EnablePruning = FLAGS_enable_pruning;
-  
-  
-  
   config.DataDirectory = FLAGS_datadir;
   
   bool nonAnsiDetected = false;
@@ -229,6 +229,16 @@ main (int argc, char** argv)
   config.MinXayaVersion = 1040000;
 
   pxd::PXLogic rules;
+  
+  if (FLAGS_dump_state)
+  {
+      rules.dumpStateToFile = true;
+  }
+  else
+  {
+      rules.dumpStateToFile = false;
+  }  
+  
   PXInstanceFactory instanceFact(rules);
   if (FLAGS_rest_port != 0)
     instanceFact.EnableRest (FLAGS_rest_port);

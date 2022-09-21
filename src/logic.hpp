@@ -41,6 +41,8 @@
 #include <fpm/fixed.hpp>
 #include <fpm/math.hpp>
 
+#include <gflags/gflags.h>
+
 namespace pxd
 {
 
@@ -80,6 +82,8 @@ class PXLogic : public xaya::SQLiteGame
 {
 
 public:
+
+  bool dumpStateToFile;
 
   /**
    * Scans tournament instances and tournament blueprints to see if we need

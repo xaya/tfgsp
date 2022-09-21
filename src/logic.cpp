@@ -17,6 +17,7 @@
 */
 #include <cmath>
 #include <utility>
+#include <fstream>
 
 #include <xayautil/hash.hpp>
 #include "logic.hpp"
@@ -32,6 +33,7 @@
 #include "database/schema.hpp"
 
 #include <glog/logging.h>
+
 
 namespace pxd
 {
@@ -1993,9 +1995,16 @@ PXLogic::UpdateState (xaya::SQLiteDatabase& db, const Json::Value& blockData)
           
   Json::Value fState = GetStateAsJson(db);
   
-  Json::StreamWriterBuilder builder;
-  builder["indentation"] = "";
+  if (dumpStateToFile)
+  {
+    Json::StreamWriterBuilder builder;
+    builder["commentStyle"] = "None";
+    builder["indentation"] = "   ";  
   
+    std::unique_ptr<Json::StreamWriter> writer(builder.newStreamWriter());
+    std::ofstream outputFileStream("./statedump.json");
+    writer -> write(fState, &outputFileStream);
+  }
   
   // In order for state to match, we need it do be determenistic; Hence, lets 
   // calculate it not from state itself, but from something simple;
