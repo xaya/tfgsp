@@ -415,6 +415,39 @@ TEST_F (PendingStateUpdaterTests, TestSweetenerCollect)
   )");    
 }
 
+TEST_F (PendingStateUpdaterTests, SubmitRecepieDestroy)
+{
+  auto a = xayaplayers.CreateNew ("testy2", ctx.RoConfig(), rnd);
+  a->AddBalance(100);
+  
+  a->GetInventory().SetFungibleCount("Common_Gumdrop", 1);
+  a->GetInventory().SetFungibleCount("Common_Icing", 1);  
+  
+  a.reset();
+  
+  auto r0 = tbl2.CreateNew("testy2", "5864a19b-c8c0-2d34-eaef-9455af0baf2c", ctx.RoConfig());
+  r0.reset();     
+  
+  tbl2.GetById(1)->SetOwner("testy2");
+  
+  Process ("testy2", R"({"ca": {"d": {"rid": 1, "fid": 0}}})");  
+  
+  ExpectStateJson (R"(
+    {
+      "xayaplayers":
+        [
+          {
+            "name": "testy2",
+			"recipedestroy" : 
+			[
+              1
+			]
+          }
+        ]
+    }
+  )");
+}
+
 TEST_F (PendingStateUpdaterTests, SubmitRecepieInstance)
 {
   auto a = xayaplayers.CreateNew ("testy2", ctx.RoConfig(), rnd);

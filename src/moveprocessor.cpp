@@ -2181,7 +2181,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     return true;
   }
   
-  bool
+ bool
   BaseMoveProcessor::ParseCookRecepie(const XayaPlayer& a, const std::string& name, const Json::Value& recepie, std::map<std::string, pxd::Quantity>& fungibleItemAmountForDeduction, int32_t& cookCost, int32_t& duration, std::string& weHaveApplibeGoodyName)
   {
     if (!recepie.isObject ())
@@ -2350,6 +2350,35 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     }    
 
     duration = (int32_t)effective_duration;
+
+    return true;    
+  } 
+  
+  bool
+  BaseMoveProcessor::ParseDestroyRecepie(const XayaPlayer& a, const std::string& name, const Json::Value& recepie)
+  {
+    if (!recepie.isObject ())
+    return false;
+
+    if(!recepie["rid"].isInt())
+    {
+        return false;
+    }
+   
+    const int32_t recepieID = (uint32_t)recepie["rid"].asInt();
+    auto itemInventoryRecipe = GetRecepieObjectFromID(recepieID, ctx);
+
+    if(itemInventoryRecipe == nullptr)
+    {
+        LOG (WARNING) << "Could not resolve key name from the authid for the item: " << recepieID;
+        return false;       
+    }      
+    
+    if(itemInventoryRecipe->GetOwner() != a.GetName())
+    {
+        LOG (WARNING) << "Recipe does not belong to the player or is already in process " << recepieID;
+        return false;           
+    }
 
     return true;    
   }
@@ -2752,12 +2781,14 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
     auto fighterDb = fighters.GetById (fighterID, ctx.RoConfig ());
     fighterDb->SetStatus(pxd::FighterStatus::Available);
     
-    int feeMultipler = 100 - ctx.RoConfig()->params().exchange_sale_percentage();
-    
     a->AddBalance (-fighterDb->GetProto().exchangeprice());
     
+    fpm::fixed_24_8 reductionPercent = fpm::fixed_24_8(ctx.RoConfig()->params().exchange_sale_percentage());
+    fpm::fixed_24_8 priceToPay = fpm::fixed_24_8(fighterDb->GetProto().exchangeprice());
+    fpm::fixed_24_8 finalPrice = priceToPay * reductionPercent;    
+    
     auto a2 = xayaplayers.GetByName (fighterDb->GetOwner(), ctx.RoConfig ());
-    a2->AddBalance(fighterDb->GetProto().exchangeprice() * feeMultipler);
+    a2->AddBalance((int32_t)finalPrice);
 
     fighterDb->SetOwner(name);
     fighterDb.reset();
@@ -3125,6 +3156,27 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
   }
   
   void
+  MoveProcessor::MaybeDestroyRecepie (const std::string& name, const Json::Value& recepie)
+  {          
+    auto a = xayaplayers.GetByName (name, ctx.RoConfig ());
+    
+    if(a == nullptr)
+    {
+      LOG (INFO) << "Player " << name << " not found";
+      return;
+    }    
+    
+    if(!ParseDestroyRecepie(*a, name, recepie)) return;
+
+    auto itemInventoryRecipe = GetRecepieObjectFromID((uint32_t)recepie["rid"].asInt(), ctx);
+    itemInventoryRecipe->SetOwner("");
+    
+    a->CalculatePrestige(ctx.RoConfig());
+    a.reset();
+    LOG (INFO) << "Cooking instance " << recepie << " submitted succesfully ";
+  }    
+  
+  void
   MoveProcessor::MaybeCookRecepie (const std::string& name, const Json::Value& recepie)
   {      
     std::map<std::string, pxd::Quantity> fungibleItemAmountForDeduction;
@@ -3231,6 +3283,9 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 
     /*Trying to cook recepie, optionally with the fighter */
     MaybeCookRecepie (name, upd["r"]);
+    
+    /*Trying to cook recepie, optionally with the fighter */
+    MaybeDestroyRecepie (name, upd["d"]);    
     
     /*Trying to collect cooked recepie*/
     MaybeCollectCookedRecepie (name, upd["cl"]);    

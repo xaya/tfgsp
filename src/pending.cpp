@@ -172,6 +172,15 @@ PendingState::AddRecepieCookingInstance (const XayaPlayer& a, int32_t duration, 
 }
 
 void
+PendingState::AddRecepieDestroyInstance (const XayaPlayer& a, int32_t duration, int32_t recepieID)
+{
+  VLOG (1) << "Adding pending recepie destroy operation for name" << a.GetName ();
+
+  auto& aState = GetXayaPlayerState (a);
+  aState.destroyrecipe.push_back(recepieID);
+}
+
+void
 PendingState::AddPurchasing (const XayaPlayer& a, std::string authID, Amount purchaseCost)
 {
   VLOG (1) << "Adding pending Purchasingoperation for name" << a.GetName ();
@@ -606,6 +615,17 @@ PendingState::XayaPlayerState::ToJson () const
     res["cookedFightersToCollect"] = fghttrs;      
   }   
   
+  if(destroyrecipe.size() > 0)
+  {
+    Json::Value rcp(Json::arrayValue);
+    for(const auto& rw: destroyrecipe) 
+    {
+      rcp.append(rw);
+    }  
+      
+    res["recipedestroy"] = rcp;      
+  }  
+  
   if(purchasing.size() > 0)
   {
     Json::Value purchasingArr(Json::arrayValue);
@@ -785,6 +805,11 @@ PendingStateUpdater::ProcessMove (const Json::Value& moveObj)
     if(ParseCollectCookRecepie(*a, name, upd["cl"], fighterIdToCollect))
     {
        state.AddCookedRecepieCollectInstance(*a, fighterIdToCollect);
+    }    
+    
+    if(ParseDestroyRecepie(*a, name, upd["d"]))
+    {
+       state.AddRecepieDestroyInstance(*a, duration, upd["d"]["rid"].asInt());
     }    
     
     if(ParseCookRecepie(*a, name, upd["r"], fungibleItemAmountForDeduction, cookCost, duration, weHaveApplibeGoodyName))

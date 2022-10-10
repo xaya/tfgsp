@@ -19,7 +19,7 @@ params:
   
     exchange_listing_fee: 10
   
-    exchange_sale_percentage: 4
+    exchange_sale_percentage: 0.96
   
     common_recipe_cook_cost: 15
   

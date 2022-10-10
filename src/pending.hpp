@@ -71,6 +71,11 @@ public:
    */    
   void AddRecepieCookingInstance (const XayaPlayer& a, int32_t duration, int32_t recepieID, Amount cookingCost, std::map<std::string, pxd::Quantity> fungibleItemAmountForDeduction); 
   
+   /**
+   * Updates the state for a new recepie destroy action
+   */    
+  void AddRecepieDestroyInstance (const XayaPlayer& a, int32_t duration, int32_t recepieID); 
+    
   /**
    * Updates the state for a new sweetener cooking action
    */    
@@ -244,6 +249,10 @@ public:
     /** Pending ids of fighters ready to collect
     */    
     std::vector<int32_t> cookedFightersToCollect;    
+    
+    /** Pending ids of recepies ready to destroy
+    */    
+    std::vector<int32_t> destroyrecipe;      
   };  
   
   /** Pending updates by account name.  */

@@ -255,6 +255,25 @@ TEST_F (XayaPlayersUpdateTests, RecepieInstanceSheduleTest)
   EXPECT_EQ (a->GetOngoingsSize (), 1);
 }
 
+TEST_F (XayaPlayersUpdateTests, RecepieDestroyTest)
+{
+  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (100);
+  
+  auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  a.reset();
+  
+  tbl2.GetById(1)->SetOwner("domob");
+  
+  auto r0 = tbl2.CreateNew("domob", "5864a19b-c8c0-2d34-eaef-9455af0baf2c", ctx.RoConfig());
+  r0.reset();    
+  
+  Process (R"([
+    {"name": "domob", "move": {"ca": {"d": {"rid": 1, "fid": 0}}}}
+  ])");  
+  
+  EXPECT_EQ (tbl2.GetById(1)->GetOwner(), "");
+}
+
 TEST_F (XayaPlayersUpdateTests, RecepieInstanceWrongValues)
 {
   xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (100);
