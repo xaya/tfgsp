@@ -430,7 +430,7 @@ TEST_F (PendingStateUpdaterTests, SubmitRecepieDestroy)
   
   tbl2.GetById(1)->SetOwner("testy2");
   
-  Process ("testy2", R"({"ca": {"d": {"rid": 1, "fid": 0}}})");  
+  Process ("testy2", R"({"ca": {"d": {"rid": [1]}}})");  
   
   ExpectStateJson (R"(
     {

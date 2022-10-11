@@ -201,7 +201,7 @@ protected:
    * Tries to parse a move that sets recepie for destroying
    */       
    
-  bool ParseDestroyRecepie(const XayaPlayer& a, const std::string& name, const Json::Value& recepie);
+  bool ParseDestroyRecepie(const XayaPlayer& a, const std::string& name, const Json::Value& recepie, std::vector<uint32_t>& recepieIDS);
     
   /**
    * Tries to parse a move that collects cooked fighter

@@ -268,7 +268,7 @@ TEST_F (XayaPlayersUpdateTests, RecepieDestroyTest)
   r0.reset();    
   
   Process (R"([
-    {"name": "domob", "move": {"ca": {"d": {"rid": 1, "fid": 0}}}}
+    {"name": "domob", "move": {"ca": {"d": {"rid": [1]}}}}
   ])");  
   
   EXPECT_EQ (tbl2.GetById(1)->GetOwner(), "");

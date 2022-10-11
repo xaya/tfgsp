@@ -74,7 +74,7 @@ public:
    /**
    * Updates the state for a new recepie destroy action
    */    
-  void AddRecepieDestroyInstance (const XayaPlayer& a, int32_t duration, int32_t recepieID); 
+  void AddRecepieDestroyInstance (const XayaPlayer& a, int32_t duration, std::vector<uint32_t>& recepieIDS); 
     
   /**
    * Updates the state for a new sweetener cooking action

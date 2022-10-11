@@ -172,12 +172,16 @@ PendingState::AddRecepieCookingInstance (const XayaPlayer& a, int32_t duration, 
 }
 
 void
-PendingState::AddRecepieDestroyInstance (const XayaPlayer& a, int32_t duration, int32_t recepieID)
+PendingState::AddRecepieDestroyInstance (const XayaPlayer& a, int32_t duration, std::vector<uint32_t>& recepieIDS)
 {
   VLOG (1) << "Adding pending recepie destroy operation for name" << a.GetName ();
 
   auto& aState = GetXayaPlayerState (a);
-  aState.destroyrecipe.push_back(recepieID);
+  
+  for(auto& rcp: recepieIDS)
+  {
+    aState.destroyrecipe.push_back(rcp);
+  }
 }
 
 void
@@ -807,9 +811,10 @@ PendingStateUpdater::ProcessMove (const Json::Value& moveObj)
        state.AddCookedRecepieCollectInstance(*a, fighterIdToCollect);
     }    
     
-    if(ParseDestroyRecepie(*a, name, upd["d"]))
+    std::vector<uint32_t> recepieIDS;
+    if(ParseDestroyRecepie(*a, name, upd["d"], recepieIDS))
     {
-       state.AddRecepieDestroyInstance(*a, duration, upd["d"]["rid"].asInt());
+       state.AddRecepieDestroyInstance(*a, duration, recepieIDS);
     }    
     
     if(ParseCookRecepie(*a, name, upd["r"], fungibleItemAmountForDeduction, cookCost, duration, weHaveApplibeGoodyName))

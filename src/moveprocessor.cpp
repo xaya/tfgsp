@@ -1931,7 +1931,6 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
   {
     if (!sweetener.isObject ())
     {
-       LOG (WARNING) << "sweetener is not an object";
        return false;
     } 
 
@@ -2355,29 +2354,33 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
   } 
   
   bool
-  BaseMoveProcessor::ParseDestroyRecepie(const XayaPlayer& a, const std::string& name, const Json::Value& recepie)
+  BaseMoveProcessor::ParseDestroyRecepie(const XayaPlayer& a, const std::string& name, const Json::Value& recepie, std::vector<uint32_t>& recepieIDS)
   {
     if (!recepie.isObject ())
     return false;
 
-    if(!recepie["rid"].isInt())
+    if(!recepie["rid"].isArray())
     {
         return false;
     }
    
-    const int32_t recepieID = (uint32_t)recepie["rid"].asInt();
-    auto itemInventoryRecipe = GetRecepieObjectFromID(recepieID, ctx);
+    for(auto ft: recepie["rid"])
+    {
+      recepieIDS.push_back(ft.asInt());
 
-    if(itemInventoryRecipe == nullptr)
-    {
-        LOG (WARNING) << "Could not resolve key name from the authid for the item: " << recepieID;
-        return false;       
-    }      
-    
-    if(itemInventoryRecipe->GetOwner() != a.GetName())
-    {
-        LOG (WARNING) << "Recipe does not belong to the player or is already in process " << recepieID;
-        return false;           
+      auto itemInventoryRecipe = GetRecepieObjectFromID(ft.asInt(), ctx);
+
+      if(itemInventoryRecipe == nullptr)
+      {
+          LOG (WARNING) << "Could not resolve key name from the authid for the item: " << ft.asInt();
+          return false;       
+      }      
+      
+      if(itemInventoryRecipe->GetOwner() != a.GetName())
+      {
+          LOG (WARNING) << "Recipe does not belong to the player or is already in process " << ft.asInt();
+          return false;           
+      }
     }
 
     return true;    
@@ -3166,14 +3169,19 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
       return;
     }    
     
-    if(!ParseDestroyRecepie(*a, name, recepie)) return;
+    std::vector<uint32_t> recepieIDS;
+    
+    if(!ParseDestroyRecepie(*a, name, recepie, recepieIDS)) return;
 
-    auto itemInventoryRecipe = GetRecepieObjectFromID((uint32_t)recepie["rid"].asInt(), ctx);
-    itemInventoryRecipe->SetOwner("");
+    for(auto& rcp: recepieIDS)
+    {
+      auto itemInventoryRecipe = GetRecepieObjectFromID(rcp, ctx);
+      itemInventoryRecipe->SetOwner("");
+    }
     
     a->CalculatePrestige(ctx.RoConfig());
     a.reset();
-    LOG (INFO) << "Cooking instance " << recepie << " submitted succesfully ";
+    LOG (INFO) << "Destroy instance " << recepie << " submitted succesfully ";
   }    
   
   void
