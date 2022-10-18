@@ -144,12 +144,12 @@ public:
    /**
    * Updates the state for a fighter being bought
    */      
-  void AddFighterForBuyData (const XayaPlayer& a, uint32_t fighterID);
+  void AddFighterForBuyData (const XayaPlayer& a, uint32_t fighterID, Amount exchangeprice);
 
    /**
    * Updates the state for a fighter being sold
    */      
-  void AddFighterForSaleData (const XayaPlayer& a, uint32_t fighterID);
+  void AddFighterForSaleData (const XayaPlayer& a, uint32_t fighterID, Amount listingfee);
 
    /**
    * Updates the state for a fighter being removed from sale

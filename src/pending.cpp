@@ -299,11 +299,13 @@ PendingState::AddTournamentLeaves (const XayaPlayer& a, uint32_t tournamentID, s
 }
 
 void
-PendingState::AddFighterForBuyData (const XayaPlayer& a, uint32_t fighterID)
+PendingState::AddFighterForBuyData (const XayaPlayer& a, uint32_t fighterID, Amount exchangeprice)
 {
   VLOG (1) << "Adding fighting for buy for name" << a.GetName ();
   
   auto& aState = GetXayaPlayerState (a);
+  
+  aState.balance -= exchangeprice;
   aState.fightingForBuy.push_back(fighterID);  
 }
 
@@ -317,11 +319,12 @@ PendingState::RemoveFromSaleData (const XayaPlayer& a, uint32_t fighterID)
 }
 
 void
-PendingState::AddFighterForSaleData (const XayaPlayer& a, uint32_t fighterID)
+PendingState::AddFighterForSaleData (const XayaPlayer& a, uint32_t fighterID, Amount listingfee)
 {
   VLOG (1) << "Adding fighting for sale for name" << a.GetName ();
   
   auto& aState = GetXayaPlayerState (a);
+  aState.balance -= listingfee;
   aState.fightingForSale.push_back(fighterID);  
 }
 
@@ -898,6 +901,8 @@ PendingStateUpdater::ProcessMove (const Json::Value& moveObj)
   }    
   
   Json::Value& upd4 = mv["f"];   
+  Amount exchangeprice = 0;
+  Amount listingfee = 0;
   
   if(upd4.isObject())
   {  
@@ -912,14 +917,14 @@ PendingStateUpdater::ProcessMove (const Json::Value& moveObj)
     }    
     
     uint32_t durationI = -1;
-    if(ParseFighterForSaleData(*a, name, upd4["s"], fighterID, durationI, price))
+    if(ParseFighterForSaleData(*a, name, upd4["s"], fighterID, durationI, price, listingfee))
     {
-      state.AddFighterForSaleData(*a, fighterID);  
+      state.AddFighterForSaleData(*a, fighterID, listingfee);  
     }   
 
-    if(ParseBuyData(*a, name, upd4["b"], fighterID)) 
+    if(ParseBuyData(*a, name, upd4["b"], fighterID, exchangeprice)) 
     {
-      state.AddFighterForBuyData(*a, fighterID);  
+      state.AddFighterForBuyData(*a, fighterID, exchangeprice);  
     }        
     
     if(ParseRemoveBuyData(*a, name, upd4["r"], fighterID))

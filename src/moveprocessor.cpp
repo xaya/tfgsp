@@ -497,7 +497,7 @@ BaseMoveProcessor::TryCrystalPurchase (const std::string& name, const Json::Valu
 
   VLOG (1) << "Attempting to purchase crystal bundle through move: " << cmd;
 
-  const auto player = xayaplayers.GetByName (name, ctx.RoConfig());
+  auto player = xayaplayers.GetByName (name, ctx.RoConfig());
   CHECK (player != nullptr);
 
   if (cmd.isObject ())
@@ -524,6 +524,7 @@ BaseMoveProcessor::TryCrystalPurchase (const std::string& name, const Json::Valu
   }
 
   player->AddBalance (crystalAmount); 
+  player.reset();
   
   Amount fraction = paidToDev / 28;
 
@@ -536,14 +537,14 @@ BaseMoveProcessor::TryCrystalPurchase (const std::string& name, const Json::Valu
     auto spctrm = specialTournamentsTbl.GetFromResult (res, ctx.RoConfig ());
     std::string xName = spctrm->GetProto().crownholder();
     
-    auto player = xayaplayers.GetByName (xName, ctx.RoConfig());
-    if(player == nullptr)
+    auto pPlayer = xayaplayers.GetByName (xName, ctx.RoConfig());
+    if(pPlayer == nullptr)
     {
       LOG (ERROR) << "Failed to get player with name " << xName;
       return;
     }
     
-    std::string xAddress = player->GetProto().address();
+    std::string xAddress = pPlayer->GetProto().address();
     
     // Its important to test that address is valid, else we must provide working substitute,
     // or someone might use this just to hard other crown holders
@@ -558,7 +559,7 @@ BaseMoveProcessor::TryCrystalPurchase (const std::string& name, const Json::Valu
       //return;        
     }
     
-    player.reset();    
+    pPlayer.reset();    
     
     holderTier.insert(std::pair<std::string, int32_t>(xAddress,(int32_t)spctrm->GetProto().tier()));
     spctrm.reset();
@@ -575,8 +576,6 @@ BaseMoveProcessor::TryCrystalPurchase (const std::string& name, const Json::Valu
       }
       
       paidToCrownHolders[entry.first] -= fraction * holderTier[entry.first];
-      
-
   }
   
   paidToDev -= cost;   
@@ -1137,7 +1136,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     return true;
   }  
   
-  bool BaseMoveProcessor::ParseFighterForSaleData(const XayaPlayer& a, const std::string& name, const Json::Value& fighter, uint32_t& fighterID, uint32_t& duration, Amount& price)
+  bool BaseMoveProcessor::ParseFighterForSaleData(const XayaPlayer& a, const std::string& name, const Json::Value& fighter, uint32_t& fighterID, uint32_t& duration, Amount& price, Amount& listingfee)
   {
     if (!fighter.isObject ())
     {
@@ -1166,6 +1165,8 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     fighterID = fighter["fid"].asInt();
     duration = fighter["d"].asInt();
     price = fighter["p"].asInt();
+    
+    listingfee = ctx.RoConfig()->params().exchange_listing_fee();
     
     if(price <= 0)
     {
@@ -1263,7 +1264,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     return true;    
   }        
   
-  bool BaseMoveProcessor::ParseBuyData(const XayaPlayer& a, const std::string& name, const Json::Value& fighter, uint32_t& fighterID)
+  bool BaseMoveProcessor::ParseBuyData(const XayaPlayer& a, const std::string& name, const Json::Value& fighter, uint32_t& fighterID, Amount& exchangeprice)
   {
     if (!fighter.isObject ())
     {
@@ -1286,6 +1287,8 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
       LOG (WARNING) << "Fatal erorr, could not get fighter with ID" << fighterID;
       return false;                
     }
+    
+    exchangeprice = fighterDb->GetProto().exchangeprice();
     
     if(fighterDb->GetOwner() == a.GetName())
     {
@@ -2688,8 +2691,9 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
     uint32_t fighterID = 0;
     uint32_t duration = 0;
     Amount price = 0;
+    Amount listingfee = 0;
     
-    if(!ParseFighterForSaleData(*a, name, fighter, fighterID, duration, price))      
+    if(!ParseFighterForSaleData(*a, name, fighter, fighterID, duration, price, listingfee))      
     {
       a.reset();
       return;
@@ -2698,9 +2702,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
     auto fighterDb = fighters.GetById (fighterID, ctx.RoConfig ());
     fighterDb->SetStatus(pxd::FighterStatus::Exchange);
     
-    int listingFree = ctx.RoConfig()->params().exchange_listing_fee();
-    
-    a->AddBalance(-listingFree);
+    a->AddBalance(-listingfee);
     
     int secondsInOneDay = 24 * 60 * 60;
     int blocksInOneDay = secondsInOneDay / 30;
@@ -2775,7 +2777,8 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
     }
     
     uint32_t fighterID = 0;
-    if(!ParseBuyData(*a, name, fighter, fighterID))      
+    Amount exchangeprice = 0;
+    if(!ParseBuyData(*a, name, fighter, fighterID, exchangeprice))      
     {
       a.reset();
       return;
@@ -2783,15 +2786,24 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 
     auto fighterDb = fighters.GetById (fighterID, ctx.RoConfig ());
     fighterDb->SetStatus(pxd::FighterStatus::Available);
-    
-    a->AddBalance (-fighterDb->GetProto().exchangeprice());
-    
-    fpm::fixed_24_8 reductionPercent = fpm::fixed_24_8(ctx.RoConfig()->params().exchange_sale_percentage());
-    fpm::fixed_24_8 priceToPay = fpm::fixed_24_8(fighterDb->GetProto().exchangeprice());
-    fpm::fixed_24_8 finalPrice = priceToPay * reductionPercent;    
-    
     auto a2 = xayaplayers.GetByName (fighterDb->GetOwner(), ctx.RoConfig ());
-    a2->AddBalance((int32_t)finalPrice);
+    if(ctx.Height () > 4265751) // HARD FORK INITIATING
+    {
+      a->AddBalance (-exchangeprice);
+      
+      fpm::fixed_24_8 reductionPercent = fpm::fixed_24_8(ctx.RoConfig()->params().exchange_sale_percentage());
+      fpm::fixed_24_8 priceToPay = fpm::fixed_24_8(fighterDb->GetProto().exchangeprice());
+      fpm::fixed_24_8 finalPrice = priceToPay * reductionPercent;    
+      
+      a2->AddBalance((int32_t)finalPrice);
+    }
+    else
+    {
+      int feeMultipler = 100 - ctx.RoConfig()->params().exchange_sale_percentage();
+      
+      a->AddBalance (-fighterDb->GetProto().exchangeprice());
+      a2->AddBalance(fighterDb->GetProto().exchangeprice() * feeMultipler);        
+    }
 
     fighterDb->SetOwner(name);
     fighterDb.reset();
@@ -3292,8 +3304,11 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
     /*Trying to cook recepie, optionally with the fighter */
     MaybeCookRecepie (name, upd["r"]);
     
-    /*Trying to cook recepie, optionally with the fighter */
-    MaybeDestroyRecepie (name, upd["d"]);    
+    if(ctx.Height () > 4265751) // HARD FORK INITIATING
+    {
+      /*Trying to destroy recepie*/
+      MaybeDestroyRecepie (name, upd["d"]);    
+    }
     
     /*Trying to collect cooked recepie*/
     MaybeCollectCookedRecepie (name, upd["cl"]);    
@@ -3301,7 +3316,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
     /*Trying to cook sweetener */
     MaybeCookSweetener (name, upd["s"]);  
 
-    /*Trying to cook sweetener */
+    /*Trying to claim sweetener rewards */
     MaybeClaimSweetenerReward (name, upd["sc"]);      
   } 
   

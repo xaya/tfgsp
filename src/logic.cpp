@@ -1515,8 +1515,16 @@ void PXLogic::ProcessFighterPair(int64_t fighter1, int64_t fighter2, bool isSpec
           
           if(isSpecial == false)
           {
-            fighterResults[fighter2]->set_draws(fighterResults[fighter2]->draws() + 1);
-            fighterResults[fighter2]->set_draws(fighterResults[fighter2]->draws() + 1);  
+            if(ctx.Height () > 4265751) // HARD FORK INITIATING
+            {              
+              fighterResults[fighter1]->set_draws(fighterResults[fighter1]->draws() + 1);
+              fighterResults[fighter2]->set_draws(fighterResults[fighter2]->draws() + 1);  
+            }
+            else
+            {
+              fighterResults[fighter2]->set_draws(fighterResults[fighter2]->draws() + 1);
+              fighterResults[fighter2]->set_draws(fighterResults[fighter2]->draws() + 1);                  
+            }
           }
    
           break;

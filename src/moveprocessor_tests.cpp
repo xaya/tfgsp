@@ -257,6 +257,8 @@ TEST_F (XayaPlayersUpdateTests, RecepieInstanceSheduleTest)
 
 TEST_F (XayaPlayersUpdateTests, RecepieDestroyTest)
 {
+  ctx.SetHeight (4265752);
+  
   xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (100);
   
   auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());

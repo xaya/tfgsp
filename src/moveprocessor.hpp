@@ -176,7 +176,7 @@ protected:
    */       
     
   bool ParseFighterForSaleData(const XayaPlayer& a, const std::string& name, const Json::Value& fighter, uint32_t& fighterID, 
-  uint32_t& duration, Amount& price);
+  uint32_t& duration, Amount& price, Amount& listingfee);
       
   /**
    * Tries to parse a move that purchases goody bundle
@@ -246,7 +246,7 @@ protected:
    * Tries to parse a move that buys fighter from the exchange 
    */ 
  
-  bool ParseBuyData(const XayaPlayer& a, const std::string& name, const Json::Value& fighter, uint32_t& fighterID);
+  bool ParseBuyData(const XayaPlayer& a, const std::string& name, const Json::Value& fighter, uint32_t& fighterID, Amount& exchangeprice);
 
   /**
    * Tries to parse a move that removes fighter from the exchange 
