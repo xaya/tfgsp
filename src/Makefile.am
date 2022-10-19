@@ -47,6 +47,7 @@ tfd_CXXFLAGS = \
   $(JSON_CFLAGS) $(MHD_CLFGAS) \
   $(GLOG_CFLAGS) $(GFLAGS_CFLAGS) $(PROTOBUF_CFLAGS)
   
+ ifeq ($(OS),Windows_NT)
 tfd_LDADD = \
   $(top_builddir)/libwinsane/libwinsane.la \
   $(builddir)/libtf.la \
@@ -54,6 +55,15 @@ tfd_LDADD = \
   $(XAYAGAME_LIBS) $(CHARON_LIBS) \
   $(JSON_LIBS) $(MHD_LIBS) \
   $(GLOG_LIBS) $(GFLAGS_LIBS) $(PROTOBUF_LIBS)
+ else
+tfd_LDADD = \
+  $(builddir)/libtf.la \
+  $(top_builddir)/database/libdatabase.la \
+  $(XAYAGAME_LIBS) $(CHARON_LIBS) \
+  $(JSON_LIBS) $(MHD_LIBS) \
+  $(GLOG_LIBS) $(GFLAGS_LIBS) $(PROTOBUF_LIBS)
+ endif
+
 tfd_SOURCES = main.cpp \
   charon.cpp \
   pxrpcserver.cpp \
