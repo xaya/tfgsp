@@ -229,6 +229,22 @@ template <>
   }  
   
   res["deconstructions"] = deconstructsArray;
+  
+  Json::Value salesHistory(Json::arrayValue);
+  
+  for (int i = 0; i < pb.salehistory_size (); ++i)
+  {
+      const auto& data = pb.salehistory (i);
+
+      Json::Value sale(Json::objectValue);
+      sale["selltime"] = IntToJson (data.selltime());
+      sale["fromowner"] = data.fromowner();
+      sale["toowner"] = data.toowner();
+      sale["price"] = IntToJson (data.price());
+      salesHistory.append (sale);
+  }   
+
+  res["saleshistory"] = salesHistory;
 
   return res;
 } 

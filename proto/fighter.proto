@@ -24,6 +24,21 @@ import "proto/armor_piece.proto";
 
 package pxd.proto;
 
+message FighterSaleEntry
+{    
+  /*Server time at which sale happened*/
+  optional uint64 SellTime = 1;  
+  
+  /*Seller Name*/
+  optional string FromOwner = 2;    
+  
+  /*Buyer Name*/
+  optional string ToOwner = 3;    
+  
+  /*Selling price*/
+  optional uint32 Price = 4;
+}
+
 message Fighter
 {    
   /*Reference to the reciped GUID used to create this fighter*/
@@ -91,4 +106,7 @@ message Fighter
   
   /*Last tournament timestamp, to make sure player can participate only once per mathday*/
   optional uint64 LastTournamentTime = 22;     
+  
+  /*Information on sale time, price and owner changes*/
+  repeated FighterSaleEntry salehistory = 23;  
 }

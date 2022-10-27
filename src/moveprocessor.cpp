@@ -2792,7 +2792,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
       a->AddBalance (-exchangeprice);
       
       fpm::fixed_24_8 reductionPercent = fpm::fixed_24_8(ctx.RoConfig()->params().exchange_sale_percentage());
-      fpm::fixed_24_8 priceToPay = fpm::fixed_24_8(fighterDb->GetProto().exchangeprice());
+      fpm::fixed_24_8 priceToPay = fpm::fixed_24_8(exchangeprice);
       fpm::fixed_24_8 finalPrice = priceToPay * reductionPercent;    
       
       a2->AddBalance((int32_t)finalPrice);
@@ -2801,9 +2801,16 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
     {
       int feeMultipler = 100 - ctx.RoConfig()->params().exchange_sale_percentage();
       
-      a->AddBalance (-fighterDb->GetProto().exchangeprice());
-      a2->AddBalance(fighterDb->GetProto().exchangeprice() * feeMultipler);        
+      a->AddBalance (-exchangeprice);
+      a2->AddBalance(exchangeprice * feeMultipler);        
     }
+
+    proto::FighterSaleEntry* newSale = fighterDb->MutableProto().add_salehistory();
+      
+    newSale->set_selltime(ctx.Timestamp());
+    newSale->set_price(exchangeprice);
+    newSale->set_fromowner(fighterDb->GetOwner());
+    newSale->set_toowner(name);
 
     fighterDb->SetOwner(name);
     fighterDb.reset();

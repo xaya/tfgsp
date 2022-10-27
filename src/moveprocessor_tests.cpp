@@ -629,7 +629,9 @@ TEST_F (CoinOperationTests, PutFighterForSaleAndThenBuy)
   Process (R"([
     {"name": "domob", "move": {"a": {"x": 42, "init": {"address": "CGUpAcjsb6MDktSYg8yRDxDutr7FhWtdWC"}}}}
   ])");
-  
+ 
+  ctx.SetTimestamp(1000);
+ 
   UpdateState ("[]");
   
   auto ft = tbl3.GetById(4, ctx.RoConfig());

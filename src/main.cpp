@@ -42,10 +42,12 @@
 #include <codecvt>
 #include <string>
 
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32) || defined(__MINGW32__) || defined(__MINGW64__)
               // This is free and unencumbered software released into the public domain.
 #include <fcntl.h>
 #include <io.h>
-#include <windows.h>                  
+#include <windows.h>
+#endif               
 
                                 
 namespace
@@ -131,6 +133,7 @@ public:
 
 } // anonymous namespace
 
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32) || defined(__MINGW32__) || defined(__MINGW64__)
 __attribute__((constructor))
 void
 winsane_init(void)
@@ -140,6 +143,7 @@ winsane_init(void)
     SetConsoleCP(CP_UTF8);  // maybe will work someday
     SetConsoleOutputCP(CP_UTF8);
 }
+#endif
 
 int
 main (int argc, char** argv)
