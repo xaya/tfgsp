@@ -157,17 +157,37 @@ BaseMoveProcessor::ExtractMoveBasics (const Json::Value& moveObj,
           continue;                    
         }
 
-        if(amnt != myTier * smallestPayFraction)
-        {
-            if(myTier == 7 && amnt == myTier * smallestPayFraction + leftOverDueToPrecisionError)
+        if(ctx.Height () > 4324148) // HARD FORK INITIATING
+        { 
+          if(amnt != myTier * smallestPayFraction)
+          {
+            if(myTier == 7 && amnt >= myTier * smallestPayFraction + leftOverDueToPrecisionError)
             {
             }
             else
             {
+              if(amnt < myTier * smallestPayFraction)
+              {
               LOG (WARNING) << "Invalid fraction paid for " << outValue.first << " he/she has tier " << myTier << " but payments was" << amnt;
               return false;
+              }
             }
-        }      
+          }      
+        }
+        else
+        {
+          if(amnt != myTier * smallestPayFraction)
+          {
+              if(myTier == 7 && amnt == myTier * smallestPayFraction + leftOverDueToPrecisionError)
+              {
+              }
+              else
+              {
+                LOG (WARNING) << "Invalid fraction paid for " << outValue.first << " he/she has tier " << myTier << " but payments was" << amnt;
+                return false;
+              }
+          }             
+        }
         
         paidToCrownHolders[outValue.first] = amnt;
     }
