@@ -23,6 +23,16 @@ Tests creation / initialisation of accounts.
 
 from pxtest import PXTest
 
+import time
+import unittest
+
+def sleepSome ():
+  """
+  Sleep for a short amount of time, which should be enough for the pending
+  moves to be processed in the GSP.
+  """
+
+  time.sleep (0.1)
 
 class AccountsTest (PXTest):
 
@@ -35,14 +45,22 @@ class AccountsTest (PXTest):
     self.sendMove ("domob", {"x": "foobar"})
     self.generate (1)
     accounts = self.getAccounts ()
-
     assert "andy" not in accounts
 
-    self.mainLogger.info ("Initialising basic accounts...")
-    self.initAccount ("domob", "p")
-    self.initAccount ("domob", "r")
-    self.initAccount ("andy", "c")
     self.generate (1)
+    
+    #Lets conduct a test for destroy behaviour here
+    self.sendMove ("domob", {"ca": {"d": {"rid": [1152]}}})
+    sleepSome ()
+    self.generate (1)
+    self.syncGame ()    
+    
+    currentState = self.getCustomState ("gamestate", "getcurrentstate");
+    
+    allRecepies = currentState["recepies"]
+    for rp in allRecepies:
+        if rp["did"] == 1152:
+            self.assertEqual (rp["owner"], "")    
 
 if __name__ == "__main__":
   AccountsTest ().main ()

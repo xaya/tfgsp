@@ -3216,6 +3216,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
     {
       auto itemInventoryRecipe = GetRecepieObjectFromID(rcp, ctx);
       itemInventoryRecipe->SetOwner("");
+      itemInventoryRecipe.reset();
     }
     
     a->CalculatePrestige(ctx.RoConfig());
@@ -3331,7 +3332,8 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
     /*Trying to cook recepie, optionally with the fighter */
     MaybeCookRecepie (name, upd["r"]);
     
-    if(ctx.Height () > 4265751) // HARD FORK INITIATING
+    xaya::Chain chain = ctx.Chain();
+    if(ctx.Height () > 4265751 || chain == xaya::Chain::REGTEST) // HARD FORK INITIATING
     {
       /*Trying to destroy recepie*/
       MaybeDestroyRecepie (name, upd["d"]);    
