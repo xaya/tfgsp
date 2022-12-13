@@ -28,6 +28,7 @@
 #include <xayagame/gamerpcserver.hpp>
 
 #include <glog/logging.h>
+#include <jsonrpccpp/common/exception.h>
 
 #include <limits>
 #include <sstream>
@@ -38,41 +39,35 @@ namespace pxd
 
 /* ************************************************************************** */
 
-namespace
+void
+PXRpcServer::ThrowJsonError (ErrorCode code, const std::string& msg)
 {
+  throw jsonrpc::JsonRpcException (static_cast<int> (code), msg);
+}
 
-
-enum class ErrorCode
+void
+PXRpcServer::EnsureUnsafeAllowed (const std::string& method)
 {
+  if (!unsafeMethods)
+    {
+      LOG (WARNING) << "Blocked unsafe '" << method << "' call";
+      ThrowJsonError (ErrorCode::UNSAFE_METHOD,
+                      "unsafe RPC methods are disabled in the server");
+    }
+}
 
-  /* Invalid values for arguments (e.g. passing a malformed JSON value for
-     a HexCoord or an out-of-range integer.  */
-  INVALID_ARGUMENT = -1,
-
-  /* Non-existing account passed as associated name for some RPC.  */
-  INVALID_ACCOUNT = -2,
-
-  /* Specific errors with findpath.  */
-  FINDPATH_NO_CONNECTION = 1,
-  FINDPATH_ENCODE_FAILED = 4,
-
-  /* Specific errors with getregionat.  */
-  REGIONAT_OUT_OF_MAP = 2,
-
-  /* Specific errors with getregions.  */
-  GETREGIONS_FROM_TOO_LOW = 3,
-
-};
-
-
-
-} // anonymous namespace
-
+void
+PXRpcServer::EnableUnsafeMethods ()
+{
+  LOG (WARNING) << "Enabling unsafe RPC methods";
+  unsafeMethods = true;
+}
 
 void
 PXRpcServer::stop ()
 {
   LOG (INFO) << "RPC method called: stop";
+  EnsureUnsafeAllowed ("stop");
   game.RequestStop ();
 }
 
@@ -123,6 +118,7 @@ Json::Value
 PXRpcServer::waitforpendingchange (const int oldVersion)
 {
   LOG (INFO) << "RPC method called: waitforpendingchange " << oldVersion;
+  EnsureUnsafeAllowed ("waitforpendingchange");
   return game.WaitForPendingChange (oldVersion);
 }
 
@@ -130,6 +126,7 @@ std::string
 PXRpcServer::waitforchange (const std::string& knownBlock)
 {
   LOG (INFO) << "RPC method called: waitforchange " << knownBlock;
+  EnsureUnsafeAllowed ("waitforchange");
   return xaya::GameRpcServer::DefaultWaitForChange (game, knownBlock);
 }
 

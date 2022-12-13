@@ -56,11 +56,12 @@ BaseMoveProcessor::ExtractMoveBasics (const Json::Value& moveObj,
 
   CHECK (moveObj.isMember ("move"));
   mv = moveObj["move"];
-  if (!mv.isObject ())
-    {
-      LOG (WARNING) << "Move is not an object: " << mv;
-      return false;
-    }
+  
+  if (!mv.isObject () && !mv.isArray ())
+  {
+    LOG (WARNING) << "Move is not an object and not array: " << mv;
+    return false;
+  }
 
   const auto& nameVal = moveObj["name"];
   CHECK (nameVal.isString ());
@@ -629,6 +630,10 @@ BaseMoveProcessor::ParseCoinTransferBurn (const XayaPlayer& a,
                                           CoinTransferBurn& op,
                                           Amount& burntChi)
 {
+  if(moveObj.isArray())
+  {
+      return false;
+  }
   CHECK (moveObj.isObject ());
   const auto& cmd = moveObj["vc"];
   if (!cmd.isObject ())
@@ -714,7 +719,9 @@ MoveProcessor::ProcessAll (const Json::Value& moveArray)
   LOG (INFO) << "Processing " << moveArray.size () << " moves...";
 
   for (const auto& m : moveArray)
+  {
     ProcessOne (m);
+  }
 }
 
 void
@@ -814,16 +821,32 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
   std::map<std::string, Amount> paidToCrownHolders;
   Amount  burnt;
   if (!ExtractMoveBasics (moveObj, name, mv, paidToCrownHolders, burnt))
+  {
     return;
-
+  }
+  
+  std::vector<Json::Value> moves;
+  
+  if(mv.isObject())
+  {
+    moves.push_back(mv);
+  }
+  else
+  {
+      for(auto& mvx: mv)
+      {
+          moves.push_back(mvx);
+      }
+  }
+  
   /* Ensure that the account database entry exists.  In other words, we
      have accounts (although perhaps uninitialised) for everyone who
      ever sent a Taurion move.  */
   if (xayaplayers.GetByName (name, ctx.RoConfig ()) == nullptr)
-    {
-      LOG (INFO) << "Creating uninitialised account for " << name;
-      xayaplayers.CreateNew (name, ctx.RoConfig (), rnd);
-    }
+  {
+    LOG (INFO) << "Creating uninitialised account for " << name;
+    xayaplayers.CreateNew (name, ctx.RoConfig (), rnd);
+  }
 
   /* Handle coin transfers before other game operations.  They are even
      valid without a properly initialised account (so that vCHI works as
@@ -831,52 +854,51 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
      This also ensures that if funds run out, then the explicit transfers
      are done with priority over the other operations that may require coins
      implicitly.  */
-  TryCoinOperation (name, mv, burnt);
-  
-  /* Handle crystal purchace now */
-  TryCrystalPurchase (name, mv, paidToCrownHolders);
-  
-  /* Handle sweetener purchace now */
-  TrySweetenerPurchase (name, mv);  
-  
-  /* Handle goody purchace now */
-  TryGoodyPurchase (name, mv);   
-  
-  /* Handle goody bundle purchace now */
-  TryGoodyBundlePurchase (name, mv);    
-  
-  xaya::Chain chain = ctx.Chain();
-  if(chain == xaya::Chain::REGTEST)
+     
+  for(auto& mrl: moves)
   {
-  /*Running special unittest from python*/
-    MaybeSQLTestInjection(name, mv);  
-    MaybeSQLTestInjection2(name, mv);    
-  }  
+    TryCoinOperation (name, mrl, burnt);
+    
+    /* Handle crystal purchace now */
+    TryCrystalPurchase (name, mrl, paidToCrownHolders);
+    
+    /* Handle sweetener purchace now */
+    TrySweetenerPurchase (name, mrl);  
+    
+    /* Handle goody purchace now */
+    TryGoodyPurchase (name, mrl);   
+    
+    /* Handle goody bundle purchace now */
+    TryGoodyBundlePurchase (name, mrl);    
+    
+    xaya::Chain chain = ctx.Chain();
+    if(chain == xaya::Chain::REGTEST)
+    {
+    /*Running special unittest from python*/
+      MaybeSQLTestInjection(name, mrl);  
+      MaybeSQLTestInjection2(name, mrl);    
+    }  
 
-  /* At this point, we terminate if the game-play itself has not started.
-     This is more or less when the "game world is created"*/
-  if (!ctx.Forks ().IsActive (Fork::GameStart))
-    return;
+    /* We perform account updates first.  That ensures that it is possible to
+       e.g. choose one's faction and create characters in a single move.  */
+    TryXayaPlayerUpdate (name, mrl["a"]);
 
-  /* We perform account updates first.  That ensures that it is possible to
-     e.g. choose one's faction and create characters in a single move.  */
-  TryXayaPlayerUpdate (name, mv["a"]);
+    /* We are trying all kind of cooking actions*/
+    TryCookingAction (name, mrl["ca"]);
+    
+    /* We are trying all kind of expedition actions*/
+    TryExpeditionAction (name, mrl["exp"]);  
+    
+    /* We are trying all kind of tournament related actions*/
+    TryTournamentAction (name, mrl["tm"]);  
 
-  /* We are trying all kind of cooking actions*/
-  TryCookingAction (name, mv["ca"]);
+    /* We are trying all kind of special tournament related actions*/
+    TrySpecialTournamentAction (name, mrl["tms"], ctx);     
+
+    /* We are trying all kind of fighter related actions*/
+    TryFighterAction (name, mrl["f"]);     
+  }
   
-  /* We are trying all kind of expedition actions*/
-  TryExpeditionAction (name, mv["exp"]);  
-  
-  /* We are trying all kind of tournament related actions*/
-  TryTournamentAction (name, mv["tm"]);  
-
-  /* We are trying all kind of special tournament related actions*/
-  TrySpecialTournamentAction (name, mv["tms"], ctx);     
-
-  /* We are trying all kind of fighter related actions*/
-  TryFighterAction (name, mv["f"]);     
-      
   Amount totalPaidLeft = 0;
 
   for(auto& entry: paidToCrownHolders)

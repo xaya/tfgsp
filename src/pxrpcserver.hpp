@@ -33,7 +33,32 @@
 
 namespace pxd
 {
-    
+ 
+enum class ErrorCode
+{
+
+  /* Invalid values for arguments (e.g. passing a malformed JSON value for
+     a HexCoord or an out-of-range integer.  */
+  INVALID_ARGUMENT = -1,
+
+  /* Non-existing account passed as associated name for some RPC.  */
+  INVALID_ACCOUNT = -2,
+
+  /* Specific errors with findpath.  */
+  FINDPATH_NO_CONNECTION = 1,
+  FINDPATH_ENCODE_FAILED = 4,
+
+  /* Specific errors with getregionat.  */
+  REGIONAT_OUT_OF_MAP = 2,
+
+  /* Specific errors with getregions.  */
+  GETREGIONS_FROM_TOO_LOW = 3,
+  /* This method is considered unsafe and not enabled in the server.  */
+  UNSAFE_METHOD = -4,  
+
+}; 
+ 
+ 
 /**
  * Fake JSON-RPC server connector that just does nothing.  By using this class,
  * we can construct instances of the libjson-rpc-cpp servers without needing to
@@ -76,7 +101,24 @@ private:
 
   /** The PX game logic implementation.  */
   PXLogic& logic;
+  
+ /**
+   * Whether or not to allow "unsafe" RPC methods (like stop, that should
+   * not be publicly exposed).
+   */
+  bool unsafeMethods = false;
 
+  /**
+   * Checks if unsafe methods are allowed.  If not, throws a JSON-RPC
+   * exception to the caller.
+   */
+  void EnsureUnsafeAllowed (const std::string& method);  
+
+  /**
+   * Throws a JSON-RPC error from the current method.  This throws an exception,
+   * so does not return to the caller in a normal way.
+   */
+  void ThrowJsonError (ErrorCode code, const std::string& msg);
 
 public:
 
@@ -84,6 +126,12 @@ explicit PXRpcServer (xaya::Game& g, PXLogic& l,
                         jsonrpc::AbstractServerConnector& conn)
     : PXRpcServerStub(conn), game(g), logic(l)
   {}
+
+  /**
+   * Turns on support for unsafe methods, which should not be publicly
+   * exposed.
+   */
+  void EnableUnsafeMethods ();
 
   void stop () override;
   Json::Value getcurrentstate () override;

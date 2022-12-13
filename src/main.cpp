@@ -76,7 +76,10 @@ DEFINE_bool (pending_moves, true,
              "whether or not pending moves should be tracked");
              
 DEFINE_bool (dump_state, false,
-             "whether to dump state into file or not");             
+             "whether to dump state into file or not");           
+
+DEFINE_bool (unsafe_rpc, false,
+             "whether or not to allow 'unsafe' RPC methods like stop");             
 
 class PXInstanceFactory : public xaya::CustomisedInstanceFactory
 {
@@ -108,10 +111,15 @@ public:
   BuildRpcServer (xaya::Game& game,
                   jsonrpc::AbstractServerConnector& conn) override
   {
-    std::unique_ptr<xaya::RpcServerInterface> res;
-    res.reset (new xaya::WrappedRpcServer<pxd::PXRpcServer> (game, rules,
-                                                             conn));
-    return res;
+    using WrappedRpc = xaya::WrappedRpcServer<pxd::PXRpcServer>;
+     auto rpc =  std::make_unique<WrappedRpc> (game, rules, conn);
+                                                             
+    if (FLAGS_unsafe_rpc)
+    {
+       rpc->Get ().EnableUnsafeMethods ();
+    }
+    
+    return rpc;
   }
 
   std::vector<std::unique_ptr<xaya::GameComponent>>

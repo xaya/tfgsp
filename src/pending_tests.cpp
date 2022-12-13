@@ -202,6 +202,39 @@ protected:
     PendingStateUpdater updater(db, state, ctx);
     updater.ProcessMove (moveObj);
   }
+  
+  /**
+   * Processes a move for the given name and with the given move data, parsed
+   * from JSON string.  If paidToDev is non-zero, then add an "out" entry
+   * paying the given amount to the dev address.  If burntChi is non-zero,
+   * then also a CHI burn is added to the JSON data.
+   */
+  void
+  ProcessWithDevPaymentAndBurnAsBatch (const std::string& name,
+                                const Amount paidToDev, const Amount burntChi,
+                                const std::string& mvStr)
+  {
+    Json::Value moveObj(Json::objectValue);
+    moveObj["name"] = name;
+    moveObj["move"] = ParseJson ("["+mvStr+"]");
+
+    if (paidToDev != 0)
+    {   
+      moveObj["out"]["CPxvCsP9wr8ow4x5r6D1gYpxAFBg6ACzc6"] = xaya::ChiAmountToJson ((paidToDev / 28) * 1);
+      moveObj["out"]["CHPVEUVFKy1YugLhVFQmqE8iaPch3MxGsd"] = xaya::ChiAmountToJson ((paidToDev / 28) * 2);
+      moveObj["out"]["Cdwan1eAmsvA2sE6XNUB4ZWNDMHwoyhRYr"] = xaya::ChiAmountToJson ((paidToDev / 28) * 3);
+      moveObj["out"]["CcX1ksjf4c9qJ2ftd51T2iJbNkRm5SRc94"] = xaya::ChiAmountToJson ((paidToDev / 28) * 4);
+      moveObj["out"]["CGr5MT1C5PXUpYhaDQkKoLxP11qJtJxzu8"] = xaya::ChiAmountToJson ((paidToDev / 28) * 5);
+      moveObj["out"]["CeJt7YpW8P9jMeVrVm58nUaoM4fJ4KXMUS"] = xaya::ChiAmountToJson ((paidToDev / 28) * 6);
+      moveObj["out"]["CZhfYfqbMdzeS5ADRR2su12cWD3TQaeBFc"] = xaya::ChiAmountToJson ((paidToDev / 28) * 7);    
+    }    
+          
+    if (burntChi != 0)
+      moveObj["burnt"] = xaya::ChiAmountToJson (burntChi);
+
+    PendingStateUpdater updater(db, state, ctx);
+    updater.ProcessMove (moveObj);
+  }  
 
   /**
    * Processes a move for the given name, data and dev payment, without burn.
@@ -414,6 +447,41 @@ TEST_F (PendingStateUpdaterTests, TestSweetenerCollect)
     }
   )");    
 }
+
+/*
+TEST_F (PendingStateUpdaterTests, BatchSubmitPendingTests)
+{
+  auto a = xayaplayers.CreateNew ("testy2", ctx.RoConfig(), rnd);
+  a->AddBalance(100);
+  
+  a->GetInventory().SetFungibleCount("Common_Gumdrop", 1);
+  a->GetInventory().SetFungibleCount("Common_Icing", 1);  
+  
+  a.reset();
+  
+  auto r0 = tbl2.CreateNew("testy2", "5864a19b-c8c0-2d34-eaef-9455af0baf2c", ctx.RoConfig());
+  r0.reset();     
+  
+  tbl2.GetById(1)->SetOwner("testy2");
+  
+  ProcessWithDevPaymentAndBurnAsBatch ("testy2", 0, 0, R"({"ca": {"d": {"rid": [1]}}})");  
+  
+  ExpectStateJson (R"(
+    {
+      "xayaplayers":
+        [
+          {
+            "name": "testy2",
+			"recipedestroy" : 
+			[
+              1
+			]
+          }
+        ]
+    }
+  )");
+}*/
+
 
 TEST_F (PendingStateUpdaterTests, SubmitRecepieDestroy)
 {
