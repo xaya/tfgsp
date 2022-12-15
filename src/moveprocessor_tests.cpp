@@ -255,6 +255,16 @@ TEST_F (XayaPlayersUpdateTests, RecepieInstanceSheduleTest)
   EXPECT_EQ (a->GetOngoingsSize (), 1);
 }
 
+
+TEST_F (XayaPlayersUpdateTests, TestFractionPaymentRounding)
+{
+  Amount smallestPayFraction = 500100;
+  smallestPayFraction = smallestPayFraction / 1000;
+  smallestPayFraction = smallestPayFraction * 1000;    
+  
+   EXPECT_EQ (smallestPayFraction, 500000);
+}
+
 TEST_F (XayaPlayersUpdateTests, BacthSubmitNormalTest)
 {
   xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (100);

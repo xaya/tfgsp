@@ -118,7 +118,6 @@ Json::Value
 PXRpcServer::waitforpendingchange (const int oldVersion)
 {
   LOG (INFO) << "RPC method called: waitforpendingchange " << oldVersion;
-  EnsureUnsafeAllowed ("waitforpendingchange");
   return game.WaitForPendingChange (oldVersion);
 }
 
@@ -126,7 +125,6 @@ std::string
 PXRpcServer::waitforchange (const std::string& knownBlock)
 {
   LOG (INFO) << "RPC method called: waitforchange " << knownBlock;
-  EnsureUnsafeAllowed ("waitforchange");
   return xaya::GameRpcServer::DefaultWaitForChange (game, knownBlock);
 }
 

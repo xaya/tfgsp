@@ -130,6 +130,10 @@ BaseMoveProcessor::ExtractMoveBasics (const Json::Value& moveObj,
     }
   }
 
+  //Lets filter small additional fee, which we have to get rid of electrum bug
+  smallestPayFraction = smallestPayFraction / 1000;
+  smallestPayFraction = smallestPayFraction * 1000;
+
   Amount totalAmountPaid = 0;
   
   for(auto& outValue: outVal)
@@ -157,19 +161,21 @@ BaseMoveProcessor::ExtractMoveBasics (const Json::Value& moveObj,
           LOG (WARNING) << "Failed to extract amount from " << outVal[outValue.first];
           continue;                    
         }
+        
+        Amount needToPay = myTier * smallestPayFraction;
 
         if(ctx.Height () > 4324148) // HARD FORK INITIATING
         { 
-          if(amnt != myTier * smallestPayFraction)
+          if(amnt != needToPay)
           {
-            if(myTier == 7 && amnt >= myTier * smallestPayFraction + leftOverDueToPrecisionError)
+            if(myTier == 7 && amnt >= needToPay + leftOverDueToPrecisionError)
             {
             }
             else
             {
-              if(amnt < myTier * smallestPayFraction)
+              if(amnt < needToPay)
               {
-              LOG (WARNING) << "Invalid fraction paid for " << outValue.first << " he/she has tier " << myTier << " but payments was" << amnt;
+              LOG (WARNING) << "Invalid fraction paid for " << outValue.first << " he/she has tier " << myTier << " but payments was" << amnt << " where needed to pay " << needToPay << " as fracton was " << smallestPayFraction;
               return false;
               }
             }

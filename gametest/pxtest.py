@@ -44,7 +44,7 @@ class Account (object):
 
 class PXTest (XayaGameTest):
   """
-  Integration test for the Tauron game daemon.
+  Integration test for the TF game daemon.
   """
 
   cfg = None
