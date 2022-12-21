@@ -121,8 +121,7 @@ BaseMoveProcessor::ExtractMoveBasics (const Json::Value& moveObj,
         Amount amnt;
         if(xaya::ChiAmountFromJson(outVal[outValue.first], amnt) == false)
         {
-          LOG (WARNING) << "Failed to extract amount from " << outVal[outValue.first] << " for name " << outValue.first << " outValDumpBeing " << outVal ;
-          continue;         
+          continue;        
         }
         
         smallestPayFraction = amnt;
@@ -130,74 +129,77 @@ BaseMoveProcessor::ExtractMoveBasics (const Json::Value& moveObj,
     }
   }
 
-  //Lets filter small additional fee, which we have to get rid of electrum bug
-  smallestPayFraction = smallestPayFraction / 1000;
-  smallestPayFraction = smallestPayFraction * 1000;
-
-  Amount totalAmountPaid = 0;
-  
-  for(auto& outValue: outVal)
+  if(smallestPayFraction != 0)
   {
-      Amount amnt;
-      if(xaya::ChiAmountFromJson(outValue, amnt) == false)
+      //Lets filter small additional fee, which we have to get rid of electrum bug
+      smallestPayFraction = smallestPayFraction / 1000;
+      smallestPayFraction = smallestPayFraction * 1000;
+
+      Amount totalAmountPaid = 0;
+      
+      for(auto& outValue: outVal)
       {
-        LOG (WARNING) << "Failed to extract amount from " << outValue;
-        continue;                     
-      }          
-      totalAmountPaid += amnt;
-  }
-  
-  Amount leftOverDueToPrecisionError = totalAmountPaid - smallestPayFraction * 28;
-    
-  if(outVal.isObject())
-  {
-    for(auto& outValue: paidToCrownHolders)
-    {
-        int32_t myTier = holderTier[outValue.first];
-        
-        Amount amnt;
-        if(xaya::ChiAmountFromJson(outVal[outValue.first], amnt) == false)
-        {
-          LOG (WARNING) << "Failed to extract amount from " << outVal[outValue.first];
-          continue;                    
-        }
-        
-        Amount needToPay = myTier * smallestPayFraction;
-
-        if(ctx.Height () > 4324148) // HARD FORK INITIATING
-        { 
-          if(amnt != needToPay)
+          Amount amnt;
+          if(xaya::ChiAmountFromJson(outValue, amnt) == false)
           {
-            if(myTier == 7 && amnt >= needToPay + leftOverDueToPrecisionError)
+            LOG (WARNING) << "Failed to extract amount from " << outValue;
+            return false;                    
+          }          
+          totalAmountPaid += amnt;
+      }
+      
+      Amount leftOverDueToPrecisionError = totalAmountPaid - smallestPayFraction * 28;
+        
+      if(outVal.isObject())
+      {
+        for(auto& outValue: paidToCrownHolders)
+        {
+            int32_t myTier = holderTier[outValue.first];
+            
+            Amount amnt;
+            if(xaya::ChiAmountFromJson(outVal[outValue.first], amnt) == false)
             {
+              LOG (WARNING) << "Failed to extract amount from " << outVal[outValue.first] << "for key" << outValue.first;
+              return false;                   
+            }
+            
+            Amount needToPay = myTier * smallestPayFraction;
+
+            if(ctx.Height () > 4324148) // HARD FORK INITIATING
+            { 
+              if(amnt != needToPay)
+              {
+                if(myTier == 7 && amnt >= needToPay + leftOverDueToPrecisionError)
+                {
+                }
+                else
+                {
+                  if(amnt < needToPay)
+                  {
+                  LOG (WARNING) << "Invalid fraction paid for " << outValue.first << " he/she has tier " << myTier << " but payments was" << amnt << " where needed to pay " << needToPay << " as fracton was " << smallestPayFraction;
+                  return false;
+                  }
+                }
+              }      
             }
             else
             {
-              if(amnt < needToPay)
+              if(amnt != myTier * smallestPayFraction)
               {
-              LOG (WARNING) << "Invalid fraction paid for " << outValue.first << " he/she has tier " << myTier << " but payments was" << amnt << " where needed to pay " << needToPay << " as fracton was " << smallestPayFraction;
-              return false;
-              }
+                  if(myTier == 7 && amnt == myTier * smallestPayFraction + leftOverDueToPrecisionError)
+                  {
+                  }
+                  else
+                  {
+                    LOG (WARNING) << "Invalid fraction paid for " << outValue.first << " he/she has tier " << myTier << " but payments was" << amnt;
+                    return false;
+                  }
+              }             
             }
-          }      
+            
+            paidToCrownHolders[outValue.first] = amnt;
         }
-        else
-        {
-          if(amnt != myTier * smallestPayFraction)
-          {
-              if(myTier == 7 && amnt == myTier * smallestPayFraction + leftOverDueToPrecisionError)
-              {
-              }
-              else
-              {
-                LOG (WARNING) << "Invalid fraction paid for " << outValue.first << " he/she has tier " << myTier << " but payments was" << amnt;
-                return false;
-              }
-          }             
-        }
-        
-        paidToCrownHolders[outValue.first] = amnt;
-    }
+      }
   }
   
   if (moveObj.isMember ("burnt"))

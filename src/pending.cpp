@@ -773,6 +773,20 @@ PendingStateUpdater::ProcessMove (const Json::Value& moveObj)
   if (!ExtractMoveBasics (moveObj, name, mv, paidToCrownHolders, burnt))
     return;
 
+  std::vector<Json::Value> moves;
+  
+  if(mv.isObject())
+  {
+    moves.push_back(mv);
+  }
+  else
+  {
+      for(auto& mvx: mv)
+      {
+          moves.push_back(mvx);
+      }
+  }
+
   auto a = xayaplayers.GetByName (name, ctx.RoConfig ());
   if (a == nullptr)
     {
@@ -788,180 +802,183 @@ PendingStateUpdater::ProcessMove (const Json::Value& moveObj)
       return;
     }
 
-  CoinTransferBurn coinOps;
-  if (ParseCoinTransferBurn (*a, mv, coinOps, burnt))
-    state.AddCoinTransferBurn (*a, coinOps);
-
-  /*If we have any recepies trying to submit for cooking, check here*/
-  std::map<std::string, pxd::Quantity> fungibleItemAmountForDeduction;
-  int32_t cookCost = -1;
-  uint32_t fighterID = -1;
-  int32_t duration = -1;
-  std::string weHaveApplibeGoodyName = "";
-  std::string sweetenerKeyName = "";
-  std::vector<uint32_t> rewardDatabaseIds;  
-  Amount price = 0;
-  
-  Json::Value& upd = mv["ca"];
-  if(upd.isObject())
+  for(auto& mrl: moves)
   {
-    pxd::proto::ExpeditionBlueprint expeditionBlueprint;
-    FighterTable::Handle fighter;
-    int32_t fighterIdToCollect = 0;
-    
-    if(ParseCollectCookRecepie(*a, name, upd["cl"], fighterIdToCollect))
-    {
-       state.AddCookedRecepieCollectInstance(*a, fighterIdToCollect);
-    }    
-    
-    std::vector<uint32_t> recepieIDS;
-    if(ParseDestroyRecepie(*a, name, upd["d"], recepieIDS))
-    {
-       state.AddRecepieDestroyInstance(*a, duration, recepieIDS);
-    }    
-    
-    if(ParseCookRecepie(*a, name, upd["r"], fungibleItemAmountForDeduction, cookCost, duration, weHaveApplibeGoodyName))
-    {
-       state.AddRecepieCookingInstance(*a, duration, upd["r"]["rid"].asInt(), cookCost, fungibleItemAmountForDeduction);
-    }
-    
-    if(ParseSweetener(*a, name, upd["s"], fungibleItemAmountForDeduction, cookCost, fighterID, duration, sweetenerKeyName))
-    {
-       state.AddSweetenerCookingInstance(*a, sweetenerKeyName, duration, fighterID, cookCost, fungibleItemAmountForDeduction);  
-    }
-    
-    std::string sweetenerAuthId = "";
-    if(ParseClaimSweetener(*a, name, upd["sc"], fighterID, rewardDatabaseIds, sweetenerAuthId))
-    {
-       state.AddClaimingSweetenerReward(*a, sweetenerAuthId, fighterID);   
-    }
+      CoinTransferBurn coinOps;
+      if (ParseCoinTransferBurn (*a, mrl, coinOps, burnt))
+        state.AddCoinTransferBurn (*a, coinOps);
+
+      /*If we have any recepies trying to submit for cooking, check here*/
+      std::map<std::string, pxd::Quantity> fungibleItemAmountForDeduction;
+      int32_t cookCost = -1;
+      uint32_t fighterID = -1;
+      int32_t duration = -1;
+      std::string weHaveApplibeGoodyName = "";
+      std::string sweetenerKeyName = "";
+      std::vector<uint32_t> rewardDatabaseIds;  
+      Amount price = 0;
+      
+      Json::Value& upd = mrl["ca"];
+      if(upd.isObject())
+      {
+        pxd::proto::ExpeditionBlueprint expeditionBlueprint;
+        FighterTable::Handle fighter;
+        int32_t fighterIdToCollect = 0;
+        
+        if(ParseCollectCookRecepie(*a, name, upd["cl"], fighterIdToCollect))
+        {
+           state.AddCookedRecepieCollectInstance(*a, fighterIdToCollect);
+        }    
+        
+        std::vector<uint32_t> recepieIDS;
+        if(ParseDestroyRecepie(*a, name, upd["d"], recepieIDS))
+        {
+           state.AddRecepieDestroyInstance(*a, duration, recepieIDS);
+        }    
+        
+        if(ParseCookRecepie(*a, name, upd["r"], fungibleItemAmountForDeduction, cookCost, duration, weHaveApplibeGoodyName))
+        {
+           state.AddRecepieCookingInstance(*a, duration, upd["r"]["rid"].asInt(), cookCost, fungibleItemAmountForDeduction);
+        }
+        
+        if(ParseSweetener(*a, name, upd["s"], fungibleItemAmountForDeduction, cookCost, fighterID, duration, sweetenerKeyName))
+        {
+           state.AddSweetenerCookingInstance(*a, sweetenerKeyName, duration, fighterID, cookCost, fungibleItemAmountForDeduction);  
+        }
+        
+        std::string sweetenerAuthId = "";
+        if(ParseClaimSweetener(*a, name, upd["sc"], fighterID, rewardDatabaseIds, sweetenerAuthId))
+        {
+           state.AddClaimingSweetenerReward(*a, sweetenerAuthId, fighterID);   
+        }
+      }
+      
+      Json::Value& upd2 = mrl["exp"];   
+      if(upd2.isObject())
+      {   
+        pxd::proto::ExpeditionBlueprint expeditionBlueprint;
+        std::vector<int> fighter; 
+
+        if(ParseExpeditionData(*a, name, upd2["f"], expeditionBlueprint, fighter, duration, weHaveApplibeGoodyName))
+        {
+          state.AddExpeditionInstance(*a, duration, expeditionBlueprint.authoredid(), fighter);
+        }  
+
+        std::vector<std::string> expeditionIDArray;
+        
+        if(ParseRewardData(*a, name, upd2["c"], rewardDatabaseIds, expeditionIDArray))
+        {
+          state.AddRewardIDs(*a, expeditionIDArray, rewardDatabaseIds);
+        }  
+        
+      }
+      
+      Json::Value& upd3 = mrl["tm"];   
+      
+      if(upd3.isObject())
+      {   
+        uint32_t tournamentID = 0;
+        std::vector<uint32_t> fighterIDS;   
+        std::vector<uint32_t> fighterIDSL; 
+        
+        if(ParseTournamentEntryData(*a, name, upd3["e"], tournamentID, fighterIDS))
+        {
+           state.AddTournamentEntries(*a, tournamentID, fighterIDS);  
+        }
+        
+        if(ParseTournamentLeaveData(*a, name, upd3["l"], tournamentID, fighterIDSL))
+        {
+           state.AddTournamentLeaves(*a, tournamentID, fighterIDSL);  
+        }    
+        
+        if(ParseTournamentRewardData(*a, name, upd3["c"], rewardDatabaseIds, tournamentID))
+        {
+           state.AddTournamentRewardIDs(*a, tournamentID, rewardDatabaseIds); 
+        }    
+      }  
+      
+      Json::Value& upd3x = mrl["tms"];
+      
+      if(upd3x.isObject())
+      {   
+        uint32_t tournamentID = 0;
+        std::vector<uint32_t> fighterIDS;   
+        std::vector<uint32_t> fighterIDSL;
+        
+        if(ParseSpecialTournamentEntryData(*a, name, upd3x["e"], tournamentID, fighterIDS))       
+        {
+           state.AddSpecialTournamentEntries(*a, tournamentID, fighterIDS);  
+        }
+        
+        if(ParseSpecialTournamentLeaveData(*a, name, upd3["l"], tournamentID, fighterIDSL))
+        {
+           state.AddSpecialTournamentLeaves(*a, tournamentID, fighterIDSL);  
+        }     
+      }    
+      
+      Json::Value& upd4 = mrl["f"];   
+      Amount exchangeprice = 0;
+      Amount listingfee = 0;
+      
+      if(upd4.isObject())
+      {  
+        if(ParseDeconstructData(*a, name, upd4["d"], fighterID))
+        {
+          state.AddDeconstructionData(*a, fighterID);  
+        }
+        
+        if(ParseDeconstructRewardData(*a, name, upd4["c"], fighterID)) 
+        {
+          state.AddDeconstructionRewardData(*a, fighterID);  
+        }    
+        
+        uint32_t durationI = -1;
+        if(ParseFighterForSaleData(*a, name, upd4["s"], fighterID, durationI, price, listingfee))
+        {
+          state.AddFighterForSaleData(*a, fighterID, listingfee);  
+        }   
+
+        if(ParseBuyData(*a, name, upd4["b"], fighterID, exchangeprice)) 
+        {
+          state.AddFighterForBuyData(*a, fighterID, exchangeprice);  
+        }        
+        
+        if(ParseRemoveBuyData(*a, name, upd4["r"], fighterID))
+        {
+          state.RemoveFromSaleData(*a, fighterID);  
+        }
+      }
+
+      /*If we have any crystal bundles purchases pending, lets add them here*/
+     
+      Amount cost = 0;
+      Amount crystalAmount  = 0;
+      std::string fungibleName = "";
+      uint64_t uses = 0;
+      Amount paidToDev;
+      
+      if(ParseCrystalPurchase(mrl, bundleKeyCode, cost, crystalAmount, name, paidToDev))
+      {
+          state.AddCrystalPurchase(*a, bundleKeyCode, crystalAmount);
+      }  
+      
+      auto& aState = state.GetXayaPlayerState (*a);
+      if(ParseGoodyPurchase(mrl, cost, name, fungibleName, aState.balance, uses))
+      {
+          state.AddPurchasing(*a, mrl["pg"].asString(), cost);  
+      }
+      
+      if(ParseSweetenerPurchase(mrl, cost, name, fungibleName, aState.balance))
+      {
+          state.AddPurchasing(*a, mrl["ps"].asString(), cost);
+      }  
+      
+      std::map<std::string, uint64_t> fungibles;
+      if(ParseGoodyBundlePurchase(mrl, cost, name, fungibles, aState.balance))
+      {
+          state.AddPurchasing(*a, mrl["pgb"].asString(), cost);
+      }  
   }
-  
-  Json::Value& upd2 = mv["exp"];   
-  if(upd2.isObject())
-  {   
-    pxd::proto::ExpeditionBlueprint expeditionBlueprint;
-    std::vector<int> fighter; 
-
-    if(ParseExpeditionData(*a, name, upd2["f"], expeditionBlueprint, fighter, duration, weHaveApplibeGoodyName))
-    {
-      state.AddExpeditionInstance(*a, duration, expeditionBlueprint.authoredid(), fighter);
-    }  
-
-    std::vector<std::string> expeditionIDArray;
-    
-    if(ParseRewardData(*a, name, upd2["c"], rewardDatabaseIds, expeditionIDArray))
-    {
-      state.AddRewardIDs(*a, expeditionIDArray, rewardDatabaseIds);
-    }  
-    
-  }
-  
-  Json::Value& upd3 = mv["tm"];   
-  
-  if(upd3.isObject())
-  {   
-    uint32_t tournamentID = 0;
-    std::vector<uint32_t> fighterIDS;   
-    std::vector<uint32_t> fighterIDSL; 
-    
-    if(ParseTournamentEntryData(*a, name, upd3["e"], tournamentID, fighterIDS))
-    {
-       state.AddTournamentEntries(*a, tournamentID, fighterIDS);  
-    }
-    
-    if(ParseTournamentLeaveData(*a, name, upd3["l"], tournamentID, fighterIDSL))
-    {
-       state.AddTournamentLeaves(*a, tournamentID, fighterIDSL);  
-    }    
-    
-    if(ParseTournamentRewardData(*a, name, upd3["c"], rewardDatabaseIds, tournamentID))
-    {
-       state.AddTournamentRewardIDs(*a, tournamentID, rewardDatabaseIds); 
-    }    
-  }  
-  
-  Json::Value& upd3x = mv["tms"];
-  
-  if(upd3x.isObject())
-  {   
-    uint32_t tournamentID = 0;
-    std::vector<uint32_t> fighterIDS;   
-    std::vector<uint32_t> fighterIDSL;
-    
-    if(ParseSpecialTournamentEntryData(*a, name, upd3x["e"], tournamentID, fighterIDS))       
-    {
-       state.AddSpecialTournamentEntries(*a, tournamentID, fighterIDS);  
-    }
-    
-    if(ParseSpecialTournamentLeaveData(*a, name, upd3["l"], tournamentID, fighterIDSL))
-    {
-       state.AddSpecialTournamentLeaves(*a, tournamentID, fighterIDSL);  
-    }     
-  }    
-  
-  Json::Value& upd4 = mv["f"];   
-  Amount exchangeprice = 0;
-  Amount listingfee = 0;
-  
-  if(upd4.isObject())
-  {  
-    if(ParseDeconstructData(*a, name, upd4["d"], fighterID))
-    {
-      state.AddDeconstructionData(*a, fighterID);  
-    }
-    
-    if(ParseDeconstructRewardData(*a, name, upd4["c"], fighterID)) 
-    {
-      state.AddDeconstructionRewardData(*a, fighterID);  
-    }    
-    
-    uint32_t durationI = -1;
-    if(ParseFighterForSaleData(*a, name, upd4["s"], fighterID, durationI, price, listingfee))
-    {
-      state.AddFighterForSaleData(*a, fighterID, listingfee);  
-    }   
-
-    if(ParseBuyData(*a, name, upd4["b"], fighterID, exchangeprice)) 
-    {
-      state.AddFighterForBuyData(*a, fighterID, exchangeprice);  
-    }        
-    
-    if(ParseRemoveBuyData(*a, name, upd4["r"], fighterID))
-    {
-      state.RemoveFromSaleData(*a, fighterID);  
-    }
-  }
-
-  /*If we have any crystal bundles purchases pending, lets add them here*/
- 
-  Amount cost = 0;
-  Amount crystalAmount  = 0;
-  std::string fungibleName = "";
-  uint64_t uses = 0;
-  Amount paidToDev;
-  
-  if(ParseCrystalPurchase(mv, bundleKeyCode, cost, crystalAmount, name, paidToDev))
-  {
-      state.AddCrystalPurchase(*a, bundleKeyCode, crystalAmount);
-  }  
-  
-  auto& aState = state.GetXayaPlayerState (*a);
-  if(ParseGoodyPurchase(mv, cost, name, fungibleName, aState.balance, uses))
-  {
-      state.AddPurchasing(*a, mv["pg"].asString(), cost);  
-  }
-  
-  if(ParseSweetenerPurchase(mv, cost, name, fungibleName, aState.balance))
-  {
-      state.AddPurchasing(*a, mv["ps"].asString(), cost);
-  }  
-  
-  std::map<std::string, uint64_t> fungibles;
-  if(ParseGoodyBundlePurchase(mv, cost, name, fungibles, aState.balance))
-  {
-      state.AddPurchasing(*a, mv["pgb"].asString(), cost);
-  }  
   
   /* Release the account again.  It is not needed anymore, and some of
      the further operations may allocate another Account handle for

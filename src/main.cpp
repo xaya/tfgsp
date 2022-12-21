@@ -78,7 +78,7 @@ DEFINE_bool (pending_moves, true,
 DEFINE_bool (dump_state, false,
              "whether to dump state into file or not");           
 
-DEFINE_bool (unsafe_rpc, false,
+DEFINE_bool (unsafe_rpc, true,
              "whether or not to allow 'unsafe' RPC methods like stop");             
 
 class PXInstanceFactory : public xaya::CustomisedInstanceFactory
