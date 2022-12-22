@@ -2012,47 +2012,54 @@ PXLogic::UpdateState (xaya::SQLiteDatabase& db, const Json::Value& blockData)
     std::unique_ptr<Json::StreamWriter> writer(builder.newStreamWriter());
     std::ofstream outputFileStream("./statedump.json");
     writer -> write(fState, &outputFileStream);
+    
+    LOG (WARNING) << "Dumping state to file";
   }
   
   // In order for state to match, we need it do be determenistic; Hence, lets 
   // calculate it not from state itself, but from something simple;
 
-  uint64_t stateNumericValue = 0;
-  stateNumericValue += fState["xayaplayers"].size();
-  stateNumericValue += fState["activities"].size();
-  stateNumericValue += fState["crystalbundles"].size();
-  stateNumericValue += fState["fighters"].size();
-  stateNumericValue += fState["rewards"].size();
-  stateNumericValue += fState["recepies"].size();
-
-  std::vector<std::string> sortedFighterNames;
-  std::string finalStringForHasing = "";
-  finalStringForHasing +=std::to_string(stateNumericValue);
-  
-  for(auto& ft: fState["fighters"])
-  {
-      sortedFighterNames.push_back(ft["name"].asString());
-  }
-  
-  for(auto& name: sortedFighterNames)
-  {
-      finalStringForHasing += name;
-  }
-  
   const auto& blockMeta = blockData["block"];
   const auto& heightVal = blockMeta["height"];
-  const uint64_t height = heightVal.asUInt64 ();    
-  
-  std::ostringstream ss;
-  ss << height;
-  std::string hStd = ss.str();
-    
-  finalStringForHasing += hStd;
-  
-  xaya::uint256 heystring = xaya::SHA256::Hash(finalStringForHasing);
-  
-  GameStateJson::latestKnownStateHash = heystring.ToHex ();
-  GameStateJson::latestKnownStateBlock = height;                 
+  const uint64_t height = heightVal.asUInt64 ();  
+
+  if(height % 100 == 0)
+  {
+      uint64_t stateNumericValue = 0;
+      stateNumericValue += fState["xayaplayers"].size();
+      stateNumericValue += fState["activities"].size();
+      stateNumericValue += fState["crystalbundles"].size();
+      stateNumericValue += fState["fighters"].size();
+      stateNumericValue += fState["rewards"].size();
+      stateNumericValue += fState["recepies"].size();
+
+      std::vector<std::string> sortedFighterNames;
+      std::string finalStringForHasing = "";
+      finalStringForHasing +=std::to_string(stateNumericValue);
+      
+      for(auto& ft: fState["fighters"])
+      {
+          sortedFighterNames.push_back(ft["name"].asString());
+      }
+      
+      for(auto& name: sortedFighterNames)
+      {
+          finalStringForHasing += name;
+      }
+      
+      std::ostringstream ss;
+      ss << height;
+      std::string hStd = ss.str();
+        
+      finalStringForHasing += hStd;
+      
+      xaya::uint256 heystring = xaya::SHA256::Hash(finalStringForHasing);
+      
+      GameStateJson::latestKnownStateHash = heystring.ToHex ();
+      GameStateJson::latestKnownStateBlock = height;    
+
+      LOG (WARNING) << "Calculating anti-fork hash";  
+  }
 }
 
 Json::Value
