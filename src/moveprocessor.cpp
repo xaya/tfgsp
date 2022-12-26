@@ -33,6 +33,23 @@
 
 #include <sstream>
 
+#include <chrono>
+#include <thread>
+
+namespace
+{
+
+/** Clock used for timing the callbacks.  */
+using PerformanceTimer = std::chrono::high_resolution_clock;
+
+/** Duration type used for reporting callback timings.  */
+using CallbackDuration = std::chrono::microseconds;
+/** Unit (as string) for the callback timings.  */
+constexpr const char* CALLBACK_DURATION_UNIT = "us";
+
+} // anonymous namespace
+
+
 namespace pxd
 {
 
@@ -723,6 +740,7 @@ BaseMoveProcessor::ParseCoinTransferBurn (const XayaPlayer& a,
 void
 MoveProcessor::ProcessAll (const Json::Value& moveArray)
 {
+  const auto start = PerformanceTimer::now ();
   CHECK (moveArray.isArray ());
   LOG (INFO) << "Processing " << moveArray.size () << " moves...";
 
@@ -730,6 +748,9 @@ MoveProcessor::ProcessAll (const Json::Value& moveArray)
   {
     ProcessOne (m);
   }
+  
+    const auto end = PerformanceTimer::now ();
+    LOG (INFO) << "Processing all moves took " << std::chrono::duration_cast<CallbackDuration> (end - start).count (); 
 }
 
 void

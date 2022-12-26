@@ -35,6 +35,24 @@
 #include <glog/logging.h>
 
 
+#include <sstream>
+
+#include <chrono>
+#include <thread>
+
+namespace
+{
+
+/** Clock used for timing the callbacks.  */
+using PerformanceTimer = std::chrono::high_resolution_clock;
+
+/** Duration type used for reporting callback timings.  */
+using CallbackDuration = std::chrono::microseconds;
+/** Unit (as string) for the callback timings.  */
+constexpr const char* CALLBACK_DURATION_UNIT = "us";
+
+} // anonymous namespace
+
 namespace pxd
 {
 
@@ -61,6 +79,8 @@ PXLogic::UpdateState (Database& db, xaya::Random& rnd,
                       const xaya::Chain chain,
                       const Json::Value& blockData)
 {
+  const auto start = PerformanceTimer::now ();
+      
   const auto& blockMeta = blockData["block"];
   CHECK (blockMeta.isObject ());
   const auto& heightVal = blockMeta["height"];
@@ -73,6 +93,9 @@ PXLogic::UpdateState (Database& db, xaya::Random& rnd,
   Context ctx(chain, height, timestamp);
 
   UpdateState (db, rnd, ctx, blockData);
+  
+  const auto end = PerformanceTimer::now ();
+  LOG (INFO) << "Update state took " << std::chrono::duration_cast<CallbackDuration> (end - start).count ();   
 }
 
 std::vector<uint32_t> PXLogic::GenerateActivityReward(const uint32_t fighterID, const std::string blueprintAuthID, const uint32_t tournamentID, const pxd::proto::AuthoredActivityReward rw, const Context& ctx, Database& db, std::unique_ptr<XayaPlayer>& a, xaya::Random& rnd, const uint32_t posInTableList, const std::string basedRewardsTableAuthId, const std::string sweetenerAuthID)
@@ -1907,7 +1930,6 @@ void
 PXLogic::UpdateState (Database& db, xaya::Random& rnd,
                       const Context& ctx, const Json::Value& blockData)
 {
-    
   /** We run this very early, as we want to create tournament instances from blueprints ASAP.
   We are going to open tournaments instances if blueprint is not present ir game or already full and running */
   ReopenMissingTournaments(db, ctx);  
@@ -1936,7 +1958,6 @@ PXLogic::UpdateState (Database& db, xaya::Random& rnd,
 #ifdef ENABLE_SLOW_ASSERTS
   ValidateStateSlow (db, ctx);
 #endif // ENABLE_SLOW_ASSERTS
-
 }
 
 void
@@ -2000,11 +2021,9 @@ PXLogic::UpdateState (xaya::SQLiteDatabase& db, const Json::Value& blockData)
   UpdateState (dbObj, GetContext ().GetRandom (),
                GetChain (), blockData);
                
-          
-  Json::Value fState = GetStateAsJson(db);
-  
   if (dumpStateToFile)
   {
+    Json::Value fState = GetStateAsJson(db);
     Json::StreamWriterBuilder builder;
     builder["commentStyle"] = "None";
     builder["indentation"] = "   ";  
@@ -2025,6 +2044,8 @@ PXLogic::UpdateState (xaya::SQLiteDatabase& db, const Json::Value& blockData)
 
   if(height % 100 == 0)
   {
+      Json::Value fState = GetStateAsJson(db);
+      
       uint64_t stateNumericValue = 0;
       stateNumericValue += fState["xayaplayers"].size();
       stateNumericValue += fState["activities"].size();
