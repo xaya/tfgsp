@@ -2042,7 +2042,7 @@ PXLogic::UpdateState (xaya::SQLiteDatabase& db, const Json::Value& blockData)
   const auto& heightVal = blockMeta["height"];
   const uint64_t height = heightVal.asUInt64 ();  
 
-  if(height % 100 == 0)
+  if(height % 100 == 0 || GameStateJson::latestKnownStateBlock == 0)
   {
       Json::Value fState = GetStateAsJson(db);
       
