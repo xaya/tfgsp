@@ -2068,6 +2068,11 @@ PXLogic::UpdateState (xaya::SQLiteDatabase& db, const Json::Value& blockData)
           finalStringForHasing += name;
       }
       
+      for(auto& st: fState["specialtournaments"])
+      {
+          finalStringForHasing += st["crownholder"].asString();
+      }   
+      
       std::ostringstream ss;
       ss << height;
       std::string hStd = ss.str();

@@ -312,11 +312,11 @@ template <>
   
   GlobalData gd(db);
     
-  int64_t currentTime = ctx.Timestamp();
+  //int64_t currentTime = ctx.Timestamp();
   int64_t lastTournamentTime = gd.GetLastTournamentTime();
-  int64_t timeDiff = currentTime - lastTournamentTime;  
+  //int64_t timeDiff = currentTime - lastTournamentTime;  
     
-  res["timeuntilnext"] = IntToJson (timeDiff);
+  res["lasttournamenttile"] = IntToJson (lastTournamentTime);
   
   return res;
 }   
