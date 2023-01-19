@@ -190,11 +190,8 @@ void FighterInstance::UpdateSweetness()
 {
     if(GetProto().rating() > 2000)
     {
-        if((pxd::Sweetness)(int)GetProto().sweetness() != pxd::Sweetness::Super_Sweet)
-        {
-              MutableProto().set_sweetness((int)pxd::Sweetness::Super_Sweet);
-              return;
-        }
+        MutableProto().set_sweetness((int)pxd::Sweetness::Super_Sweet);
+        return;
     }
     
     double srate = (double)(GetProto().sweetness() * 100.0 + 1000);

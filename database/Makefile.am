@@ -10,7 +10,7 @@ libdatabase_la_CXXFLAGS = \
 libdatabase_la_LIBADD = \
   $(top_builddir)/proto2/libpxproto.la \
   $(XAYAGAME_LIBS) \
-  $(GLOG_LIBS) $(SQLITE3_LIBS) $(GMP_LIBS) $(PROTOBUF_LIBS)
+  $(GLOG_LIBS) $(SQLITE3_LIBS) $(GMP_LIBS) $(PROTOBUF_LIBS) $(GFLAGS_LIBS)
 libdatabase_la_SOURCES = \
   database.cpp \
   schema.cpp \
@@ -51,7 +51,7 @@ libdbtest_la_CXXFLAGS = \
 libdbtest_la_LIBADD = \
   $(builddir)/libdatabase.la \
   $(XAYAGAME_LIBS) \
-  $(GTEST_LIBS) $(GLOG_LIBS) $(SQLITE3_LIBS) $(BENCHMARK_LIBS)
+  $(GTEST_LIBS) $(GLOG_LIBS) $(SQLITE3_LIBS) $(BENCHMARK_LIBS) $(GFLAGS_LIBS)
 libdbtest_la_SOURCES = \
   dbtest.cpp
 check_HEADERS = \
