@@ -2020,7 +2020,11 @@ PXLogic::UpdateState (xaya::SQLiteDatabase& db, const Json::Value& blockData)
   SQLiteGameDatabase dbObj(db, *this);
   UpdateState (dbObj, GetContext ().GetRandom (),
                GetChain (), blockData);
-               
+         
+  const auto& blockMeta = blockData["block"];
+  const auto& heightVal = blockMeta["height"];
+  const uint64_t height = heightVal.asUInt64 ();  
+		 
   if (dumpStateToFile)
   {
     Json::Value fState = GetStateAsJson(db);
@@ -2031,16 +2035,14 @@ PXLogic::UpdateState (xaya::SQLiteDatabase& db, const Json::Value& blockData)
     std::unique_ptr<Json::StreamWriter> writer(builder.newStreamWriter());
     std::ofstream outputFileStream("./statedump.json");
     writer -> write(fState, &outputFileStream);
+	
+	GameStateJson::latestKnownStateBlock = height;
     
     LOG (WARNING) << "Dumping state to file";
   }
   
   // In order for state to match, we need it do be determenistic; Hence, lets 
   // calculate it not from state itself, but from something simple;
-
-  const auto& blockMeta = blockData["block"];
-  const auto& heightVal = blockMeta["height"];
-  const uint64_t height = heightVal.asUInt64 ();  
 
   if(height % 100 == 0 || GameStateJson::latestKnownStateBlock == 0)
   {
