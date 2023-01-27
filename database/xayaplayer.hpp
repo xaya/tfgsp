@@ -318,6 +318,11 @@ public:
    * Returns the account with the given name.
    */
   Handle GetByName (const std::string& name, const RoConfig& cfg);
+  
+  /**
+   * Queries the database for particular account
+   */
+  Database::Result<XayaPlayerResult> QueryForOwner (const std::string& owner);
 
   /**
    * Queries the database for all accounts, including uninitialised ones.

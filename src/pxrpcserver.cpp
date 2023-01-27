@@ -115,6 +115,39 @@ PXRpcServer::getxayaplayers ()
 }
 
 Json::Value
+PXRpcServer::getuser (const std::string& userName)
+{
+  LOG (INFO) << "RPC method called: getuser";
+  return logic.GetCustomStateData (game,
+    [userName] (GameStateJson& gsj)
+      {
+        return gsj.User (userName);
+      });
+}
+
+Json::Value
+PXRpcServer::gettournaments (const std::string& userName)
+{
+  LOG (INFO) << "RPC method called: gettournaments";
+  return logic.GetCustomStateData (game,
+    [userName] (GameStateJson& gsj)
+      {
+        return gsj.UserTournaments (userName);
+      });
+}
+
+Json::Value
+PXRpcServer::getexchange ()
+{
+  LOG (INFO) << "RPC method called: getexchange";
+  return logic.GetCustomStateData (game,
+    [] (GameStateJson& gsj)
+      {
+        return gsj.Exchange ();
+      });
+}
+
+Json::Value
 PXRpcServer::waitforpendingchange (const int oldVersion)
 {
   LOG (INFO) << "RPC method called: waitforpendingchange " << oldVersion;
@@ -127,6 +160,7 @@ PXRpcServer::waitforchange (const std::string& knownBlock)
   LOG (INFO) << "RPC method called: waitforchange " << knownBlock;
   return xaya::GameRpcServer::DefaultWaitForChange (game, knownBlock);
 }
+
 
 
 

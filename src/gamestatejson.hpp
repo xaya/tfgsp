@@ -46,6 +46,7 @@ private:
    */
   template <typename T, typename R>
     Json::Value ResultsAsArray(T& tbl, Database::Result<R> res) const;
+	
 
 public:
 
@@ -108,7 +109,22 @@ public:
    * Returns the JSON data about special tournaments.
    */
   Json::Value SpecialTournaments();  
-
+  
+  /**
+   * All user relevant data, excluding tournaments
+   */
+  Json::Value User(const std::string& userName);
+  
+  /**
+   * Tournaments and special tournaments data exluding user data treats and irrelevant treats
+   */
+  Json::Value UserTournaments(const std::string& userName);  
+  
+  /**
+   * Fighters exclusive to any exchange operations
+   */
+  Json::Value Exchange();    
+  
   /**
    * Returns the full game state JSON for the given Database handle.  The full
    * game state as JSON should mainly be used for debugging and testing, not

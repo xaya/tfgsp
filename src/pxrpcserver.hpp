@@ -142,6 +142,10 @@ explicit PXRpcServer (xaya::Game& g, PXLogic& l,
   
   Json::Value getxayaplayers () override;
   Json::Value getmoneysupply () override;
+  
+  Json::Value getuser (const std::string& userName) override;
+  Json::Value gettournaments (const std::string& userName) override;
+  Json::Value getexchange () override;
 
 };
 

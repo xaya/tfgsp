@@ -454,6 +454,16 @@ XayaPlayersTable::QueryAll ()
 }
 
 Database::Result<XayaPlayerResult>
+XayaPlayersTable::QueryForOwner (const std::string& owner)
+{
+  auto stmt = db.Prepare (R"(
+    SELECT * FROM `xayaplayers` WHERE `name` = ?1 ORDER BY `name`
+  )");
+  stmt.Bind (1, owner);
+  return stmt.Query<XayaPlayerResult> ();
+}
+
+Database::Result<XayaPlayerResult>
 XayaPlayersTable::QueryInitialised ()
 {
   auto stmt = db.Prepare (R"(

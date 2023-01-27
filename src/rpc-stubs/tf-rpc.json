@@ -7,7 +7,22 @@
     "name": "getcurrentstate",
     "params": {},
     "returns": {}
-  },
+  }, 
+  {
+    "name": "getuser",
+    "params": ["username"],
+    "returns": {}
+  },  
+  {
+    "name": "gettournaments",
+    "params": ["username"],
+    "returns": {}
+  },  
+  {
+    "name": "getexchange",
+    "params": {},
+    "returns": {}
+  },   
   {
     "name": "getnullstate",
     "params": {},

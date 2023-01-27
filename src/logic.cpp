@@ -290,7 +290,7 @@ void PXLogic::ResolveSweetener(std::unique_ptr<XayaPlayer>& a, std::string sweet
 
     if(rewardsSolved == false)
     {
-        LOG (WARNING) << "Could not resolve reward table with id: " << sweetenerBlueprint.rewardchoices(rewardID).moverewardstableid();
+        LOG (WARNING) << "Could not resolve moves reward table with id: " << sweetenerBlueprint.rewardchoices(rewardID).moverewardstableid();
         return;            
     }    
 
@@ -300,7 +300,7 @@ void PXLogic::ResolveSweetener(std::unique_ptr<XayaPlayer>& a, std::string sweet
        totalWeight += (uint32_t)rw.weight();
     }
 
-    LOG (WARNING) << "Rolling for total possible awards: " << sweetenerBlueprint.rewardchoices(rewardID).moverollcount();
+    LOG (WARNING) << "Rolling for total possible moves: " << sweetenerBlueprint.rewardchoices(rewardID).moverollcount();
     
     for(int roll = 0; roll < (int)sweetenerBlueprint.rewardchoices(rewardID).moverollcount(); ++roll)
     {

@@ -67,10 +67,28 @@ protected:
   ExpectStateJson (const std::string& expectedStr)
   {
     const Json::Value actual = converter.FullState ();
-    LOG (WARNING) << "Actual JSON for the game state:\n" << actual;
-    LOG (WARNING) << "EXPECTED JSON for the game state:\n" << expectedStr;
+    //LOG (WARNING) << "Actual JSON for the game state:\n" << actual;
+    //LOG (WARNING) << "EXPECTED JSON for the game state:\n" << expectedStr;
     ASSERT_TRUE (PartialJsonEqual (actual, ParseJson (expectedStr)));
   }
+  
+  void
+  ExpectStateTournamentsOnlyJson (const std::string& expectedStr, const std::string& userName)
+  {
+    const Json::Value actual = converter.UserTournaments (userName);
+    //LOG (WARNING) << "Actual tournament JSON for the game state:\n" << actual;
+    //LOG (WARNING) << "EXPECTED tournament JSON for the game state:\n" << expectedStr;
+    ASSERT_TRUE (PartialJsonEqual (actual, ParseJson (expectedStr)));
+  }  
+  
+  void
+  ExpectStateUserOnlyJson (const std::string& expectedStr, const std::string& userName)
+  {
+    const Json::Value actual = converter.User(userName);
+    //LOG (WARNING) << "Actual user JSON for the game state:\n" << actual;
+    //LOG (WARNING) << "EXPECTED user JSON for the game state:\n" << expectedStr;
+    ASSERT_TRUE (PartialJsonEqual (actual, ParseJson (expectedStr)));
+  }   
 
 };
 
@@ -412,7 +430,7 @@ TEST_F (XayaPlayersJsonTests, ExpeditionInstance)
   a->SetRole (PlayerRole::PLAYER);
   a.reset ();
 
-  auto rw = tbl4.CreateNew ("domob");
+  auto rw = tbl4.CreateNew ("foo");
   rw->MutableProto().set_expeditionid("myexpid");
   rw->MutableProto().set_generatedrecipeid(2);
   rw.reset();
@@ -423,18 +441,185 @@ TEST_F (XayaPlayersJsonTests, ExpeditionInstance)
           {
             "expeditionid" : "myexpid",
             "generatedrecipeid" : 2,
-            "owner" : "domob",
+            "owner" : "foo",
             "sweetenerid" : "",
             "tournamentid" : 0
           }
         ]
         }
         )");
+		
+  ExpectStateUserOnlyJson (R"({
+	"fighters" : 
+	[
+		{
+			"animationid" : "5fce85e9-51f9-d7b4-db81-ef141439db00",
+			"armorpieces" : 
+			[
+				{
+					"armortype" : 3,
+					"candy" : "934dae05-689f-30e4-5804-d497aee0b47c",
+					"rewardsource" : 0,
+					"rewardsourceid" : ""
+				},
+				{
+					"armortype" : 14,
+					"candy" : "c2774273-0cd4-2494-fa02-76cffe1ef1ef",
+					"rewardsource" : 0,
+					"rewardsourceid" : ""
+				}
+			],
+			"blocksleft" : 0,
+			"deconstructions" : [],
+			"exchangeexpire" : 0,
+			"exchangeprice" : 0,
+			"expeditioninstanceid" : "",
+			"fightertypeid" : "c160f7ad-c775-8614-abe2-8ef74e54401f",
+			"highestappliedsweetener" : 1,
+			"id" : 3,
+			"isaccountbound" : true,
+			"lasttournamenttime" : 0,
+			"moves" : 
+			[
+				{
+					"authoredid" : "86b323c2-b2fd-2494-ab5e-bc3514bc92d8"
+				},
+				{
+					"authoredid" : "0090580c-04ef-9d84-e883-32f52c977b98"
+				}
+			],
+			"name" : "Sour Gummi Brawler",
+			"owner" : "foo",
+			"quality" : 1,
+			"rating" : 1000,
+			"recipeid" : 1,
+			"saleshistory" : [],
+			"specialtournamentinstanceid" : 0,
+			"specialtournamentstatus" : 0,
+			"status" : 0,
+			"sweetness" : 1,
+			"tournamentinstanceid" : 0,
+			"tournamentpoints" : 0
+		},
+		{
+			"animationid" : "05633498-ace9-de14-c939-9435a6343d0f",
+			"armorpieces" : 
+			[
+				{
+					"armortype" : 13,
+					"candy" : "4e343f68-1aaa-0e84-7bab-eae458b68264",
+					"rewardsource" : 0,
+					"rewardsourceid" : ""
+				},
+				{
+					"armortype" : 14,
+					"candy" : "c2774273-0cd4-2494-fa02-76cffe1ef1ef",
+					"rewardsource" : 0,
+					"rewardsourceid" : ""
+				}
+			],
+			"blocksleft" : 0,
+			"deconstructions" : [],
+			"exchangeexpire" : 0,
+			"exchangeprice" : 0,
+			"expeditioninstanceid" : "",
+			"fightertypeid" : "85f361b8-e55d-0244-1a98-26bffa0a18a2",
+			"highestappliedsweetener" : 1,
+			"id" : 4,
+			"isaccountbound" : true,
+			"lasttournamenttime" : 0,
+			"moves" : 
+			[
+				{
+					"authoredid" : "2c555752-8a84-58f4-395e-6460b7864069"
+				},
+				{
+					"authoredid" : "0090580c-04ef-9d84-e883-32f52c977b98"
+				}
+			],
+			"name" : "Caramel Kicker",
+			"owner" : "foo",
+			"quality" : 1,
+			"rating" : 1000,
+			"recipeid" : 2,
+			"saleshistory" : [],
+			"specialtournamentinstanceid" : 0,
+			"specialtournamentstatus" : 0,
+			"status" : 0,
+			"sweetness" : 1,
+			"tournamentinstanceid" : 0,
+			"tournamentpoints" : 0
+		}
+	],
+	"recepies" : 
+	[
+		{
+			"authoredid" : "1bbc7d99-7fce-24a4-c9a3-dfaf4b744efa",
+			"did" : 5,
+			"owner" : "foo"
+		}
+	],
+	"rewards" : 
+	[
+		{
+			"expeditionid" : "myexpid",
+			"fighterid" : 0,
+			"generatedrecipeid" : 2,
+			"owner" : "foo",
+			"positionintable" : 0,
+			"rewardid" : "",
+			"rid" : 6,
+			"sweetenerid" : "",
+			"tournamentid" : 0
+		}
+	],
+	"stateblock" : 0,
+	"statehex" : "",
+	"xayaplayers" : 
+	[
+		{
+			"address" : "",
+			"balance" : 
+			{
+				"available" : 250
+			},
+			"fighteraverage" : 477,
+			"inventory" : 
+			{
+				"fungible" : 
+				{
+					"Common_Candy Cane" : 9,
+					"Common_Chocolate Chip" : 20,
+					"Common_Fizzy Powder" : 9,
+					"Common_Icing" : 20,
+					"Common_Nonpareil" : 10
+				}
+			},
+			"minted" : 0,
+			"name" : "foo",
+			"ongoings" : [],
+			"prestige" : 954,
+			"recepies" : 
+			[
+				5
+			],
+			"role" : "p",
+			"specialtournamentprestigetier" : 1,
+			"tournamentperformance" : 1,
+			"valuecommon" : 477,
+			"valueepic" : 0,
+			"valuerare" : 0,
+			"valueuncommon" : 0
+		}
+	]
+})", "foo");			
+  
 }
 
 TEST_F (XayaPlayersJsonTests, TournamentInstance)
 {
   auto tnm = tbl5.CreateNew ("99258908-ce4f-50e4-2880-99f0027b8d2b", ctx.RoConfig());
+  int IDsr = tnm->GetId();
   tnm.reset();
 
   ExpectStateJson (R"({
@@ -450,6 +635,26 @@ TEST_F (XayaPlayersJsonTests, TournamentInstance)
         ]
         }
         )");
+		
+	
+  ExpectStateTournamentsOnlyJson (R"({
+	"fighters" : [],
+	"specialtournaments" : [],
+	"tournaments" : 
+	[
+		{
+			"blocksleft" : 60,
+			"blueprint" : "99258908-ce4f-50e4-2880-99f0027b8d2b",
+			"fighters" : [],
+			"results" : [],
+			"state" : 0,
+			"teamsjoined" : 0,
+			"tid" : 1,
+			"winnerid" : ""
+		}
+	]
+})", "domob");	
+    
 }
 
 /* ************************************************************************** */
