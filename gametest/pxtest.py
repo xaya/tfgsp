@@ -130,7 +130,7 @@ class PXTest (XayaGameTest):
     """
 
     res = {}
-    for a in self.getRpc ("getxayaplayers"):
+    for a in self.getRpc ("getxayaplayers")["xayaplayers"]:
       handle = Account (a)
       nm = handle.getName ()
       assert nm not in res

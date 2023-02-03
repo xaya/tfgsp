@@ -85,8 +85,8 @@ protected:
   ExpectStateUserOnlyJson (const std::string& expectedStr, const std::string& userName)
   {
     const Json::Value actual = converter.User(userName);
-    //LOG (WARNING) << "Actual user JSON for the game state:\n" << actual;
-    //LOG (WARNING) << "EXPECTED user JSON for the game state:\n" << expectedStr;
+    LOG (WARNING) << "Actual user JSON for the game state:\n" << actual;
+    LOG (WARNING) << "EXPECTED user JSON for the game state:\n" << expectedStr;
     ASSERT_TRUE (PartialJsonEqual (actual, ParseJson (expectedStr)));
   }   
 

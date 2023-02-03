@@ -110,7 +110,11 @@ PXRpcServer::getxayaplayers ()
   return logic.GetCustomStateData (game,
     [] (GameStateJson& gsj)
       {
-        return gsj.XayaPlayers ();
+		  
+		Json::Value res(Json::objectValue);
+        res["xayaplayers"] = gsj.XayaPlayers();  
+		  
+        return res;
       });
 }
 

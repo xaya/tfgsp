@@ -141,17 +141,16 @@ protected:
     Json::Value val = ParseJson (str);
     for (auto& entry : val)
     {      
-      entry["out"]["CPxvCsP9wr8ow4x5r6D1gYpxAFBg6ACzc6"] = xaya::ChiAmountToJson ((amount / 28) * 1);
-      entry["out"]["CHPVEUVFKy1YugLhVFQmqE8iaPch3MxGsd"] = xaya::ChiAmountToJson ((amount / 28) * 2);
-      entry["out"]["Cdwan1eAmsvA2sE6XNUB4ZWNDMHwoyhRYr"] = xaya::ChiAmountToJson ((amount / 28) * 3);
-      entry["out"]["CcX1ksjf4c9qJ2ftd51T2iJbNkRm5SRc94"] = xaya::ChiAmountToJson ((amount / 28) * 4);
-      entry["out"]["CGr5MT1C5PXUpYhaDQkKoLxP11qJtJxzu8"] = xaya::ChiAmountToJson ((amount / 28) * 5);
-      entry["out"]["CeJt7YpW8P9jMeVrVm58nUaoM4fJ4KXMUS"] = xaya::ChiAmountToJson ((amount / 28) * 6);
-      entry["out"]["CZhfYfqbMdzeS5ADRR2su12cWD3TQaeBFc"] = xaya::ChiAmountToJson ((amount / 28) * 7);
+      entry["out"]["CPxvCsP9wr8ow4x5r6D1gYpxAFBg6ACzc6"] = xaya::ChiAmountToJson ((amount / 35) * 1);
+      entry["out"]["CHPVEUVFKy1YugLhVFQmqE8iaPch3MxGsd"] = xaya::ChiAmountToJson ((amount / 35) * 2);
+      entry["out"]["Cdwan1eAmsvA2sE6XNUB4ZWNDMHwoyhRYr"] = xaya::ChiAmountToJson ((amount / 35) * 3);
+      entry["out"]["CcX1ksjf4c9qJ2ftd51T2iJbNkRm5SRc94"] = xaya::ChiAmountToJson ((amount / 35) * 4);
+      entry["out"]["CGr5MT1C5PXUpYhaDQkKoLxP11qJtJxzu8"] = xaya::ChiAmountToJson ((amount / 35) * 5);
+      entry["out"]["CeJt7YpW8P9jMeVrVm58nUaoM4fJ4KXMUS"] = xaya::ChiAmountToJson ((amount / 35) * 6);
+      entry["out"]["CZhfYfqbMdzeS5ADRR2su12cWD3TQaeBFc"] = xaya::ChiAmountToJson ((amount / 35) * 7);
+	  entry["out"]["CWXvFB9MuGVxCXohBaAStPZmJprqKL7kMm"] = xaya::ChiAmountToJson ((amount / 35) * 8);
       
-      Amount leftOverDueToPrecisionError = amount - ((amount / 28) * 28);
-      Amount finalAmn = ((amount / 28) * 7) + leftOverDueToPrecisionError;
-      entry["out"]["CZhfYfqbMdzeS5ADRR2su12cWD3TQaeBFc"] = xaya::ChiAmountToJson (finalAmn);
+      entry["out"]["CZhfYfqbMdzeS5ADRR2su12cWD3TQaeBFc"] = xaya::ChiAmountToJson (amount);
     }
 
     MoveProcessor mvProc(db, rnd, ctx);

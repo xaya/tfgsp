@@ -74,22 +74,20 @@ class SpecialTournamentTest (PXTest):
         self.generate (1)
         self.syncGame ()            
 
-
+    add_dev = self.rpc.xaya.getnewaddress ()
     
-    fraction = 0.14 / 28
-    leftover = 0.14 - (fraction * 28)
-    
+    fraction = 0.14 / 35
     amnt1 = fraction * 1
     amnt2 = fraction * 2
     amnt3 = fraction * 3
     amnt4 = fraction * 4
     amnt5 = fraction * 5
     amnt6 = fraction * 6
-    amnt7 = fraction * 7 + leftover
+    amnt7 = fraction * 7
+    amnt8 = fraction * 7
     
-    self.sendMove ("andy", {"pc": "T1"}, {"sendCoins": {add1: amnt1,add2: amnt2,add3: amnt3,add4: amnt4,add5: amnt5,add6: amnt6,add7: amnt7}})
-      
-      
+    self.sendMove ("andy", {"pc": "T1"}, {"sendCoins": {add1: amnt1,add2: amnt2,add3: amnt3,add4: amnt4,add5: amnt5,add6: amnt6,add7: amnt7, add_dev: amnt8}})
+    
     sleepSome ()
     
     self.generate (1)

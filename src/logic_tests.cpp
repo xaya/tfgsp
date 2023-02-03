@@ -64,10 +64,30 @@ protected:
   TournamentTable tbl5;
   SpecialTournamentTable tbl6;
   
-  PXLogicTests () : xayaplayers(db), tbl2(db), tbl3(db), tbl4(db), tbl5(db), tbl6(db)
+  /** GameStateJson instance used in testing.  */
+  GameStateJson converter;  
+  
+  PXLogicTests () : xayaplayers(db), tbl2(db), tbl3(db), tbl4(db), tbl5(db), tbl6(db), converter(db, ctx)
   {
     SetHeight (42);
   }
+  
+  /**
+   * Expects that the current state matches the given one, after parsing
+   * the expected state's string as JSON.  Furthermore, the expected value
+   * is assumed to be *partial* -- keys that are not present in the expected
+   * value may be present with any value in the actual object.  If a key is
+   * present in expected but has value null, then it must not be present
+   * in the actual data, though.
+   */  
+  void
+  ExpectStateTournamentsOnlyJson (const std::string& expectedStr, const std::string& userName)
+  {
+    const Json::Value actual = converter.UserTournaments (userName);
+    LOG (WARNING) << "Actual tournament JSON for the game state:\n" << actual;
+    LOG (WARNING) << "EXPECTED tournament JSON for the game state:\n" << expectedStr;
+    ASSERT_TRUE (PartialJsonEqual (actual, ParseJson (expectedStr)));
+  }   
   
   /**
    * Processes the given data (which is passed as string and converted to
@@ -1004,29 +1024,6 @@ TEST_F (ValidateStateTests, ExpeditionTestRewards)
 
 }
 
-/*
-TEST_F (ValidateStateTests, ExpeditionTestForRyan)
-{
-  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
-  auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
-  EXPECT_EQ (ft->GetStatus(), FighterStatus::Available);
-  ft.reset();
-  EXPECT_EQ (xp->CollectInventoryFighters(ctx.RoConfig()).size(), 3);
-  xp.reset();
-  
-  for (unsigned x = 0; x < 1000; ++x)
-  { 
-    Process (R"([
-      {"name": "domob", "move": {"exp": {"f": {"eid": "93ad71bb-cd8f-dc24-7885-2c3fd0013245", "fid": 4}}}}
-    ])");  
-    
-    for (unsigned i = 0; i < 4; ++i)
-    {
-      UpdateState ("[]");
-    }  
-  }
-}*/
-
 TEST_F (ValidateStateTests, ExpeditionWithApplicableGoodieTest)
 {
   auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
@@ -1251,6 +1248,7 @@ TEST_F (ValidateStateTests, TournamentResolvedTest)
   
   tutorialTrmn = tbl5.GetById(TID, ctx.RoConfig());
   EXPECT_EQ (tutorialTrmn->GetInstance().results_size(), 4);
+  tutorialTrmn.reset();  
 }
 
 TEST_F (ValidateStateTests, FighterSacrifice)

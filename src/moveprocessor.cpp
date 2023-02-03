@@ -116,6 +116,15 @@ BaseMoveProcessor::ExtractMoveBasics (const Json::Value& moveObj,
     
     paidToCrownHolders.insert(std::pair<std::string, Amount>(xAddress,0));
     holderTier.insert(std::pair<std::string, int32_t>(xAddress,(int32_t)spctrm->GetProto().tier()));
+	
+	if(xName == name)
+	{
+		if(xAddress != "CWXvFB9MuGVxCXohBaAStPZmJprqKL7kMm")
+		{
+            LOG (WARNING) << "Users buy crystals for himself, but address is not pot address ";
+            return false;       			
+		}
+	}
     
     if((int32_t)spctrm->GetProto().tier() == 1)
     {
@@ -124,7 +133,10 @@ BaseMoveProcessor::ExtractMoveBasics (const Json::Value& moveObj,
         
     spctrm.reset();
     tryAndStep = res.Step ();
-  }  
+  }
+
+   paidToCrownHolders.insert(std::pair<std::string, Amount>("CWXvFB9MuGVxCXohBaAStPZmJprqKL7kMm",0));
+   holderTier.insert(std::pair<std::string, int32_t>("CWXvFB9MuGVxCXohBaAStPZmJprqKL7kMm",8));  
   
   //Every out here must much the address of crownholder and its tier;
   Amount smallestPayFraction = 0;
@@ -165,13 +177,13 @@ BaseMoveProcessor::ExtractMoveBasics (const Json::Value& moveObj,
           totalAmountPaid += amnt;
       }
       
-      Amount leftOverDueToPrecisionError = totalAmountPaid - smallestPayFraction * 28;
-        
-      if(outVal.isObject())
-      {
+    if(outVal.isObject())
+    {
         for(auto& outValue: paidToCrownHolders)
         {
             int32_t myTier = holderTier[outValue.first];
+			
+			if(myTier > 7) myTier = 7;
             
             Amount amnt;
             if(xaya::ChiAmountFromJson(outVal[outValue.first], amnt) == false)
@@ -181,42 +193,25 @@ BaseMoveProcessor::ExtractMoveBasics (const Json::Value& moveObj,
             }
             
             Amount needToPay = myTier * smallestPayFraction;
-
-            if(ctx.Height () > 4324148) // HARD FORK INITIATING
-            { 
-              if(amnt != needToPay)
-              {
-                if(myTier == 7 && amnt >= needToPay + leftOverDueToPrecisionError)
-                {
-                }
-                else
-                {
-                  if(amnt < needToPay)
-                  {
-                  LOG (WARNING) << "Invalid fraction paid for " << outValue.first << " he/she has tier " << myTier << " but payments was" << amnt << " where needed to pay " << needToPay << " as fracton was " << smallestPayFraction;
-                  return false;
-                  }
-                }
-              }      
-            }
-            else
-            {
-              if(amnt != myTier * smallestPayFraction)
-              {
-                  if(myTier == 7 && amnt == myTier * smallestPayFraction + leftOverDueToPrecisionError)
-                  {
-                  }
-                  else
-                  {
-                    LOG (WARNING) << "Invalid fraction paid for " << outValue.first << " he/she has tier " << myTier << " but payments was" << amnt;
-                    return false;
-                  }
-              }             
-            }
-            
+ 
+			if(amnt != needToPay)
+			{
+				if(myTier == 7 && amnt >= needToPay)
+				{
+				}
+				else
+				{
+				  if(amnt < needToPay)
+				  {
+				  LOG (WARNING) << "Invalid fraction paid for " << outValue.first << " he/she has tier " << myTier << " but payments was" << amnt << " where needed to pay " << needToPay << " as fracton was " << smallestPayFraction;
+				  return false;
+				  }
+				}
+			}      
+    
             paidToCrownHolders[outValue.first] = amnt;
         }
-      }
+    }
   }
   
   if (moveObj.isMember ("burnt"))
@@ -558,6 +553,7 @@ BaseMoveProcessor::TryCrystalPurchase (const std::string& name, const Json::Valu
   std::string bundleKeyCode = "";
   
   Amount paidToDev = 0;
+  Amount fraction = paidToDev / 35;
   
   for(auto& payFraction: paidToCrownHolders)
   {
@@ -572,8 +568,6 @@ BaseMoveProcessor::TryCrystalPurchase (const std::string& name, const Json::Valu
   player->AddBalance (crystalAmount); 
   player.reset();
   
-  Amount fraction = paidToDev / 28;
-
   std::map<std::string, int32_t> holderTier;
   
   auto res = specialTournamentsTbl.QueryAll();
@@ -610,18 +604,26 @@ BaseMoveProcessor::TryCrystalPurchase (const std::string& name, const Json::Valu
     holderTier.insert(std::pair<std::string, int32_t>(xAddress,(int32_t)spctrm->GetProto().tier()));
     spctrm.reset();
     tryAndStep = res.Step ();
-  }    
+  }
+
+  // This needs to be either developers foundation address or just burned, to make sure 
+  // system abuse is prevented by accumulating infinite amount of crystals and overtaking
+  // the game with multiple accounts
+  holderTier.insert(std::pair<std::string, int32_t>("CWXvFB9MuGVxCXohBaAStPZmJprqKL7kMm",8));  
   
   for(auto& entry: paidToCrownHolders)
   {
       if(holderTier[entry.first] == 7)
       {
-        Amount fraction = cost / 28;
-        Amount leftover = cost - fraction * 28;
+        Amount fraction = cost / 35;
+        Amount leftover = cost - fraction * 35;
         paidToCrownHolders[entry.first] -= leftover;
       }
       
-      paidToCrownHolders[entry.first] -= fraction * holderTier[entry.first];
+	  int32_t multiplier = holderTier[entry.first];
+	  if(multiplier > 7) multiplier = 7;
+	  
+      paidToCrownHolders[entry.first] -= fraction * multiplier;
   }
   
   paidToDev -= cost;   

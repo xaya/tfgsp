@@ -212,7 +212,7 @@ template <>
   bool stepLoop = ourRewards.Step ();
   while (stepLoop)
   {
-      const auto h = tbl.GetFromResult (ourRewards);
+      auto h = tbl.GetFromResult (ourRewards);
       
       if(h->GetProto().fighterid() == fighter.GetId() && h->GetProto().deconstructions_size() > 0)
       {
@@ -225,6 +225,7 @@ template <>
           }
       }
       
+	  h.reset();
       stepLoop = ourRewards.Step ();
   }  
   
@@ -305,6 +306,8 @@ template <>
       {
          defendersarray.append(c->GetId());  
       }
+	  
+	  c.reset();
   } 
   
   res["ldresults"] = matchresults;
@@ -635,6 +638,24 @@ GameStateJson::User(const std::string& userName)
   
   res["statehex"] = latestKnownStateHash; 
   res["stateblock"] = latestKnownStateBlock;  
+  
+  // Additionally, we want to attach all the player ratings
+  
+  auto res2x = xayaplayers.QueryAll ();
+  
+  Json::Value ratings(Json::arrayValue);
+  
+  while (res2x.Step ())
+  {
+      auto pl = xayaplayers.GetFromResult (res2x, ctx.RoConfig ());
+	  
+	  Json::Value ratingData(Json::objectValue);	  
+	  ratingData["name"] = pl->GetName();
+	  ratingData["prestige"] = IntToJson (pl->GetPresitge());	  
+      ratings.append(ratingData);  
+  }
+
+  res["ratings"] = ratings;
 
   return res;
 } 
@@ -663,35 +684,39 @@ GameStateJson::UserTournaments(const std::string& userName)
   
   while (res2.Step ())
   {
-      const auto h = tbl.GetFromResult (res2, ctx.RoConfig ());
+      auto h = tbl.GetFromResult (res2, ctx.RoConfig ());
 	  
 	  if(h->GetInstance().state() == 0)
 	  {
 		arr.append (Convert<TournamentInstance> (*h));
 		
-		// Additionally, we want to supply all the relevant fighters
-          for(const auto ft: h->GetInstance().fighters())
+		  // Additionally, we want to supply all the relevant fighters
+		  const auto ftrs = h->GetInstance().fighters();
+		  h.reset();
+          for(const auto ft: ftrs)
           { 
               auto resDD = ftbl.GetById (ft, ctx.RoConfig ());
-
-              // We ignore user fighters as we get those from User() anyway, also
-			  // lets make sure we are filtering for duplictaes, we there is possibility
-			  // of duplicating, and we really don't want this to happen at all costs
-			  int32_t fID = resDD->GetId();
-              if(resDD->GetOwner() != userName)
+              if(resDD != nullptr) // was destroyed at some point of the game?
 			  {
-				if (std::find(collectedFightersIds.begin(), collectedFightersIds.end(), fID) != collectedFightersIds.end()) 
-				{
-					// ignore duplicate
-				}					
-				else
-				{
-				 fghtrarr.append (Convert<FighterInstance> (*resDD));  
-				 collectedFightersIds.push_back(fID);
-				}
-			  }	
-			  
-			  resDD.reset();
+				  // We ignore user fighters as we get those from User() anyway, also
+				  // lets make sure we are filtering for duplictaes, we there is possibility
+				  // of duplicating, and we really don't want this to happen at all costs
+				  int32_t fID = resDD->GetId();
+				  if(resDD->GetOwner() != userName)
+				  {
+					if (std::find(collectedFightersIds.begin(), collectedFightersIds.end(), fID) != collectedFightersIds.end()) 
+					{
+						// ignore duplicate
+					}					
+					else
+					{
+					 fghtrarr.append (Convert<FighterInstance> (*resDD));  
+					 collectedFightersIds.push_back(fID);
+					}
+				  }	
+				  
+				  resDD.reset();
+			  }
 		  }			  
 	  }
 	  else if(h->GetInstance().state() == 1 || h->GetInstance().state() == 2)
@@ -714,100 +739,144 @@ GameStateJson::UserTournaments(const std::string& userName)
 		  
 		  if(hasAnyOfOurFighters)
 		  {
-             arr.append (Convert<TournamentInstance> (*h));	
+              arr.append (Convert<TournamentInstance> (*h));	
 
-		// Additionally, we want to supply all the relevant fighters
-          for(const auto ft: h->GetInstance().fighters())
-          { 
-              auto resDD = ftbl.GetById (ft, ctx.RoConfig ());
-
-              // We ignore user fighters as we get those from User() anyway, also
-			  // lets make sure we are filtering for duplictaes, we there is possibility
-			  // of duplicating, and we really don't want this to happen at all costs
-			  int32_t fID = resDD->GetId();
-              if(resDD->GetOwner() != userName)
-			  {
-				if (std::find(collectedFightersIds.begin(), collectedFightersIds.end(), fID) != collectedFightersIds.end()) 
-				{
-					// ignore duplicate
-				}					
-				else
-				{
-				 fghtrarr.append (Convert<FighterInstance> (*resDD));  
-				 collectedFightersIds.push_back(fID);
-				}
-			  }	
-			  
-			  resDD.reset();
-		  }			 
+			  // Additionally, we want to supply all the relevant fighters
+			  const auto ftrs = h->GetInstance().fighters();
+			  h.reset();
+			  for(const auto ft: ftrs)
+			  { 
+				  auto resDD = ftbl.GetById (ft, ctx.RoConfig ());
+                  if(resDD != nullptr) // was destroyed at some point of the game?
+			      {
+					  // We ignore user fighters as we get those from User() anyway, also
+					  // lets make sure we are filtering for duplictaes, we there is possibility
+					  // of duplicating, and we really don't want this to happen at all costs
+					  int32_t fID = resDD->GetId();
+					  if(resDD->GetOwner() != userName)
+					  {
+						if (std::find(collectedFightersIds.begin(), collectedFightersIds.end(), fID) != collectedFightersIds.end()) 
+						{
+							// ignore duplicate
+						}					
+						else
+						{
+						 fghtrarr.append (Convert<FighterInstance> (*resDD));  
+						 collectedFightersIds.push_back(fID);
+						}
+					  }	
+					  
+					  resDD.reset();
+				  }
+			  }			 
 		  }
+		  else
+		  {
+			   h.reset();
+		  }
+		  
 	  }		
 	  else if(h->GetInstance().state() == 3)
 	  {
 		  bool hasAnyOfOurFighters = false;
 		  
-		  for(const auto ft: h->GetInstance().fighters())
-          { 
+		  // Additionally, we want to supply all the relevant fighters
+		  const auto ftrs = h->GetInstance().fighters();
+		  auto converted = Convert<TournamentInstance> (*h);
+		  int64_t idT = h->GetId();
+		  h.reset();
+          for(const auto ft: ftrs)
+          { 	  
               auto resDD = ftbl.GetById (ft, ctx.RoConfig ());
 
-              if(resDD->GetOwner() == userName)
+			  if(resDD != nullptr) // was destroyed at some point of the game?
 			  {
-				  // Lets additionally check, we did claim all the tournament rewards already?
-				  bool allRewardsAreClaimed = true;
-				  			  
-				  auto ourRewards = rtbl.QueryForOwner(userName);
-				  bool stepLoop = ourRewards.Step ();
-				  while (stepLoop)
+				  if(resDD->GetOwner() == userName)
 				  {
-				     auto h2 = rtbl.GetFromResult (ourRewards);	
-					 
-					 if(h2->GetProto().tournamentid() == h->GetId())
-					 {
-						 allRewardsAreClaimed = false;
-					 }
-					 
-					 h2.reset();	
-				  }		
+					  // Lets additionally check, we did claim all the tournament rewards already?
+					  bool allRewardsAreClaimed = true;
+								  
+					  auto ourRewards = rtbl.QueryForOwner(userName);
+					  bool stepLoop = ourRewards.Step ();
+					  while (stepLoop)
+					  {
+						 auto h2 = rtbl.GetFromResult (ourRewards);	
+						 
+						 if(h2->GetProto().tournamentid() == idT)
+						 {
+							 allRewardsAreClaimed = false;
+						 }
+						 
+						 h2.reset();	
+						 stepLoop = ourRewards.Step ();
+					  }		
 
-                  if(allRewardsAreClaimed == false) hasAnyOfOurFighters = true; 				  
-			  }
+					  if(allRewardsAreClaimed == false) hasAnyOfOurFighters = true; 				  
+				  }
 
-              resDD.reset();			  
+				  resDD.reset();			 
+			  }			  
 			  
 			  if(hasAnyOfOurFighters) break;
 	      }
 		  
 		  if(hasAnyOfOurFighters)
 		  {
-             arr.append (Convert<TournamentInstance> (*h));		
-		// Additionally, we want to supply all the relevant fighters
-          for(const auto ft: h->GetInstance().fighters())
-          { 
-              auto resDD = ftbl.GetById (ft, ctx.RoConfig ());
-
-              // We ignore user fighters as we get those from User() anyway, also
-			  // lets make sure we are filtering for duplictaes, we there is possibility
-			  // of duplicating, and we really don't want this to happen at all costs
-			  int32_t fID = resDD->GetId();
-              if(resDD->GetOwner() != userName)
-			  {
-				if (std::find(collectedFightersIds.begin(), collectedFightersIds.end(), fID) != collectedFightersIds.end()) 
-				{
-					// ignore duplicate
-				}					
-				else
-				{
-				 fghtrarr.append (Convert<FighterInstance> (*resDD));  
-				 collectedFightersIds.push_back(fID);
-				}
-			  }	
-			  
-			  resDD.reset();
-		  }			 
+              arr.append (converted);		
+			  // Additionally, we want to supply all the relevant fighters
+			  for(const auto ft: ftrs)
+			  { 
+				  auto resDD = ftbl.GetById (ft, ctx.RoConfig ());
+                  if(resDD != nullptr) // was destroyed at some point of the game?
+			      {
+					  // We ignore user fighters as we get those from User() anyway, also
+					  // lets make sure we are filtering for duplictaes, we there is possibility
+					  // of duplicating, and we really don't want this to happen at all costs
+					  int32_t fID = resDD->GetId();
+					  if(resDD->GetOwner() != userName)
+					  {
+						if (std::find(collectedFightersIds.begin(), collectedFightersIds.end(), fID) != collectedFightersIds.end()) 
+						{
+							// ignore duplicate
+						}					
+						else
+						{
+						 fghtrarr.append (Convert<FighterInstance> (*resDD));  
+						 collectedFightersIds.push_back(fID);
+						}
+					  }	
+					  
+					  resDD.reset();
+				  }
+		      }			 
 		  }		  
-	  }		  
+	  }	
   };  
   
+  // Additionally, lets feed all the special tournament defenders
+  
+  auto resDDFT = ftbl.QueryAll();
+  while (resDDFT.Step ())
+  {
+      auto c = ftbl.GetFromResult (resDDFT, ctx.RoConfig ());
+      int32_t fIDD = c->GetId();
+	  
+      if(c->GetProto().specialtournamentinstanceid() > 0)
+      {
+        if (std::find(collectedFightersIds.begin(), collectedFightersIds.end(), fIDD) != collectedFightersIds.end()) 
+		{
+			// ignore duplicate
+		}					
+		else
+		{		  
+         fghtrarr.append(Convert<FighterInstance> (*c));  
+		 collectedFightersIds.push_back(fIDD);
+		}
+      }
+	  
+	  c.reset();
+  } 
+      
   res["tournaments"] = arr;
   res["fighters"] = fghtrarr;
 
@@ -818,7 +887,7 @@ Json::Value
 GameStateJson::Exchange()
 {
   Json::Value res(Json::objectValue);
-  
+  Json::Value fghtrarr(Json::arrayValue);
   // We identify fighters listed on exchange based on their status
   
   FighterTable tbl2(db);
@@ -831,13 +900,13 @@ GameStateJson::Exchange()
 
      if(h->GetStatus() == FighterStatus::Exchange)
 	 {
-          res.append (Convert<FighterInstance> (*h));				 
+          fghtrarr.append (Convert<FighterInstance> (*h));				 
 	 }
 	 
 	 h.reset();
   }  
    
-  res["fighters"] = res;     
+  res["fighters"] = fghtrarr;     
   return res;
 }
  
