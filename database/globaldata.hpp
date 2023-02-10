@@ -64,6 +64,32 @@ public:
    * Returns Crystal prices in CHI multiplier
    */
   int64_t GetChiMultiplier();  
+  
+  /**
+   * Sets Crystal prices in CHI multiplier
+   */
+  void SetChiMultiplier(int64_t newMultiplier);   
+  
+  /**
+   * Returns recommended version
+   */
+  std::string GetVersion();  
+  
+  /**
+   * Sets recommended version
+   */
+  void SetVersion(std::string version);   
+  
+  /**
+   * Returns recommended url
+   */
+  std::string GetUrl();  
+  
+  /**
+   * Sets recommended url
+   */
+  void SetUrl(std::string url);   
+  
 
 
 

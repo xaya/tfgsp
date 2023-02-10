@@ -952,6 +952,7 @@ PendingStateUpdater::ProcessMove (const Json::Value& moveObj)
       /*If we have any crystal bundles purchases pending, lets add them here*/
      
       Amount cost = 0;
+	  Amount total = 1;
       Amount crystalAmount  = 0;
       std::string fungibleName = "";
       uint64_t uses = 0;
@@ -968,7 +969,7 @@ PendingStateUpdater::ProcessMove (const Json::Value& moveObj)
           state.AddPurchasing(*a, mrl["pg"].asString(), cost);  
       }
       
-      if(ParseSweetenerPurchase(mrl, cost, name, fungibleName, aState.balance))
+      if(ParseSweetenerPurchase(mrl, cost, name, fungibleName, aState.balance, total))
       {
           state.AddPurchasing(*a, mrl["ps"].asString(), cost);
       }  

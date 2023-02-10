@@ -6,6 +6,7 @@ TEST_LIBRARY = \
   pxtest.py
 
 REGTESTS = \
+  godmode.py \
   accounts.py \
   burnsale.py \
   pending.py \

@@ -854,6 +854,18 @@ TEST_F (CoinOperationTests, PurchaseStuff)
   EXPECT_EQ (a->GetInventory().GetFungibleCount("Goodie_Espresso_1"), 3);
   EXPECT_EQ (a->GetInventory().GetFungibleCount("Sweetener_R6"), 1);
   a.reset();  
+  
+    Process (R"([
+    {"name": "domob", "move": {"ps": "36adece2-8ed9-3114-db6e-24fa8c494fa5,2"}}
+  ])"); 
+
+  ExpectBalances ({{"domob", 125}});  
+  
+  a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  EXPECT_EQ (a->GetInventory().GetFungibleCount("Goodie_PressureCooker_1"), 6);
+  EXPECT_EQ (a->GetInventory().GetFungibleCount("Goodie_Espresso_1"), 3);
+  EXPECT_EQ (a->GetInventory().GetFungibleCount("Sweetener_R6"), 3);
+  a.reset();    
 }
 
 TEST_F (CoinOperationTests, PurchaseCrystalsWrongData)

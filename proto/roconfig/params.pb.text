@@ -39,11 +39,11 @@ params:
   
     common_move_count: 3
   
-    uncommon_move_count: 4
+    uncommon_move_count: 5
   
-    rare_move_count: 6
+    rare_move_count: 7
   
-    epic_move_count: 8
+    epic_move_count: 9
   
     max_recipe_inventory_amount: 48
   

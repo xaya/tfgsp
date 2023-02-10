@@ -55,7 +55,13 @@ CREATE TABLE IF NOT EXISTS `globaldata` (
   `lasttournamenttime` TIMESTAMP NOT NULL,
   
   -- Crystal prices in CHI multiplier, by default is 1, updated via g/tfr
-  `chimultiplier` INTEGER NOT NULL
+  `chimultiplier` INTEGER NOT NULL,
+  
+ -- Current latest recommended version
+  `version` TEXT NOT NULL,  
+
+ -- Vanilla recommended download URL
+  `url` TEXT NOT NULL  
 );
 
 -- Data for the special tournaments instances in the game.

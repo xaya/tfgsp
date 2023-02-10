@@ -657,6 +657,11 @@ GameStateJson::User(const std::string& userName)
 
   res["ratings"] = ratings;
 
+  GlobalData gd(db);
+  res["version"] = gd.GetVersion();
+  res["vanillaurl"] = gd.GetUrl();
+  res["multiplier"] = IntToJson(gd.GetChiMultiplier());
+
   return res;
 } 
 
@@ -926,6 +931,11 @@ GameStateJson::FullState()
   
   res["statehex"] = latestKnownStateHash; 
   res["stateblock"] = latestKnownStateBlock;
+  
+  GlobalData gd(db);
+  res["version"] = gd.GetVersion();
+  res["vanillaurl"] = gd.GetUrl();
+  res["multiplier"] = IntToJson(gd.GetChiMultiplier());
   
   return res;
 }  

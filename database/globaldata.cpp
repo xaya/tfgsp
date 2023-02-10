@@ -31,6 +31,8 @@ struct GlobalDataResult : public Database::ResultType
   RESULT_COLUMN (int64_t, id, 1);    
   RESULT_COLUMN (int64_t, lasttournamenttime, 2);
   RESULT_COLUMN (int64_t, chimultiplier,3);
+  RESULT_COLUMN (std::string, version,4);
+  RESULT_COLUMN (std::string, url,5);
 };
 
 } // anonymous namespace
@@ -84,18 +86,94 @@ GlobalData::GetChiMultiplier ()
   return chimultiplier;
 }
 
+void GlobalData::SetChiMultiplier(int64_t newMultiplier)
+{
+  auto stmt = db.Prepare (R"(
+    UPDATE `globaldata` SET
+      (`chimultiplier`) = (?1) WHERE id=0
+  )");
+
+  stmt.Reset ();
+  stmt.Bind (1, newMultiplier);
+  stmt.Execute ();
+}
+
+std::string
+GlobalData::GetVersion ()
+{
+  auto stmt = db.Prepare (R"(
+    SELECT *
+      FROM `globaldata`
+      WHERE `id` = 0
+  )");
+
+  auto res = stmt.Query<GlobalDataResult> ();
+  CHECK (res.Step ());
+
+  const std::string version = res.Get<GlobalDataResult::version> ();
+  CHECK (!res.Step ());
+
+  return version;
+}
+
+void GlobalData::SetVersion(std::string version)
+{
+  auto stmt = db.Prepare (R"(
+    UPDATE `globaldata` SET
+      (`version`) = (?1) WHERE id=0
+  )");
+
+  stmt.Reset ();
+  stmt.Bind (1, version);
+  stmt.Execute ();
+}
+
+std::string
+GlobalData::GetUrl ()
+{
+  auto stmt = db.Prepare (R"(
+    SELECT *
+      FROM `globaldata`
+      WHERE `id` = 0
+  )");
+
+  auto res = stmt.Query<GlobalDataResult> ();
+  CHECK (res.Step ());
+
+  const std::string url = res.Get<GlobalDataResult::url> ();
+  CHECK (!res.Step ());
+
+  return url;
+}
+
+void GlobalData::SetUrl(std::string url)
+{
+  auto stmt = db.Prepare (R"(
+    UPDATE `globaldata` SET
+      (`url`) = (?1) WHERE id=0
+  )");
+
+  stmt.Reset ();
+  stmt.Bind (1, url);
+  stmt.Execute ();
+}
+
 void
 GlobalData::InitialiseDatabase ()
 {
   auto stmt = db.Prepare (R"(
     INSERT INTO `globaldata`
-      (`id`, `lasttournamenttime`, `chimultiplier`) VALUES (?1, ?2, ?3)
+      (`id`, `lasttournamenttime`, `chimultiplier`, `version`, `url`) VALUES (?1, ?2, ?3, ?4, ?5)
   )");
 
+  std::string vd = "0.9.9j";
+  std::string ud = "xaya.io";
   stmt.Reset ();
   stmt.Bind (1, 0);
   stmt.Bind (2, 0);
   stmt.Bind (3, 1000);
+  stmt.Bind (4, vd);
+  stmt.Bind (5, ud);
   stmt.Execute ();
     
 }

@@ -32,6 +32,9 @@
 #include <xayagame/sqlitestorage.hpp>
 
 #include <sstream>
+#include <iostream>
+#include <vector>
+#include <string>
 
 #include <chrono>
 #include <thread>
@@ -58,7 +61,7 @@ namespace pxd
 
 BaseMoveProcessor::BaseMoveProcessor (Database& d,
                                       const Context& c)
-  : ctx(c), db(d), xayaplayers(db), recipeTbl(db), fighters(db), moneySupply(db), rewards(db), tournamentsTbl(db), specialTournamentsTbl(db)
+  : ctx(c), db(d), xayaplayers(db), recipeTbl(db), fighters(db), moneySupply(db), rewards(db), tournamentsTbl(db), specialTournamentsTbl(db), globalData(db)
 {}
 
 
@@ -117,9 +120,10 @@ BaseMoveProcessor::ExtractMoveBasics (const Json::Value& moveObj,
     paidToCrownHolders.insert(std::pair<std::string, Amount>(xAddress,0));
     holderTier.insert(std::pair<std::string, int32_t>(xAddress,(int32_t)spctrm->GetProto().tier()));
 	
+    xaya::Chain chain = ctx.Chain();
 	if(xName == name)
 	{
-		if(xAddress != "CWXvFB9MuGVxCXohBaAStPZmJprqKL7kMm")
+		if(xAddress != "CWXvFB9MuGVxCXohBaAStPZmJprqKL7kMm" && chain != xaya::Chain::REGTEST)
 		{
             LOG (WARNING) << "Users buy crystals for himself, but address is not pot address ";
             return false;       			
@@ -223,7 +227,7 @@ BaseMoveProcessor::ExtractMoveBasics (const Json::Value& moveObj,
 }
 
 bool
-BaseMoveProcessor::ParseSweetenerPurchase(const Json::Value& mv, Amount& cost, const std::string& name, std::string& fungibleName, Amount balance)
+BaseMoveProcessor::ParseSweetenerPurchase(const Json::Value& mv, Amount& cost, const std::string& name, std::string& fungibleName, Amount balance, Amount& total)
 {
   const auto& cmd = mv["ps"];
   
@@ -232,12 +236,37 @@ BaseMoveProcessor::ParseSweetenerPurchase(const Json::Value& mv, Amount& cost, c
       return false;
   }
   
+  total = 1;
+  std::string cmdStr = cmd.asString();
+  try
+  {
+	  if (cmdStr.find(",") != std::string::npos) 
+	  {
+		std::vector<std::string> result;
+		std::stringstream ss (cmdStr);
+		std::string item;
+        char delim = ',';
+
+		while (std::getline (ss, item, delim)) {
+			result.push_back (item);
+		}	  
+		
+		total = std::stoi(result[1]);
+		cmdStr = result[0];
+	  }	  
+  }
+  catch(...)
+  {
+  }
+  
+  if(total <=1) total = 1;
+  
   bool exists = false;
   const auto& sweetenerList = ctx.RoConfig()->sweetenerblueprints();
   
   for(const auto& swtnr: sweetenerList)
   {
-      if(swtnr.second.authoredid() == cmd.asString())
+      if(swtnr.second.authoredid() == cmdStr)
       {
           cost = swtnr.second.price();
           fungibleName = swtnr.first;
@@ -248,11 +277,11 @@ BaseMoveProcessor::ParseSweetenerPurchase(const Json::Value& mv, Amount& cost, c
   
   if(exists == false)
   {
-      LOG (WARNING) << "Could not solve sweetener entry for: " << cmd;
+      LOG (WARNING) << "Could not solve sweetener entry for: " << cmdStr;
       return false;      
   }
   
-  if (balance < cost)
+  if (balance < cost * total)
   {
       LOG (WARNING)
           << "Required amount to purchace bundle character not paid by " << name
@@ -412,8 +441,10 @@ BaseMoveProcessor::ParseCrystalPurchase(const Json::Value& mv, std::string& bund
       return false;
   }
   
+  int64_t multiplier = globalData.GetChiMultiplier();
+  
   VLOG (1) << "Trying to purchace bundle, amount paid left: " << paidToDev;
-  cost = chiPRICE * COIN;
+  cost = chiPRICE * COIN * (multiplier / 1000);
   
   if (paidToDev < cost)
   {
@@ -445,7 +476,7 @@ BaseMoveProcessor::TrySweetenerPurchase (const std::string& name, const Json::Va
   const auto& cmd = mv["ps"];
   if (!cmd.isString ()) return;
 
-  LOG (WARNING) << "Attempting to purchase sweetener through move: " << cmd;
+  LOG (INFO) << "Attempting to purchase sweetener through move: " << cmd;
   
   auto player = xayaplayers.GetByName (name, ctx.RoConfig());
   CHECK (player != nullptr);
@@ -457,14 +488,16 @@ BaseMoveProcessor::TrySweetenerPurchase (const std::string& name, const Json::Va
   } 
   
   Amount cost = 0;
+  Amount total = 1;
   std::string fungibleName = "";
-  if(!ParseSweetenerPurchase(mv, cost, name, fungibleName, player->GetBalance()))
+  if(!ParseSweetenerPurchase(mv, cost, name, fungibleName, player->GetBalance(), total))
   {
       return;
   }
-   LOG (WARNING) << "GOOD: " << cmd << " as cost " << cost;
-  player->AddBalance (-cost); 
-  player->GetInventory().AddFungibleCount(fungibleName, 1);
+  
+  LOG (INFO) << "GOOD: " << cmd << " as cost " << cost * total;
+  player->AddBalance (-cost * total); 
+  player->GetInventory().AddFungibleCount(fungibleName, total);
   player.reset();
 }
 
@@ -751,8 +784,8 @@ MoveProcessor::ProcessAll (const Json::Value& moveArray)
     ProcessOne (m);
   }
   
-    const auto end = PerformanceTimer::now ();
-    LOG (INFO) << "Processing all moves took " << std::chrono::duration_cast<CallbackDuration> (end - start).count (); 
+  const auto end = PerformanceTimer::now ();
+  LOG (INFO) << "Processing all moves took " << std::chrono::duration_cast<CallbackDuration> (end - start).count (); 
 }
 
 void
@@ -788,6 +821,41 @@ MoveProcessor::HandleGodMode (const Json::Value& cmd)
       LOG (WARNING) << "God mode command ignored: " << cmd;
       return;
     }
+	
+	MaybeSetNewCostMultiplier (cmd["cost"]);
+	MaybeSetNewVersionIdentifier (cmd["version"]);
+	MaybeSetNewVanillaDownloadUrl (cmd["vanillaurl"]);
+}
+
+void
+MoveProcessor::MaybeSetNewCostMultiplier (const Json::Value& cmd)
+{
+  if (!cmd.isInt ())
+    return;
+
+  int64_t mt = cmd.asInt();
+
+  globalData.SetChiMultiplier(mt);
+}
+
+void
+MoveProcessor::MaybeSetNewVersionIdentifier (const Json::Value& cmd)
+{
+  if (!cmd.isString ())
+    return;
+
+  std::string dd = cmd.asString();
+  globalData.SetVersion(dd);
+}
+
+void
+MoveProcessor::MaybeSetNewVanillaDownloadUrl (const Json::Value& cmd)
+{
+  if (!cmd.isString ())
+    return;
+
+  std::string dd = cmd.asString();
+  globalData.SetUrl(dd);
 }
 
 void

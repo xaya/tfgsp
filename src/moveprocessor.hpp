@@ -31,6 +31,7 @@
 #include "database/reward.hpp"
 #include "database/moneysupply.hpp"
 #include "database/amount.hpp"
+#include "database/globaldata.hpp"
 
 #include <xayautil/random.hpp>
 
@@ -104,7 +105,10 @@ protected:
   TournamentTable tournamentsTbl;     
   
   /** Access handle special tournaments database instances*/
-  SpecialTournamentTable specialTournamentsTbl;       
+  SpecialTournamentTable specialTournamentsTbl;     
+
+  /** Access handle for global data*/
+  GlobalData globalData;       
   
   explicit BaseMoveProcessor (Database& d, const Context& c);
 
@@ -169,7 +173,7 @@ protected:
    * Tries to parse a move that purchases sweetener
    */       
    
-  bool ParseSweetenerPurchase(const Json::Value& mv, Amount& cost, const std::string& name, std::string& fungibleName, Amount balance);  
+  bool ParseSweetenerPurchase(const Json::Value& mv, Amount& cost, const std::string& name, std::string& fungibleName, Amount balance, Amount& total);  
     
   /**
    * Tries to parse a move that puts fighter on the auction
@@ -332,6 +336,11 @@ private:
    * integration testing, so that this will only be done on regtest.
    */
   void HandleGodMode (const Json::Value& cmd);
+  
+  /*Global data command to set up using regtest commands on in production using xaya owned game name*/
+  void MaybeSetNewCostMultiplier (const Json::Value& cmd);
+  void MaybeSetNewVersionIdentifier (const Json::Value& cmd);
+  void MaybeSetNewVanillaDownloadUrl (const Json::Value& cmd);
   
    /**
    * Tries to handle an account initialisation (choosing faction) from

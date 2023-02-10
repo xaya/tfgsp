@@ -1392,8 +1392,8 @@ TEST_F (ValidateStateTests, RatingSweetnessUpgrades)
   }
   
   ftA = tbl3.GetById(ftA1id, ctx.RoConfig());
-  EXPECT_EQ (ftA->GetProto().rating(), 1143);
-  EXPECT_EQ (ftA->GetProto().sweetness(), (int)pxd::Sweetness::Bittersweet);
+  EXPECT_EQ (ftA->GetProto().rating(), 1255);
+  EXPECT_EQ (ftA->GetProto().sweetness(), (int)pxd::Sweetness::Semi_Sweet);
   ftA.reset();  
 }
 
