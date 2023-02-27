@@ -113,46 +113,6 @@ TEST_F (PendingStateTests, Clear)
   )");
 }
 
-TEST_F (PendingStateTests, CoinTransferBurn)
-{
-  auto a = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
-
-  CoinTransferBurn coinOp;
-  coinOp.minted = 32;
-  coinOp.burnt = 5;
-  coinOp.transfers["andy"] = 20;
-  state.AddCoinTransferBurn (*a, coinOp);
-
-  coinOp.minted = 10;
-  coinOp.burnt = 2;
-  coinOp.transfers["andy"] = 1;
-  coinOp.transfers["daniel"] = 10;
-  state.AddCoinTransferBurn (*a, coinOp);
-
-  a.reset ();
-
-  ExpectStateJson (R"(
-{
-	"xayaplayers" : 
-	[
-		{
-			"coinops" : 
-			{
-				"burnt" : 7,
-				"minted" : 42,
-				"transfers" : 
-				{
-					"andy" : 21,
-					"daniel" : 10
-				}
-			},
-			"name" : "domob"
-		}
-	]
-}
-  )");
-}
-
 }
 
 
@@ -287,63 +247,6 @@ TEST_F (PendingStateUpdaterTests, UninitialisedAndNonExistantAccount)
   ASSERT_EQ (xayaplayers.GetByName ("domob",  ctx.RoConfig()), nullptr);
 }
 
-TEST_F (PendingStateUpdaterTests, CoinTransferBurn)
-{
-  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (100);
-  xayaplayers.CreateNew ("andy", ctx.RoConfig(), rnd)->AddBalance (100);
-
-  Process ("domob", R"({
-    "abc": "foo",
-    "vc": {"x": 5, "b": 10}
-  })");
-  Process ("andy", R"({
-    "vc": {"b": -10, "t": {"domob": 5, "invalid": 2}}
-  })");
-  Process ("invalid", R"({
-    "vc": {"b": 1}
-  })");
-  Process ("domob", R"({
-    "abc": "foo",
-    "vc": {"b": 2, "t": {"domob": 1, "andy": 5}}
-  })");
-  Process ("andy", R"({
-    "vc": {"b": 101, "t": {"domob": 101}}
-  })");
-
-  ExpectStateJson (R"(
-    {
-      "xayaplayers" : 
-      [
-          {
-              "coinops" : 
-              {
-                  "burnt" : 101,
-                  "minted" : 0,
-                  "transfers" : 
-                  {
-                      "domob" : 106,
-                      "invalid" : 2
-                  }
-              },
-              "name" : "andy"
-          },
-          {
-              "coinops" : 
-              {
-                  "burnt" : 12,
-                  "minted" : 0,
-                  "transfers" : 
-                  {
-                      "andy" : 5
-                  }
-              },
-              "name" : "domob"
-          }
-      ]
-    }
-  )");
-}
-
 TEST_F (PendingStateUpdaterTests, Minting)
 {
   xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
@@ -386,7 +289,7 @@ TEST_F (PendingStateUpdaterTests, PurchaseCrystals)
           {
             "name": "domob",
             "crystalbundles": ["T1"],
-            "balance": 450
+            "balance": 200
           }
         ]
     }
@@ -409,7 +312,7 @@ TEST_F (PendingStateUpdaterTests, CrystalBalancePendingTestings)
         "xayaplayers" :
         [
                 {
-                        "balance" : 300,
+                        "balance" : 50,
                         "name" : "domob",
                         "purchasing" :
                         [
@@ -644,6 +547,7 @@ TEST_F (PendingStateUpdaterTests, SubmitTournamentEntry)
 TEST_F (PendingStateUpdaterTests, SubmitSpecialTournamentEntry)
 {
   auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
+  xp->AddBalance(100);
   xp.reset();
   
   ctx.SetTimestamp(100);

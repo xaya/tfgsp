@@ -38,6 +38,7 @@ class GodModeTest (PXTest):
 
   def run (self):
     self.collectPremine ()
+    self.splitPremine ()
      
     accounts = self.getAccounts ()
 
@@ -101,7 +102,9 @@ class GodModeTest (PXTest):
     self.assertEqual (self.getPendingState (), {
       "xayaplayers": []
     })	     
-    
+ 
+    self.generate (1)
+    self.syncGame ()    
     self.adminCommand ({"god": {"cost": 1000 }})
     sleepSome ()
     self.generate (1)
@@ -112,7 +115,7 @@ class GodModeTest (PXTest):
 
     self.sendMove ("andy", {"pc": "T1"}, {"sendCoins": {add1: amnt1,add2: amnt2,add3: amnt3,add4: amnt4,add5: amnt5,add6: amnt6,add7: amnt7, add_dev: amnt8}}) 
     sleepSome ()
-    self.assertEqual (self.getPendingState (), {'xayaplayers': [{'balance': 350, 'crystalbundles': ['T1'], 'name': 'andy'}]})	   
+    self.assertEqual (self.getPendingState (), {'xayaplayers': [{'balance': 100, 'crystalbundles': ['T1'], 'name': 'andy'}]})	   
 
 if __name__ == "__main__":
   GodModeTest ().main ()

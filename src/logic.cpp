@@ -1537,17 +1537,9 @@ void PXLogic::ProcessFighterPair(int64_t fighter1, int64_t fighter2, bool isSpec
           participatingPlayerTotalScore[rhs->GetOwner()] += fpm::fixed_24_8(0.5);
           
           if(isSpecial == false)
-          {
-            if(ctx.Height () > 4265751) // HARD FORK INITIATING
-            {              
-              fighterResults[fighter1]->set_draws(fighterResults[fighter1]->draws() + 1);
-              fighterResults[fighter2]->set_draws(fighterResults[fighter2]->draws() + 1);  
-            }
-            else
-            {
-              fighterResults[fighter2]->set_draws(fighterResults[fighter2]->draws() + 1);
-              fighterResults[fighter2]->set_draws(fighterResults[fighter2]->draws() + 1);                  
-            }
+          {           
+            fighterResults[fighter1]->set_draws(fighterResults[fighter1]->draws() + 1);
+            fighterResults[fighter2]->set_draws(fighterResults[fighter2]->draws() + 1);  
           }
    
           break;
@@ -1974,9 +1966,9 @@ PXLogic::GetInitialStateBlock (unsigned& height,
   switch (chain)
     {
     case xaya::Chain::MAIN:
-      height = 4'583'195;
+      height = 4'623'565;
       hashHex
-          = "df3fc5754a396ef2614ecf43dff6f726eed18dd39d3eb45d41457ab9864fd3b5";
+          = "500b55121a7c67ec95b38d1a290a9ca409d467c8497d497630f05598eefdfd52";
       break;
 
     case xaya::Chain::TEST:

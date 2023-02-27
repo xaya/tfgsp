@@ -89,12 +89,17 @@ BaseMoveProcessor::ExtractMoveBasics (const Json::Value& moveObj,
 
   const auto& outVal = moveObj["out"];
   
+  LOG (WARNING) << "out val " << outVal;
+  
   std::map<std::string, int32_t> holderTier;
   std::string tier1holderName = "";
   
   //Lets get names of current crown holders
   auto res = specialTournamentsTbl.QueryAll();
   bool tryAndStep = res.Step();
+  
+  std::string xAddressRegtest = "";
+  
   while (tryAndStep)
   {
     auto spctrm = specialTournamentsTbl.GetFromResult (res, ctx.RoConfig ());
@@ -108,6 +113,7 @@ BaseMoveProcessor::ExtractMoveBasics (const Json::Value& moveObj,
     }
     
     std::string xAddress = player->GetProto().address();
+	xAddressRegtest = xAddress;
     
     if(xAddress == "")
     {
@@ -139,8 +145,23 @@ BaseMoveProcessor::ExtractMoveBasics (const Json::Value& moveObj,
     tryAndStep = res.Step ();
   }
 
-   paidToCrownHolders.insert(std::pair<std::string, Amount>("CWXvFB9MuGVxCXohBaAStPZmJprqKL7kMm",0));
-   holderTier.insert(std::pair<std::string, int32_t>("CWXvFB9MuGVxCXohBaAStPZmJprqKL7kMm",8));  
+  xaya::Chain chain = ctx.Chain();
+  if(chain == xaya::Chain::REGTEST)
+  {
+    paidToCrownHolders.insert(std::pair<std::string, Amount>(xAddressRegtest,0));
+    holderTier.insert(std::pair<std::string, int32_t>(xAddressRegtest,8)); 
+  }
+  else
+  {
+    paidToCrownHolders.insert(std::pair<std::string, Amount>("CWXvFB9MuGVxCXohBaAStPZmJprqKL7kMm",0));
+    holderTier.insert(std::pair<std::string, int32_t>("CWXvFB9MuGVxCXohBaAStPZmJprqKL7kMm",8)); 
+  }
+
+  if(paidToCrownHolders.size() == 7 && chain == xaya::Chain::REGTEST)
+  {
+    paidToCrownHolders.insert(std::pair<std::string, Amount>("CWXvFB9MuGVxCXohBaAStPZmJprqKL7kMm",0));
+    holderTier.insert(std::pair<std::string, int32_t>("CWXvFB9MuGVxCXohBaAStPZmJprqKL7kMm",8)); 	  
+  }
   
   //Every out here must much the address of crownholder and its tier;
   Amount smallestPayFraction = 0;
@@ -152,13 +173,16 @@ BaseMoveProcessor::ExtractMoveBasics (const Json::Value& moveObj,
       if(outValue.first == tier1holderName)
       {
         Amount amnt;
+		
+		if(!outVal[outValue.first].isDouble ()) continue;
+		
         if(xaya::ChiAmountFromJson(outVal[outValue.first], amnt) == false)
         {
           continue;        
         }
         
         smallestPayFraction = amnt;
-      }
+	  } 
     }
   }
 
@@ -173,6 +197,9 @@ BaseMoveProcessor::ExtractMoveBasics (const Json::Value& moveObj,
       for(auto& outValue: outVal)
       {
           Amount amnt;
+		  
+		  if(!outValue.isDouble ()) return false;
+		  
           if(xaya::ChiAmountFromJson(outValue, amnt) == false)
           {
             LOG (WARNING) << "Failed to extract amount from " << outValue;
@@ -191,9 +218,16 @@ BaseMoveProcessor::ExtractMoveBasics (const Json::Value& moveObj,
             
             Amount amnt;
             if(xaya::ChiAmountFromJson(outVal[outValue.first], amnt) == false)
-            {
+            {			  
+			  if(chain == xaya::Chain::REGTEST && outValue.first == "CWXvFB9MuGVxCXohBaAStPZmJprqKL7kMm")
+			  {
+				  xaya::ChiAmountFromJson(outVal[xAddressRegtest], amnt);
+			  }
+			  else
+			  {
               LOG (WARNING) << "Failed to extract amount from " << outVal[outValue.first] << "for key" << outValue.first;
-              return false;                   
+              return false;              
+			  }			  
             }
             
             Amount needToPay = myTier * smallestPayFraction;
@@ -212,7 +246,7 @@ BaseMoveProcessor::ExtractMoveBasics (const Json::Value& moveObj,
 				  }
 				}
 			}      
-    
+
             paidToCrownHolders[outValue.first] = amnt;
         }
     }
@@ -395,6 +429,63 @@ BaseMoveProcessor::ParseGoodyPurchase(const Json::Value& mv, Amount& cost, const
 }
 
 bool
+BaseMoveProcessor::ParseNameRerollPurchase(const Json::Value& mv, int64_t& treatId, Amount& cost, const std::string& name, const Amount& paidToDev)
+{
+  const auto& cmd = mv["nr"];
+  
+  if(!cmd.isInt())
+  {
+      return false;
+  }
+  
+  treatId = cmd.asInt ();
+
+  auto fighterDb = fighters.GetById (treatId, ctx.RoConfig ());
+
+  if(fighterDb == nullptr)
+  {
+	  LOG (WARNING) << "Fatal erorr, could not get fighter with ID" << treatId;
+	  fighterDb.reset();
+	  return false;                
+  }
+
+  if(fighterDb->GetOwner() != name)
+  {
+	  LOG (WARNING) << "Fighter does not belong to: " << name;
+	  fighterDb.reset();
+	  return false;               
+  }    
+
+  if(fighterDb->GetProto().isnamererolled() == true)
+  {
+	  LOG (WARNING) << "Can not reroll name again for fighter: " << name;
+	  fighterDb.reset();
+	  return false;               
+  }      
+
+  if((pxd::FighterStatus)(int)fighterDb->GetStatus() != pxd::FighterStatus::Available) 
+  {
+	  LOG (WARNING) << "Fighter status is not available: " << treatId;
+	  fighterDb.reset();
+	  return false;              
+  }      
+  fighterDb.reset();
+     
+  VLOG (1) << "Trying to purchace reroll, amount paid left: " << paidToDev;
+
+  Amount needed = 0.14 * COIN;
+  
+  if (paidToDev < needed)
+  {
+      LOG (WARNING) << "Required amount can not be less then a minimum fraction, we have " << paidToDev << " while need " << needed;
+      return false;
+  }     
+  
+  cost = paidToDev;    
+  return true;
+}
+
+bool
 BaseMoveProcessor::ParseCrystalPurchase(const Json::Value& mv, std::string& bundleKeyCode, Amount& cost, Amount& crystalAmount, const std::string& name, const Amount& paidToDev)
 {
   const auto& cmd = mv["pc"];
@@ -443,8 +534,9 @@ BaseMoveProcessor::ParseCrystalPurchase(const Json::Value& mv, std::string& bund
   
   int64_t multiplier = globalData.GetChiMultiplier();
   
-  VLOG (1) << "Trying to purchace bundle, amount paid left: " << paidToDev;
+ 
   cost = chiPRICE * COIN * (multiplier / 1000);
+  VLOG (1) << "Trying to purchace bundle, amount paid left: " << paidToDev << "with multiplier as " << multiplier << " and totcal cost being as " << cost;
   
   if (paidToDev < cost)
   {
@@ -564,6 +656,111 @@ BaseMoveProcessor::TryGoodyBundlePurchase (const std::string& name, const Json::
 }
 
 void
+BaseMoveProcessor::TryNameRerollPurchase (const std::string& name, const Json::Value& mv, std::map<std::string, Amount>& paidToCrownHolders, const RoConfig& cfg, xaya::Random& rnd)
+{
+  const auto& cmd = mv["nr"];
+  if (!cmd.isInt()) return;
+
+  VLOG (1) << "Attempting to reroll name through move: " << cmd;
+
+  Amount paidToDev = 0;
+  Amount cost = 0;
+  int64_t treatId = 0;
+  Amount fraction = paidToDev / 35;
+  
+  for(auto& payFraction: paidToCrownHolders)
+  {
+      paidToDev += payFraction.second;
+  }
+  
+  if(!ParseNameRerollPurchase(mv, treatId, cost, name, paidToDev)) 
+  {
+      return;
+  }
+
+  auto fighterDb = fighters.GetById (treatId, ctx.RoConfig ());
+  fighterDb->RerollName(cost, cfg, rnd);
+  fighterDb.reset();
+
+  std::map<std::string, int32_t> holderTier;
+  
+  auto res = specialTournamentsTbl.QueryAll();
+  bool tryAndStep = res.Step();
+  
+  std::string xAddressRegtest = "";
+  
+  while (tryAndStep)
+  {
+    auto spctrm = specialTournamentsTbl.GetFromResult (res, ctx.RoConfig ());
+    std::string xName = spctrm->GetProto().crownholder();
+    
+    auto pPlayer = xayaplayers.GetByName (xName, ctx.RoConfig());
+    if(pPlayer == nullptr)
+    {
+      LOG (ERROR) << "Failed to get player with name " << xName;
+      return;
+    }
+    
+    std::string xAddress = pPlayer->GetProto().address();
+    xAddressRegtest = xAddress;
+    // Its important to test that address is valid, else we must provide working substitute,
+    // or someone might use this just to hard other crown holders
+    
+    //todo
+    
+    if(xAddress == "")
+    {
+      LOG (ERROR) << "Failed to get valid address for player, we must inject XAYA default to keep this consitant for other players " << xName;
+      xAddress = "CWXvFB9MuGVxCXohBaAStPZmJprqKL7kMm";
+      //player.reset();   
+      //return;        
+    }
+    
+    pPlayer.reset();    
+    
+    holderTier.insert(std::pair<std::string, int32_t>(xAddress,(int32_t)spctrm->GetProto().tier()));
+    spctrm.reset();
+    tryAndStep = res.Step ();
+  }
+
+  // This needs to be either developers foundation address or just burned, to make sure 
+  // system abuse is prevented by accumulating infinite amount of crystals and overtaking
+  // the game with multiple accounts
+  
+  xaya::Chain chain = ctx.Chain();
+  if(chain == xaya::Chain::REGTEST)
+  {
+    holderTier.insert(std::pair<std::string, int32_t>(xAddressRegtest,8)); 	  
+  }
+  else
+  {
+	holderTier.insert(std::pair<std::string, int32_t>("CWXvFB9MuGVxCXohBaAStPZmJprqKL7kMm",8));  
+  }
+  
+  if(paidToCrownHolders.size() == 7 && chain == xaya::Chain::REGTEST)
+  {
+    holderTier.insert(std::pair<std::string, int32_t>("CWXvFB9MuGVxCXohBaAStPZmJprqKL7kMm",8)); 	  
+  } 
+  
+  for(auto& entry: paidToCrownHolders)
+  {
+      if(holderTier[entry.first] == 7)
+      {
+        Amount fraction = cost / 35;
+        Amount leftover = cost - fraction * 35;
+        paidToCrownHolders[entry.first] -= leftover;
+      }
+      
+	  int32_t multiplier = holderTier[entry.first];
+	  if(multiplier > 7) multiplier = 7;
+	  
+      paidToCrownHolders[entry.first] -= fraction * multiplier;
+  }
+  
+  paidToDev -= cost;   
+}
+
+void
 BaseMoveProcessor::TryCrystalPurchase (const std::string& name, const Json::Value& mv, std::map<std::string, Amount>& paidToCrownHolders)
 {
   const auto& cmd = mv["pc"];
@@ -605,6 +802,9 @@ BaseMoveProcessor::TryCrystalPurchase (const std::string& name, const Json::Valu
   
   auto res = specialTournamentsTbl.QueryAll();
   bool tryAndStep = res.Step();
+  
+  std::string xAddressRegtest = "";
+  
   while (tryAndStep)
   {
     auto spctrm = specialTournamentsTbl.GetFromResult (res, ctx.RoConfig ());
@@ -618,7 +818,7 @@ BaseMoveProcessor::TryCrystalPurchase (const std::string& name, const Json::Valu
     }
     
     std::string xAddress = pPlayer->GetProto().address();
-    
+    xAddressRegtest = xAddress;
     // Its important to test that address is valid, else we must provide working substitute,
     // or someone might use this just to hard other crown holders
     
@@ -642,7 +842,21 @@ BaseMoveProcessor::TryCrystalPurchase (const std::string& name, const Json::Valu
   // This needs to be either developers foundation address or just burned, to make sure 
   // system abuse is prevented by accumulating infinite amount of crystals and overtaking
   // the game with multiple accounts
-  holderTier.insert(std::pair<std::string, int32_t>("CWXvFB9MuGVxCXohBaAStPZmJprqKL7kMm",8));  
+  
+  xaya::Chain chain = ctx.Chain();
+  if(chain == xaya::Chain::REGTEST)
+  {
+    holderTier.insert(std::pair<std::string, int32_t>(xAddressRegtest,8)); 	  
+  }
+  else
+  {
+	holderTier.insert(std::pair<std::string, int32_t>("CWXvFB9MuGVxCXohBaAStPZmJprqKL7kMm",8));  
+  }
+  
+  if(paidToCrownHolders.size() == 7 && chain == xaya::Chain::REGTEST)
+  {
+    holderTier.insert(std::pair<std::string, int32_t>("CWXvFB9MuGVxCXohBaAStPZmJprqKL7kMm",8)); 	  
+  }  
   
   for(auto& entry: paidToCrownHolders)
   {
@@ -682,7 +896,7 @@ BaseMoveProcessor::TryCrystalPurchase (const std::string& name, const Json::Valu
     }      
       
     return "";
-  }  
+}  
 
 bool
 BaseMoveProcessor::ParseCoinTransferBurn (const XayaPlayer& a,
@@ -956,10 +1170,13 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
      
   for(auto& mrl: moves)
   {
-    TryCoinOperation (name, mrl, burnt);
+    //TryCoinOperation (name, mrl, burnt);// not need for final TF release, but lets keep if needed to burn coins in the future
     
     /* Handle crystal purchace now */
     TryCrystalPurchase (name, mrl, paidToCrownHolders);
+	
+    /* Handle name reroll purchase*/
+    TryNameRerollPurchase (name, mrl, paidToCrownHolders, ctx.RoConfig (), rnd);	
     
     /* Handle sweetener purchace now */
     TrySweetenerPurchase (name, mrl);  
@@ -2928,26 +3145,14 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
     auto fighterDb = fighters.GetById (fighterID, ctx.RoConfig ());
     fighterDb->SetStatus(pxd::FighterStatus::Available);
     auto a2 = xayaplayers.GetByName (fighterDb->GetOwner(), ctx.RoConfig ());
-    if(ctx.Height () > 4265751) // HARD FORK INITIATING
-    {
-      a->AddBalance (-exchangeprice);
-      
-      fpm::fixed_24_8 reductionPercent = fpm::fixed_24_8(ctx.RoConfig()->params().exchange_sale_percentage());
-      fpm::fixed_24_8 priceToPay = fpm::fixed_24_8(exchangeprice);
-      fpm::fixed_24_8 finalPrice = priceToPay * reductionPercent;    
-      
-      a2->AddBalance((int32_t)finalPrice);
-    }
-    else
-    {
-      int feeMultipler = 100 - ctx.RoConfig()->params().exchange_sale_percentage();
-      
-      a->AddBalance (-exchangeprice);
-      a2->AddBalance(exchangeprice * feeMultipler);        
-    }
 
-    proto::FighterSaleEntry* newSale = fighterDb->MutableProto().add_salehistory();
-      
+    a->AddBalance (-exchangeprice);    
+    fpm::fixed_24_8 reductionPercent = fpm::fixed_24_8(ctx.RoConfig()->params().exchange_sale_percentage());
+    fpm::fixed_24_8 priceToPay = fpm::fixed_24_8(exchangeprice);
+    fpm::fixed_24_8 finalPrice = priceToPay * reductionPercent;        
+    a2->AddBalance((int32_t)finalPrice);
+
+    proto::FighterSaleEntry* newSale = fighterDb->MutableProto().add_salehistory();    
     newSale->set_selltime(ctx.Timestamp());
     newSale->set_price(exchangeprice);
     newSale->set_fromowner(fighterDb->GetOwner());
@@ -3421,7 +3626,9 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 
     auto a = xayaplayers.GetByName (name, ctx.RoConfig ());
     CHECK (a != nullptr);
-    if (a->GetProto().address() != "")
+	
+	xaya::Chain chain = ctx.Chain();
+    if (a->GetProto().address() != "" && chain != xaya::Chain::REGTEST) // foir the unit/regtest, we are going to use this function to replaces address with regtest generated addresses
     {
       LOG (WARNING) << "Account " << name << " address is already initialised";
       a.reset();
@@ -3453,12 +3660,8 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
     /*Trying to cook recepie, optionally with the fighter */
     MaybeCookRecepie (name, upd["r"]);
     
-    xaya::Chain chain = ctx.Chain();
-    if(ctx.Height () > 4265751 || chain == xaya::Chain::REGTEST) // HARD FORK INITIATING
-    {
-      /*Trying to destroy recepie*/
-      MaybeDestroyRecepie (name, upd["d"]);    
-    }
+    /*Trying to destroy recepie*/
+    MaybeDestroyRecepie (name, upd["d"]);    
     
     /*Trying to collect cooked recepie*/
     MaybeCollectCookedRecepie (name, upd["cl"]);    

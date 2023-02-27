@@ -52,14 +52,19 @@ class SpecialTournamentTest (PXTest):
 
     self.mainLogger.info ("Creating test account.")
     
+    self.generate (1)
+    self.syncGame ()        
+    
     add1 = self.rpc.xaya.getnewaddress ()
     add2 = self.rpc.xaya.getnewaddress ()
     add3 = self.rpc.xaya.getnewaddress ()
     add4 = self.rpc.xaya.getnewaddress ()
     add5 = self.rpc.xaya.getnewaddress ()
     add6 = self.rpc.xaya.getnewaddress ()
-    add7 = self.rpc.xaya.getnewaddress ()
+    add7 = self.rpc.xaya.getnewaddress ()   
     
+    currentState = self.getCustomState ("gamestate", "getcurrentstate")
+
     self.initAccount ("xayatf1", add1)
     self.initAccount ("xayatf2", add2)
     self.initAccount ("xayatf3", add3)
@@ -68,12 +73,9 @@ class SpecialTournamentTest (PXTest):
     self.initAccount ("xayatf6", add6)
     self.initAccount ("xayatf7", add7)    
     
-    for name in names:
-        add0 = self.rpc.xaya.getnewaddress ()
-        self.initAccount (name, add0)
-        self.generate (1)
-        self.syncGame ()            
-
+    self.generate (1)
+    self.syncGame ()    
+    
     add_dev = self.rpc.xaya.getnewaddress ()
     
     fraction = 0.14 / 35
@@ -86,7 +88,23 @@ class SpecialTournamentTest (PXTest):
     amnt7 = fraction * 7
     amnt8 = fraction * 7
     
-    self.sendMove ("andy", {"pc": "T1"}, {"sendCoins": {add1: amnt1,add2: amnt2,add3: amnt3,add4: amnt4,add5: amnt5,add6: amnt6,add7: amnt7, add_dev: amnt8}})
+    for name in names:
+        add0 = self.rpc.xaya.getnewaddress ()
+        self.initAccount (name, add0)
+        self.generate (1)
+        self.syncGame ()           
+        self.sendMove (name, {"pc": "T1"}, {"sendCoins": {add1: amnt1,add2: amnt2,add3: amnt3,add4: amnt4,add5: amnt5,add6: amnt6,add7: amnt7, add_dev: amnt8}})
+        self.generate (1)
+        self.syncGame ()           
+        self.sendMove (name, {"pc": "T1"}, {"sendCoins": {add1: amnt1,add2: amnt2,add3: amnt3,add4: amnt4,add5: amnt5,add6: amnt6,add7: amnt7, add_dev: amnt8}})
+        self.generate (1)
+        self.syncGame ()           
+        self.sendMove (name, {"pc": "T1"}, {"sendCoins": {add1: amnt1,add2: amnt2,add3: amnt3,add4: amnt4,add5: amnt5,add6: amnt6,add7: amnt7, add_dev: amnt8}})
+        self.generate (1)
+        self.syncGame ()           
+        self.sendMove (name, {"pc": "T1"}, {"sendCoins": {add1: amnt1,add2: amnt2,add3: amnt3,add4: amnt4,add5: amnt5,add6: amnt6,add7: amnt7, add_dev: amnt8}})
+        self.generate (1)
+        self.syncGame ()   
     
     sleepSome ()
     
@@ -325,6 +343,9 @@ class SpecialTournamentTest (PXTest):
                     playerOwnedFightersIDS[name].append(fghtr["id"])    
     
     for name in names:
+        self.syncGame ()           
+        self.sendMove (name, {"pc": "T1"}, {"sendCoins": {add1: amnt1,add2: amnt2,add3: amnt3,add4: amnt4,add5: amnt5,add6: amnt6,add7: amnt7, add_dev: amnt8}})
+        self.generate (1)    
         self.sendMove (name, {"tms": {"e": {"tid": tier1Id, "fc": playerOwnedFightersIDS[name]}}})
       
     self.generate (298)
@@ -346,6 +367,9 @@ class SpecialTournamentTest (PXTest):
     for name in names:
         playerOwnedFighters[name] = 0
         playerOwnedFightersIDS[name] = []
+        self.syncGame ()           
+        self.sendMove (name, {"pc": "T1"}, {"sendCoins": {add1: amnt1,add2: amnt2,add3: amnt3,add4: amnt4,add5: amnt5,add6: amnt6,add7: amnt7, add_dev: amnt8}})
+        self.generate (1)           
         
     self.generate (1)
     self.syncGame ()

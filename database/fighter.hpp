@@ -23,6 +23,7 @@
 #include "database.hpp"
 #include "inventory.hpp"
 #include "lazyproto.hpp"
+#include "database/amount.hpp"
 
 #include "proto/fighter.pb.h"
 #include "proto/roconfig.hpp"
@@ -232,6 +233,11 @@ public:
    * Calculates new sweetness based on the rating
    */  
   void UpdateSweetness();
+  
+  /**
+   * Rerolls for the new name based on the paid probability
+   */  
+  void RerollName(Amount cost, const RoConfig& cfg,  xaya::Random& rnd);  
 
   /**
    * In the destructor, the underlying database is updated if there are any

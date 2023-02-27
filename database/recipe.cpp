@@ -235,35 +235,74 @@ uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xa
         return 0;
     }    
     
-    while(fname == "")
-    {
-        for(long long unsigned int e =0; e < position0names.size(); e++)
-        {
-          int probabilityTreshhold = position0names[e].probability() * 1000;
-          int rolCurNum = rnd.NextInt(50000);
-          
-          if(rolCurNum < probabilityTreshhold)
-          {
-            fname = position0names[e].name();
-            break;
-          }
-        }
-    }
+    std::vector<std::string> candidates0collected;
+	std::vector<std::string> candidates1collected;
+	
+	int32_t biggetRollSoFar = 0;
+	while(candidates0collected.size() == 0)
+	{
+		for(long long unsigned int e =0; e < position0names.size(); e++)
+		{
+		  int32_t probabilityTreshhold = position0names[e].probability();
+		  int32_t rolCurNum = rnd.NextInt(1001);
+		  
+		  if(probabilityTreshhold < rolCurNum)
+		  {			
+            if(biggetRollSoFar < probabilityTreshhold)
+			{
+			   candidates0collected.clear();
+               candidates0collected.push_back(position0names[e].name());
+               biggetRollSoFar = probabilityTreshhold;			   
+			}
+            if(biggetRollSoFar == probabilityTreshhold)
+			{
+               candidates0collected.push_back(position0names[e].name());		   
+			}				
+		  }
+		}
+		
+		if(candidates0collected.size() == 1)
+		{
+			fname = candidates0collected[0];
+		}
+		else
+		{
+			fname = candidates0collected[rnd.NextInt(candidates0collected.size())];			
+		}	
+	}
     
-    while(lname == "")
-    {
-        for(long long unsigned int e =0; e < position1names.size(); e++) // long long unsigned int to surpess warning V___V
-        {
-          int probabilityTreshhold = position1names[e].probability() * 1000;
-          int rolCurNum = rnd.NextInt(50000);
-          
-          if(rolCurNum < probabilityTreshhold)
-          {
-            lname = position1names[e].name();
-            break;
-          }
-        }
-    }    
+    biggetRollSoFar = 0;
+	while(candidates1collected.size() == 0)
+	{
+		for(long long unsigned int e =0; e < position1names.size(); e++)
+		{
+		  int32_t probabilityTreshhold = position1names[e].probability();
+		  int32_t rolCurNum = rnd.NextInt(1001);
+		  
+		  if(probabilityTreshhold < rolCurNum)
+		  {			
+            if(biggetRollSoFar < probabilityTreshhold)
+			{
+			   candidates1collected.clear();
+               candidates1collected.push_back(position1names[e].name());
+               biggetRollSoFar = probabilityTreshhold;			   
+			}
+            if(biggetRollSoFar == probabilityTreshhold)
+			{
+               candidates1collected.push_back(position1names[e].name());			   
+			}							
+		  }
+		}
+		
+		if(candidates1collected.size() == 1)
+		{
+			fname = candidates1collected[0];
+		}
+		else
+		{
+			fname = candidates1collected[rnd.NextInt(candidates1collected.size())];			
+		}	
+	}
 
     pxd::proto::FighterType fighterType;
     const auto& fighterTypes = cfg->fightertype();

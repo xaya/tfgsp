@@ -148,9 +148,7 @@ protected:
       entry["out"]["CGr5MT1C5PXUpYhaDQkKoLxP11qJtJxzu8"] = xaya::ChiAmountToJson ((amount / 35) * 5);
       entry["out"]["CeJt7YpW8P9jMeVrVm58nUaoM4fJ4KXMUS"] = xaya::ChiAmountToJson ((amount / 35) * 6);
       entry["out"]["CZhfYfqbMdzeS5ADRR2su12cWD3TQaeBFc"] = xaya::ChiAmountToJson ((amount / 35) * 7);
-	  entry["out"]["CWXvFB9MuGVxCXohBaAStPZmJprqKL7kMm"] = xaya::ChiAmountToJson ((amount / 35) * 8);
-      
-      entry["out"]["CZhfYfqbMdzeS5ADRR2su12cWD3TQaeBFc"] = xaya::ChiAmountToJson (amount);
+	  entry["out"]["CWXvFB9MuGVxCXohBaAStPZmJprqKL7kMm"] = xaya::ChiAmountToJson ((amount / 35) * 7);
     }
 
     MoveProcessor mvProc(db, rnd, ctx);
@@ -347,6 +345,7 @@ TEST_F (XayaPlayersUpdateTests, RecepieInstanceInsufficientResources)
 TEST_F (XayaPlayersUpdateTests, SweetenerSubmitForCooking)
 {
   auto pl = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
+  pl->AddBalance(100);
   pl->GetInventory().SetFungibleCount("Sweetener_R2", 1);
   
   pl->GetInventory().SetFungibleCount("Common_Icing", 10);
@@ -478,186 +477,11 @@ protected:
 
 };
 
-TEST_F (CoinOperationTests, Invalid)
-{
-  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (100);
-
-  Process (R"([
-    {"name": "domob", "move": {"vc": 42}},
-    {"name": "domob", "move": {"vc": []}},
-    {"name": "domob", "move": {"vc": {}}},
-    {"name": "domob", "move": {"vc": {"x": 10}}},
-    {"name": "domob", "move": {"vc": {"b": -1}}},
-    {"name": "domob", "move": {"vc": {"b": 1000000001}}},
-    {"name": "domob", "move": {"vc": {"b": 999999999999999999}}},
-    {"name": "domob", "move": {"vc": {"t": 42}}},
-    {"name": "domob", "move": {"vc": {"t": "other"}}},
-    {"name": "domob", "move": {"vc": {"t": {"other": -1}}}},
-    {"name": "domob", "move": {"vc": {"t": {"other": 1000000001}}}},
-    {"name": "domob", "move": {"vc": {"t": {"other": 1.999999}}}},
-    {"name": "domob", "move": {"vc": {"t": {"other": 101}}}},
-    {"name": "domob", "move": {"vc": {"m": {"x": "foo"}}}, "burnt": 1.0},
-    {"name": "domob", "move": {"vc": {"m": null}}, "burnt": 1.0},
-    {"name": "domob", "move": {"vc": {"m": []}}, "burnt": 1.0},
-    {"name": "domob", "move": {"vc": {}}, "burnt": 1.0}
-  ])");
-
-  ExpectBalances ({{"domob", 249}, {"other", 351}});
-}
-
-TEST_F (CoinOperationTests, ExtraFieldsAreFine)
-{
-  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (100);
-  Process (R"([
-    {"name": "domob", "move": {"vc": {"b": 10, "x": "foo"}}}
-  ])");
-  ExpectBalances ({{"domob", 340}});
-}
-
-TEST_F (CoinOperationTests, BurnAndTransfer)
-{
-  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (100);
-
-  /* Some of the burns and transfers are invalid.  They should just be ignored,
-     without affecting the rest of the operation (valid parts).  */
-  Process (R"([
-    {"name": "domob", "move": {"vc":
-      {
-        "b": 10,
-        "t": {"a": "invalid", "b": -5, "c": 1000, "second": 5, "third": 3}
-      }}
-    },
-    {"name": "domob", "move": {"vc":
-      {
-        "b": 1000,
-        "t": {"third": 2}
-      }}
-    },
-    {"name": "second", "move": {"vc": {"b": 1}}}
-  ])");
-
-  ExpectBalances ({
-    {"domob", 330},
-    {"second", 254},
-    {"third", 255},
-  });
-}
-
-TEST_F (CoinOperationTests, BurnAll)
-{
-  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (100);
-  Process (R"([
-    {"name": "domob", "move": {"vc": {"b": 100}}}
-  ])");
-  ExpectBalances ({{"domob", 250}});
-}
-
-TEST_F (CoinOperationTests, TransferAll)
-{
-  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (100);
-  Process (R"([
-    {"name": "domob", "move": {"vc": {"t": {"other": 100}}}}
-  ])");
-  ExpectBalances ({{"domob", 250}, {"other", 350}});
-}
-
-TEST_F (CoinOperationTests, SelfTransfer)
-{
-  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (100);
-  Process (R"([
-    {"name": "domob", "move": {"vc": {"t": {"domob": 90, "other": 20}}}}
-  ])");
-  ExpectBalances ({{"domob", 330}, {"other", 270}});
-}
-
-TEST_F (CoinOperationTests, Minting)
-{
-  Process (R"([
-    {"name": "domob", "move": {"a": {"x": 42, "init": {"address": "CGUpAcjsb6MDktSYg8yRDxDutr7FhWtdWC"}}}}
-  ])");
-  
-  UpdateState ("[]");
-
-  Process (R"([
-    {"name": "domob", "move": {"vc": {"m": {}}}, "burnt": 1000000},
-    {"name": "andy", "move": {"vc": {"m": {}}}, "burnt": 2.00019999}
-  ])");
-
-  ExpectBalances ({{"domob", 10'000'000'250}});
-
-  MoneySupply ms(db);
-  EXPECT_EQ (ms.Get ("burnsale"), 10'000'010'000);
-}
-
-TEST_F (CoinOperationTests, BurnsaleBalance)
-{
-  Process (R"([
-    {"name": "domob", "move": {"vc": {"m": {}}}, "burnt": 0.1},
-    {"name": "domob", "move": {"vc": {"b": 10}}, "burnt": 1}
-  ])");
-
-  ExpectBalances ({{"domob", 1240}});
-  EXPECT_EQ (xayaplayers.GetByName ("domob", ctx.RoConfig())->GetProto ().burnsale_balance (),
-             1'000);
-}
-
-TEST_F (CoinOperationTests, MintBeforeBurnBeforeTransfer)
-{
-  Process (R"([
-    {"name": "domob", "burnt": 0.01, "move": {"vc":
-      {
-        "m": {},
-        "b": 90,
-        "t": {"other": 20}
-      }}
-    }
-  ])");
-
-  ExpectBalances ({
-    {"domob", 240},
-    {"other", 270},
-  });
-
-  Process (R"([
-    {"name": "domob", "burnt": 0.01, "move": {"vc":
-      {
-        "m": {},
-        "t": {"other": 20}
-      }}
-    }
-  ])");
-
-  ExpectBalances ({
-    {"domob", 320},
-    {"other", 290},
-  });
-
-  MoneySupply ms(db);
-  EXPECT_EQ (ms.Get ("burnsale"), 200);
-}
-
-TEST_F (CoinOperationTests, TransferOrder)
-{
-  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (100);
-
-  Process (R"([
-    {"name": "domob", "move": {"vc":
-      {
-        "t": {"z": 10, "a": 101, "middle": 99}
-      }}
-    }
-  ])");
-
-  ExpectBalances ({
-    {"domob", 140},
-    {"a", 351},
-    {"middle", 349},
-    {"z", 260},
-  });
-}
-
 TEST_F (CoinOperationTests, PutFighterForSaleAndThenBuy)
 {
+  proto::ConfigData& cfg = const_cast <proto::ConfigData&>(*ctx.RoConfig());
+  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (250 + cfg.params().starting_crystals());  
+	
   Process (R"([
     {"name": "domob", "move": {"a": {"x": 42, "init": {"address": "CGUpAcjsb6MDktSYg8yRDxDutr7FhWtdWC"}}}}
   ])");
@@ -686,7 +510,7 @@ TEST_F (CoinOperationTests, PutFighterForSaleAndThenBuy)
   EXPECT_EQ (ft->GetProto().exchangeprice(), 500);
   ft.reset();
   
-  ExpectBalances ({{"domob", 240}});
+  ExpectBalances ({{"domob", 240  + cfg.params().starting_crystals()}});
   
   Process (R"([
     {"name": "andy", "move": {"a": {"x": 42, "init": {"address": "psss"}}}}
@@ -719,6 +543,9 @@ TEST_F (CoinOperationTests, PutFighterForSaleAndThenBuy)
 
 TEST_F (CoinOperationTests, PutFighterForSaleAndThenRemove)
 {
+  proto::ConfigData& cfg = const_cast <proto::ConfigData&>(*ctx.RoConfig());
+  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (250 + cfg.params().starting_crystals()); 	
+	
   Process (R"([
     {"name": "domob", "move": {"a": {"x": 42, "init": {"address": "CGUpAcjsb6MDktSYg8yRDxDutr7FhWtdWC"}}}}
   ])");
@@ -744,7 +571,7 @@ TEST_F (CoinOperationTests, PutFighterForSaleAndThenRemove)
   EXPECT_EQ (ft->GetProto().exchangeprice(), 500);
   ft.reset();
   
-  ExpectBalances ({{"domob", 240}});
+  ExpectBalances ({{"domob", 240  + cfg.params().starting_crystals()}});
 
   Process (R"([
     {"name": "domob", "move": {"f": {"r": {"fid": 4}}}}
@@ -759,6 +586,9 @@ TEST_F (CoinOperationTests, PutFighterForSaleAndThenRemove)
 
 TEST_F (CoinOperationTests, PutFighterForSaleCrazyPrices)
 {
+  proto::ConfigData& cfg = const_cast <proto::ConfigData&>(*ctx.RoConfig());
+  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (250 + cfg.params().starting_crystals()); 	
+  
   Process (R"([
     {"name": "domob", "move": {"a": {"x": 42, "init": {"address": "CGUpAcjsb6MDktSYg8yRDxDutr7FhWtdWC"}}}}
   ])");
@@ -783,11 +613,14 @@ TEST_F (CoinOperationTests, PutFighterForSaleCrazyPrices)
   EXPECT_EQ (ft->GetStatus(), pxd::FighterStatus::Available);
   ft.reset();  
   
-  ExpectBalances ({{"domob", 250}});
+  ExpectBalances ({{"domob", 250 + cfg.params().starting_crystals()}});
 }
 
 TEST_F (CoinOperationTests, PurchaseStuff)
 {
+  proto::ConfigData& cfg = const_cast <proto::ConfigData&>(*ctx.RoConfig());
+  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (250 + cfg.params().starting_crystals()); 		
+	
   Process (R"([
     {"name": "domob", "move": {"a": {"x": 42, "init": {"address": "CGUpAcjsb6MDktSYg8yRDxDutr7FhWtdWC"}}}}
   ])");
@@ -802,7 +635,7 @@ TEST_F (CoinOperationTests, PurchaseStuff)
       }
   }])", 0.14 * COIN);
 
-  ExpectBalances ({{"domob", 350}});
+  ExpectBalances ({{"domob", 350 + cfg.params().starting_crystals()}});
 
   Process (R"([
     {"name": "domob", "move": {"pg": "ca3378db-cd54-e514-7ae8-23705781bb9d"}}
@@ -812,7 +645,7 @@ TEST_F (CoinOperationTests, PurchaseStuff)
   EXPECT_EQ (a->GetInventory().GetFungibleCount("Goodie_PressureCooker_1"), 3);
   a.reset();
   
-  ExpectBalances ({{"domob", 250}});
+  ExpectBalances ({{"domob", 250 + cfg.params().starting_crystals()}});
   
   ProcessWithDevPayment (R"([{
     "name": "domob",
@@ -830,13 +663,13 @@ TEST_F (CoinOperationTests, PurchaseStuff)
       }
   }])", 0.14 * COIN);
 
-  ExpectBalances ({{"domob", 450}});
+  ExpectBalances ({{"domob", 450 + cfg.params().starting_crystals()}});
   
     Process (R"([
     {"name": "domob", "move": {"pgb": "645a9411-d8f1-3e24-aa12-f3f79665dca2"}}
   ])");
   
-  ExpectBalances ({{"domob", 275}});
+  ExpectBalances ({{"domob", 275 + cfg.params().starting_crystals()}});
   
   a = xayaplayers.GetByName ("domob", ctx.RoConfig());
   EXPECT_EQ (a->GetInventory().GetFungibleCount("Goodie_PressureCooker_1"), 6);
@@ -847,7 +680,7 @@ TEST_F (CoinOperationTests, PurchaseStuff)
     {"name": "domob", "move": {"ps": "36adece2-8ed9-3114-db6e-24fa8c494fa5"}}
   ])");  
   
-  ExpectBalances ({{"domob", 225}});
+  ExpectBalances ({{"domob", 225 + cfg.params().starting_crystals()}});
   
   a = xayaplayers.GetByName ("domob", ctx.RoConfig());
   EXPECT_EQ (a->GetInventory().GetFungibleCount("Goodie_PressureCooker_1"), 6);
@@ -859,7 +692,7 @@ TEST_F (CoinOperationTests, PurchaseStuff)
     {"name": "domob", "move": {"ps": "36adece2-8ed9-3114-db6e-24fa8c494fa5,2"}}
   ])"); 
 
-  ExpectBalances ({{"domob", 125}});  
+  ExpectBalances ({{"domob", 125 + cfg.params().starting_crystals()}});  
   
   a = xayaplayers.GetByName ("domob", ctx.RoConfig());
   EXPECT_EQ (a->GetInventory().GetFungibleCount("Goodie_PressureCooker_1"), 6);
@@ -868,8 +701,138 @@ TEST_F (CoinOperationTests, PurchaseStuff)
   a.reset();    
 }
 
+TEST_F (CoinOperationTests, RRNameProperly)
+{
+  Process (R"([
+    {"name": "domob", "move": {"a": {"x": 42, "init": {"address": "CGUpAcjsb6MDktSYg8yRDxDutr7FhWtdWC"}}}}
+  ])");
+ 
+  ctx.SetTimestamp(1000);
+ 
+  UpdateState ("[]");
+  
+  auto ft = tbl3.GetById(4, ctx.RoConfig());
+  ASSERT_TRUE (ft != nullptr);
+  ft->MutableProto().set_isaccountbound(false);
+  std::string fighterName = ft->GetProto().name();
+  ft.reset();  
+  
+  ProcessWithDevPayment (R"([{
+    "name": "domob",
+    "move":
+      {
+        "nr": 4
+      }
+  }])", 0.14 * COIN);
+
+  UpdateState ("[]");
+
+  ft = tbl3.GetById(4, ctx.RoConfig());
+  EXPECT_NE(fighterName, ft->GetProto().name());
+  fighterName = ft->GetProto().name();
+  ft.reset(); 
+  
+  ProcessWithDevPayment (R"([{
+    "name": "domob",
+    "move":
+      {
+        "nr": 4
+      }
+  }])", 0.14 * COIN);
+
+  UpdateState ("[]");  
+  
+  ft = tbl3.GetById(4, ctx.RoConfig());
+  EXPECT_EQ(fighterName, ft->GetProto().name());
+  ft.reset();   
+}
+
+TEST_F (CoinOperationTests, BuyCrustalAndThenRerollNameProperly)
+{
+  proto::ConfigData& cfg = const_cast <proto::ConfigData&>(*ctx.RoConfig());
+  
+  Process (R"([
+    {"name": "domob", "move": {"a": {"x": 42, "init": {"address": "CGUpAcjsb6MDktSYg8yRDxDutr7FhWtdWC"}}}}
+  ])");
+ 
+  ctx.SetTimestamp(1000);
+ 
+  UpdateState ("[]");
+  
+  auto ft = tbl3.GetById(4, ctx.RoConfig());
+  ASSERT_TRUE (ft != nullptr);
+  ft->MutableProto().set_isaccountbound(false);
+  std::string fighterName = ft->GetProto().name();
+  ft.reset();  
+  
+ ProcessWithDevPayment (R"([{
+    "name": "domob",
+    "move":
+      {
+        "pc": "T1"
+      }
+  }])", 0.14 * COIN);
+  
+  ProcessWithDevPayment (R"([{
+    "name": "domob",
+    "move":
+      {
+        "pc": "T1"
+      }
+  }])", 0.14 * COIN);    
+  
+  ProcessWithDevPayment (R"([{
+    "name": "domob",
+    "move":
+      {
+        "nr": 4
+      }
+  }])", 0.35 * COIN);
+
+  UpdateState ("[]");
+
+  ft = tbl3.GetById(4, ctx.RoConfig());
+  EXPECT_NE(fighterName, ft->GetProto().name());
+  ft.reset(); 
+  
+   ExpectBalances ({{"domob", 200 + cfg.params().starting_crystals()}});
+}
+
+TEST_F (CoinOperationTests, RerollNameFailsAsNoFunds)
+{
+  Process (R"([
+    {"name": "domob", "move": {"a": {"x": 42, "init": {"address": "CGUpAcjsb6MDktSYg8yRDxDutr7FhWtdWC"}}}}
+  ])");
+ 
+  ctx.SetTimestamp(1000);
+ 
+  UpdateState ("[]");
+  
+  auto ft = tbl3.GetById(4, ctx.RoConfig());
+  ASSERT_TRUE (ft != nullptr);
+  ft->MutableProto().set_isaccountbound(false);
+  std::string fighterName = ft->GetProto().name();
+  ft.reset();  
+  
+  ProcessWithDevPayment (R"([{
+    "name": "domob",
+    "move":
+      {
+        "nr": 4
+      }
+  }])", 0.11 * COIN);
+
+  UpdateState ("[]");
+
+  ft = tbl3.GetById(4, ctx.RoConfig());
+  EXPECT_EQ(fighterName, ft->GetProto().name());
+  ft.reset(); 
+}
+
 TEST_F (CoinOperationTests, PurchaseCrystalsWrongData)
 {
+  proto::ConfigData& cfg = const_cast <proto::ConfigData&>(*ctx.RoConfig());
+	
   Process (R"([
     {"name": "domob", "move": {"a": {"x": 42, "init": {"address": "CGUpAcjsb6MDktSYg8yRDxDutr7FhWtdWC"}}}}
   ])");
@@ -884,11 +847,13 @@ TEST_F (CoinOperationTests, PurchaseCrystalsWrongData)
       }
   }])", 0.14 * COIN);
 
-  ExpectBalances ({{"domob", 250}});
+  ExpectBalances ({{"domob", 0 + cfg.params().starting_crystals()}});
 }
 
 TEST_F (CoinOperationTests, PurchaseCrystalsInsufficientCoin)
 {
+  proto::ConfigData& cfg = const_cast <proto::ConfigData&>(*ctx.RoConfig());
+  
   Process (R"([
     {"name": "domob", "move": {"a": {"x": 42, "init": {"address": "CGUpAcjsb6MDktSYg8yRDxDutr7FhWtdWC"}}}}
   ])");
@@ -903,11 +868,13 @@ TEST_F (CoinOperationTests, PurchaseCrystalsInsufficientCoin)
       }
   }])", 0.28 * COIN);
 
-  ExpectBalances ({{"domob", 250}});
+  ExpectBalances ({{"domob", 0 + cfg.params().starting_crystals()}});
 }
 
 TEST_F (CoinOperationTests, PurchaseCrystalsTwiceInARow)
 {
+  proto::ConfigData& cfg = const_cast <proto::ConfigData&>(*ctx.RoConfig());
+  
   Process (R"([
     {"name": "domob", "move": {"a": {"x": 42, "init": {"address": "CGUpAcjsb6MDktSYg8yRDxDutr7FhWtdWC"}}}}
   ])");
@@ -930,7 +897,7 @@ TEST_F (CoinOperationTests, PurchaseCrystalsTwiceInARow)
       }
   }])", 0.14 * COIN);  
 
-  ExpectBalances ({{"domob", 450}});
+  ExpectBalances ({{"domob", 200 + cfg.params().starting_crystals()}});
 }
 
 /* ************************************************************************** */
@@ -951,28 +918,6 @@ protected:
   }
 
 };
-
-TEST_F (GameStartTests, Before)
-{
-  ctx.SetHeight (99);
-  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (100);
-
-  Process (R"([
-    {"name": "andy", "move": {"vc": {"m": {}}}, "burnt": 1},
-    {"name": "domob", "move": {"vc": {"b": 10}}},
-    {"name": "domob", "move": {"vc": {"t": {"daniel": 5}}}},
-    {"name": "domob", "move": {"a": {"init": {"adress": "eeeee"}}}}
-  ])");
-
-  ExpectBalances ({
-    {"domob", 335},
-    {"daniel", 255},
-    {"andy", 10'250},
-  });
-}
-
-
-
 /* ************************************************************************** */
 
 } // anonymous namespace

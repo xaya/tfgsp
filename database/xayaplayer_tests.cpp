@@ -75,7 +75,7 @@ TEST_F (XayaPlayerTests, DefaultData)
   EXPECT_EQ (a->GetName (), "foobar");
 
   EXPECT_EQ (a->GetRole (), PlayerRole::INVALID);
-  EXPECT_EQ (a->GetBalance (), 250);
+  EXPECT_EQ (a->GetBalance (), 0);
 }
 
 TEST_F (XayaPlayerTests, UpdateFields)
@@ -105,9 +105,9 @@ TEST_F (XayaPlayerTests, Balance)
   a.reset ();
 
   a = tbl.GetByName ("foobar", *cfg);
-  EXPECT_EQ (a->GetBalance (), 280);
+  EXPECT_EQ (a->GetBalance (), 30);
   a->AddBalance (-30);
-  EXPECT_EQ (a->GetBalance (), 250);
+  EXPECT_EQ (a->GetBalance (), 0);
   a.reset ();
 }
 

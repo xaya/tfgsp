@@ -13,7 +13,7 @@ params:
   
     alms: 0.15
   
-    starting_crystals: 250
+    starting_crystals: 0
   
     required_candy_per_vove: 20
   

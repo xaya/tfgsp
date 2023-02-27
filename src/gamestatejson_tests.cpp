@@ -150,7 +150,7 @@ TEST_F (XayaPlayersJsonTests, UninitialisedBalance)
                 {
                         "balance" :
                         {
-                                "available" : 292
+                                "available" : 42
                         },
                         "inventory" :
                         {
@@ -176,7 +176,7 @@ TEST_F (XayaPlayersJsonTests, UninitialisedBalance)
                 {
                         "balance" :
                         {
-                                "available" : 250
+                                "available" : 0
                         },
                         "inventory" :
                         {
@@ -581,7 +581,7 @@ TEST_F (XayaPlayersJsonTests, ExpeditionInstance)
 			"address" : "",
 			"balance" : 
 			{
-				"available" : 250
+				"available" : 0
 			},
 			"fighteraverage" : 477,
 			"inventory" : 

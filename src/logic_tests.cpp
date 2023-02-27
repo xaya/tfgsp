@@ -191,6 +191,8 @@ using ValidateStateTests = PXLogicTests;
 
 TEST_F (ValidateStateTests, RecepieInstanceFullCycleTest)
 {
+  proto::ConfigData& cfg = const_cast <proto::ConfigData&>(*ctx.RoConfig());
+  
   xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (100);
    
   auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
@@ -219,7 +221,7 @@ TEST_F (ValidateStateTests, RecepieInstanceFullCycleTest)
   EXPECT_EQ (a->GetOngoingsSize (), 0);
   EXPECT_EQ (a->CollectInventoryFighters(ctx.RoConfig()).size(), 3);
   
-  EXPECT_EQ (a->GetBalance (), 335);
+  EXPECT_EQ (a->GetBalance (), 85 + cfg.params().starting_crystals());
   
   auto r = tbl2.GetById(1); 
   EXPECT_EQ (r->GetProto().name(), "First Recipe");
@@ -425,6 +427,8 @@ TEST_F (ValidateStateTests, EnterLeaveSpecialCompetitionTest)
 
 TEST_F (ValidateStateTests, RecepieWithApplicableGoodieTest)
 {
+  proto::ConfigData& cfg = const_cast <proto::ConfigData&>(*ctx.RoConfig());
+  
   auto a = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
   a->AddBalance (100);
   
@@ -460,7 +464,7 @@ TEST_F (ValidateStateTests, RecepieWithApplicableGoodieTest)
   EXPECT_EQ (a->GetOngoingsSize (), 0);
   EXPECT_EQ (a->CollectInventoryFighters(ctx.RoConfig()).size(), 3);
   
-  EXPECT_EQ (a->GetBalance (), 335);
+  EXPECT_EQ (a->GetBalance (), 85 + cfg.params().starting_crystals());
   
   auto r = tbl2.GetById(2); 
   EXPECT_EQ (r->GetProto().name(), "Second Recipe");
@@ -471,9 +475,10 @@ TEST_F (ValidateStateTests, RecepieWithApplicableGoodieTest)
 
 TEST_F (ValidateStateTests, RecepieInstanceRevertIfFullRoster)
 {
+  proto::ConfigData& cfg = const_cast <proto::ConfigData&>(*ctx.RoConfig());
+  
   xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (100);
    
-  proto::ConfigData& cfg = const_cast <proto::ConfigData&>(*ctx.RoConfig());
   cfg.mutable_params()->set_max_fighter_inventory_amount(2); 
   
   auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
@@ -497,7 +502,7 @@ TEST_F (ValidateStateTests, RecepieInstanceRevertIfFullRoster)
   a = xayaplayers.GetByName ("domob", ctx.RoConfig());
   EXPECT_EQ (a->CollectInventoryFighters(ctx.RoConfig()).size(), 2);
   
-  EXPECT_EQ (a->GetBalance (), 350);
+  EXPECT_EQ (a->GetBalance (), 100 + cfg.params().starting_crystals());
   
   auto r0 = tbl2.GetById(1); 
   EXPECT_EQ (r0->GetProto().name(), "First Recipe");
@@ -590,11 +595,13 @@ TEST_F (ValidateStateTests, GeneratedRecipeMakeSureItWorks)
   EXPECT_EQ (r->GetProto().authoredid(), "generated");
   
   EXPECT_EQ (r->GetProto().moves_size(), 3);
-  EXPECT_EQ (r->GetProto().requiredcandy_size(), 3);
+  EXPECT_EQ (r->GetProto().requiredcandy_size(), 2);
 } 
 
 TEST_F (ValidateStateTests, RecepieInstanceFailWithMissingIngridients)
 {
+   proto::ConfigData& cfg = const_cast <proto::ConfigData&>(*ctx.RoConfig());
+   
    xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (100);
    auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
 
@@ -620,7 +627,7 @@ TEST_F (ValidateStateTests, RecepieInstanceFailWithMissingIngridients)
   a = xayaplayers.GetByName ("domob", ctx.RoConfig());
 
   
-  EXPECT_EQ (a->GetBalance (), 350);
+  EXPECT_EQ (a->GetBalance (), 100 + cfg.params().starting_crystals());
   
   auto r = tbl2.GetById(1); 
   EXPECT_EQ (r->GetProto().name(), "First Recipe");
@@ -634,6 +641,7 @@ TEST_F (ValidateStateTests, RecepieInstanceFailWithMissingIngridients)
 TEST_F (ValidateStateTests, SweetenerCookAndProperRewardsClaimed)
 {
   auto pl = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
+  pl->AddBalance(100);
   pl->GetInventory().SetFungibleCount("Sweetener_R2", 1);
   
   pl->GetInventory().SetFungibleCount("Common_Icing", 10);
@@ -947,15 +955,6 @@ TEST_F (ValidateStateTests, ClaimRewardsWhenFullSlotsEmptySomeAndFinishClaiming)
   ])");  
 
   EXPECT_EQ (tbl4.CountForOwner("domob"), 0);
-  
-  /* // todo refactor later, to make sure wrong rewards stays, but is not deleted as it nowma
-  cfg.mutable_params()->set_max_recipe_inventory_amount(10);  
-
-  Process (R"([
-    {"name": "domob", "move": {"exp": {"c": {"eid": "c064e7f7-acbf-4f74-fab8-cccd7b2d4004"}}}}
-  ])");    
-  
-  EXPECT_EQ (tbl4.CountForOwner("domob"), 0);*/
 }
 
 TEST_F (ValidateStateTests, ExpeditionInstanceBusyFighterNotSending)
@@ -1306,6 +1305,7 @@ TEST_F (ValidateStateTests, FighterSacrifice)
 TEST_F (ValidateStateTests, RatingSweetnessUpgrades)
 {
   auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
+  xp->AddBalance(100);
   auto ft = tbl3.CreateNew ("domob", 2, ctx.RoConfig(), rnd);
   int ftA1idx = ft->GetId();
   ft.reset();
@@ -1392,7 +1392,7 @@ TEST_F (ValidateStateTests, RatingSweetnessUpgrades)
   }
   
   ftA = tbl3.GetById(ftA1id, ctx.RoConfig());
-  EXPECT_EQ (ftA->GetProto().rating(), 1255);
+  EXPECT_EQ (ftA->GetProto().rating(), 1237);
   EXPECT_EQ (ftA->GetProto().sweetness(), (int)pxd::Sweetness::Semi_Sweet);
   ftA.reset();  
 }

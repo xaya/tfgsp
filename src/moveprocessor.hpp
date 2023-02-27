@@ -141,6 +141,11 @@ protected:
    * Tries to handle a move that purchases crystals
    */                       
   void TryCrystalPurchase (const std::string& name, const Json::Value& mv, std::map<std::string, Amount>& paidToCrownHolders); 
+  
+  /**
+   * Tries to purchase a name reroll for the treat
+   */                       
+  void TryNameRerollPurchase (const std::string& name, const Json::Value& mv, std::map<std::string, Amount>& paidToCrownHolders, const RoConfig& cfg, xaya::Random& rnd);   
 
   /**
    * Tries to handle a move that purchases goody
@@ -163,6 +168,11 @@ protected:
    */      
   bool ParseCrystalPurchase(const Json::Value& mv, std::string& bundleKeyName, Amount& cost, Amount& crystalAmount, const std::string& name, const Amount& paidToDev);
   
+  /**
+   * Tries to parse a move that rerolls name with a certain probability once per treat
+   */      
+  bool ParseNameRerollPurchase(const Json::Value& mv, int64_t& treatId, Amount& cost, const std::string& name, const Amount& paidToDev);
+    
   /**
    * Tries to parse a move that purchases goody
    */       
