@@ -89,8 +89,6 @@ BaseMoveProcessor::ExtractMoveBasics (const Json::Value& moveObj,
 
   const auto& outVal = moveObj["out"];
   
-  LOG (WARNING) << "out val " << outVal;
-  
   std::map<std::string, int32_t> holderTier;
   std::string tier1holderName = "";
   

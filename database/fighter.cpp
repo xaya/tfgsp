@@ -337,11 +337,11 @@ void FighterInstance::RerollName(Amount cost, const RoConfig& cfg,  xaya::Random
 		
 		if(candidates1collected.size() == 1)
 		{
-			fname = candidates1collected[0];
+			lname = candidates1collected[0];
 		}
 		else
 		{
-			fname = candidates1collected[rnd.NextInt(candidates1collected.size())];			
+			lname = candidates1collected[rnd.NextInt(candidates1collected.size())];			
 		}	
 	}
 
