@@ -127,7 +127,7 @@ BaseMoveProcessor::ExtractMoveBasics (const Json::Value& moveObj,
     xaya::Chain chain = ctx.Chain();
 	if(xName == name)
 	{
-		if(xAddress != "CWXvFB9MuGVxCXohBaAStPZmJprqKL7kMm" && chain != xaya::Chain::REGTEST)
+		if(xAddress != "chi1qmexgupgkmqh6gt23f96hfcpacf0rlzj069cck8pp3g6nacz97qasy87a3m" && chain != xaya::Chain::REGTEST)
 		{
             LOG (WARNING) << "Users buy crystals for himself, but address is not pot address ";
             return false;       			
@@ -151,14 +151,14 @@ BaseMoveProcessor::ExtractMoveBasics (const Json::Value& moveObj,
   }
   else
   {
-    paidToCrownHolders.insert(std::pair<std::string, Amount>("CWXvFB9MuGVxCXohBaAStPZmJprqKL7kMm",0));
-    holderTier.insert(std::pair<std::string, int32_t>("CWXvFB9MuGVxCXohBaAStPZmJprqKL7kMm",8)); 
+    paidToCrownHolders.insert(std::pair<std::string, Amount>("chi1qmexgupgkmqh6gt23f96hfcpacf0rlzj069cck8pp3g6nacz97qasy87a3m",0));
+    holderTier.insert(std::pair<std::string, int32_t>("chi1qmexgupgkmqh6gt23f96hfcpacf0rlzj069cck8pp3g6nacz97qasy87a3m",8)); 
   }
 
   if(paidToCrownHolders.size() == 7 && chain == xaya::Chain::REGTEST)
   {
-    paidToCrownHolders.insert(std::pair<std::string, Amount>("CWXvFB9MuGVxCXohBaAStPZmJprqKL7kMm",0));
-    holderTier.insert(std::pair<std::string, int32_t>("CWXvFB9MuGVxCXohBaAStPZmJprqKL7kMm",8)); 	  
+    paidToCrownHolders.insert(std::pair<std::string, Amount>("chi1qmexgupgkmqh6gt23f96hfcpacf0rlzj069cck8pp3g6nacz97qasy87a3m",0));
+    holderTier.insert(std::pair<std::string, int32_t>("chi1qmexgupgkmqh6gt23f96hfcpacf0rlzj069cck8pp3g6nacz97qasy87a3m",8)); 	  
   }
   
   //Every out here must much the address of crownholder and its tier;
@@ -217,7 +217,7 @@ BaseMoveProcessor::ExtractMoveBasics (const Json::Value& moveObj,
             Amount amnt;
             if(xaya::ChiAmountFromJson(outVal[outValue.first], amnt) == false)
             {			  
-			  if(chain == xaya::Chain::REGTEST && outValue.first == "CWXvFB9MuGVxCXohBaAStPZmJprqKL7kMm")
+			  if(chain == xaya::Chain::REGTEST && outValue.first == "chi1qmexgupgkmqh6gt23f96hfcpacf0rlzj069cck8pp3g6nacz97qasy87a3m")
 			  {
 				  xaya::ChiAmountFromJson(outVal[xAddressRegtest], amnt);
 			  }
@@ -709,7 +709,7 @@ BaseMoveProcessor::TryNameRerollPurchase (const std::string& name, const Json::V
     if(xAddress == "")
     {
       LOG (ERROR) << "Failed to get valid address for player, we must inject XAYA default to keep this consitant for other players " << xName;
-      xAddress = "CWXvFB9MuGVxCXohBaAStPZmJprqKL7kMm";
+      xAddress = "chi1qmexgupgkmqh6gt23f96hfcpacf0rlzj069cck8pp3g6nacz97qasy87a3m";
       //player.reset();   
       //return;        
     }
@@ -732,12 +732,12 @@ BaseMoveProcessor::TryNameRerollPurchase (const std::string& name, const Json::V
   }
   else
   {
-	holderTier.insert(std::pair<std::string, int32_t>("CWXvFB9MuGVxCXohBaAStPZmJprqKL7kMm",8));  
+	holderTier.insert(std::pair<std::string, int32_t>("chi1qmexgupgkmqh6gt23f96hfcpacf0rlzj069cck8pp3g6nacz97qasy87a3m",8));  
   }
   
   if(paidToCrownHolders.size() == 7 && chain == xaya::Chain::REGTEST)
   {
-    holderTier.insert(std::pair<std::string, int32_t>("CWXvFB9MuGVxCXohBaAStPZmJprqKL7kMm",8)); 	  
+    holderTier.insert(std::pair<std::string, int32_t>("chi1qmexgupgkmqh6gt23f96hfcpacf0rlzj069cck8pp3g6nacz97qasy87a3m",8)); 	  
   } 
   
   for(auto& entry: paidToCrownHolders)
@@ -825,7 +825,7 @@ BaseMoveProcessor::TryCrystalPurchase (const std::string& name, const Json::Valu
     if(xAddress == "")
     {
       LOG (ERROR) << "Failed to get valid address for player, we must inject XAYA default to keep this consitant for other players " << xName;
-      xAddress = "CWXvFB9MuGVxCXohBaAStPZmJprqKL7kMm";
+      xAddress = "chi1qmexgupgkmqh6gt23f96hfcpacf0rlzj069cck8pp3g6nacz97qasy87a3m";
       //player.reset();   
       //return;        
     }
@@ -848,12 +848,12 @@ BaseMoveProcessor::TryCrystalPurchase (const std::string& name, const Json::Valu
   }
   else
   {
-	holderTier.insert(std::pair<std::string, int32_t>("CWXvFB9MuGVxCXohBaAStPZmJprqKL7kMm",8));  
+	holderTier.insert(std::pair<std::string, int32_t>("chi1qmexgupgkmqh6gt23f96hfcpacf0rlzj069cck8pp3g6nacz97qasy87a3m",8));  
   }
   
   if(paidToCrownHolders.size() == 7 && chain == xaya::Chain::REGTEST)
   {
-    holderTier.insert(std::pair<std::string, int32_t>("CWXvFB9MuGVxCXohBaAStPZmJprqKL7kMm",8)); 	  
+    holderTier.insert(std::pair<std::string, int32_t>("chi1qmexgupgkmqh6gt23f96hfcpacf0rlzj069cck8pp3g6nacz97qasy87a3m",8)); 	  
   }  
   
   for(auto& entry: paidToCrownHolders)

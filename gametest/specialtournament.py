@@ -45,6 +45,7 @@ class SpecialTournamentTest (PXTest):
     self.splitPremine ()
     
     names = ["andy", "evilandy"]
+    names2 = ["andy", "evilandy", "xayatf1", "xayatf2", "xayatf3", "xayatf4", "xayatf5", "xayatf6", "xayatf7"]
     #for x in range(150):
         #names.append("testft"+str(x)) // too long, below, we will do SQL data injection when testing deeply, but lets keep this in case we need to rebuild full sql data
     
@@ -88,9 +89,10 @@ class SpecialTournamentTest (PXTest):
     amnt7 = fraction * 7
     amnt8 = fraction * 7
     
-    for name in names:
-        add0 = self.rpc.xaya.getnewaddress ()
-        self.initAccount (name, add0)
+    for name in names2:
+        add0 = self.rpc.xaya.getnewaddress ()     
+        if name == "andy" or name == "evilandy":
+            self.initAccount (name, add0)
         self.generate (1)
         self.syncGame ()           
         self.sendMove (name, {"pc": "T1"}, {"sendCoins": {add1: amnt1,add2: amnt2,add3: amnt3,add4: amnt4,add5: amnt5,add6: amnt6,add7: amnt7, add_dev: amnt8}})
@@ -118,6 +120,11 @@ class SpecialTournamentTest (PXTest):
     # Sanity check first
     currentState = self.getCustomState ("gamestate", "getcurrentstate")
     allFighters = currentState["fighters"]
+    
+    allPlayers = currentState["xayaplayers"]
+    for player in allPlayers:
+        self.mainLogger.info ("Checking balance for " + player["name"])
+        self.assertEqual(player["balance"]["available"], 400)
     
     playerOwnedFighters = {}
     playerOwnedFightersIDS = {}

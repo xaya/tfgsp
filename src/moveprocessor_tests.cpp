@@ -148,7 +148,7 @@ protected:
       entry["out"]["CGr5MT1C5PXUpYhaDQkKoLxP11qJtJxzu8"] = xaya::ChiAmountToJson ((amount / 35) * 5);
       entry["out"]["CeJt7YpW8P9jMeVrVm58nUaoM4fJ4KXMUS"] = xaya::ChiAmountToJson ((amount / 35) * 6);
       entry["out"]["CZhfYfqbMdzeS5ADRR2su12cWD3TQaeBFc"] = xaya::ChiAmountToJson ((amount / 35) * 7);
-	  entry["out"]["CWXvFB9MuGVxCXohBaAStPZmJprqKL7kMm"] = xaya::ChiAmountToJson ((amount / 35) * 7);
+	  entry["out"]["chi1qmexgupgkmqh6gt23f96hfcpacf0rlzj069cck8pp3g6nacz97qasy87a3m"] = xaya::ChiAmountToJson ((amount / 35) * 7);
     }
 
     MoveProcessor mvProc(db, rnd, ctx);
