@@ -1545,6 +1545,7 @@ recepies:
     Duration: 20
     FighterName: "Luke Saltwater the Bronzed"
     FighterType: "c160f7ad-c775-8614-abe2-8ef74e54401f"
+	Moves: "52ea4044-e203-16d4-c90f-8b685ed5e9c9"
     Moves: "8e4753b5-c739-aaf4-ab79-4d333a69cae6"
     Moves: "55cafe03-4a58-0f44-6a27-f9fc6fce881a"
     Moves: "3e76f2fa-072c-5654-dac9-c9b0e4e1643a"

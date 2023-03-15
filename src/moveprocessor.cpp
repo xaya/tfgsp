@@ -3641,7 +3641,21 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
         a.reset();    
         return;
     }
-
+	
+	if(address == "")
+	{
+		a.reset();
+		return;
+	}
+	
+	// Lets allocate early access promised prizes
+	
+	if(name == "DonRinkula" || name == "PandaBoss" || name == "1 John")
+	{
+		auto r0 = recipeTbl.CreateNew(name, "b5850520-cb42-d804-d887-38e4577f62a6", ctx.RoConfig());
+		r0.reset();
+	}
+	
     a->MutableProto().set_address(address.asString());
     a.reset();
     LOG (INFO)
