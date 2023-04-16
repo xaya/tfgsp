@@ -657,6 +657,12 @@ void PXLogic::TickAndResolveOngoings(Database& db, const Context& ctx, xaya::Ran
       
       for (auto it = ongoings.begin(); it != ongoings.end(); it++)
       {
+		  
+		if(it->blocksleft() > 3)
+		{
+		   it->set_blocksleft(3);	
+		}
+		  
         it->set_blocksleft(it->blocksleft() - 1);
       }
       
@@ -1710,6 +1716,13 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
       {
           if((int)tnm->GetInstance().blocksleft() > 0)
           {
+			
+            if(tnm->GetInstance().blocksleft() > 3)
+			{
+				tnm->MutableInstance().set_blocksleft(3);
+			}				
+			  
+			  
             tnm->MutableInstance().set_blocksleft((int)tnm->GetInstance().blocksleft() - 1);
           }
                         

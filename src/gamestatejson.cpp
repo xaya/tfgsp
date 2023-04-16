@@ -627,10 +627,96 @@ GameStateJson::User(const std::string& userName)
   FighterTable tbl2(db);
   Json::Value res2 = ResultsAsArray (tbl2, tbl2.QueryForOwner (userName)); 
   res["fighters"] = res2;  
+  
+  // Becase for ONGOING_COOKING we set recepie owner to "",
+  // here we need to add those additionally, as else they
+  // will be missing from the front-end roster until fighter
+  // is cooked
+  
+  // Also we want to recipes in rewards, because we want to
+  // fetch their info as well for rewards screens
+  
+  std::vector<int> ourRecipesInRewards;
+  
+  RewardsTable tblRewards(db);
+  auto ourRewards = tblRewards.QueryForOwner(userName);
+  bool stepLoopRewards = ourRewards.Step ();
+  while (stepLoopRewards)
+  {
+      auto hReward = tblRewards.GetFromResult (ourRewards); 
+	  
+	  if(hReward->GetProto().generatedrecipeid() > 0)
+	  {
+		  ourRecipesInRewards.push_back(hReward->GetProto().generatedrecipeid());
+	  }
+	  
+	  hReward.reset();
+	  stepLoopRewards = ourRewards.Step ();
+  }
+  
+  
+  auto a = xayaplayers.GetByName (userName, ctx.RoConfig ());
+  const auto& pb = a->GetProto ();
+  
+  Json::Value recJsonObj(Json::arrayValue);
+  for(auto& ongoing: pb.ongoings())
+  {
+    if((pxd::OngoingType)ongoing.type() == pxd::OngoingType::COOK_RECIPE)
+    {
+       recJsonObj.append (ongoing.recipeid()); 
+    }
+  }
+  
+  for(auto& ongoing: pb.ongoings())
+  {
+    if((pxd::OngoingType)ongoing.type() == pxd::OngoingType::COOK_SWEETENER)
+    {
+       recJsonObj.append (ongoing.recipeid()); 
+    }
+  }  
+   
+  a.reset();   
+  
+  Json::Value arrAllPotentialRecipes(Json::arrayValue);
+  RecipeInstanceTable tblRecipe(db);
+  auto recipeAllResults =  tblRecipe.QueryAll ();
+  while (recipeAllResults.Step ())
+  {
+      auto h = tblRecipe.GetFromResult (recipeAllResults, ctx.RoConfig ());
+	  
+	  if(h->GetOwner() == userName)
+	  {
+         arrAllPotentialRecipes.append (Convert (*h));
+	  }
+	  else
+	  {
+          int ID = h->GetId();
+		  bool found = false;
+		  for (Json::ArrayIndex i = 0; i < recJsonObj.size(); i++) {
+			  if (recJsonObj[i].isInt() && recJsonObj[i].asInt() == ID) {
+				found = true;
+				break;
+			  }
+		  }		  
+		  
+		  if(found == false)
+		  {
+			   if (std::count(ourRecipesInRewards.begin(), ourRecipesInRewards.end(), ID))
+			   {
+				  found = true;
+			   }
+		  }
+		  
+		  if(found)
+		  {
+			 arrAllPotentialRecipes.append (Convert (*h)); 
+		  }
+	  }
+	  
+	  h.reset();
+  }
 
-  RecipeInstanceTable tbl3(db);
-  Json::Value res3 = ResultsAsArray (tbl3, tbl3.QueryForOwner (userName)); 
-  res["recepies"] = res3;
+  res["recepies"] = arrAllPotentialRecipes;
   
   RewardsTable tbl4(db);
   Json::Value res4 = ResultsAsArray (tbl4, tbl4.QueryForOwner (userName));  
