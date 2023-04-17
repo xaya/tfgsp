@@ -656,64 +656,68 @@ GameStateJson::User(const std::string& userName)
   
   
   auto a = xayaplayers.GetByName (userName, ctx.RoConfig ());
-  const auto& pb = a->GetProto ();
-  
-  Json::Value recJsonObj(Json::arrayValue);
-  for(auto& ongoing: pb.ongoings())
-  {
-    if((pxd::OngoingType)ongoing.type() == pxd::OngoingType::COOK_RECIPE)
-    {
-       recJsonObj.append (ongoing.recipeid()); 
-    }
-  }
-  
-  for(auto& ongoing: pb.ongoings())
-  {
-    if((pxd::OngoingType)ongoing.type() == pxd::OngoingType::COOK_SWEETENER)
-    {
-       recJsonObj.append (ongoing.recipeid()); 
-    }
-  }  
-   
-  a.reset();   
   
   Json::Value arrAllPotentialRecipes(Json::arrayValue);
-  RecipeInstanceTable tblRecipe(db);
-  auto recipeAllResults =  tblRecipe.QueryAll ();
-  while (recipeAllResults.Step ())
+  if(a != nullptr)
   {
-      auto h = tblRecipe.GetFromResult (recipeAllResults, ctx.RoConfig ());
+	  const auto& pb = a->GetProto ();
 	  
-	  if(h->GetOwner() == userName)
+	  Json::Value recJsonObj(Json::arrayValue);
+	  for(auto& ongoing: pb.ongoings())
 	  {
-         arrAllPotentialRecipes.append (Convert (*h));
+		if((pxd::OngoingType)ongoing.type() == pxd::OngoingType::COOK_RECIPE)
+		{
+		   recJsonObj.append (ongoing.recipeid()); 
+		}
 	  }
-	  else
+	  
+	  for(auto& ongoing: pb.ongoings())
 	  {
-          int ID = h->GetId();
-		  bool found = false;
-		  for (Json::ArrayIndex i = 0; i < recJsonObj.size(); i++) {
-			  if (recJsonObj[i].isInt() && recJsonObj[i].asInt() == ID) {
-				found = true;
-				break;
+		if((pxd::OngoingType)ongoing.type() == pxd::OngoingType::COOK_SWEETENER)
+		{
+		   recJsonObj.append (ongoing.recipeid()); 
+		}
+	  }  
+	   
+	  a.reset();   
+	  
+	  RecipeInstanceTable tblRecipe(db);
+	  auto recipeAllResults =  tblRecipe.QueryAll ();
+	  while (recipeAllResults.Step ())
+	  {
+		  auto h = tblRecipe.GetFromResult (recipeAllResults, ctx.RoConfig ());
+		  
+		  if(h->GetOwner() == userName)
+		  {
+			 arrAllPotentialRecipes.append (Convert (*h));
+		  }
+		  else
+		  {
+			  int ID = h->GetId();
+			  bool found = false;
+			  for (Json::ArrayIndex i = 0; i < recJsonObj.size(); i++) {
+				  if (recJsonObj[i].isInt() && recJsonObj[i].asInt() == ID) {
+					found = true;
+					break;
+				  }
+			  }		  
+			  
+			  if(found == false)
+			  {
+				   if (std::count(ourRecipesInRewards.begin(), ourRecipesInRewards.end(), ID))
+				   {
+					  found = true;
+				   }
 			  }
-		  }		  
-		  
-		  if(found == false)
-		  {
-			   if (std::count(ourRecipesInRewards.begin(), ourRecipesInRewards.end(), ID))
-			   {
-				  found = true;
-			   }
+			  
+			  if(found)
+			  {
+				 arrAllPotentialRecipes.append (Convert (*h)); 
+			  }
 		  }
 		  
-		  if(found)
-		  {
-			 arrAllPotentialRecipes.append (Convert (*h)); 
-		  }
+		  h.reset();
 	  }
-	  
-	  h.reset();
   }
 
   res["recepies"] = arrAllPotentialRecipes;
