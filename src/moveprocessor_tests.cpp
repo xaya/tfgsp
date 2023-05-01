@@ -477,6 +477,162 @@ protected:
 
 };
 
+TEST_F (CoinOperationTests, TransfigureWrongValues)
+{
+  proto::ConfigData& cfg = const_cast <proto::ConfigData&>(*ctx.RoConfig());
+  auto a = xayaplayers.CreateNew("domob", ctx.RoConfig(), rnd);
+  a->AddBalance (250 + cfg.params().starting_crystals());  
+
+  
+  a.reset();
+  
+  std::string candyID = "";
+  int32_t fighterID = 0;
+  int32_t recipeID = 0;
+
+  Process (R"([
+    {"name": "domob", "move": {"a": {"x": 42, "init": {"address": "CGUpAcjsb6MDktSYg8yRDxDutr7FhWtdWC"}}}}
+  ])");   
+  
+  // Generate recipes and candies and fighters to feed out needs
+  for (unsigned i = 0; i < 10; ++i)
+  {
+    auto rcpID = pxd::RecipeInstance::Generate(pxd::Quality::Common, ctx.RoConfig(), rnd, db, "");
+    auto r = tbl2.GetById(rcpID);
+	r->SetOwner("domob");
+	r.reset();  
+	
+	tbl3.CreateNew ("domob", rcpID, ctx.RoConfig(), rnd);
+	
+	a = xayaplayers.GetByName("domob", ctx.RoConfig());
+	r = tbl2.GetById(rcpID);
+    for(auto& rC: r->GetProto().requiredcandy())
+    {
+      a->GetInventory().SetFungibleCount(BaseMoveProcessor::GetCandyKeyNameFromID(rC.candytype(), ctx), 100);
+    }
+	r.reset(); 
+	a.reset();
+  }  
+  
+  for (unsigned i = 0; i < 10; ++i)
+  {
+    auto rcpID = pxd::RecipeInstance::Generate(pxd::Quality::Uncommon, ctx.RoConfig(), rnd, db, "");
+    auto r = tbl2.GetById(rcpID);
+	r->SetOwner("domob");
+	r.reset();  
+	
+	tbl3.CreateNew ("domob", rcpID, ctx.RoConfig(), rnd);
+	
+	a = xayaplayers.GetByName("domob", ctx.RoConfig());
+	r = tbl2.GetById(rcpID);
+    for(auto& rC: r->GetProto().requiredcandy())
+    {
+      a->GetInventory().SetFungibleCount(BaseMoveProcessor::GetCandyKeyNameFromID(rC.candytype(), ctx), 100);
+    }
+	r.reset(); 
+	a.reset();
+  }    
+  
+  for (unsigned i = 0; i < 10; ++i)
+  {
+    auto rcpID = pxd::RecipeInstance::Generate(pxd::Quality::Rare, ctx.RoConfig(), rnd, db, "");
+    auto r = tbl2.GetById(rcpID);
+	r->SetOwner("domob");
+	r.reset();  
+	
+	tbl3.CreateNew ("domob", rcpID, ctx.RoConfig(), rnd);
+	
+	a = xayaplayers.GetByName("domob", ctx.RoConfig());
+	r = tbl2.GetById(rcpID);
+    for(auto& rC: r->GetProto().requiredcandy())
+    {
+      a->GetInventory().SetFungibleCount(BaseMoveProcessor::GetCandyKeyNameFromID(rC.candytype(), ctx), 100);
+    }
+	r.reset(); 
+	a.reset();
+  }    
+  
+  for (unsigned i = 0; i < 10; ++i)
+  {
+    auto rcpID = pxd::RecipeInstance::Generate(pxd::Quality::Epic, ctx.RoConfig(), rnd, db, "");
+    auto r = tbl2.GetById(rcpID);
+	r->SetOwner("domob");
+	r.reset();  
+	
+    auto ff = tbl3.CreateNew ("domob", rcpID, ctx.RoConfig(), rnd);
+	fighterID = ff->GetId();
+	ff.reset();	
+	
+	a = xayaplayers.GetByName("domob", ctx.RoConfig());
+	r = tbl2.GetById(rcpID);
+    for(auto& rC: r->GetProto().requiredcandy())
+    {
+      a->GetInventory().SetFungibleCount(BaseMoveProcessor::GetCandyKeyNameFromID(rC.candytype(), ctx), 100);
+	  candyID = BaseMoveProcessor::GetCandyKeyNameFromID(rC.candytype(), ctx);
+    }
+	
+	recipeID =rcpID;
+	
+	r.reset(); 
+	a.reset();
+  }    
+  
+  auto ft = tbl3.GetById(4, ctx.RoConfig());
+  
+  EXPECT_EQ (ft->GetStatus(), pxd::FighterStatus::Available); 
+  
+  Process (R"([
+    {"name": "domob", "move": {"f": {"t": {"fid": 4, "d": 3, "p": 500}}}}
+  ])");
+
+  EXPECT_EQ (ft->GetStatus(), pxd::FighterStatus::Available); 
+
+  Process (R"([
+    {"name": "domob", "move": {"f": {"t": {"fid": 4, "o": 3, "if": 500}}}}
+  ])");
+  
+  EXPECT_EQ (ft->GetStatus(), pxd::FighterStatus::Available); 
+  ft.reset();
+  
+  std::ostringstream sF;
+  sF << fighterID;  
+  std::string sFc(sF.str());
+  
+  std::ostringstream sR;
+  sR << recipeID;    
+  std::string sRc(sR.str());
+  
+  std::ostringstream sC;
+  sC << candyID; 
+  std::string sCc(sC.str());  
+  
+  Process (R"([
+    {"name": "domob", "move": {"f": {"t": {"fid": 4, "o": 3, "if": [)"+sFc+R"(], "ic": [{"a":10, "n":1}], "ir": [)"+sRc+R"(]}}}}
+  ])");  
+  
+  ft = tbl3.GetById(4, ctx.RoConfig());
+  EXPECT_EQ (ft->GetStatus(), pxd::FighterStatus::Available); 
+  ft.reset();
+  
+  
+  Process (R"([
+    {"name": "domob", "move": {"f": {"t": {"fid": 4, "o": 3, "if": [)"+sFc+R"(], "ic": [{"a":5, "n":")"+sCc+R"("}], "ir": [)"+sRc+R"(]}}}}
+  ])");  
+  
+  ft = tbl3.GetById(4, ctx.RoConfig());
+  EXPECT_EQ (ft->GetStatus(), pxd::FighterStatus::Available);  
+  ft.reset();
+  
+  
+  Process (R"([
+    {"name": "domob", "move": {"f": {"t": {"fid": 4, "o": 3, "if": [)"+sFc+R"(], "ic": [{"a":10, "n":")"+sCc+R"("}], "ir": [)"+sRc+R"(]}}}}
+  ])");    
+  
+  ft = tbl3.GetById(4, ctx.RoConfig());
+  EXPECT_EQ (ft->GetStatus(), pxd::FighterStatus::Transfiguring); 
+  ft.reset();
+}
+
 TEST_F (CoinOperationTests, PutFighterForSaleAndThenBuy)
 {
   proto::ConfigData& cfg = const_cast <proto::ConfigData&>(*ctx.RoConfig());

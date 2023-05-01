@@ -81,9 +81,19 @@ public:
   void SetVersion(std::string version);   
   
   /**
+   * Returns queuedata
+   */
+  std::string GetQueueData();  
+  
+  /**
+   * Sets queuedata
+   */
+  void SetQueueData(std::string queuedata);   
+  
+  /**
    * Returns recommended url
    */
-  std::string GetUrl();  
+  std::string GetUrl();    
   
   /**
    * Sets recommended url

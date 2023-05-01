@@ -22,6 +22,9 @@
 #include "context.hpp"
 #include "proto/config.pb.h"
 
+#include <fpm/fixed.hpp>
+#include <fpm/math.hpp>
+
 #include "database/database.hpp"
 #include "database/xayaplayer.hpp"
 #include "database/fighter.hpp"
@@ -216,6 +219,12 @@ protected:
    */       
    
   bool ParseDestroyRecepie(const XayaPlayer& a, const std::string& name, const Json::Value& recepie, std::vector<uint32_t>& recepieIDS);
+  
+  /**
+   * Tries to parse a move that transfiures fighter
+   */       
+   
+  bool ParseTransfigureData(const XayaPlayer& a, const std::string& name, const Json::Value& fighter);
     
   /**
    * Tries to parse a move that collects cooked fighter
@@ -303,6 +312,9 @@ protected:
    */  
   bool InventoryHasItem(const std::string& itemKeyName, const Inventory& inventory, const google::protobuf::uint64 amount);  
   
+  /*Function copypasted from hifghter.hpp, helps in transifuration to resolve armor type*/
+  std::vector<pxd::ArmorType> ArmorTypeFromMoveType(pxd::MoveType moveType);
+  
 public:
 
   /** Utility functions to help converting between authID and keyNames.
@@ -311,6 +323,7 @@ public:
    *  original source */     
   pxd::RecipeInstanceTable::Handle GetRecepieObjectFromID(const uint32_t& ID, const Context& ctx);
   static std::string GetCandyKeyNameFromID(const std::string& authID, const Context& ctx); 
+  static Json::Value EvaluateFuelList(const Json::Value& fightersSubmited, const Json::Value& recipesSubmited, const Json::Value& candiesSubmited, const Json::Value& fightersNew, const Json::Value& recipesNew, const Json::Value& candiesNew, const Json::Value wholeFightersData,  const Json::Value wholeRecipeData, const Json::Value& candylist);
 
   virtual ~BaseMoveProcessor () = default;
 
@@ -395,7 +408,12 @@ private:
    /**
    * Tries to remove the fighter from the exchange sale
    */  
-  void MaybeRemoveFighterFromExchange(const std::string& name, const Json::Value& fighter);      
+  void MaybeRemoveFighterFromExchange(const std::string& name, const Json::Value& fighter);     
+
+   /**
+   * Tries to transifure fighter in necrotorium
+   */  
+  void MaybeTransfigureFighter (const std::string& name, const Json::Value& fighter);   
   
   /**
   * Tries to cook recepie instance, optionally with the fighter attached
@@ -498,8 +516,18 @@ private:
    */
   void TryCoinOperation (const std::string& name, const Json::Value& mv,
                          Amount& burntChi);   
+  /**
+   * Destroys all submited resources
+   */		
+  void DestroyUsedElements(std::unique_ptr<pxd::XayaPlayer>& player, const Json::Value& fighter);	  
                 
 public:
+
+  /**
+   * Evaluates all submited resources and computes
+   * final fuel power out of them
+   */		
+  static fpm::fixed_24_8 CalculateFuelPower(const Json::Value& fighter, const Json::Value& wholeFighterData, const Json::Value& wholeRecipeData, const Json::Value& candylist, bool outputDebug);	
 
   explicit MoveProcessor (Database& d, xaya::Random& r,
                           const Context& c)

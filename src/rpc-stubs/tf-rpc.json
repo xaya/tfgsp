@@ -17,6 +17,21 @@
     "name": "gettournaments",
     "params": ["username"],
     "returns": {}
+  },
+  {
+    "name": "getfueldata",
+    "params": {
+      "fightersSubmited": [],
+	  "recipesSubmited": [],
+      "candiesSubmited": [],
+      "fightersNew": [],
+	  "recipesNew": [],
+      "candiesNew": [],
+      "fighterData": {},
+      "recipeData": {},
+	  "candylist": []
+    },
+    "returns": {}
   },  
   {
     "name": "getexchange",

@@ -33,6 +33,7 @@ struct GlobalDataResult : public Database::ResultType
   RESULT_COLUMN (int64_t, chimultiplier,3);
   RESULT_COLUMN (std::string, version,4);
   RESULT_COLUMN (std::string, url,5);
+  RESULT_COLUMN (std::string, queuedata,6);
 };
 
 } // anonymous namespace
@@ -158,22 +159,55 @@ void GlobalData::SetUrl(std::string url)
   stmt.Execute ();
 }
 
+std::string
+GlobalData::GetQueueData ()
+{
+  auto stmt = db.Prepare (R"(
+    SELECT *
+      FROM `globaldata`
+      WHERE `id` = 0
+  )");
+
+  auto res = stmt.Query<GlobalDataResult> ();
+  CHECK (res.Step ());
+
+  const std::string queuedata = res.Get<GlobalDataResult::queuedata> ();
+  CHECK (!res.Step ());
+
+  return queuedata;
+}
+
+void GlobalData::SetQueueData(std::string queuedata)
+{
+  auto stmt = db.Prepare (R"(
+    UPDATE `globaldata` SET
+      (`queuedata`) = (?1) WHERE id=0
+  )");
+
+  stmt.Reset ();
+  stmt.Bind (1, queuedata);
+  stmt.Execute ();
+}
+
 void
 GlobalData::InitialiseDatabase ()
 {
   auto stmt = db.Prepare (R"(
     INSERT INTO `globaldata`
-      (`id`, `lasttournamenttime`, `chimultiplier`, `version`, `url`) VALUES (?1, ?2, ?3, ?4, ?5)
+      (`id`, `lasttournamenttime`, `chimultiplier`, `version`, `url`, `queuedata`) VALUES (?1, ?2, ?3, ?4, ?5, ?6)
   )");
 
   std::string vd = "0.9.9j";
   std::string ud = "xaya.io";
+  std::string none = "";
+  
   stmt.Reset ();
   stmt.Bind (1, 0);
   stmt.Bind (2, 0);
   stmt.Bind (3, 1000);
   stmt.Bind (4, vd);
   stmt.Bind (5, ud);
+  stmt.Bind (6, none);
   stmt.Execute ();
     
 }

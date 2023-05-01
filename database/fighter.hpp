@@ -28,6 +28,8 @@
 #include "proto/fighter.pb.h"
 #include "proto/roconfig.hpp"
 
+#include "recipe.hpp"
+
 #include <functional>
 #include <memory>
 #include <string>
@@ -75,7 +77,8 @@ enum class FighterStatus : int8_t
   Cooking = 4,
   Deconstructing = 5,
   SpecialTournament = 6,
-  Cooked = 7
+  Cooked = 7,
+  Transfiguring = 8
 };
 
 /**
@@ -237,7 +240,7 @@ public:
   /**
    * Rerolls for the new name based on the paid probability
    */  
-  void RerollName(Amount cost, const RoConfig& cfg,  xaya::Random& rnd);  
+  void RerollName(Amount cost, const RoConfig& cfg,  xaya::Random& rnd, pxd::Quality ql);  
 
   /**
    * In the destructor, the underlying database is updated if there are any

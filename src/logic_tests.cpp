@@ -63,11 +63,14 @@ protected:
   RewardsTable tbl4;
   TournamentTable tbl5;
   SpecialTournamentTable tbl6;
-  
+
   /** GameStateJson instance used in testing.  */
   GameStateJson converter;  
   
-  PXLogicTests () : xayaplayers(db), tbl2(db), tbl3(db), tbl4(db), tbl5(db), tbl6(db), converter(db, ctx)
+  GlobalData gd;
+  
+  
+  PXLogicTests () : xayaplayers(db), tbl2(db), tbl3(db), tbl4(db), tbl5(db), tbl6(db), converter(db, ctx), gd(db)
   {
     SetHeight (42);
   }
@@ -1159,6 +1162,222 @@ TEST_F (ValidateStateTests, TournamentInstanceSheduleTest)
   
   EXPECT_EQ (tutorialTrmn->GetInstance().fighters_size(), 0);
   tutorialTrmn.reset(); 
+}
+
+TEST_F (ValidateStateTests, TournamentInstanceVeryHighDemandExtraInstanceAreCreatedTest)
+{
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
+  auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
+  int ftA1id = ft->GetId();
+  ft.reset();
+  
+  auto ft2 = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
+  int ftA2id = ft2->GetId();
+  ft2.reset();
+  
+  EXPECT_EQ (xp->CollectInventoryFighters(ctx.RoConfig()).size(), 4);
+  xp.reset();
+  
+  
+  auto xp__A = xayaplayers.CreateNew ("domob__A", ctx.RoConfig(), rnd);
+  auto ft__A = tbl3.CreateNew ("domob__A", 1, ctx.RoConfig(), rnd);
+  int ftA1id__A = ft__A->GetId();
+  ft__A.reset();
+  
+  auto ft2__A = tbl3.CreateNew ("domob__A", 1, ctx.RoConfig(), rnd);
+  int ftA2id__A = ft2__A->GetId();
+  ft2__A.reset();
+  
+  EXPECT_EQ (xp__A->CollectInventoryFighters(ctx.RoConfig()).size(), 4);
+  xp__A.reset();
+
+
+  auto xp__B = xayaplayers.CreateNew ("domob__B", ctx.RoConfig(), rnd);
+  auto ft__B = tbl3.CreateNew ("domob__B", 1, ctx.RoConfig(), rnd);
+  int ftA1id__B = ft__B->GetId();
+  ft__B.reset();
+  
+  auto ft2__B = tbl3.CreateNew ("domob__B", 1, ctx.RoConfig(), rnd);
+  int ftA2id__B = ft2__B->GetId();
+  ft2__B.reset();
+  
+  EXPECT_EQ (xp__B->CollectInventoryFighters(ctx.RoConfig()).size(), 4);
+  xp__B.reset();  
+  
+  auto xp__C = xayaplayers.CreateNew ("domob__C", ctx.RoConfig(), rnd);
+  auto ft__C = tbl3.CreateNew ("domob__C", 1, ctx.RoConfig(), rnd);
+  int ftA1id__C = ft__C->GetId();
+  ft__C.reset();
+  
+  auto ft2__C = tbl3.CreateNew ("domob__C", 1, ctx.RoConfig(), rnd);
+  int ftA2id__C = ft2__C->GetId();
+  ft2__C.reset();
+  
+  EXPECT_EQ (xp__C->CollectInventoryFighters(ctx.RoConfig()).size(), 4);
+  xp__C.reset();
+
+  auto xp__D = xayaplayers.CreateNew ("domob__D", ctx.RoConfig(), rnd);
+  auto ft__D = tbl3.CreateNew ("domob__D", 1, ctx.RoConfig(), rnd);
+  int ftA1id__D = ft__D->GetId();
+  ft__D.reset();
+  
+  auto ft2__D = tbl3.CreateNew ("domob__D", 1, ctx.RoConfig(), rnd);
+  int ftA2id__D = ft2__D->GetId();
+  ft2__D.reset();
+  
+  EXPECT_EQ (xp__D->CollectInventoryFighters(ctx.RoConfig()).size(), 4);
+  xp__D.reset();  
+  
+  UpdateState ("[]");
+  
+  auto tutorialTrmn = tbl5.GetByAuthIdName("cbd2e78a-37ce-b864-793d-8dd27788a774", ctx.RoConfig());
+  ASSERT_TRUE (tutorialTrmn != nullptr);
+  uint32_t TID = tutorialTrmn->GetId();
+  tutorialTrmn.reset();
+  
+  std::ostringstream s;
+  s << TID;
+  std::string converted(s.str());  
+  
+  std::ostringstream s1;
+  s1 << ftA1id;
+  std::string converted1(s1.str()); 
+
+  std::ostringstream s2;
+  s2 << ftA2id;
+  std::string converted2(s2.str());   
+  
+  Process (R"([
+    {"name": "domob", "move": {"tm": {"e": {"tid": )" + converted + R"(, "fc": [)"+converted1+R"(,)"+converted2+R"(]}}}}
+  ])");   
+  
+  auto res = tbl5.QueryAll ();
+  ASSERT_TRUE (res.Step ());
+  
+  ft = tbl3.GetById(ftA1id, ctx.RoConfig());
+  EXPECT_EQ (ft->GetProto().tournamentinstanceid(), TID);  
+  ft.reset();
+  
+ std::ostringstream s__A;
+  s__A << TID;
+  std::string converted__A(s__A.str());  
+  
+  std::ostringstream s1__A;
+  s1__A << ftA1id__A;
+  std::string converted1__A(s1__A.str()); 
+
+  std::ostringstream s2__A;
+  s2__A << ftA2id__A;
+  std::string converted2__A(s2__A.str());   
+  
+  std::string serializedDataString = gd.GetQueueData();
+  EXPECT_EQ (serializedDataString, "");  
+  
+  Process (R"([
+  {"name": "domob__A", "move": {"tm": {"e": {"tid": )" + converted__A + R"(, "fc": [)"+converted1__A+R"(,)"+converted2__A+R"(]}}}}
+  ])");   
+
+  std::ostringstream s__B;
+  s__B << TID;
+  std::string converted__B(s__B.str());  
+  
+  std::ostringstream s1__B;
+  s1__B << ftA1id__B;
+  std::string converted1__B(s1__B.str()); 
+
+  std::ostringstream s2__B;
+  s2__B << ftA2id__B;
+  std::string converted2__B(s2__B.str());   
+  
+    Process (R"([
+    {"name": "domob__B", "move": {"tm": {"e": {"tid": )" + converted__B + R"(, "fc": [)"+converted1__B+R"(,)"+converted2__B+R"(]}}}}
+  ])");     
+  
+  
+  // Now this figter should not be able to join, but should be marked in global data as being in demand
+  
+  res = tbl5.QueryAll ();
+  ASSERT_TRUE (res.Step ());
+  
+  ft__B = tbl3.GetById(ftA1id__B, ctx.RoConfig());
+  EXPECT_NE (ft__B->GetProto().tournamentinstanceid(), TID);  
+  ft__B.reset(); 
+  
+  serializedDataString = gd.GetQueueData();
+ 
+  Json::Value root;
+  Json::Reader reader;
+  reader.parse(serializedDataString, root);
+
+  std::map<std::string, int32_t> tournamentDemand;
+
+  for (int i = 0; i < root.size(); i++) 
+  {		
+	  std::string kName = root[i]["tournamentauth"].asString();
+		
+	  if (tournamentDemand.find(kName) == tournamentDemand.end())
+	  {
+		  tournamentDemand.insert(std::pair<std::string, int32_t>(kName, 0));
+	  }
+
+	  tournamentDemand[kName] += 1;
+  } 
+
+  EXPECT_EQ (tournamentDemand["cbd2e78a-37ce-b864-793d-8dd27788a774"], 1);  
+  
+  std::ostringstream s__C;
+  s__C << TID;
+  std::string converted__C(s__C.str());  
+  
+  std::ostringstream s1__C;
+  s1__C << ftA1id__C;
+  std::string converted1__C(s1__C.str()); 
+
+  std::ostringstream s2__C;
+  s2__C << ftA2id__C;
+  std::string converted2__C(s2__C.str());   
+  
+    Process (R"([
+    {"name": "domob__C", "move": {"tm": {"e": {"tid": )" + converted__C + R"(, "fc": [)"+converted1__C+R"(,)"+converted2__C+R"(]}}}}
+  ])");  
+
+  UpdateState ("[]");
+
+  // Ok then, now because we had demand of 2, realistically we should have additional instance of this tournament being created
+  
+  int totalListed = 0;
+  int totalRunning = 0;
+  res = tbl5.QueryAll ();
+  bool tryAndStep = res.Step();
+  while (tryAndStep)
+  {
+      auto tnm = tbl5.GetFromResult (res, ctx.RoConfig ()); 
+	  
+	  if((pxd::TournamentState)(int)tnm->GetInstance().state() == pxd::TournamentState::Listed)
+	  {
+		if(tnm->GetProto().authoredid() == "cbd2e78a-37ce-b864-793d-8dd27788a774")
+		{
+			totalListed++;
+		}
+	  }
+	  
+	  if((pxd::TournamentState)(int)tnm->GetInstance().state() == pxd::TournamentState::Running)
+	  {
+		if(tnm->GetProto().authoredid() == "cbd2e78a-37ce-b864-793d-8dd27788a774")
+		{
+			totalRunning++;
+		}
+	  }	  
+	  
+	  tnm.reset();
+	  tryAndStep = res.Step();
+  }
+  
+  EXPECT_EQ (totalListed, 2); 
+  EXPECT_EQ (totalRunning, 1);
+
+  serializedDataString = gd.GetQueueData();
+  EXPECT_EQ (serializedDataString, "");   
 }
 
 TEST_F (ValidateStateTests, TournamentResolvedTest)

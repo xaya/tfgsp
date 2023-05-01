@@ -450,168 +450,183 @@ TEST_F (XayaPlayersJsonTests, ExpeditionInstance)
         )");
 		
   ExpectStateUserOnlyJson (R"({
-	"fighters" : 
-	[
-		{
-			"animationid" : "5fce85e9-51f9-d7b4-db81-ef141439db00",
-			"armorpieces" : 
-			[
-				{
-					"armortype" : 3,
-					"candy" : "934dae05-689f-30e4-5804-d497aee0b47c",
-					"rewardsource" : 0,
-					"rewardsourceid" : ""
-				},
-				{
-					"armortype" : 14,
-					"candy" : "c2774273-0cd4-2494-fa02-76cffe1ef1ef",
-					"rewardsource" : 0,
-					"rewardsourceid" : ""
-				}
-			],
-			"blocksleft" : 0,
-			"deconstructions" : [],
-			"exchangeexpire" : 0,
-			"exchangeprice" : 0,
-			"expeditioninstanceid" : "",
-			"fightertypeid" : "c160f7ad-c775-8614-abe2-8ef74e54401f",
-			"highestappliedsweetener" : 1,
-			"id" : 3,
-			"isaccountbound" : true,
-			"lasttournamenttime" : 0,
-			"moves" : 
-			[
-				{
-					"authoredid" : "86b323c2-b2fd-2494-ab5e-bc3514bc92d8"
-				},
-				{
-					"authoredid" : "0090580c-04ef-9d84-e883-32f52c977b98"
-				}
-			],
-			"name" : "Sour Gummi Brawler",
-			"owner" : "foo",
-			"quality" : 1,
-			"rating" : 1000,
-			"recipeid" : 1,
-			"saleshistory" : [],
-			"specialtournamentinstanceid" : 0,
-			"specialtournamentstatus" : 0,
-			"status" : 0,
-			"sweetness" : 1,
-			"tournamentinstanceid" : 0,
-			"tournamentpoints" : 0
-		},
-		{
-			"animationid" : "05633498-ace9-de14-c939-9435a6343d0f",
-			"armorpieces" : 
-			[
-				{
-					"armortype" : 13,
-					"candy" : "4e343f68-1aaa-0e84-7bab-eae458b68264",
-					"rewardsource" : 0,
-					"rewardsourceid" : ""
-				},
-				{
-					"armortype" : 14,
-					"candy" : "c2774273-0cd4-2494-fa02-76cffe1ef1ef",
-					"rewardsource" : 0,
-					"rewardsourceid" : ""
-				}
-			],
-			"blocksleft" : 0,
-			"deconstructions" : [],
-			"exchangeexpire" : 0,
-			"exchangeprice" : 0,
-			"expeditioninstanceid" : "",
-			"fightertypeid" : "85f361b8-e55d-0244-1a98-26bffa0a18a2",
-			"highestappliedsweetener" : 1,
-			"id" : 4,
-			"isaccountbound" : true,
-			"lasttournamenttime" : 0,
-			"moves" : 
-			[
-				{
-					"authoredid" : "2c555752-8a84-58f4-395e-6460b7864069"
-				},
-				{
-					"authoredid" : "0090580c-04ef-9d84-e883-32f52c977b98"
-				}
-			],
-			"name" : "Caramel Kicker",
-			"owner" : "foo",
-			"quality" : 1,
-			"rating" : 1000,
-			"recipeid" : 2,
-			"saleshistory" : [],
-			"specialtournamentinstanceid" : 0,
-			"specialtournamentstatus" : 0,
-			"status" : 0,
-			"sweetness" : 1,
-			"tournamentinstanceid" : 0,
-			"tournamentpoints" : 0
-		}
-	],
-	"recepies" : 
-	[
-		{
-			"authoredid" : "1bbc7d99-7fce-24a4-c9a3-dfaf4b744efa",
-			"did" : 5,
-			"owner" : "foo"
-		}
-	],
-	"rewards" : 
-	[
-		{
-			"expeditionid" : "myexpid",
-			"fighterid" : 0,
-			"generatedrecipeid" : 2,
-			"owner" : "foo",
-			"positionintable" : 0,
-			"rewardid" : "",
-			"rid" : 6,
-			"sweetenerid" : "",
-			"tournamentid" : 0
-		}
-	],
-	"stateblock" : 0,
-	"statehex" : "",
-	"xayaplayers" : 
-	[
-		{
-			"address" : "",
-			"balance" : 
-			{
-				"available" : 0
-			},
-			"fighteraverage" : 477,
-			"inventory" : 
-			{
-				"fungible" : 
-				{
-					"Common_Candy Cane" : 9,
-					"Common_Chocolate Chip" : 20,
-					"Common_Fizzy Powder" : 9,
-					"Common_Icing" : 20,
-					"Common_Nonpareil" : 10
-				}
-			},
-			"minted" : 0,
-			"name" : "foo",
-			"ongoings" : [],
-			"prestige" : 954,
-			"recepies" : 
-			[
-				5
-			],
-			"role" : "p",
-			"specialtournamentprestigetier" : 1,
-			"tournamentperformance" : 1,
-			"valuecommon" : 477,
-			"valueepic" : 0,
-			"valuerare" : 0,
-			"valueuncommon" : 0
-		}
-	]
+        "fighters" :
+        [
+                {
+                        "animationid" : "5fce85e9-51f9-d7b4-db81-ef141439db00",
+                        "armorpieces" :
+                        [
+                                {
+                                        "armortype" : 3,
+                                        "candy" : "934dae05-689f-30e4-5804-d497aee0b47c",
+                                        "rewardsource" : 0,
+                                        "rewardsourceid" : ""
+                                },
+                                {
+                                        "armortype" : 14,
+                                        "candy" : "c2774273-0cd4-2494-fa02-76cffe1ef1ef",
+                                        "rewardsource" : 0,
+                                        "rewardsourceid" : ""
+                                }
+                        ],
+                        "blocksleft" : 0,
+                        "deconstructions" : [],
+                        "exchangeexpire" : 0,
+                        "exchangeprice" : 0,
+                        "expeditioninstanceid" : "",
+                        "fightertypeid" : "c160f7ad-c775-8614-abe2-8ef74e54401f",
+                        "highestappliedsweetener" : 1,
+                        "id" : 3,
+                        "isaccountbound" : true,
+                        "lasttournamenttime" : 0,
+                        "moves" :
+                        [
+                                {
+                                        "authoredid" : "86b323c2-b2fd-2494-ab5e-bc3514bc92d8"
+                                },
+                                {
+                                        "authoredid" : "0090580c-04ef-9d84-e883-32f52c977b98"
+                                }
+                        ],
+                        "name" : "Sour Gummi Brawler",
+                        "owner" : "foo",
+                        "quality" : 1,
+                        "rating" : 1000,
+                        "recipeid" : 1,
+                        "saleshistory" : [],
+                        "specialtournamentinstanceid" : 0,
+                        "specialtournamentstatus" : 0,
+                        "status" : 0,
+                        "sweetness" : 1,
+                        "tournamentinstanceid" : 0,
+                        "tournamentpoints" : 0
+                },
+                {
+                        "animationid" : "05633498-ace9-de14-c939-9435a6343d0f",
+                        "armorpieces" :
+                        [
+                                {
+                                        "armortype" : 13,
+                                        "candy" : "4e343f68-1aaa-0e84-7bab-eae458b68264",
+                                        "rewardsource" : 0,
+                                        "rewardsourceid" : ""
+                                },
+                                {
+                                        "armortype" : 14,
+                                        "candy" : "c2774273-0cd4-2494-fa02-76cffe1ef1ef",
+                                        "rewardsource" : 0,
+                                        "rewardsourceid" : ""
+                                }
+                        ],
+                        "blocksleft" : 0,
+                        "deconstructions" : [],
+                        "exchangeexpire" : 0,
+                        "exchangeprice" : 0,
+                        "expeditioninstanceid" : "",
+                        "fightertypeid" : "85f361b8-e55d-0244-1a98-26bffa0a18a2",
+                        "highestappliedsweetener" : 1,
+                        "id" : 4,
+                        "isaccountbound" : true,
+                        "lasttournamenttime" : 0,
+                        "moves" :
+                        [
+                                {
+                                        "authoredid" : "2c555752-8a84-58f4-395e-6460b7864069"
+                                },
+                                {
+                                        "authoredid" : "0090580c-04ef-9d84-e883-32f52c977b98"
+                                }
+                        ],
+                        "name" : "Caramel Kicker",
+                        "owner" : "foo",
+                        "quality" : 1,
+                        "rating" : 1000,
+                        "recipeid" : 2,
+                        "saleshistory" : [],
+                        "specialtournamentinstanceid" : 0,
+                        "specialtournamentstatus" : 0,
+                        "status" : 0,
+                        "sweetness" : 1,
+                        "tournamentinstanceid" : 0,
+                        "tournamentpoints" : 0
+                }
+        ],
+        "multiplier" : 1000,
+        "ratings" :
+        [
+                {
+                        "name" : "foo",
+                        "prestige" : 954
+                }
+        ],
+        "recepies" :
+        [
+                {
+                        "authoredid" : "ba0121ba-e8a6-7e64-9bc1-71dfeca27daa",
+                        "did" : 2,
+                        "owner" : ""
+                },
+                {
+                        "authoredid" : "1bbc7d99-7fce-24a4-c9a3-dfaf4b744efa",
+                        "did" : 5,
+                        "owner" : "foo"
+                }
+        ],
+        "rewards" :
+        [
+                {
+                        "expeditionid" : "myexpid",
+                        "fighterid" : 0,
+                        "generatedrecipeid" : 2,
+                        "owner" : "foo",
+                        "positionintable" : 0,
+                        "rewardid" : "",
+                        "rid" : 6,
+                        "sweetenerid" : "",
+                        "tournamentid" : 0
+                }
+        ],
+        "stateblock" : 0,
+        "statehex" : "",
+        "vanillaurl" : "xaya.io",
+        "version" : "0.9.9j",
+        "xayaplayers" :
+        [
+                {
+                        "address" : "",
+                        "balance" :
+                        {
+                                "available" : 0
+                        },
+                        "fighteraverage" : 477,
+                        "inventory" :
+                        {
+                                "fungible" :
+                                {
+                                        "Common_Candy Cane" : 9,
+                                        "Common_Chocolate Chip" : 20,
+                                        "Common_Fizzy Powder" : 9,
+                                        "Common_Icing" : 20,
+                                        "Common_Nonpareil" : 10
+                                }
+                        },
+                        "minted" : 0,
+                        "name" : "foo",
+                        "ongoings" : [],
+                        "prestige" : 954,
+                        "recepies" :
+                        [
+                                5
+                        ],
+                        "role" : "p",
+                        "specialtournamentprestigetier" : 1,
+                        "tournamentperformance" : 1,
+                        "valuecommon" : 477,
+                        "valueepic" : 0,
+                        "valuerare" : 0,
+                        "valueuncommon" : 0
+                }
+        ]
 })", "foo");			
   
 }

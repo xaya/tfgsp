@@ -61,7 +61,10 @@ CREATE TABLE IF NOT EXISTS `globaldata` (
   `version` TEXT NOT NULL,  
 
  -- Vanilla recommended download URL
-  `url` TEXT NOT NULL  
+  `url` TEXT NOT NULL ,
+
+  -- Additional data of std:map encoded as string
+  `queuedata` TEXT NOT NULL
 );
 
 -- Data for the special tournaments instances in the game.

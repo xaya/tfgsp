@@ -521,7 +521,8 @@ void PXLogic::ResolveExpedition(std::unique_ptr<XayaPlayer>& a, const std::strin
 
     
     fighter->SetStatus(FighterStatus::Available);
-    
+	int32_t rating =  fighter->GetProto().rating();
+
     uint32_t totalWeight = 0;
     for(auto& rw: rewardTableDb.rewards())
     {
@@ -657,12 +658,6 @@ void PXLogic::TickAndResolveOngoings(Database& db, const Context& ctx, xaya::Ran
       
       for (auto it = ongoings.begin(); it != ongoings.end(); it++)
       {
-		  
-		if(it->blocksleft() > 3)
-		{
-		   it->set_blocksleft(3);	
-		}
-		  
         it->set_blocksleft(it->blocksleft() - 1);
       }
       
@@ -1716,13 +1711,6 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
       {
           if((int)tnm->GetInstance().blocksleft() > 0)
           {
-			
-            if(tnm->GetInstance().blocksleft() > 3)
-			{
-				tnm->MutableInstance().set_blocksleft(3);
-			}				
-			  
-			  
             tnm->MutableInstance().set_blocksleft((int)tnm->GetInstance().blocksleft() - 1);
           }
                         
@@ -1855,6 +1843,51 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
       tnm.reset();
       tryAndStep = res.Step ();
     }
+	
+	// If we have high demand for tournaments, lets solve it here, or drop it and wait again for other blocks
+	
+	GlobalData gd(db);
+	std::string serializedDataString = gd.GetQueueData();
+	  
+	if(serializedDataString != "")
+	{
+		Json::Value root;
+		Json::Reader reader;
+		reader.parse(serializedDataString, root);
+		
+		std::map<std::string, int32_t> tournamentDemand;
+
+        for (int i = 0; i < root.size(); i++) 
+		{		
+            std::string kName = root[i]["tournamentauth"].asString();
+			
+			if (tournamentDemand.find(kName) == tournamentDemand.end())
+			{
+				tournamentDemand.insert(std::pair<std::string, int32_t>(kName, 0));
+			}
+       
+            tournamentDemand[kName] += 1;
+		}
+		
+		// Now that we have demand map, we can create tournaments
+        for (auto it = tournamentDemand.begin(); it != tournamentDemand.end(); ++it) 
+		{
+           int32_t tournamentsDemand = it->second;
+		   
+		   if(tournamentsDemand >= 2)
+		   {
+			   int32_t totalToPopulate = tournamentsDemand / 2;
+			   
+			   for (int i2 = 0; i2 < totalToPopulate; i2++) 
+			   {
+				   tournamentsDatabase.CreateNew(it->first, ctx.RoConfig());
+			   }
+			   }
+        }		
+
+		// Reset
+		gd.SetQueueData("");
+	}
 }
 
 void PXLogic::CheckFightersForSale(Database& db, const Context& ctx)
@@ -1879,6 +1912,26 @@ void PXLogic::CheckFightersForSale(Database& db, const Context& ctx)
       fighterDb.reset();
       tryAndStep = res.Step ();
     }      
+}
+
+void PXLogic::SetFreeTransfiguringFighters(Database& db, const Context& ctx)
+{
+    FighterTable fighters(db); 
+    auto res = fighters.QueryAll ();
+
+    bool tryAndStep = res.Step();
+    while (tryAndStep)
+    {
+      auto fighterDb = fighters.GetFromResult (res, ctx.RoConfig ());
+      
+      if((pxd::FighterStatus)(int)fighterDb->GetStatus() == pxd::FighterStatus::Transfiguring) 
+      {
+             fighterDb->SetStatus(pxd::FighterStatus::Available);
+      }
+      
+      fighterDb.reset();
+      tryAndStep = res.Step ();
+    }      	
 }
 
 void PXLogic::ReopenMissingTournaments(Database& db, const Context& ctx)
@@ -1939,6 +1992,8 @@ PXLogic::UpdateState (Database& db, xaya::Random& rnd,
   We are going to open tournaments instances if blueprint is not present ir game or already full and running */
   ReopenMissingTournaments(db, ctx);  
       
+  SetFreeTransfiguringFighters(db, ctx);	  
+	  
   MoveProcessor mvProc(db, rnd, ctx);
   mvProc.ProcessAdmin (blockData["admin"]);
   mvProc.ProcessAll (blockData["moves"]);

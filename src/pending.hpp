@@ -59,109 +59,113 @@ public:
    /**
    * Updates the state for a new coin transfer / burn.
    */
-  void AddCoinTransferBurn (const XayaPlayer& a, const CoinTransferBurn& op);  
+  void AddCoinTransferBurn (const XayaPlayer& a, const CoinTransferBurn& op, FighterTable& fighters, const pxd::RoConfig& config);  
   
    /**
    * Updates the state for a new crystal bundle purchase.
    */  
-  void AddCrystalPurchase (const XayaPlayer& a, std::string crystalBundleKey, Amount crystalAmount);
+  void AddCrystalPurchase (const XayaPlayer& a, std::string crystalBundleKey, Amount crystalAmount, FighterTable& fighters, const pxd::RoConfig& config);
   
    /**
    * Updates the state for a new recepie cooking action
    */    
-  void AddRecepieCookingInstance (const XayaPlayer& a, int32_t duration, int32_t recepieID, Amount cookingCost, std::map<std::string, pxd::Quantity> fungibleItemAmountForDeduction); 
+  void AddRecepieCookingInstance (const XayaPlayer& a, int32_t duration, int32_t recepieID, Amount cookingCost, std::map<std::string, pxd::Quantity> fungibleItemAmountForDeduction, FighterTable& fighters, const pxd::RoConfig& config); 
   
    /**
    * Updates the state for a new recepie destroy action
    */    
-  void AddRecepieDestroyInstance (const XayaPlayer& a, int32_t duration, std::vector<uint32_t>& recepieIDS); 
+  void AddRecepieDestroyInstance (const XayaPlayer& a, int32_t duration, std::vector<uint32_t>& recepieIDS, FighterTable& fighters, const pxd::RoConfig& config); 
     
   /**
    * Updates the state for a new sweetener cooking action
    */    
-  void AddSweetenerCookingInstance (const XayaPlayer& a, const std::string sweetenerKeyName, int32_t duration, int32_t fighterID, Amount cookingCost, std::map<std::string, pxd::Quantity> fungibleItemAmountForDeduction); 
+  void AddSweetenerCookingInstance (const XayaPlayer& a, const std::string sweetenerKeyName, int32_t duration, int32_t fighterID, Amount cookingCost, std::map<std::string, pxd::Quantity> fungibleItemAmountForDeduction, FighterTable& fighters, const pxd::RoConfig& config); 
   
   /**
    * Updates the state for a cooked sweetener being claimed back on fighter
    */  
-  void AddClaimingSweetenerReward (const XayaPlayer& a, const std::string sweetenerAuthId, int32_t fighterID);
+  void AddClaimingSweetenerReward (const XayaPlayer& a, const std::string sweetenerAuthId, int32_t fighterID, FighterTable& fighters, const pxd::RoConfig& config);
   
    /**
    * Updates the state for a new recepie instance bundle
    */    
-  void AddExpeditionInstance (const XayaPlayer& a, int32_t duration, std::string expeditionID, std::vector<int> fighterID);  
+  void AddExpeditionInstance (const XayaPlayer& a, int32_t duration, std::string expeditionID, std::vector<int> fighterID, FighterTable& fighters, const pxd::RoConfig& config);  
 
    /**
    * Updates the state for a collecting cooked fighter recepie
    */    
-  void AddCookedRecepieCollectInstance(const XayaPlayer& a, int32_t fighterToCollectID);     
+  void AddCookedRecepieCollectInstance(const XayaPlayer& a, int32_t fighterToCollectID, FighterTable& fighters, const pxd::RoConfig& config);     
   
    /**
    * Updates the state for a new pending rewards
    */      
-  void AddRewardIDs (const XayaPlayer& a, std::vector<std::string> expeditionIDArray, std::vector<uint32_t> rewardDatabaseIds);
+  void AddRewardIDs (const XayaPlayer& a, std::vector<std::string> expeditionIDArray, std::vector<uint32_t> rewardDatabaseIds, FighterTable& fighters, const pxd::RoConfig& config);
   
    /**
    * Updates the state for a new pending rewards
    */      
-  void AddTournamentRewardIDs (const XayaPlayer& a, uint32_t tournamentID, std::vector<uint32_t> rewardDatabaseIds);  
+  void AddTournamentRewardIDs (const XayaPlayer& a, uint32_t tournamentID, std::vector<uint32_t> rewardDatabaseIds, FighterTable& fighters, const pxd::RoConfig& config);  
   
    /**
    * Updates the state for a new pending tournament entries
    */      
-  void AddTournamentEntries (const XayaPlayer& a, uint32_t tournamentID, std::vector<uint32_t> fighterIDS);
+  void AddTournamentEntries (const XayaPlayer& a, uint32_t tournamentID, std::vector<uint32_t> fighterIDS, FighterTable& fighters, const pxd::RoConfig& config);
   
    /**
    * Updates the state for a new pending special tournament entries
    */      
-  void AddSpecialTournamentEntries (const XayaPlayer& a, uint32_t tournamentID, std::vector<uint32_t> fighterIDS);  
+  void AddSpecialTournamentEntries (const XayaPlayer& a, uint32_t tournamentID, std::vector<uint32_t> fighterIDS, FighterTable& fighters, const pxd::RoConfig& config);  
   
    /**
    * Updates the state for a new pending tournament leaves
    */      
-  void AddTournamentLeaves (const XayaPlayer& a, uint32_t tournamentID, std::vector<uint32_t> fighterIDS);
+  void AddTournamentLeaves (const XayaPlayer& a, uint32_t tournamentID, std::vector<uint32_t> fighterIDS, FighterTable& fighters, const pxd::RoConfig& config);
 
    /**
    * Updates the state for a new pending special tournament leaves
    */      
-  void AddSpecialTournamentLeaves (const XayaPlayer& a, uint32_t tournamentID, std::vector<uint32_t> fighterIDS);    
+  void AddSpecialTournamentLeaves (const XayaPlayer& a, uint32_t tournamentID, std::vector<uint32_t> fighterIDS, FighterTable& fighters, const pxd::RoConfig& config);    
   
     /**
    * Updates the state for a new pending purchases of fungible items
    */      
-  void AddPurchasing (const XayaPlayer& a, std::string authID, Amount purchaseCost);
+  void AddPurchasing (const XayaPlayer& a, std::string authID, Amount purchaseCost, FighterTable& fighters, const pxd::RoConfig& config);
   
    /**
    * Updates the state for a new fighter deconstruction
    */      
-  void AddDeconstructionData (const XayaPlayer& a, uint32_t fighterID);   
+  void AddDeconstructionData (const XayaPlayer& a, uint32_t fighterID, FighterTable& fighters, const pxd::RoConfig& config);   
   
    /**
    * Updates the state for a deconstructed fighter reward claiming
    */     
-  void AddDeconstructionRewardData (const XayaPlayer& a, uint32_t fighterID);
+  void AddDeconstructionRewardData (const XayaPlayer& a, uint32_t fighterID, FighterTable& fighters, const pxd::RoConfig& config);
   
    /**
    * Updates the state for a fighter being bought
    */      
-  void AddFighterForBuyData (const XayaPlayer& a, uint32_t fighterID, Amount exchangeprice);
+  void AddFighterForBuyData (const XayaPlayer& a, uint32_t fighterID, Amount exchangeprice, FighterTable& fighters, const pxd::RoConfig& config);
 
    /**
    * Updates the state for a fighter being sold
    */      
-  void AddFighterForSaleData (const XayaPlayer& a, uint32_t fighterID, Amount listingfee);
+  void AddFighterForSaleData (const XayaPlayer& a, uint32_t fighterID, Amount listingfee, FighterTable& fighters, const pxd::RoConfig& config);
 
    /**
    * Updates the state for a fighter being removed from sale
    */      
-  void RemoveFromSaleData (const XayaPlayer& a, uint32_t fighterID); 
+  void RemoveFromSaleData (const XayaPlayer& a, uint32_t fighterID, FighterTable& fighters, const pxd::RoConfig& config); 
+  
+   /**
+   * Updates transfiguration of selectecd fighter
+   */      
+  void AddTransfigureData (const XayaPlayer& a, Json::Value data, FighterTable& fighters, const pxd::RoConfig& config);   
   
   /**
    * Pending state updates associated to an account.
    */
   struct XayaPlayerState
   {
-
     /** The combined coin transfer / burn for this account.  */
     std::unique_ptr<CoinTransferBurn> coinOps;
 
@@ -179,6 +183,9 @@ public:
     
     /** Fungibles in the original player inventory*/
     std::map<std::string, uint64_t> onChainFungibleSet;
+	
+    /** FighterData in the original player inventory*/
+    std::vector<Json::Value> onChainPlayerFighterData;	
 
     /** List of currently pending ongoing operations, which are going
     to take more then 1 block to finish*/
@@ -253,6 +260,10 @@ public:
     /** Pending ids of recepies ready to destroy
     */    
     std::vector<int32_t> destroyrecipe;      
+	
+    /** Pending data for all transfigure-involved objects
+    */   	
+	 std::vector<Json::Value> pendingTransfigure;
   };  
   
   /** Pending updates by account name.  */
@@ -262,7 +273,7 @@ public:
    * Returns the pending state for the given account instance, creating a new
    * (empty) one if there is not already one.
    */
-  XayaPlayerState& GetXayaPlayerState (const XayaPlayer& a);  
+  XayaPlayerState& GetXayaPlayerState (const XayaPlayer& a, FighterTable& fighters, const pxd::RoConfig& config);  
 
   /**
    * Returns the JSON representation of the pending state.

@@ -28,4 +28,7 @@ message Candy
     
   /*n*/
   optional string Name = 2;  
+  
+  /*r*/
+  optional uint32 Rarity = 3;    
 }

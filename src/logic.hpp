@@ -92,6 +92,12 @@ public:
   static void ReopenMissingTournaments(Database& db, const Context& ctx);
   
   /**
+   * We keep this extremely simple for now, marking all transfiguring fighters as available
+   * on new block
+   */     
+  static void SetFreeTransfiguringFighters(Database& db, const Context& ctx);  
+  
+  /**
    * Scans all tournaments to either start them or finilize; public for unit test access purposes
    */  
   static void ProcessSpecialTournaments(Database& db, const Context& ctx, xaya::Random& rnd);   

@@ -22,6 +22,8 @@
 
 
 #include "jsonutils.hpp"
+#include "moveprocessor.hpp"
+
 
 #include "proto/config.pb.h"
 
@@ -165,7 +167,11 @@ PXRpcServer::waitforchange (const std::string& knownBlock)
   return xaya::GameRpcServer::DefaultWaitForChange (game, knownBlock);
 }
 
-
+Json::Value
+PXRpcServer::getfueldata (const Json::Value& candiesNew, const Json::Value& candiesSubmited, const Json::Value& candylist, const Json::Value& fighterData, const Json::Value& fightersNew, const Json::Value& fightersSubmited, const Json::Value& recipeData, const Json::Value& recipesNew, const Json::Value& recipesSubmited)
+{
+  return BaseMoveProcessor::EvaluateFuelList(fightersSubmited, recipesSubmited, candiesSubmited, fightersNew, recipesNew, candiesNew, fighterData, recipeData, candylist);
+}
 
 
 /* ************************************************************************** */

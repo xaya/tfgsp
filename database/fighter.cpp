@@ -17,7 +17,6 @@
 */
 
 #include "fighter.hpp"
-#include "recipe.hpp"
 #include "amount.hpp"
 
 #include <xayautil/random.hpp>
@@ -187,7 +186,7 @@ std::vector<pxd::ArmorType> FighterInstance::ArmorTypeFromMoveType(pxd::MoveType
   return pieceList;  
 }
 
-void FighterInstance::RerollName(Amount cost, const RoConfig& cfg,  xaya::Random& rnd)
+void FighterInstance::RerollName(Amount cost, const RoConfig& cfg,  xaya::Random& rnd, pxd::Quality ql)
 {
 	MutableProto().set_isnamererolled(true);
 	
@@ -196,7 +195,12 @@ void FighterInstance::RerollName(Amount cost, const RoConfig& cfg,  xaya::Random
     
     std::vector<std::pair<std::string, pxd::proto::FighterName>> sortedNamesTypesmap;
     for (auto itr = fighterNames.begin(); itr != fighterNames.end(); ++itr)
-        sortedNamesTypesmap.push_back(*itr);
+	{
+		if((int)itr->second.quality() <= (int)ql)
+		{
+			sortedNamesTypesmap.push_back(*itr);
+		}
+	}
 
     sort(sortedNamesTypesmap.begin(), sortedNamesTypesmap.end(), [=](std::pair<std::string, pxd::proto::FighterName>& a, std::pair<std::string, pxd::proto::FighterName>& b)
     {
