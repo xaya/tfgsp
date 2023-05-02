@@ -1743,7 +1743,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     
     if((pxd::FighterStatus)(int)fighterDb->GetStatus() != pxd::FighterStatus::Exchange)
     {
-      LOG (WARNING) << "Fighter status is not on exchange: " << fighterID;
+      LOG (WARNING) << "Fighter status is not on exchange: " << fighterID << " but is " << (int)fighterDb->GetStatus();
       fighterDb.reset();
       return false;              
     }    
@@ -2086,9 +2086,10 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
 		}		
  
         int32_t ca = candy["a"].asInt();
-        if(a.GetInventory().GetFungibleCount(candy["n"].asString()) < ca)
+        if(a.GetInventory().GetFungibleCount(BaseMoveProcessor::GetCandyKeyNameFromID(candy["n"].asString(), ctx)) < ca)
+			
         {
-		  LOG (WARNING) << "Not sufficient candy amount, got " << a.GetInventory().GetFungibleCount(candy["n"].asString()) << " while needs " << ca << " for candy " << candy["n"].asString();
+		  LOG (WARNING) << "Not sufficient candy amount, got " << a.GetInventory().GetFungibleCount(BaseMoveProcessor::GetCandyKeyNameFromID(candy["n"].asString(), ctx)) << " while needs " << ca << " for candy " << candy["n"].asString();
 		  return false;   			
 		}		
 
@@ -2267,12 +2268,17 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     int32_t tournamentTier = (int32_t)tournamentData->GetProto().tier();
     int32_t playerPrestigeBasedTier = (int32_t)a.GetProto().specialtournamentprestigetier();
     
-    if(tournamentTier != playerPrestigeBasedTier)
-    {
-      LOG (WARNING) << "Wrong tournament tier, expected  " << tournamentTier << " but actual player is " << playerPrestigeBasedTier;
-      tournamentData.reset();
-      return false;        
-    }
+	xaya::Chain chain = ctx.Chain();
+	
+	if(chain != xaya::Chain::REGTEST)
+	{
+		if(tournamentTier != playerPrestigeBasedTier)
+		{
+		  LOG (WARNING) << "Wrong tournament tier, expected  " << tournamentTier << " but actual player is " << playerPrestigeBasedTier;
+		  tournamentData.reset();
+		  return false;        
+		}
+	}
 
     if((pxd::SpecialTournamentState)(int)tournamentData->GetProto().state() != pxd::SpecialTournamentState::Listed)
     {
@@ -3955,15 +3961,15 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 	    keySS << ft.asInt();
 	    std::string keySSStr = keySS.str();
 		
-		auto fighterDb = fighters.GetById (ft.asInt(), ctx.RoConfig ());
+		auto fighterDb2 = fighters.GetById (ft.asInt(), ctx.RoConfig ());
 		
-		wholeFightersData[keySSStr]["q"] = fighterDb->GetProto().quality();
-		wholeFightersData[keySSStr]["has"] = fighterDb->GetProto().highestappliedsweetener();
-		wholeFightersData[keySSStr]["r"] = fighterDb->GetProto().rating();
-		wholeFightersData[keySSStr]["n"] = fighterDb->GetProto().name();
+		wholeFightersData[keySSStr]["q"] = fighterDb2->GetProto().quality();
+		wholeFightersData[keySSStr]["has"] = fighterDb2->GetProto().highestappliedsweetener();
+		wholeFightersData[keySSStr]["r"] = fighterDb2->GetProto().rating();
+		wholeFightersData[keySSStr]["n"] = fighterDb2->GetProto().name();
 		
 		Json::Value armorPieces(Json::arrayValue);
-		for(auto& ap : fighterDb->GetProto().armorpieces())
+		for(auto& ap : fighterDb2->GetProto().armorpieces())
 	    {
 			Json::Value piece(Json::objectValue);
 			piece["c"] = ap.candy();
@@ -3972,7 +3978,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 	
 		wholeFightersData[keySSStr]["ap"] = armorPieces;
 		
-		fighterDb.reset();
+		fighterDb2.reset();
 	}
 	
 	for(auto& ir : itemRecipe)
@@ -4005,6 +4011,10 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 
 	// Now that we have our value, we can finally try and transifure the input_iterator
     fpm::fixed_24_8 fuelPowerUnit = fpm::floor(fuelPower / 25000);
+	
+	auto fighterID = fighter["fid"].asInt();
+	auto fighterDb = fighters.GetById (fighterID, ctx.RoConfig ());	
+	
 	if(fuelPowerUnit >= fpm::fixed_24_8(1))
 	{
 		auto optionID = fighter["o"].asInt();
@@ -4040,21 +4050,12 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 				
 				cost = lookUpPrices[(int)(fuelPowerUnit-fpm::fixed_24_8(4))];
 			}	
-
-			auto fighterID = fighter["fid"].asInt();
-			auto fighterDb = fighters.GetById (fighterID, ctx.RoConfig ());
 			fighterDb->RerollName(cost, ctx.RoConfig (), rnd, nQL);
-			
-			fighterDb->SetStatus(pxd::FighterStatus::Transfiguring);
-			fighterDb.reset();
 		}
 		
 		// Armor	
 		if(optionID == 2)
 		{		
-			auto fighterID = fighter["fid"].asInt();
-			auto fighterDb = fighters.GetById (fighterID, ctx.RoConfig ());
-
 			fpm::fixed_24_8 basedQualityLevel = fpm::fixed_24_8(fighterDb->GetProto().quality());
 			fpm::fixed_24_8 minimumPowerToPass = fpm::fixed_24_8(basedQualityLevel);
 			
@@ -4119,18 +4120,12 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 						}
 					}
 				}	
-			}
-			
-            fighterDb->SetStatus(pxd::FighterStatus::Transfiguring);
-			fighterDb.reset();		
+			}	
 		}		
 		
 		// Move	
 		if(optionID == 3)
 		{
-			auto fighterID = fighter["fid"].asInt();
-			auto fighterDb = fighters.GetById (fighterID, ctx.RoConfig ());	
-            
 			const auto& moveBlueprints = ctx.RoConfig()->fightermoveblueprints();
 			std::vector<pxd::proto::FighterMoveBlueprint> generatedMoveblueprints;
 			
@@ -4172,11 +4167,11 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 					moveToAlterData = newMove;
 				}
 			}
-
-            fighterDb->SetStatus(pxd::FighterStatus::Transfiguring);
-			fighterDb.reset();	
 		}
 	}
+	
+	fighterDb->SetStatus(pxd::FighterStatus::Transfiguring);
+	fighterDb.reset();		
 	
 	DestroyUsedElements(a, fighter);
 	a->CalculatePrestige(ctx.RoConfig());
@@ -4924,10 +4919,10 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 	}
 
     /*Trying to auction the fighter*/
-	const auto& ref3 = upd["r"];
+	const auto& ref3 = upd["s"];
     if (!ref3.isNull ())
 	{	
-		MaybePutFighterForSale(name, upd["r"]); 
+		MaybePutFighterForSale(name, upd["s"]); 
 	}
 
     /*Trying to buy the fighter*/

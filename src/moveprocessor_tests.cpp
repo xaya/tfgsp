@@ -568,7 +568,7 @@ TEST_F (CoinOperationTests, TransfigureWrongValues)
     for(auto& rC: r->GetProto().requiredcandy())
     {
       a->GetInventory().SetFungibleCount(BaseMoveProcessor::GetCandyKeyNameFromID(rC.candytype(), ctx), 100);
-	  candyID = BaseMoveProcessor::GetCandyKeyNameFromID(rC.candytype(), ctx);
+	  candyID = rC.candytype();
     }
 	
 	recipeID =rcpID;

@@ -43,6 +43,8 @@ class SpecialTournamentTest (PXTest):
   def run (self):
     self.collectPremine ()
     self.splitPremine ()
+    self.splitPremine ()
+    self.splitPremine ()
     
     names = ["andy", "evilandy"]
     names2 = ["andy", "evilandy", "xayatf1", "xayatf2", "xayatf3", "xayatf4", "xayatf5", "xayatf6", "xayatf7"]

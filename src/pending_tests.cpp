@@ -96,7 +96,7 @@ TEST_F (PendingStateTests, Clear)
   coinOp.minted = 5;
   coinOp.burnt = 10;
   coinOp.transfers["andy"] = 20;
-  state.AddCoinTransferBurn (*a, coinOp);
+  state.AddCoinTransferBurn (*a, coinOp, tbl3, ctx.RoConfig ());
   a.reset ();
 
   ExpectStateJson (R"(
@@ -325,10 +325,10 @@ TEST_F (PendingStateUpdaterTests, CrystalBalancePendingTestings)
   )");
 }
 
-TEST_F (PendingStateUpdaterTests, TestSweetenerCollect)
+TEST_F (PendingStateUpdaterTests, TestSweetenerCollect) //(*a, sweetenerAuthId, fighterID, fighters, ctx.RoConfig ());  
 {
     auto a = xayaplayers.CreateNew ("testy2", ctx.RoConfig(), rnd);
-    state.AddClaimingSweetenerReward (*a, "authyauth", 14);
+    state.AddClaimingSweetenerReward (*a, "authyauth", 14, tbl3, ctx.RoConfig ());
     a.reset();
     
     ExpectStateJson (R"(
@@ -658,7 +658,7 @@ TEST_F (PendingStateUpdaterTests, ExpeditionGetRewards)
   rewardDatabaseIds.push_back(1);
   rewardDatabaseIds.push_back(4);
    
-  state.AddRewardIDs (*a, expeditionIDArray, rewardDatabaseIds);
+  state.AddRewardIDs (*a, expeditionIDArray, rewardDatabaseIds, tbl3, ctx.RoConfig ());
   a.reset ();
    
   ExpectStateJson (R"(
