@@ -993,7 +993,8 @@ GameStateJson::Exchange()
   {
      auto h = tbl2.GetFromResult (res2, ctx.RoConfig ()); 
 
-     if(h->GetStatus() == FighterStatus::Exchange)
+     // we also want to include anyone who ever participated, to make sure it appears in sales history
+     if(h->GetStatus() == FighterStatus::Exchange || h->GetProto().salehistory_size() > 0)
 	 {
           fghtrarr.append (Convert<FighterInstance> (*h));				 
 	 }
