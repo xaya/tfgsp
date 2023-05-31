@@ -167,7 +167,7 @@ std::vector<uint32_t> PXLogic::GenerateActivityReward(const uint32_t fighterID, 
           newReward->MutableProto().set_generatedrecipeid(newRecipe->GetId());
           iDS.push_back(newReward->GetId());
           
-          LOG (WARNING) << "CraftedRecipe reward generated";
+          LOG (INFO) << "CraftedRecipe reward generated";
       }
       
       if((RewardType)(int)rw.type() == RewardType::GeneratedRecipe)
@@ -175,7 +175,7 @@ std::vector<uint32_t> PXLogic::GenerateActivityReward(const uint32_t fighterID, 
           newReward->MutableProto().set_generatedrecipeid(pxd::RecipeInstance::Generate((pxd::Quality)(int)rw.generatedrecipequality(), ctx.RoConfig(), rnd, db, ""));                      
           iDS.push_back(newReward->GetId());
           
-          LOG (WARNING) << "GeneratedRecipe reward generated";
+          LOG (INFO) << "GeneratedRecipe reward generated";
       }
     }
   }
@@ -458,6 +458,53 @@ void PXLogic::ResolveDeconstruction(std::unique_ptr<XayaPlayer>& a, const uint32
 
 void PXLogic::ResolveExpedition(std::unique_ptr<XayaPlayer>& a, const std::string blueprintAuthID, const uint32_t fighterID, Database& db, const Context& ctx, xaya::Random& rnd)
 {
+	  // Original game code had wrong resource distribution weights,
+	  // for now lets use the graphs to smooth distribution out
+	std::map<std::string, fpm::fixed_24_8> m = {{"a2512eaa-028a-1f84-6879-eb240ac80a3e", fpm::fixed_24_8(1.13281)},
+	{"93ad71bb-cd8f-dc24-7885-2c3fd0013245", fpm::fixed_24_8(0.414062)},
+	{"35052272-b4bc-75c4-0ad0-fe122f54b508", fpm::fixed_24_8(0.371094)},
+	{"a1387c26-3e1c-4554-e94e-e857643e58ed", fpm::fixed_24_8(0.429688)},
+	{"fbb0edc6-92a9-dc04-5ad7-a19c36843074", fpm::fixed_24_8(0.453125)},
+	{"6d7e16b9-1a8f-b134-59a6-fb9865615001", fpm::fixed_24_8(1.37891)},
+	{"768a4c69-c928-4a34-1bf2-044d3e5bac33", fpm::fixed_24_8(0.898438)},
+	{"5edaf5d1-ec6d-7094-a8dd-a344d0650e5c", fpm::fixed_24_8(1.33203)},
+	{"0d9af5ec-b3fd-3de4-2a38-0a954c9f9cba", fpm::fixed_24_8(0.558594)},
+	{"19bbdaff-2ba7-12f4-3a13-989a490aaf86", fpm::fixed_24_8(0.890625)},
+	{"dc498167-f8b7-3164-da5b-776b731a1a6c", fpm::fixed_24_8(0.8125)},
+	{"f0e675df-3f16-e4b4-f9e2-6b5291a92b0e", fpm::fixed_24_8(0.917969)},
+	{"16457184-f0f1-73e4-183d-e7f8f2d412c2", fpm::fixed_24_8(1.41016)},
+	{"c06ccaea-47e5-ec14-bb62-d824095a1bae", fpm::fixed_24_8(1.42188)},
+	{"09b9f6ba-cc74-6ad4-dbe9-86759590d0fc", fpm::fixed_24_8(0.652344)},
+	{"c088ddf8-2b2e-b9c4-6bb2-52aa1af2584f", fpm::fixed_24_8(0.84375)},
+	{"8928eb04-3ee7-f834-9b5b-8b6f48d04ecf", fpm::fixed_24_8(1.52734)},
+	{"5c5c9f0e-4eda-bbe4-ba92-ec3c400d081e", fpm::fixed_24_8(1.20312)},
+	{"aece8a9f-30c0-3aa4-7a9b-5c33fc2e534a", fpm::fixed_24_8(0.765625)},
+	{"15840d95-57de-86a4-da5e-9ab9dfb89299", fpm::fixed_24_8(0.824219)},
+										   };
+										   
+										   
+	  std::map<std::string, fpm::fixed_24_8> r = {{"a2512eaa-028a-1f84-6879-eb240ac80a3e", fpm::fixed_24_8(6000)},
+	{"93ad71bb-cd8f-dc24-7885-2c3fd0013245", fpm::fixed_24_8(3000)},
+	{"35052272-b4bc-75c4-0ad0-fe122f54b508", fpm::fixed_24_8(3600)},
+	{"a1387c26-3e1c-4554-e94e-e857643e58ed", fpm::fixed_24_8(10000)},
+	{"fbb0edc6-92a9-dc04-5ad7-a19c36843074", fpm::fixed_24_8(2200)},
+	{"6d7e16b9-1a8f-b134-59a6-fb9865615001", fpm::fixed_24_8(1)},
+	{"768a4c69-c928-4a34-1bf2-044d3e5bac33", fpm::fixed_24_8(9000)},
+	{"5edaf5d1-ec6d-7094-a8dd-a344d0650e5c", fpm::fixed_24_8(2500)},
+	{"0d9af5ec-b3fd-3de4-2a38-0a954c9f9cba", fpm::fixed_24_8(3000)},
+	{"19bbdaff-2ba7-12f4-3a13-989a490aaf86", fpm::fixed_24_8(5000)},
+	{"dc498167-f8b7-3164-da5b-776b731a1a6c", fpm::fixed_24_8(2000)},
+	{"f0e675df-3f16-e4b4-f9e2-6b5291a92b0e", fpm::fixed_24_8(2400)},
+	{"16457184-f0f1-73e4-183d-e7f8f2d412c2", fpm::fixed_24_8(3000)},
+	{"c06ccaea-47e5-ec14-bb62-d824095a1bae", fpm::fixed_24_8(3500)},
+	{"09b9f6ba-cc74-6ad4-dbe9-86759590d0fc", fpm::fixed_24_8(4600)},
+	{"c088ddf8-2b2e-b9c4-6bb2-52aa1af2584f", fpm::fixed_24_8(1500)},
+	{"8928eb04-3ee7-f834-9b5b-8b6f48d04ecf", fpm::fixed_24_8(2000)},
+	{"5c5c9f0e-4eda-bbe4-ba92-ec3c400d081e", fpm::fixed_24_8(2000)},
+	{"aece8a9f-30c0-3aa4-7a9b-5c33fc2e534a", fpm::fixed_24_8(4000)},
+	{"15840d95-57de-86a4-da5e-9ab9dfb89299", fpm::fixed_24_8(6000)},
+										   };						
+	
     const auto& expeditionList = ctx.RoConfig()->expeditionblueprints();
     bool blueprintSolved = false;
     int rollCount = 0;
@@ -523,38 +570,80 @@ void PXLogic::ResolveExpedition(std::unique_ptr<XayaPlayer>& a, const std::strin
     fighter->SetStatus(FighterStatus::Available);
 	int32_t rating =  fighter->GetProto().rating();
 
-    uint32_t totalWeight = 0;
-    for(auto& rw: rewardTableDb.rewards())
-    {
-       totalWeight += (uint32_t)rw.weight();
-    }
+	  fpm::fixed_24_8 totalWeight = fpm::fixed_24_8(0);
+	  for(auto& rw: rewardTableDb.rewards())
+	  {
+		 totalWeight = totalWeight + fpm::fixed_24_8(rw.weight()) * m[blueprintAuthID];
+	  }
 
-    LOG (WARNING) << "Rolling for total possible awards: " << rollCount;
-    
+    bool anyRewardRolled = false;
+	
     for(int roll = 0; roll < rollCount; ++roll)
     {
         int rolCurNum = 0;
         
-        if(totalWeight != 0)
-        {
-          rolCurNum = rnd.NextInt(totalWeight);
-        }
+	    if(totalWeight != fpm::fixed_24_8(0) && (int)totalWeight != 0)
+	    {
+		 rolCurNum = rnd.NextInt((int)totalWeight);
+	    }
         
-        int accumulatedWeight = 0;
+        fpm::fixed_24_8 accumulatedWeight = fpm::fixed_24_8(0);
         int posInTableList = 0;
         for(auto& rw: rewardTableDb.rewards())
         {
-            accumulatedWeight += rw.weight();
-            
-            if(rolCurNum <= accumulatedWeight)
-            {
-               GenerateActivityReward(fighterID, blueprintAuthID, 0, rw, ctx, db, a, rnd, posInTableList, basedRewardsTableAuthId, "");
-               break;
+			accumulatedWeight = accumulatedWeight + fpm::fixed_24_8(rw.weight());
+			fpm::fixed_24_8  rolCurNumC = fpm::fixed_24_8(rolCurNum);
+			  
+			if(rolCurNumC <= accumulatedWeight)
+			{
+			  if((pxd::RewardType)(int)rw.type() == pxd::RewardType::CraftedRecipe || (pxd::RewardType)(int)rw.type() == pxd::RewardType::GeneratedRecipe)
+			  {
+				  if(blueprintAuthID != "00000000-0000-0000-zzzz-zzzzzzzzzzzz" && blueprintAuthID != "c064e7f7-acbf-4f74-fab8-cccd7b2d4004")
+				  {
+					  if (rnd.NextInt((int)r[blueprintAuthID]) > 1000)
+					  {
+						   break;
+					  } 
+				  }
+			  }		
+			  
+			  anyRewardRolled = true;
+              GenerateActivityReward(fighterID, blueprintAuthID, 0, rw, ctx, db, a, rnd, posInTableList, basedRewardsTableAuthId, "");
+              break;
             }
             
              posInTableList++;
         }
     }   
+	
+	if(anyRewardRolled == false)
+	{
+		for(int roll = 0; roll < rollCount; ++roll)
+		{
+			int rolCurNum = 0;
+			
+			if(totalWeight != fpm::fixed_24_8(0) && (int)totalWeight != 0)
+			{
+			 rolCurNum = rnd.NextInt((int)totalWeight);
+			}
+			
+			fpm::fixed_24_8 accumulatedWeight = fpm::fixed_24_8(0);
+			int posInTableList = 0;
+			for(auto& rw: rewardTableDb.rewards())
+			{
+				accumulatedWeight = accumulatedWeight + fpm::fixed_24_8(rw.weight());
+				fpm::fixed_24_8  rolCurNumC = fpm::fixed_24_8(rolCurNum);
+				  
+				if(rolCurNumC <= accumulatedWeight)
+				{
+				  GenerateActivityReward(fighterID, blueprintAuthID, 0, rw, ctx, db, a, rnd, posInTableList, basedRewardsTableAuthId, "");
+				  break;
+				}
+				
+				 posInTableList++;
+			}
+		}		
+	}
 }
 
 void PXLogic::ResolveCookingRecepie(std::unique_ptr<XayaPlayer>& a, const uint32_t recepieID, Database& db, const Context& ctx, xaya::Random& rnd)
@@ -1716,6 +1805,55 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
                         
           if(tnm->GetInstance().blocksleft() == 0)
           {
+			  // Original game code had wrong resource distribution weights,
+			  // for now lets use the graphs to smooth distribution out
+			  std::map<std::string, fpm::fixed_24_8> m = {{"cbd2e78a-37ce-b864-793d-8dd27788a774", fpm::fixed_24_8(1)},
+			{"e694d5f8-e454-7774-ca76-fc2637a9407f", fpm::fixed_24_8(1.15234)},
+			{"5569ff18-4504-0a54-8b54-518ad7501db8", fpm::fixed_24_8(11.8047)},
+			{"1dbea2e9-1abf-8524-5bb9-4c27d7d4f631", fpm::fixed_24_8(1.82812)},
+			{"0c7385d1-d807-1634-4ae1-9eb4e9991b17", fpm::fixed_24_8(6.68359)},
+			{"eedb6522-2311-3ef4-c999-d3ec275ea496", fpm::fixed_24_8(0.714844)},
+			{"f6cbb7e0-a2f3-3e14-2be5-477eeefe8963", fpm::fixed_24_8(29.6875)},
+			{"99258908-ce4f-50e4-2880-99f0027b8d2b", fpm::fixed_24_8(1.55859)},
+			{"e17e19da-139b-c484-2bc2-6eec8d407c8a", fpm::fixed_24_8(5.875)},
+			{"34c5d1a4-0245-3104-6a35-e765865124b1", fpm::fixed_24_8(0.527344)},
+			{"06cb83c5-def7-cbc4-4956-b53f755c075a", fpm::fixed_24_8(2.02344)},
+			{"1af67bae-6ab2-29e4-9b62-805c73901881", fpm::fixed_24_8(0.414062)},
+			{"b714d4e1-b463-dd14-c943-b3d8a3677a0e", fpm::fixed_24_8(1.72656)},
+			{"ec723560-ccfa-c984-89a6-f578b5387ce9", fpm::fixed_24_8(2.64453)},
+			{"fbc32cb0-c5f4-4884-1a53-f38f1c57e357", fpm::fixed_24_8(4.49219)},
+			{"9ab085a2-2247-adc4-1857-68c3a31b20c3", fpm::fixed_24_8(1.08594)},
+			{"77a516a8-4824-fbf4-ca26-42d18e610a7a", fpm::fixed_24_8(2.22656)},
+			{"8dc57404-ec23-94d4-3919-5ed9e5d4e37f", fpm::fixed_24_8(3.23047)},
+			{"06819c56-b599-d864-dbed-b1df4513ca11", fpm::fixed_24_8(36.5586)},
+			{"e1cb93b2-3ba6-9494-6bd6-9e81994480ee", fpm::fixed_24_8(17.0352)},
+			{"dd89aedb-06c1-1964-d90b-b5977ee61c4c", fpm::fixed_24_8(180.031)},
+												   };
+												   
+												   
+			  std::map<std::string, fpm::fixed_24_8> r = {{"cbd2e78a-37ce-b864-793d-8dd27788a774", fpm::fixed_24_8(1000)},
+			{"e694d5f8-e454-7774-ca76-fc2637a9407f", fpm::fixed_24_8(890)},
+			{"5569ff18-4504-0a54-8b54-518ad7501db8", fpm::fixed_24_8(1)},
+			{"1dbea2e9-1abf-8524-5bb9-4c27d7d4f631", fpm::fixed_24_8(5000)},
+			{"0c7385d1-d807-1634-4ae1-9eb4e9991b17", fpm::fixed_24_8(3138)},
+			{"eedb6522-2311-3ef4-c999-d3ec275ea496", fpm::fixed_24_8(693)},
+			{"f6cbb7e0-a2f3-3e14-2be5-477eeefe8963", fpm::fixed_24_8(1200)},
+			{"99258908-ce4f-50e4-2880-99f0027b8d2b", fpm::fixed_24_8(613)},
+			{"e17e19da-139b-c484-2bc2-6eec8d407c8a", fpm::fixed_24_8(1248)},
+			{"34c5d1a4-0245-3104-6a35-e765865124b1", fpm::fixed_24_8(3747)},
+			{"06cb83c5-def7-cbc4-4956-b53f755c075a", fpm::fixed_24_8(23010)},
+			{"1af67bae-6ab2-29e4-9b62-805c73901881", fpm::fixed_24_8(8000)},
+			{"b714d4e1-b463-dd14-c943-b3d8a3677a0e", fpm::fixed_24_8(21644)},
+			{"ec723560-ccfa-c984-89a6-f578b5387ce9", fpm::fixed_24_8(5124)},
+			{"fbc32cb0-c5f4-4884-1a53-f38f1c57e357", fpm::fixed_24_8(3787)},
+			{"9ab085a2-2247-adc4-1857-68c3a31b20c3", fpm::fixed_24_8(4737)},
+			{"77a516a8-4824-fbf4-ca26-42d18e610a7a", fpm::fixed_24_8(6000)},
+			{"8dc57404-ec23-94d4-3919-5ed9e5d4e37f", fpm::fixed_24_8(3107)},
+			{"06819c56-b599-d864-dbed-b1df4513ca11", fpm::fixed_24_8(3013)},
+			{"e1cb93b2-3ba6-9494-6bd6-9e81994480ee", fpm::fixed_24_8(3246)},
+			{"dd89aedb-06c1-1964-d90b-b5977ee61c4c", fpm::fixed_24_8(4246)},
+												   };			  
+			  
               for(auto participantFighter : tnm->GetInstance().fighters())
               {
                   proto::TournamentResult* newRslt = tnm->MutableInstance().add_results();
@@ -1785,30 +1923,40 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
                       tnm.reset();
                       return;             
                   }
-                                         
-                  uint32_t totalWeight = 0;
-                  for(auto& rw: rewardTableDb.rewards())
-                  {
-                     totalWeight += (uint32_t)rw.weight();
-                  }
+                                        
+										
+                  fpm::fixed_24_8 totalWeight = fpm::fixed_24_8(0);
+				  for(auto& rw: rewardTableDb.rewards())
+				  {
+					 totalWeight = totalWeight + fpm::fixed_24_8(rw.weight()) * m[tnm->GetProto().authoredid()];
+				  }
 
                   for(uint32_t roll = 0; roll < rollCount; ++roll)
                   {
                       int rolCurNum = 0;
                       
-                      if(totalWeight != 0)
-                      {
-                        rolCurNum = rnd.NextInt(totalWeight);
-                      }
+					  if(totalWeight != fpm::fixed_24_8(0))
+					  {
+						rolCurNum = rnd.NextInt((int)totalWeight);
+					  }
                       
-                      int accumulatedWeight = 0;
+                      fpm::fixed_24_8 accumulatedWeight = fpm::fixed_24_8(0);
                       int posInTableList = 0;
                       for(auto& rw: rewardTableDb.rewards())
                       {
-                          accumulatedWeight += rw.weight();
-                          
-                          if(rolCurNum <= accumulatedWeight)
-                          {
+						  accumulatedWeight = accumulatedWeight + fpm::fixed_24_8(rw.weight());
+						  fpm::fixed_24_8  rolCurNumC = fpm::fixed_24_8(rolCurNum);
+						  
+						  if(rolCurNumC <= accumulatedWeight)
+						  {					  
+							  if((pxd::RewardType)(int)rw.type() == pxd::RewardType::CraftedRecipe || (pxd::RewardType)(int)rw.type() == pxd::RewardType::GeneratedRecipe)
+							  {
+								  if (rnd.NextInt((int)r[tnm->GetProto().authoredid()]) > 1000)
+								  {
+									   break;
+								  } 
+							  }  
+							  
                              GenerateActivityReward(0, "", tnm->GetId(), rw, ctx, db, a, rnd, posInTableList, rewardTableId, "");
                              break;
                           }
@@ -2034,9 +2182,9 @@ PXLogic::GetInitialStateBlock (unsigned& height,
   switch (chain)
     {
     case xaya::Chain::MAIN:
-      height = 4'669'799;
+      height = 4'886'137;
       hashHex
-          = "24b5c0d57b93702fb743eab5df218a50a94fac91346a09fa7524b94190d7ea85";
+          = "988c24ff6070cfa1cfbe1711bf933e2f1033576f51412fdbf04a7cc2bdbb0e61";
       break;
 
     case xaya::Chain::TEST:

@@ -1616,6 +1616,562 @@ TEST_F (ValidateStateTests, RatingSweetnessUpgrades)
   ftA.reset();  
 }
 
+/*
+TEST_F (ValidateStateTests, ExpeditionRewardBalance)
+{
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
+  auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
+  int ftA1idx = ft->GetId();
+  ft.reset();
+  xp.reset();  
+	
+  UpdateState ("[]");	
+
+  std::vector<std::string> expeditionAuthNames;
+  
+
+	expeditionAuthNames.push_back("a2512eaa-028a-1f84-6879-eb240ac80a3e");
+	expeditionAuthNames.push_back("93ad71bb-cd8f-dc24-7885-2c3fd0013245");
+	expeditionAuthNames.push_back("35052272-b4bc-75c4-0ad0-fe122f54b508");
+	expeditionAuthNames.push_back("a1387c26-3e1c-4554-e94e-e857643e58ed");
+	expeditionAuthNames.push_back("fbb0edc6-92a9-dc04-5ad7-a19c36843074");
+	expeditionAuthNames.push_back("6d7e16b9-1a8f-b134-59a6-fb9865615001");
+	expeditionAuthNames.push_back("768a4c69-c928-4a34-1bf2-044d3e5bac33");
+	expeditionAuthNames.push_back("5edaf5d1-ec6d-7094-a8dd-a344d0650e5c");
+	expeditionAuthNames.push_back("0d9af5ec-b3fd-3de4-2a38-0a954c9f9cba");
+	expeditionAuthNames.push_back("19bbdaff-2ba7-12f4-3a13-989a490aaf86");
+	expeditionAuthNames.push_back("dc498167-f8b7-3164-da5b-776b731a1a6c");
+	expeditionAuthNames.push_back("f0e675df-3f16-e4b4-f9e2-6b5291a92b0e");
+	expeditionAuthNames.push_back("16457184-f0f1-73e4-183d-e7f8f2d412c2");
+	expeditionAuthNames.push_back("c06ccaea-47e5-ec14-bb62-d824095a1bae");
+	expeditionAuthNames.push_back("09b9f6ba-cc74-6ad4-dbe9-86759590d0fc");
+	expeditionAuthNames.push_back("c088ddf8-2b2e-b9c4-6bb2-52aa1af2584f");
+	expeditionAuthNames.push_back("8928eb04-3ee7-f834-9b5b-8b6f48d04ecf");
+	expeditionAuthNames.push_back("5c5c9f0e-4eda-bbe4-ba92-ec3c400d081e");
+	expeditionAuthNames.push_back("aece8a9f-30c0-3aa4-7a9b-5c33fc2e534a");
+	expeditionAuthNames.push_back("15840d95-57de-86a4-da5e-9ab9dfb89299");
+	
+std::vector<fpm::fixed_24_8> candiesTT;
+  std::vector<fpm::fixed_24_8> recepiesTT;
+  
+  std::map<std::string, fpm::fixed_24_8> m = {{"a2512eaa-028a-1f84-6879-eb240ac80a3e", fpm::fixed_24_8(1.13281)},
+{"93ad71bb-cd8f-dc24-7885-2c3fd0013245", fpm::fixed_24_8(0.414062)},
+{"35052272-b4bc-75c4-0ad0-fe122f54b508", fpm::fixed_24_8(0.371094)},
+{"a1387c26-3e1c-4554-e94e-e857643e58ed", fpm::fixed_24_8(0.429688)},
+{"fbb0edc6-92a9-dc04-5ad7-a19c36843074", fpm::fixed_24_8(0.453125)},
+{"6d7e16b9-1a8f-b134-59a6-fb9865615001", fpm::fixed_24_8(1.37891)},
+{"768a4c69-c928-4a34-1bf2-044d3e5bac33", fpm::fixed_24_8(0.898438)},
+{"5edaf5d1-ec6d-7094-a8dd-a344d0650e5c", fpm::fixed_24_8(1.33203)},
+{"0d9af5ec-b3fd-3de4-2a38-0a954c9f9cba", fpm::fixed_24_8(0.558594)},
+{"19bbdaff-2ba7-12f4-3a13-989a490aaf86", fpm::fixed_24_8(0.890625)},
+{"dc498167-f8b7-3164-da5b-776b731a1a6c", fpm::fixed_24_8(0.8125)},
+{"f0e675df-3f16-e4b4-f9e2-6b5291a92b0e", fpm::fixed_24_8(0.917969)},
+{"16457184-f0f1-73e4-183d-e7f8f2d412c2", fpm::fixed_24_8(1.41016)},
+{"c06ccaea-47e5-ec14-bb62-d824095a1bae", fpm::fixed_24_8(1.42188)},
+{"09b9f6ba-cc74-6ad4-dbe9-86759590d0fc", fpm::fixed_24_8(0.652344)},
+{"c088ddf8-2b2e-b9c4-6bb2-52aa1af2584f", fpm::fixed_24_8(0.84375)},
+{"8928eb04-3ee7-f834-9b5b-8b6f48d04ecf", fpm::fixed_24_8(1.52734)},
+{"5c5c9f0e-4eda-bbe4-ba92-ec3c400d081e", fpm::fixed_24_8(1.20312)},
+{"aece8a9f-30c0-3aa4-7a9b-5c33fc2e534a", fpm::fixed_24_8(0.765625)},
+{"15840d95-57de-86a4-da5e-9ab9dfb89299", fpm::fixed_24_8(0.824219)},
+									   };
+									   
+									   
+  std::map<std::string, fpm::fixed_24_8> r = {{"a2512eaa-028a-1f84-6879-eb240ac80a3e", fpm::fixed_24_8(6000)},
+{"93ad71bb-cd8f-dc24-7885-2c3fd0013245", fpm::fixed_24_8(3000)},
+{"35052272-b4bc-75c4-0ad0-fe122f54b508", fpm::fixed_24_8(3600)},
+{"a1387c26-3e1c-4554-e94e-e857643e58ed", fpm::fixed_24_8(10000)},
+{"fbb0edc6-92a9-dc04-5ad7-a19c36843074", fpm::fixed_24_8(2200)},
+{"6d7e16b9-1a8f-b134-59a6-fb9865615001", fpm::fixed_24_8(1)},
+{"768a4c69-c928-4a34-1bf2-044d3e5bac33", fpm::fixed_24_8(9000)},
+{"5edaf5d1-ec6d-7094-a8dd-a344d0650e5c", fpm::fixed_24_8(2500)},
+{"0d9af5ec-b3fd-3de4-2a38-0a954c9f9cba", fpm::fixed_24_8(3000)},
+{"19bbdaff-2ba7-12f4-3a13-989a490aaf86", fpm::fixed_24_8(5000)},
+{"dc498167-f8b7-3164-da5b-776b731a1a6c", fpm::fixed_24_8(2000)},
+{"f0e675df-3f16-e4b4-f9e2-6b5291a92b0e", fpm::fixed_24_8(2400)},
+{"16457184-f0f1-73e4-183d-e7f8f2d412c2", fpm::fixed_24_8(3000)},
+{"c06ccaea-47e5-ec14-bb62-d824095a1bae", fpm::fixed_24_8(3500)},
+{"09b9f6ba-cc74-6ad4-dbe9-86759590d0fc", fpm::fixed_24_8(4600)},
+{"c088ddf8-2b2e-b9c4-6bb2-52aa1af2584f", fpm::fixed_24_8(1500)},
+{"8928eb04-3ee7-f834-9b5b-8b6f48d04ecf", fpm::fixed_24_8(2000)},
+{"5c5c9f0e-4eda-bbe4-ba92-ec3c400d081e", fpm::fixed_24_8(2000)},
+{"aece8a9f-30c0-3aa4-7a9b-5c33fc2e534a", fpm::fixed_24_8(4000)},
+{"15840d95-57de-86a4-da5e-9ab9dfb89299", fpm::fixed_24_8(6000)},
+									   };					
+
+
+  std::vector<fpm::fixed_24_8> targetCandies;		
+  std::vector<fpm::fixed_24_8> targetRecepies;	  
+  
+  targetCandies.push_back(fpm::fixed_24_8(120 / 5));
+  targetCandies.push_back(fpm::fixed_24_8(120 / 5));
+  targetCandies.push_back(fpm::fixed_24_8(168 / 5));
+  targetCandies.push_back(fpm::fixed_24_8(156 / 5));
+  targetCandies.push_back(fpm::fixed_24_8(288 / 5));
+  targetCandies.push_back(fpm::fixed_24_8(108 / 5));
+  targetCandies.push_back(fpm::fixed_24_8(216 / 5));
+  targetCandies.push_back(fpm::fixed_24_8(198 / 5));
+  targetCandies.push_back(fpm::fixed_24_8(480 / 5));
+  targetCandies.push_back(fpm::fixed_24_8(390 / 5));
+  targetCandies.push_back(fpm::fixed_24_8(560 / 5));
+  targetCandies.push_back(fpm::fixed_24_8(450 / 5));
+  targetCandies.push_back(fpm::fixed_24_8(320 / 5));
+  targetCandies.push_back(fpm::fixed_24_8(320 / 5));
+  targetCandies.push_back(fpm::fixed_24_8(837 / 5));
+  targetCandies.push_back(fpm::fixed_24_8(670 / 5));
+  targetCandies.push_back(fpm::fixed_24_8(586 / 5));
+  targetCandies.push_back(fpm::fixed_24_8(586 / 5));
+  targetCandies.push_back(fpm::fixed_24_8(1005 / 5));
+  targetCandies.push_back(fpm::fixed_24_8(1005 / 5));
+  
+  targetRecepies.push_back(fpm::fixed_24_8(0.3));
+  targetRecepies.push_back(fpm::fixed_24_8(0.3));
+  targetRecepies.push_back(fpm::fixed_24_8(0.4));
+  targetRecepies.push_back(fpm::fixed_24_8(0.4));
+  targetRecepies.push_back(fpm::fixed_24_8(0.5));
+  targetRecepies.push_back(fpm::fixed_24_8(0.2));
+  targetRecepies.push_back(fpm::fixed_24_8(0.2));
+  targetRecepies.push_back(fpm::fixed_24_8(0.3));
+  targetRecepies.push_back(fpm::fixed_24_8(0.5));
+  targetRecepies.push_back(fpm::fixed_24_8(0.2));
+  targetRecepies.push_back(fpm::fixed_24_8(0.55));
+  targetRecepies.push_back(fpm::fixed_24_8(0.412));
+  targetRecepies.push_back(fpm::fixed_24_8(0.3));
+  targetRecepies.push_back(fpm::fixed_24_8(0.3));
+  targetRecepies.push_back(fpm::fixed_24_8(0.5));
+  targetRecepies.push_back(fpm::fixed_24_8(0.4));
+  targetRecepies.push_back(fpm::fixed_24_8(0.35));
+  targetRecepies.push_back(fpm::fixed_24_8(0.35));
+  targetRecepies.push_back(fpm::fixed_24_8(0.6));
+  targetRecepies.push_back(fpm::fixed_24_8(0.6));	
+  
+  const auto& expeditionList = ctx.RoConfig()->expeditionblueprints();
+  
+  for(int p =0; p < 1000; p++)
+  {
+	  std::vector<fpm::fixed_24_8> candiesT;
+      std::vector<fpm::fixed_24_8> recepiesT;
+	  
+	  for(auto& blueprintAuthID: expeditionAuthNames)
+	  {
+		  fpm::fixed_24_8 CT = fpm::fixed_24_8(0);
+		  fpm::fixed_24_8 RT = fpm::fixed_24_8(0);
+		  
+            uint32_t rollCount  = 0;
+			bool blueprintSolved = false;
+			std::string basedRewardsTableAuthId = "";
+			
+			for(const auto& expedition: expeditionList)
+			{
+				if(expedition.second.authoredid() == blueprintAuthID)
+				{
+					rollCount = expedition.second.baserollcount();
+					basedRewardsTableAuthId = expedition.second.baserewardstableid();
+					blueprintSolved = true;
+					break;
+				}
+			}   
+			
+			if(blueprintSolved == false)
+			{
+				LOG (WARNING) << "Could not resolve expedition in logic blueprint with authID: " << blueprintAuthID;
+				return;              
+			}
+			
+			pxd::proto::ActivityReward rewardTableDb;
+			
+			const auto& rewardsList = ctx.RoConfig()->activityrewards();
+			bool rewardsSolved = false;
+			
+			for(const auto& rewardsTable: rewardsList)
+			{
+				if(rewardsTable.second.authoredid() == basedRewardsTableAuthId)
+				{
+					rewardTableDb = rewardsTable.second;
+					rewardsSolved = true;
+					break;
+				}
+			}     
+
+			if(rewardsSolved == false)
+			{
+				LOG (WARNING) << "Could not resolve expedition rewards in logic  with authID: " << blueprintAuthID;
+				return;             
+			}
+								 
+		  fpm::fixed_24_8 totalWeight = fpm::fixed_24_8(0);
+		  for(auto& rw: rewardTableDb.rewards())
+		  {
+			 totalWeight = totalWeight + fpm::fixed_24_8(rw.weight()) * m[blueprintAuthID];
+		  }
+
+		  std::vector<uint32_t> totalRewardIds;
+
+		  for(uint32_t roll = 0; roll < rollCount; ++roll)
+		  {
+			  int rolCurNum = 0;
+			  
+			  if(totalWeight != fpm::fixed_24_8(0) && (int)totalWeight != 0)
+			  {
+				rolCurNum = rnd.NextInt((int)totalWeight);
+			  }
+			  
+			  fpm::fixed_24_8 accumulatedWeight = fpm::fixed_24_8(0);
+			  int posInTableList = 0;
+			  for(auto& rw: rewardTableDb.rewards())
+			  {
+				  accumulatedWeight = accumulatedWeight + fpm::fixed_24_8(rw.weight());
+				  fpm::fixed_24_8  rolCurNumC = fpm::fixed_24_8(rolCurNum);
+				  
+				  if(rolCurNumC <= accumulatedWeight)
+				  {
+					  if((pxd::RewardType)(int)rw.type() == pxd::RewardType::CraftedRecipe || (pxd::RewardType)(int)rw.type() == pxd::RewardType::GeneratedRecipe)
+					  {
+						  if (rnd.NextInt((int)r[blueprintAuthID]) > 1000)
+						  {
+							   break;
+						  } 
+					  }
+					  
+					  if((pxd::RewardType)(int)rw.type() == pxd::RewardType::Candy)
+					  {		   
+						   CT = CT + fpm::fixed_24_8(rw.quantity());
+					  }
+					  else if((pxd::RewardType)(int)rw.type() == pxd::RewardType::CraftedRecipe || (pxd::RewardType)(int)rw.type() == pxd::RewardType::GeneratedRecipe)
+					  {
+						   RT = RT + fpm::fixed_24_8(1);
+					  }
+					  else
+					  {
+						  RT = RT + fpm::fixed_24_8(1);
+					  }
+			  
+					 
+					 break;
+				  }
+				  
+				   posInTableList++;
+			  }
+		  }      
+
+		  candiesT.push_back(CT);
+		  recepiesT.push_back(RT);
+	  }
+	  
+	  if(candiesTT.size() == 0)
+	  {
+	    for(int r2 =0; r2 < candiesT.size(); r2++)
+        {	
+	       candiesTT.push_back(candiesT[r2]);
+		   recepiesTT.push_back(recepiesT[r2]);
+		}	
+	  }
+	  else
+	  {
+	    for(int r2 =0; r2 < candiesT.size(); r2++)
+        {	
+	       candiesTT[r2] = (candiesTT[r2] + candiesT[r2]) / fpm::fixed_24_8(2);
+		   recepiesTT[r2] = (recepiesTT[r2] + recepiesT[r2]) / fpm::fixed_24_8(2);
+		}			  
+	  }
+  }
+  
+  for(int r =0; r < expeditionAuthNames.size(); r++)
+  {
+	 
+	 fpm::fixed_24_8 div = targetCandies[r];
+	 if(div == fpm::fixed_24_8(0)) div = fpm::fixed_24_8(1);
+	 
+	 //LOG (WARNING) << "{\"" << expeditionAuthNames[r] << "\", fpm::fixed_24_8(" << (double)(candiesTT[r]/ div) << ")},";
+	 
+	 //LOG (WARNING) << (double)(candiesTT[r]/ div) << "," <<  (double)(recepiesTT[r] / targetRecepies[r]);
+   
+     //LOG (WARNING) << "{\"" << expeditionAuthNames[r] << "\", fpm::fixed_24_8(" << ((int)(1000.0 * ((double)((double)recepiesTT[r] / (double)targetRecepies[r])))) << ")},";
+   
+	 LOG (WARNING) << expeditionAuthNames[r] << " produced CT:" << (double)candiesTT[r] <<"|" << (double)targetCandies[r] << " and RT:" << (double)recepiesTT[r] <<"|"<< (double)targetRecepies[r];  
+  }  
+	
+}*/
+
+/*
+TEST_F (ValidateStateTests, TournamentRewardBalance)
+{
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
+  auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
+  int ftA1idx = ft->GetId();
+  ft.reset();
+  xp.reset();  
+	
+  UpdateState ("[]");	
+
+  std::vector<std::string> tournamentAuthNames;
+  
+  tournamentAuthNames.push_back("cbd2e78a-37ce-b864-793d-8dd27788a774");
+  tournamentAuthNames.push_back("e694d5f8-e454-7774-ca76-fc2637a9407f");
+  tournamentAuthNames.push_back("5569ff18-4504-0a54-8b54-518ad7501db8");
+  tournamentAuthNames.push_back("1dbea2e9-1abf-8524-5bb9-4c27d7d4f631");
+  tournamentAuthNames.push_back("0c7385d1-d807-1634-4ae1-9eb4e9991b17");
+  tournamentAuthNames.push_back("eedb6522-2311-3ef4-c999-d3ec275ea496");
+  tournamentAuthNames.push_back("f6cbb7e0-a2f3-3e14-2be5-477eeefe8963");
+  tournamentAuthNames.push_back("99258908-ce4f-50e4-2880-99f0027b8d2b");
+  tournamentAuthNames.push_back("e17e19da-139b-c484-2bc2-6eec8d407c8a");
+  tournamentAuthNames.push_back("34c5d1a4-0245-3104-6a35-e765865124b1");
+  tournamentAuthNames.push_back("06cb83c5-def7-cbc4-4956-b53f755c075a");
+  tournamentAuthNames.push_back("1af67bae-6ab2-29e4-9b62-805c73901881");
+  tournamentAuthNames.push_back("b714d4e1-b463-dd14-c943-b3d8a3677a0e");
+  tournamentAuthNames.push_back("ec723560-ccfa-c984-89a6-f578b5387ce9");
+  tournamentAuthNames.push_back("fbc32cb0-c5f4-4884-1a53-f38f1c57e357");
+  tournamentAuthNames.push_back("9ab085a2-2247-adc4-1857-68c3a31b20c3");
+  tournamentAuthNames.push_back("77a516a8-4824-fbf4-ca26-42d18e610a7a");
+  tournamentAuthNames.push_back("8dc57404-ec23-94d4-3919-5ed9e5d4e37f");
+  tournamentAuthNames.push_back("06819c56-b599-d864-dbed-b1df4513ca11");
+  tournamentAuthNames.push_back("e1cb93b2-3ba6-9494-6bd6-9e81994480ee");
+  tournamentAuthNames.push_back("dd89aedb-06c1-1964-d90b-b5977ee61c4c");
+	
+  std::vector<fpm::fixed_24_8> candiesTT;
+  std::vector<fpm::fixed_24_8> recepiesTT;
+  
+  std::map<std::string, fpm::fixed_24_8> m = {{"cbd2e78a-37ce-b864-793d-8dd27788a774", fpm::fixed_24_8(1)},
+{"e694d5f8-e454-7774-ca76-fc2637a9407f", fpm::fixed_24_8(1.15234)},
+{"5569ff18-4504-0a54-8b54-518ad7501db8", fpm::fixed_24_8(11.8047)},
+{"1dbea2e9-1abf-8524-5bb9-4c27d7d4f631", fpm::fixed_24_8(1.82812)},
+{"0c7385d1-d807-1634-4ae1-9eb4e9991b17", fpm::fixed_24_8(6.68359)},
+{"eedb6522-2311-3ef4-c999-d3ec275ea496", fpm::fixed_24_8(0.714844)},
+{"f6cbb7e0-a2f3-3e14-2be5-477eeefe8963", fpm::fixed_24_8(29.6875)},
+{"99258908-ce4f-50e4-2880-99f0027b8d2b", fpm::fixed_24_8(1.55859)},
+{"e17e19da-139b-c484-2bc2-6eec8d407c8a", fpm::fixed_24_8(5.875)},
+{"34c5d1a4-0245-3104-6a35-e765865124b1", fpm::fixed_24_8(0.527344)},
+{"06cb83c5-def7-cbc4-4956-b53f755c075a", fpm::fixed_24_8(2.02344)},
+{"1af67bae-6ab2-29e4-9b62-805c73901881", fpm::fixed_24_8(0.414062)},
+{"b714d4e1-b463-dd14-c943-b3d8a3677a0e", fpm::fixed_24_8(1.72656)},
+{"ec723560-ccfa-c984-89a6-f578b5387ce9", fpm::fixed_24_8(2.64453)},
+{"fbc32cb0-c5f4-4884-1a53-f38f1c57e357", fpm::fixed_24_8(4.49219)},
+{"9ab085a2-2247-adc4-1857-68c3a31b20c3", fpm::fixed_24_8(1.08594)},
+{"77a516a8-4824-fbf4-ca26-42d18e610a7a", fpm::fixed_24_8(2.22656)},
+{"8dc57404-ec23-94d4-3919-5ed9e5d4e37f", fpm::fixed_24_8(3.23047)},
+{"06819c56-b599-d864-dbed-b1df4513ca11", fpm::fixed_24_8(36.5586)},
+{"e1cb93b2-3ba6-9494-6bd6-9e81994480ee", fpm::fixed_24_8(17.0352)},
+{"dd89aedb-06c1-1964-d90b-b5977ee61c4c", fpm::fixed_24_8(180.031)},
+									   };
+									   
+									   
+  std::map<std::string, fpm::fixed_24_8> r = {{"cbd2e78a-37ce-b864-793d-8dd27788a774", fpm::fixed_24_8(1000)},
+{"e694d5f8-e454-7774-ca76-fc2637a9407f", fpm::fixed_24_8(890)},
+{"5569ff18-4504-0a54-8b54-518ad7501db8", fpm::fixed_24_8(1)},
+{"1dbea2e9-1abf-8524-5bb9-4c27d7d4f631", fpm::fixed_24_8(5000)},
+{"0c7385d1-d807-1634-4ae1-9eb4e9991b17", fpm::fixed_24_8(3138)},
+{"eedb6522-2311-3ef4-c999-d3ec275ea496", fpm::fixed_24_8(693)},
+{"f6cbb7e0-a2f3-3e14-2be5-477eeefe8963", fpm::fixed_24_8(1200)},
+{"99258908-ce4f-50e4-2880-99f0027b8d2b", fpm::fixed_24_8(613)},
+{"e17e19da-139b-c484-2bc2-6eec8d407c8a", fpm::fixed_24_8(1248)},
+{"34c5d1a4-0245-3104-6a35-e765865124b1", fpm::fixed_24_8(3747)},
+{"06cb83c5-def7-cbc4-4956-b53f755c075a", fpm::fixed_24_8(23010)},
+{"1af67bae-6ab2-29e4-9b62-805c73901881", fpm::fixed_24_8(8000)},
+{"b714d4e1-b463-dd14-c943-b3d8a3677a0e", fpm::fixed_24_8(21644)},
+{"ec723560-ccfa-c984-89a6-f578b5387ce9", fpm::fixed_24_8(5124)},
+{"fbc32cb0-c5f4-4884-1a53-f38f1c57e357", fpm::fixed_24_8(3787)},
+{"9ab085a2-2247-adc4-1857-68c3a31b20c3", fpm::fixed_24_8(4737)},
+{"77a516a8-4824-fbf4-ca26-42d18e610a7a", fpm::fixed_24_8(6000)},
+{"8dc57404-ec23-94d4-3919-5ed9e5d4e37f", fpm::fixed_24_8(3107)},
+{"06819c56-b599-d864-dbed-b1df4513ca11", fpm::fixed_24_8(3013)},
+{"e1cb93b2-3ba6-9494-6bd6-9e81994480ee", fpm::fixed_24_8(3246)},
+{"dd89aedb-06c1-1964-d90b-b5977ee61c4c", fpm::fixed_24_8(4246)},
+									   };					
+
+
+  std::vector<fpm::fixed_24_8> targetCandies;		
+  std::vector<fpm::fixed_24_8> targetRecepies;	  
+  
+  targetCandies.push_back(fpm::fixed_24_8(0));
+  targetCandies.push_back(fpm::fixed_24_8(120));
+  targetCandies.push_back(fpm::fixed_24_8(120));
+  targetCandies.push_back(fpm::fixed_24_8(168));
+  targetCandies.push_back(fpm::fixed_24_8(156));
+  targetCandies.push_back(fpm::fixed_24_8(288));
+  targetCandies.push_back(fpm::fixed_24_8(108));
+  targetCandies.push_back(fpm::fixed_24_8(216));
+  targetCandies.push_back(fpm::fixed_24_8(198));
+  targetCandies.push_back(fpm::fixed_24_8(480));
+  targetCandies.push_back(fpm::fixed_24_8(390));
+  targetCandies.push_back(fpm::fixed_24_8(560));
+  targetCandies.push_back(fpm::fixed_24_8(450));
+  targetCandies.push_back(fpm::fixed_24_8(320));
+  targetCandies.push_back(fpm::fixed_24_8(320));
+  targetCandies.push_back(fpm::fixed_24_8(837));
+  targetCandies.push_back(fpm::fixed_24_8(670));
+  targetCandies.push_back(fpm::fixed_24_8(586));
+  targetCandies.push_back(fpm::fixed_24_8(586));
+  targetCandies.push_back(fpm::fixed_24_8(1005));
+  targetCandies.push_back(fpm::fixed_24_8(1005));
+  
+  targetRecepies.push_back(fpm::fixed_24_8(4));
+  targetRecepies.push_back(fpm::fixed_24_8(1.5));
+  targetRecepies.push_back(fpm::fixed_24_8(1.5));
+  targetRecepies.push_back(fpm::fixed_24_8(2.1));
+  targetRecepies.push_back(fpm::fixed_24_8(1.95));
+  targetRecepies.push_back(fpm::fixed_24_8(2.40));
+  targetRecepies.push_back(fpm::fixed_24_8(0.9));
+  targetRecepies.push_back(fpm::fixed_24_8(1.80));
+  targetRecepies.push_back(fpm::fixed_24_8(1.65));
+  targetRecepies.push_back(fpm::fixed_24_8(2.40));
+  targetRecepies.push_back(fpm::fixed_24_8(1.95));
+  targetRecepies.push_back(fpm::fixed_24_8(2.80));
+  targetRecepies.push_back(fpm::fixed_24_8(2.25));
+  targetRecepies.push_back(fpm::fixed_24_8(1.60));
+  targetRecepies.push_back(fpm::fixed_24_8(1.60));
+  targetRecepies.push_back(fpm::fixed_24_8(2.50));
+  targetRecepies.push_back(fpm::fixed_24_8(2.00));
+  targetRecepies.push_back(fpm::fixed_24_8(1.75));
+  targetRecepies.push_back(fpm::fixed_24_8(1.75));
+  targetRecepies.push_back(fpm::fixed_24_8(3.00));
+  targetRecepies.push_back(fpm::fixed_24_8(3.00));
+
+  
+  for(int p =0; p < 1000; p++)
+  {
+	  std::vector<fpm::fixed_24_8> candiesT;
+      std::vector<fpm::fixed_24_8> recepiesT;
+	  
+	  for(auto& tAuthID: tournamentAuthNames)
+	  {
+		  fpm::fixed_24_8 CT = fpm::fixed_24_8(0);
+		  fpm::fixed_24_8 RT = fpm::fixed_24_8(0);
+		  
+		  xp = xayaplayers.GetByName ("domob", ctx.RoConfig());
+		  auto tnm = tbl5.GetByAuthIdName(tAuthID, ctx.RoConfig()); //The Chocolate Chip Pee Wee Cup
+		  ASSERT_TRUE (tnm != nullptr);
+		  std::string rewardTableId = tnm->GetProto().baserewardstableid();
+		  uint32_t rollCount = tnm->GetProto().baserollcount();
+		  bool winner = true;
+		  
+		  if(winner)
+		  {
+			 rewardTableId = tnm->GetProto().winnerrewardstableid();  
+			 rollCount = tnm->GetProto().winnerrollcount();
+		  }
+		  
+		  rollCount = rollCount * tnm->GetProto().teamsize() * tnm->GetProto().teamsize() * (tnm->GetProto().teamcount() - 1);
+		  
+		  pxd::proto::ActivityReward rewardTableDb;
+			  
+		  const auto& rewardsList = ctx.RoConfig()->activityrewards();
+		  bool rewardsSolved = false;
+			  
+		  for(const auto& rewardsTable: rewardsList)
+		  {
+			if(rewardsTable.second.authoredid() == rewardTableId)
+			{
+				rewardTableDb = rewardsTable.second;
+				rewardsSolved = true;
+				break;
+			}
+		  }     
+
+		  if(rewardsSolved == false)
+		  {
+			  LOG (WARNING) << "Could not resolve expedition rewards in logic  with authID: " << rewardTableId;
+			  tnm.reset();
+			  return;             
+		  }
+								 
+		  fpm::fixed_24_8 totalWeight = fpm::fixed_24_8(0);
+		  for(auto& rw: rewardTableDb.rewards())
+		  {
+			 totalWeight = totalWeight + fpm::fixed_24_8(rw.weight()) * m[tAuthID];
+		  }
+
+		  std::vector<uint32_t> totalRewardIds;
+
+		  for(uint32_t roll = 0; roll < rollCount; ++roll)
+		  {
+			  int rolCurNum = 0;
+			  
+			  if(totalWeight != fpm::fixed_24_8(0))
+			  {
+				rolCurNum = rnd.NextInt((int)totalWeight);
+			  }
+			  
+			  fpm::fixed_24_8 accumulatedWeight = fpm::fixed_24_8(0);
+			  int posInTableList = 0;
+			  for(auto& rw: rewardTableDb.rewards())
+			  {
+				  accumulatedWeight = accumulatedWeight + fpm::fixed_24_8(rw.weight());
+				  fpm::fixed_24_8  rolCurNumC = fpm::fixed_24_8(rolCurNum);
+				  
+				  if(rolCurNumC <= accumulatedWeight)
+				  {
+					  if((pxd::RewardType)(int)rw.type() == pxd::RewardType::CraftedRecipe || (pxd::RewardType)(int)rw.type() == pxd::RewardType::GeneratedRecipe)
+					  {
+						  if (rnd.NextInt((int)r[tAuthID]) > 1000)
+						  {
+							   break;
+						  } 
+					  }
+					  
+					  if((pxd::RewardType)(int)rw.type() == pxd::RewardType::Candy)
+					  {		   
+						   CT = CT + fpm::fixed_24_8(rw.quantity());
+					  }
+					  else if((pxd::RewardType)(int)rw.type() == pxd::RewardType::CraftedRecipe || (pxd::RewardType)(int)rw.type() == pxd::RewardType::GeneratedRecipe)
+					  {
+						   RT = RT + fpm::fixed_24_8(1);
+					  }
+					  else
+					  {
+						  RT = RT + fpm::fixed_24_8(1);
+					  }
+			  
+					 
+					 break;
+				  }
+				  
+				   posInTableList++;
+			  }
+		  }      
+
+
+		  tnm.reset();  
+		  xp.reset();
+		  
+		  candiesT.push_back(CT);
+		  recepiesT.push_back(RT);
+	  }
+	  
+	  if(candiesTT.size() == 0)
+	  {
+	    for(int r2 =0; r2 < candiesT.size(); r2++)
+        {	
+	       candiesTT.push_back(candiesT[r2]);
+		   recepiesTT.push_back(recepiesT[r2]);
+		}	
+	  }
+	  else
+	  {
+	    for(int r2 =0; r2 < candiesT.size(); r2++)
+        {	
+	       candiesTT[r2] = (candiesTT[r2] + candiesT[r2]) / fpm::fixed_24_8(2);
+		   recepiesTT[r2] = (recepiesTT[r2] + recepiesT[r2]) / fpm::fixed_24_8(2);
+		}			  
+	  }
+  }
+  
+  for(int r =0; r < tournamentAuthNames.size(); r++)
+  {
+	 
+	 fpm::fixed_24_8 div = targetCandies[r];
+	 if(div == fpm::fixed_24_8(0)) div = fpm::fixed_24_8(1);
+	 
+	 //LOG (WARNING) << "{\"" << tournamentAuthNames[r] << "\", fpm::fixed_24_8(" << (double)(candiesTT[r]/ div) << ")},";
+	 
+	 //LOG (WARNING) << (double)(candiesTT[r]/ div) << "," <<  (double)(recepiesTT[r] / targetRecepies[r]);
+   
+     //LOG (WARNING) << "{\"" << tournamentAuthNames[r] << "\", fpm::fixed_24_8(" << ((int)(1000.0 * ((double)((double)recepiesTT[r] / (double)targetRecepies[r])))) << ")},";
+   
+	 LOG (WARNING) << tournamentAuthNames[r] << " produced CT:" << (double)candiesTT[r] <<"|" << (double)targetCandies[r] << " and RT:" << (double)recepiesTT[r] <<"|"<< (double)targetRecepies[r];  
+  }
+}
+*/
+
 TEST_F (ValidateStateTests, SweetnessRatingStaysCapped)
 {
   auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
