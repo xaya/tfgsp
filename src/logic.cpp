@@ -481,9 +481,36 @@ void PXLogic::ResolveExpedition(std::unique_ptr<XayaPlayer>& a, const std::strin
 	{"aece8a9f-30c0-3aa4-7a9b-5c33fc2e534a", fpm::fixed_24_8(0.765625)},
 	{"15840d95-57de-86a4-da5e-9ab9dfb89299", fpm::fixed_24_8(0.824219)},
 										   };
+		
+    // Soft fork test	
+    const auto chain = ctx.Chain ();	
+	if(ctx.Height () > 4891530 || chain == xaya::Chain::REGTEST)
+    {
+		m = {{"a2512eaa-028a-1f84-6879-eb240ac80a3e", fpm::fixed_24_8(1)},
+		{"93ad71bb-cd8f-dc24-7885-2c3fd0013245", fpm::fixed_24_8(1)},
+		{"35052272-b4bc-75c4-0ad0-fe122f54b508", fpm::fixed_24_8(1)},
+		{"a1387c26-3e1c-4554-e94e-e857643e58ed", fpm::fixed_24_8(1)},
+		{"fbb0edc6-92a9-dc04-5ad7-a19c36843074", fpm::fixed_24_8(1)},
+		{"6d7e16b9-1a8f-b134-59a6-fb9865615001", fpm::fixed_24_8(1)},
+		{"768a4c69-c928-4a34-1bf2-044d3e5bac33", fpm::fixed_24_8(1)},
+		{"5edaf5d1-ec6d-7094-a8dd-a344d0650e5c", fpm::fixed_24_8(1)},
+		{"0d9af5ec-b3fd-3de4-2a38-0a954c9f9cba", fpm::fixed_24_8(1)},
+		{"19bbdaff-2ba7-12f4-3a13-989a490aaf86", fpm::fixed_24_8(1)},
+		{"dc498167-f8b7-3164-da5b-776b731a1a6c", fpm::fixed_24_8(1)},
+		{"f0e675df-3f16-e4b4-f9e2-6b5291a92b0e", fpm::fixed_24_8(1)},
+		{"16457184-f0f1-73e4-183d-e7f8f2d412c2", fpm::fixed_24_8(1)},
+		{"c06ccaea-47e5-ec14-bb62-d824095a1bae", fpm::fixed_24_8(1)},
+		{"09b9f6ba-cc74-6ad4-dbe9-86759590d0fc", fpm::fixed_24_8(1)},
+		{"c088ddf8-2b2e-b9c4-6bb2-52aa1af2584f", fpm::fixed_24_8(1)},
+		{"8928eb04-3ee7-f834-9b5b-8b6f48d04ecf", fpm::fixed_24_8(1)},
+		{"5c5c9f0e-4eda-bbe4-ba92-ec3c400d081e", fpm::fixed_24_8(1)},
+		{"aece8a9f-30c0-3aa4-7a9b-5c33fc2e534a", fpm::fixed_24_8(1)},
+		{"15840d95-57de-86a4-da5e-9ab9dfb89299", fpm::fixed_24_8(1)},
+        };		
+	}
 										   
 										   
-	  std::map<std::string, fpm::fixed_24_8> r = {{"a2512eaa-028a-1f84-6879-eb240ac80a3e", fpm::fixed_24_8(6000)},
+	std::map<std::string, fpm::fixed_24_8> r = {{"a2512eaa-028a-1f84-6879-eb240ac80a3e", fpm::fixed_24_8(6000)},
 	{"93ad71bb-cd8f-dc24-7885-2c3fd0013245", fpm::fixed_24_8(3000)},
 	{"35052272-b4bc-75c4-0ad0-fe122f54b508", fpm::fixed_24_8(3600)},
 	{"a1387c26-3e1c-4554-e94e-e857643e58ed", fpm::fixed_24_8(10000)},
@@ -509,7 +536,6 @@ void PXLogic::ResolveExpedition(std::unique_ptr<XayaPlayer>& a, const std::strin
     bool blueprintSolved = false;
     int rollCount = 0;
     
-    const auto chain = ctx.Chain ();
     if (blueprintAuthID == "00000000-0000-0000-zzzz-zzzzzzzzzzzz" && chain == xaya::Chain::MAIN)
     {
         LOG (WARNING) << "Unit test blueprint is not allowed on the mainnet " << blueprintAuthID;
