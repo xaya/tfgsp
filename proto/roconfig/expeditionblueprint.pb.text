@@ -10,7 +10,7 @@ expeditionblueprints:
     MaxSweetness: 10
     MaxRewardQuality: 4
     BaseRewardsTableId: "42ffc503-545f-61f4-1b57-e65dee1749e0"
-    BaseRollCount: 10
+    BaseRollCount: 5
   }
 }
 expeditionblueprints:
@@ -55,7 +55,7 @@ expeditionblueprints:
     MaxSweetness: 10
     MaxRewardQuality: 4
     BaseRewardsTableId: "45b14a76-3b9c-2014-7bc5-816c7de2f947"
-    BaseRollCount: 10
+    BaseRollCount: 5
   }
 }
 expeditionblueprints:
@@ -70,7 +70,7 @@ expeditionblueprints:
     MaxSweetness: 10
     MaxRewardQuality: 3
     BaseRewardsTableId: "1f9dc820-9e7b-0f04-3944-a13ef7236ca0"
-    BaseRollCount: 6
+    BaseRollCount: 5
   }
 }
 expeditionblueprints:
@@ -115,7 +115,7 @@ expeditionblueprints:
     MaxSweetness: 10
     MaxRewardQuality: 4
     BaseRewardsTableId: "18bce352-f1f1-c894-5807-0cc4e10c0f1a"
-    BaseRollCount: 10
+    BaseRollCount: 5
   }
 }
 expeditionblueprints:
@@ -145,7 +145,7 @@ expeditionblueprints:
     MaxSweetness: 10
     MaxRewardQuality: 4
     BaseRewardsTableId: "42ffc503-545f-61f4-1b57-e65dee1749e0"
-    BaseRollCount: 7
+    BaseRollCount: 4
   }
 }
 expeditionblueprints:
@@ -175,7 +175,7 @@ expeditionblueprints:
     MaxSweetness: 10
     MaxRewardQuality: 3
     BaseRewardsTableId: "1f9dc820-9e7b-0f04-3944-a13ef7236ca0"
-    BaseRollCount: 4
+    BaseRollCount: 6
   }
 }
 expeditionblueprints:
@@ -220,7 +220,7 @@ expeditionblueprints:
     MaxSweetness: 10
     MaxRewardQuality: 2
     BaseRewardsTableId: "bf5e7bbe-2361-80b4-f862-acdfa491c07e"
-    BaseRollCount: 4
+    BaseRollCount: 5
   }
 }
 expeditionblueprints:
@@ -235,7 +235,7 @@ expeditionblueprints:
     MaxSweetness: 10
     MaxRewardQuality: 2
     BaseRewardsTableId: "f6151176-251b-6de4-1aee-245999752b5f"
-    BaseRollCount: 4
+    BaseRollCount: 5
   }
 }
 expeditionblueprints:
@@ -250,7 +250,7 @@ expeditionblueprints:
     MaxSweetness: 10
     MaxRewardQuality: 2
     BaseRewardsTableId: "f6151176-251b-6de4-1aee-245999752b5f"
-    BaseRollCount: 6
+    BaseRollCount: 7
   }
 }
 expeditionblueprints:
@@ -265,7 +265,7 @@ expeditionblueprints:
     MaxSweetness: 10
     MaxRewardQuality: 3
     BaseRewardsTableId: "74c64b03-c246-7174-bb50-4834e2d2a010"
-    BaseRollCount: 4
+    BaseRollCount: 6
   }
 }
 expeditionblueprints:
@@ -295,7 +295,7 @@ expeditionblueprints:
     MaxSweetness: 10
     MaxRewardQuality: 3
     BaseRewardsTableId: "a2d81a2a-60e6-f354-6943-40803787242f"
-    BaseRollCount: 6
+    BaseRollCount: 5
   }
 }
 expeditionblueprints:
@@ -310,7 +310,7 @@ expeditionblueprints:
     MaxSweetness: 10
     MaxRewardQuality: 4
     BaseRewardsTableId: "45b14a76-3b9c-2014-7bc5-816c7de2f947"
-    BaseRollCount: 7
+    BaseRollCount: 4
   }
 }
 expeditionblueprints:
@@ -325,6 +325,6 @@ expeditionblueprints:
     MaxSweetness: 10
     MaxRewardQuality: 4
     BaseRewardsTableId: "18bce352-f1f1-c894-5807-0cc4e10c0f1a"
-    BaseRollCount: 10
+    BaseRollCount: 5
   }
 }

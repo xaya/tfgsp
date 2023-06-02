@@ -74,7 +74,7 @@ tournamentbluprints:
     BaseRewardsTableId: "f222e20f-3157-f314-6803-692d4ea1c9f2"
     BaseRollCount: 2
     WinnerRewardsTableId: "f222e20f-3157-f314-6803-692d4ea1c9f2"
-    WinnerRollCount: 4
+    WinnerRollCount: 5
     JoinCost: 0
   }
 }
@@ -94,7 +94,7 @@ tournamentbluprints:
     BaseRewardsTableId: "f222e20f-3157-f314-6803-692d4ea1c9f2"
     BaseRollCount: 3
     WinnerRewardsTableId: "f222e20f-3157-f314-6803-692d4ea1c9f2"
-    WinnerRollCount: 5
+    WinnerRollCount: 4
     JoinCost: 0
   }
 }
@@ -132,9 +132,9 @@ tournamentbluprints:
     MaxSweetness: 4
     MaxRewardQuality: 1
     BaseRewardsTableId: "bd3bfc25-5636-a704-a96e-59473e39a368"
-    BaseRollCount: 2
+    BaseRollCount: 1
     WinnerRewardsTableId: "bd3bfc25-5636-a704-a96e-59473e39a368"
-    WinnerRollCount: 4
+    WinnerRollCount: 2
     JoinCost: 0
   }
 }
@@ -152,9 +152,9 @@ tournamentbluprints:
     MaxSweetness: 4
     MaxRewardQuality: 1
     BaseRewardsTableId: "bd3bfc25-5636-a704-a96e-59473e39a368"
-    BaseRollCount: 3
+    BaseRollCount: 1
     WinnerRewardsTableId: "bd3bfc25-5636-a704-a96e-59473e39a368"
-    WinnerRollCount: 5
+    WinnerRollCount: 2
     JoinCost: 0
   }
 }
@@ -172,9 +172,9 @@ tournamentbluprints:
     MaxSweetness: 10
     MaxRewardQuality: 4
     BaseRewardsTableId: "ba99802e-6d0c-3da4-b9b1-99fc8105e54a"
-    BaseRollCount: 3
+    BaseRollCount: 6
     WinnerRewardsTableId: "ba99802e-6d0c-3da4-b9b1-99fc8105e54a"
-    WinnerRollCount: 5
+    WinnerRollCount: 10
     JoinCost: 0
   }
 }
@@ -194,7 +194,7 @@ tournamentbluprints:
     BaseRewardsTableId: "be507768-f89e-7114-3a40-655521f5ecad"
     BaseRollCount: 2
     WinnerRewardsTableId: "be507768-f89e-7114-3a40-655521f5ecad"
-    WinnerRollCount: 4
+    WinnerRollCount: 3
     JoinCost: 0
   }
 }
@@ -214,7 +214,7 @@ tournamentbluprints:
     BaseRewardsTableId: "6c280e9c-2326-ce44-895c-b350dd01543a"
     BaseRollCount: 2
     WinnerRewardsTableId: "6c280e9c-2326-ce44-895c-b350dd01543a"
-    WinnerRollCount: 4
+    WinnerRollCount: 6
     JoinCost: 0
   }
 }
@@ -232,9 +232,9 @@ tournamentbluprints:
     MaxSweetness: 9
     MaxRewardQuality: 3
     BaseRewardsTableId: "6c280e9c-2326-ce44-895c-b350dd01543a"
-    BaseRollCount: 3
+    BaseRollCount: 5
     WinnerRewardsTableId: "6c280e9c-2326-ce44-895c-b350dd01543a"
-    WinnerRollCount: 5
+    WinnerRollCount: 8
     JoinCost: 0
   }
 }
@@ -252,9 +252,9 @@ tournamentbluprints:
     MaxSweetness: 10
     MaxRewardQuality: 4
     BaseRewardsTableId: "53f146c5-6d06-d7e4-e970-5dd72dbef229"
-    BaseRollCount: 2
+    BaseRollCount: 3
     WinnerRewardsTableId: "53f146c5-6d06-d7e4-e970-5dd72dbef229"
-    WinnerRollCount: 4
+    WinnerRollCount: 5
     JoinCost: 0
   }
 }
@@ -272,9 +272,9 @@ tournamentbluprints:
     MaxSweetness: 8
     MaxRewardQuality: 3
     BaseRewardsTableId: "6ca739e1-18c3-9b04-4bb6-cb38d82462ea"
-    BaseRollCount: 2
+    BaseRollCount: 5
     WinnerRewardsTableId: "6ca739e1-18c3-9b04-4bb6-cb38d82462ea"
-    WinnerRollCount: 4
+    WinnerRollCount: 8
     JoinCost: 0
   }
 }
@@ -292,9 +292,9 @@ tournamentbluprints:
     MaxSweetness: 8
     MaxRewardQuality: 3
     BaseRewardsTableId: "6ca739e1-18c3-9b04-4bb6-cb38d82462ea"
-    BaseRollCount: 3
+    BaseRollCount: 5
     WinnerRewardsTableId: "6ca739e1-18c3-9b04-4bb6-cb38d82462ea"
-    WinnerRollCount: 5
+    WinnerRollCount: 8
     JoinCost: 0
   }
 }
@@ -314,7 +314,7 @@ tournamentbluprints:
     BaseRewardsTableId: "be507768-f89e-7114-3a40-655521f5ecad"
     BaseRollCount: 3
     WinnerRewardsTableId: "be507768-f89e-7114-3a40-655521f5ecad"
-    WinnerRollCount: 5
+    WinnerRollCount: 2
     JoinCost: 0
   }
 }
@@ -332,9 +332,9 @@ tournamentbluprints:
     MaxSweetness: 10
     MaxRewardQuality: 4
     BaseRewardsTableId: "ba99802e-6d0c-3da4-b9b1-99fc8105e54a"
-    BaseRollCount: 2
+    BaseRollCount: 5
     WinnerRewardsTableId: "ba99802e-6d0c-3da4-b9b1-99fc8105e54a"
-    WinnerRollCount: 4
+    WinnerRollCount: 8
     JoinCost: 0
   }
 }
@@ -352,9 +352,9 @@ tournamentbluprints:
     MaxSweetness: 7
     MaxRewardQuality: 3
     BaseRewardsTableId: "d73e36c9-4533-0ff4-cb72-2137ae467bd8"
-    BaseRollCount: 2
+    BaseRollCount: 5
     WinnerRewardsTableId: "d73e36c9-4533-0ff4-cb72-2137ae467bd8"
-    WinnerRollCount: 4
+    WinnerRollCount: 8
     JoinCost: 0
   }
 }
@@ -372,9 +372,9 @@ tournamentbluprints:
     MaxSweetness: 7
     MaxRewardQuality: 3
     BaseRewardsTableId: "d73e36c9-4533-0ff4-cb72-2137ae467bd8"
-    BaseRollCount: 3
+    BaseRollCount: 5
     WinnerRewardsTableId: "d73e36c9-4533-0ff4-cb72-2137ae467bd8"
-    WinnerRollCount: 5
+    WinnerRollCount: 8
     JoinCost: 0
   }
 }
@@ -394,7 +394,7 @@ tournamentbluprints:
     BaseRewardsTableId: "a8c278b1-2a20-db84-d9ca-977c84fe9cb8"
     BaseRollCount: 2
     WinnerRewardsTableId: "a8c278b1-2a20-db84-d9ca-977c84fe9cb8"
-    WinnerRollCount: 4
+    WinnerRollCount: 5
     JoinCost: 0
   }
 }
@@ -412,9 +412,9 @@ tournamentbluprints:
     MaxSweetness: 10
     MaxRewardQuality: 4
     BaseRewardsTableId: "a8c278b1-2a20-db84-d9ca-977c84fe9cb8"
-    BaseRollCount: 3
+    BaseRollCount: 2
     WinnerRewardsTableId: "a8c278b1-2a20-db84-d9ca-977c84fe9cb8"
-    WinnerRollCount: 5
+    WinnerRollCount: 4
     JoinCost: 0
   }
 }
