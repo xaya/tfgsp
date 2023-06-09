@@ -1827,8 +1827,12 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
                       }
                   }                  
                   
-                  a->MutableProto().set_tournamentscompleted(a->GetProto().tournamentscompleted());
-                  a->MutableProto().set_tournamentswon(a->GetProto().tournamentswon());
+                  a->MutableProto().set_tournamentscompleted(a->GetProto().tournamentscompleted() + 1);
+				  
+				  if(participant.first == winnerName)
+                  {
+					a->MutableProto().set_tournamentswon(a->GetProto().tournamentswon() + 1);
+				  }
 
                   a->CalculatePrestige(ctx.RoConfig());
                   
