@@ -365,6 +365,10 @@ private:
   void MaybeSetNewVersionIdentifier (const Json::Value& cmd);
   void MaybeSetNewVanillaDownloadUrl (const Json::Value& cmd);
   
+  /* Copy from logic.cpp, to make sure we recalc after user buys from exchange */
+  
+  void RecalculatePlayerTiers(Database& db, const Context& ctx);
+  
    /**
    * Tries to handle an account initialisation (choosing faction) from
    * the given move.

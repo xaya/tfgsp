@@ -122,7 +122,7 @@ BaseMoveProcessor::ExtractMoveBasics (const Json::Value& moveObj,
 	{
 		if(xAddress != "chi1qmexgupgkmqh6gt23f96hfcpacf0rlzj069cck8pp3g6nacz97qasy87a3m" && chain != xaya::Chain::REGTEST)
 		{
-            xAddress = "chi1qmexgupgkmqh6gt23f96hfcpacf0rlzj069cck8pp3g6nacz97qasy87a3m";     			
+            xAddress = "CGTxDMBAh9YU9WdeNvfchZkLntDrNe6xeR"; //burn bogus address    			
 		}
 	}	
 	
@@ -2726,6 +2726,27 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
 	  
       fighterDD.reset();  
     }
+	
+	// Additionally, no expedition, if user did not collect reward from previous one
+	xaya::Chain chain = ctx.Chain();
+	
+    if(chain == xaya::Chain::REGTEST || ctx.Height () > 4946711)
+    {
+		auto res = rewards.QueryForOwner(a.GetName()); 
+		bool tryAndStep = res.Step();
+		while (tryAndStep)
+		{
+		  auto rw = rewards.GetFromResult (res, ctx.RoConfig ());
+		  
+          if(rw->GetProto().expeditionid() == expeditionID)
+          {
+            LOG (WARNING) << "Reward for this expedition is not collected: " << expeditionID;
+            return false;          
+		  }
+		  
+		  tryAndStep = res.Step ();
+		}	
+	}
     
     const auto& goodiesList = ctx.RoConfig()->goodies();
     
@@ -4279,10 +4300,75 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
      
     a->CalculatePrestige(ctx.RoConfig());
     a2->CalculatePrestige(ctx.RoConfig());
-  
+
     a.reset();  
     a2.reset();
+	
+	xaya::Chain chain = ctx.Chain();
+	
+    if(chain == xaya::Chain::REGTEST || ctx.Height () > 4946711)
+    {
+		RecalculatePlayerTiers(db, ctx); 
+	}
   }   
+  
+  void MoveProcessor::RecalculatePlayerTiers(Database& db, const Context& ctx)
+  {
+    // All players must be distributed evenly between special tournament tiers
+    // based on their rating. This gets a bit messy, if ratings are similar
+    // at the beginning of the game, so ...
+    
+    // Minimum gap between tiers rating has to be 500
+    // If not, maximum tiers will not be reachable at the beginning of the game, until more rating accumulated
+    
+    // Then, players are evenly distributed amoung 10 tiers
+    
+    XayaPlayersTable xayaplayers(db);
+    
+    auto res = xayaplayers.QueryAll ();
+
+    std::map<std::string,int64_t> playerPrestigeCollection;
+    int64_t highestPrestige = 0;
+    
+    bool tryAndStep = res.Step();
+    while (tryAndStep)
+    {
+      auto a = xayaplayers.GetFromResult (res, ctx.RoConfig ());
+      
+      int64_t prst = a->GetPresitge();
+      
+      playerPrestigeCollection.insert(std::pair<std::string, int64_t>(a->GetName(), prst));
+      
+      if(highestPrestige < prst)
+      {
+         highestPrestige = prst;
+      }          
+      
+      a.reset();
+      tryAndStep = res.Step ();
+    }
+    
+    int64_t oneGradeStep = highestPrestige / 7;
+    
+    if(oneGradeStep < 500)
+    {
+        oneGradeStep = 500;
+    }
+    
+    for(auto& player : playerPrestigeCollection)
+    {
+        int32_t pTier = std::round(((player.second - 1000)) / oneGradeStep);
+        
+        if(pTier < 1)
+        {
+            pTier = 1;
+        }
+        
+        auto a = xayaplayers.GetByName(player.first, ctx.RoConfig());
+        a->MutableProto().set_specialtournamentprestigetier(pTier);
+        a.reset();
+    }
+  }  
 
   void MoveProcessor::MaybeEnterSpecialTournament (const std::string& name, const Json::Value& tournament)
   { 
