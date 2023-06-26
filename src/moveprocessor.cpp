@@ -2997,7 +2997,28 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
         LOG (WARNING) << "Can sweeten only to next level first, no jumps over " << fighterID;
         fighterDb.reset();
         return false;          
-     }         
+     }   
+
+	// Additionally, no sweetning, if user did not collect reward from previous one
+	xaya::Chain chain = ctx.Chain();	
+    if(chain == xaya::Chain::REGTEST || ctx.Height () > 4957654)
+    {
+		auto res = rewards.QueryForOwner(a.GetName()); 
+		bool tryAndStep = res.Step();
+		while (tryAndStep)
+		{
+		  auto rw = rewards.GetFromResult (res, ctx.RoConfig ());
+		  
+          if(rw->GetProto().fighterid() == fighterID && rw->GetProto().sweetenerid() != "")
+          {
+            LOG (WARNING) << "Reward for previous sweetness not collected for fighter id: " << fighterID;
+			fighterDb.reset();
+            return false;          
+		  }
+		  
+		  tryAndStep = res.Step ();
+		}	
+	}     	 
      
      fighterDb.reset();
      return true;   
