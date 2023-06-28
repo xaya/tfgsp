@@ -172,7 +172,16 @@ std::vector<uint32_t> PXLogic::GenerateActivityReward(const uint32_t fighterID, 
       
       if((RewardType)(int)rw.type() == RewardType::GeneratedRecipe)
       {
-          newReward->MutableProto().set_generatedrecipeid(pxd::RecipeInstance::Generate((pxd::Quality)(int)rw.generatedrecipequality(), ctx.RoConfig(), rnd, db, ""));                      
+		  bool isFork = false;
+		  
+		  xaya::Chain chain = ctx.Chain();
+	
+          if(chain == xaya::Chain::REGTEST || ctx.Height () > 4963736)
+          {
+			 isFork = true;
+		  }
+		  
+          newReward->MutableProto().set_generatedrecipeid(pxd::RecipeInstance::Generate((pxd::Quality)(int)rw.generatedrecipequality(), ctx.RoConfig(), rnd, db, "", isFork));                      
           iDS.push_back(newReward->GetId());
           
           LOG (INFO) << "GeneratedRecipe reward generated";
@@ -914,9 +923,18 @@ void PXLogic::ProcessSpecialTournaments(Database& db, const Context& ctx, xaya::
            
             xayaplayers.CreateNew (ownerName, ctx.RoConfig(), rnd);
 
+			bool isFork = false;
+			  
+			xaya::Chain chain = ctx.Chain();
+		
+			if(chain == xaya::Chain::REGTEST || ctx.Height () > 4963736)
+			{
+			  isFork = true;
+			}
+
             for(int32_t nTreate = 0; nTreate < 6; nTreate++)
             {
-                const auto id0 = pxd::RecipeInstance::Generate(qualities[tTier-1], ctx.RoConfig(), rnd, db, ownerName);
+                const auto id0 = pxd::RecipeInstance::Generate(qualities[tTier-1], ctx.RoConfig(), rnd, db, ownerName, isFork);
 
                 auto fighterToHoldCrown = fighters.CreateNew (ownerName, id0, ctx.RoConfig (), rnd);
                 fighterToHoldCrown->SetStatus(pxd::FighterStatus::SpecialTournament);

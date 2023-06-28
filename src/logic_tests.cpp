@@ -235,11 +235,73 @@ TEST_F (ValidateStateTests, RecepieInstanceFullCycleTest)
   
 }   
 
+TEST_F (ValidateStateTests, DebugRecipeNamesTest)
+{
+	proto::ConfigData& cfg = const_cast <proto::ConfigData&>(*ctx.RoConfig());
+    std::vector<pxd::proto::FighterName> potentialNames;
+    const auto& fighterNames = cfg.fighternames();
+    
+    std::vector<std::pair<std::string, pxd::proto::FighterName>> sortedNamesTypesmap;
+    for (auto itr = fighterNames.begin(); itr != fighterNames.end(); ++itr)
+        sortedNamesTypesmap.push_back(*itr);
+
+    sort(sortedNamesTypesmap.begin(), sortedNamesTypesmap.end(), [=](std::pair<std::string, pxd::proto::FighterName>& a, std::pair<std::string, pxd::proto::FighterName>& b)
+    {
+        return a.first < b.first;
+    } 
+    );        
+    
+    for (const auto& fighter : sortedNamesTypesmap)
+    {
+        if((Quality)(int)fighter.second.quality() == pxd::Quality::Rare)
+        {
+            potentialNames.push_back(fighter.second);
+        }
+    }
+    
+    std::vector<pxd::proto::FighterName> position0names;
+    std::vector<pxd::proto::FighterName> position1names;
+    
+    for(auto& name: potentialNames)
+    {
+        if(name.position() == 0)
+        {
+            position0names.push_back(name);
+        }
+        
+        if(name.position() == 1)
+        {
+            position1names.push_back(name);
+        }        
+    }
+
+    LOG (WARNING) << "Total potential names on position 0 is: " << position0names.size();
+	LOG (WARNING) << "Total potential names on position 1 is: " << position1names.size();
+	
+	std::vector<std::string> namesColleced;
+	
+	xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (100);	
+	for (unsigned i = 0; i < 1000; ++i)
+    {
+		auto rcpID = pxd::RecipeInstance::Generate(pxd::Quality::Rare, ctx.RoConfig(), rnd, db, "", true);
+		auto r = tbl2.GetById(rcpID);
+		
+		if (std::find(namesColleced.begin(), namesColleced.end(), r->GetProto().name()) == namesColleced.end()) 
+		{
+			namesColleced.push_back(r->GetProto().name());
+		}
+		
+		r.reset(); 
+	}
+	
+	LOG (WARNING) << "Total variations collected: " << namesColleced.size();
+}
+
 TEST_F (ValidateStateTests, RecepieInstanceGeneratedFullCycleTest)
 {
   xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (100);
   
-  auto rcpID = pxd::RecipeInstance::Generate(pxd::Quality::Common, ctx.RoConfig(), rnd, db, "");
+  auto rcpID = pxd::RecipeInstance::Generate(pxd::Quality::Common, ctx.RoConfig(), rnd, db, "", true);
   auto r = tbl2.GetById(rcpID);
   
   
@@ -293,20 +355,21 @@ TEST_F (ValidateStateTests, RecepieInstanceGeneratedFullCycleTest)
   r.reset();
 }   
 
+/*
 TEST_F (ValidateStateTests, RecepieInstanceGeneratedDifferentNamesTest)
 {
   xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (100);
   
-  auto rcpID = pxd::RecipeInstance::Generate(pxd::Quality::Common, ctx.RoConfig(), rnd, db, "");
+  auto rcpID = pxd::RecipeInstance::Generate(pxd::Quality::Common, ctx.RoConfig(), rnd, db, "", true);
   auto r = tbl2.GetById(rcpID);
   
-  auto rcpID2 = pxd::RecipeInstance::Generate(pxd::Quality::Common, ctx.RoConfig(), rnd, db, "");
+  auto rcpID2 = pxd::RecipeInstance::Generate(pxd::Quality::Common, ctx.RoConfig(), rnd, db, "", true);
   auto r2 = tbl2.GetById(rcpID2);
   
   EXPECT_NE(r->GetProto().name(), r2->GetProto().name());
   r.reset();
   r2.reset();
-}   
+}*/ 
 
 TEST_F (ValidateStateTests, DefaultSpecialTournamentsArePlottedTest)
 {

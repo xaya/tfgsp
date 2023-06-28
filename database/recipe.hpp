@@ -182,7 +182,7 @@ public:
     return data.Mutable ();
   }
   
-  static uint32_t Generate(pxd::Quality quality, const RoConfig& cfg,  xaya::Random& rnd, Database& db, std::string owner);
+  static uint32_t Generate(pxd::Quality quality, const RoConfig& cfg,  xaya::Random& rnd, Database& db, std::string owner, bool fork);
 };
 
 /**
