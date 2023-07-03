@@ -1219,6 +1219,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
   Json::Value mv;
   std::map<std::string, Amount> paidToCrownHolders;
   Amount  burnt;
+  
   if (!ExtractMoveBasics (moveObj, name, mv, paidToCrownHolders, burnt))
   {
     return;
@@ -1240,7 +1241,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
   
   /* Ensure that the account database entry exists.  In other words, we
      have accounts (although perhaps uninitialised) for everyone who
-     ever sent a Taurion move.  */
+     ever sent a TF move.  */
   if (xayaplayers.GetByName (name, ctx.RoConfig ()) == nullptr)
   {
     LOG (INFO) << "Creating uninitialised account for " << name;
@@ -1258,6 +1259,21 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
   {
     //TryCoinOperation (name, mrl, burnt);// not need for final TF release, but lets keep if needed to burn coins in the future
     
+	/* We perform account updates first.  That ensures that it is possible to
+    e.g. choose one's faction and create characters in a single move.  */
+    TryXayaPlayerUpdate (name, mrl["a"]);
+	
+	 // Block until launch time  
+	 xaya::Chain chain = ctx.Chain();
+	 if(chain != xaya::Chain::REGTEST)
+	 {
+		  if(ctx.Height () < 4980484)
+		  {
+			  LOG (WARNING) << "Game release not launched yet, ignoring move";
+			  continue;
+		  }
+	 }	
+	
     /* Handle crystal purchace now */
     TryCrystalPurchase (name, mrl, paidToCrownHolders);
 	
@@ -1273,17 +1289,12 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     /* Handle goody bundle purchace now */
     TryGoodyBundlePurchase (name, mrl);    
     
-    xaya::Chain chain = ctx.Chain();
     if(chain == xaya::Chain::REGTEST)
     {
     /*Running special unittest from python*/
       MaybeSQLTestInjection(name, mrl);  
       MaybeSQLTestInjection2(name, mrl);    
     }  
-
-    /* We perform account updates first.  That ensures that it is possible to
-       e.g. choose one's faction and create characters in a single move.  */
-    TryXayaPlayerUpdate (name, mrl["a"]);
 
     /* We are trying all kind of cooking actions*/
     TryCookingAction (name, mrl["ca"]);
@@ -2728,26 +2739,21 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     }
 	
 	// Additionally, no expedition, if user did not collect reward from previous one
-	xaya::Chain chain = ctx.Chain();
+	auto res = rewards.QueryForOwner(a.GetName()); 
+	bool tryAndStep = res.Step();
+	while (tryAndStep)
+	{
+	  auto rw = rewards.GetFromResult (res, ctx.RoConfig ());
+	  
+	  if(rw->GetProto().expeditionid() == expeditionID)
+	  {
+		LOG (WARNING) << "Reward for this expedition is not collected: " << expeditionID;
+		return false;          
+	  }
+	  
+	  tryAndStep = res.Step ();
+	}	
 	
-    if(chain == xaya::Chain::REGTEST || ctx.Height () > 4946711)
-    {
-		auto res = rewards.QueryForOwner(a.GetName()); 
-		bool tryAndStep = res.Step();
-		while (tryAndStep)
-		{
-		  auto rw = rewards.GetFromResult (res, ctx.RoConfig ());
-		  
-          if(rw->GetProto().expeditionid() == expeditionID)
-          {
-            LOG (WARNING) << "Reward for this expedition is not collected: " << expeditionID;
-            return false;          
-		  }
-		  
-		  tryAndStep = res.Step ();
-		}	
-	}
-    
     const auto& goodiesList = ctx.RoConfig()->goodies();
     
      std::vector<std::pair<std::string, pxd::proto::Goody>> sortedGoodyTypesmap;
@@ -3000,26 +3006,23 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
      }   
 
 	// Additionally, no sweetning, if user did not collect reward from previous one
-	xaya::Chain chain = ctx.Chain();	
-    if(chain == xaya::Chain::REGTEST || ctx.Height () > 4957654)
-    {
-		auto res = rewards.QueryForOwner(a.GetName()); 
-		bool tryAndStep = res.Step();
-		while (tryAndStep)
-		{
-		  auto rw = rewards.GetFromResult (res, ctx.RoConfig ());
-		  
-          if(rw->GetProto().fighterid() == fighterID && rw->GetProto().sweetenerid() != "")
-          {
-            LOG (WARNING) << "Reward for previous sweetness not collected for fighter id: " << fighterID;
-			fighterDb.reset();
-            return false;          
-		  }
-		  
-		  tryAndStep = res.Step ();
-		}	
-	}     	 
-     
+
+	auto res = rewards.QueryForOwner(a.GetName()); 
+	bool tryAndStep = res.Step();
+	while (tryAndStep)
+	{
+	  auto rw = rewards.GetFromResult (res, ctx.RoConfig ());
+	  
+	  if(rw->GetProto().fighterid() == fighterID && rw->GetProto().sweetenerid() != "")
+	  {
+		LOG (WARNING) << "Reward for previous sweetness not collected for fighter id: " << fighterID;
+		fighterDb.reset();
+		return false;          
+	  }
+	  
+	  tryAndStep = res.Step ();
+	}	
+
      fighterDb.reset();
      return true;   
   }      
@@ -4325,12 +4328,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
     a.reset();  
     a2.reset();
 	
-	xaya::Chain chain = ctx.Chain();
-	
-    if(chain == xaya::Chain::REGTEST || ctx.Height () > 4946711)
-    {
-		RecalculatePlayerTiers(db, ctx); 
-	}
+	RecalculatePlayerTiers(db, ctx); 	
   }   
   
   void MoveProcessor::RecalculatePlayerTiers(Database& db, const Context& ctx)

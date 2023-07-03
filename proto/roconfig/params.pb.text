@@ -23,11 +23,11 @@ params:
   
     common_recipe_cook_cost: 15
   
-    uncommon_recipe_cook_cost: 25
+    uncommon_recipe_cook_cost: 30
   
-    rare_recipe_cook_cost: 30
+    rare_recipe_cook_cost: 60
   
-    epic_recipe_cook_cost: 45
+    epic_recipe_cook_cost: 120
   
     common_cook_duration: 10
   

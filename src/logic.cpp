@@ -174,13 +174,6 @@ std::vector<uint32_t> PXLogic::GenerateActivityReward(const uint32_t fighterID, 
       {
 		  bool isFork = false;
 		  
-		  xaya::Chain chain = ctx.Chain();
-	
-          if(chain == xaya::Chain::REGTEST || ctx.Height () > 4963736)
-          {
-			 isFork = true;
-		  }
-		  
           newReward->MutableProto().set_generatedrecipeid(pxd::RecipeInstance::Generate((pxd::Quality)(int)rw.generatedrecipequality(), ctx.RoConfig(), rnd, db, "", isFork));                      
           iDS.push_back(newReward->GetId());
           
@@ -924,13 +917,6 @@ void PXLogic::ProcessSpecialTournaments(Database& db, const Context& ctx, xaya::
             xayaplayers.CreateNew (ownerName, ctx.RoConfig(), rnd);
 
 			bool isFork = false;
-			  
-			xaya::Chain chain = ctx.Chain();
-		
-			if(chain == xaya::Chain::REGTEST || ctx.Height () > 4963736)
-			{
-			  isFork = true;
-			}
 
             for(int32_t nTreate = 0; nTreate < 6; nTreate++)
             {
@@ -2066,9 +2052,9 @@ PXLogic::GetInitialStateBlock (unsigned& height,
   switch (chain)
     {
     case xaya::Chain::MAIN:
-      height = 4'886'137;
+      height = 4'977'087;
       hashHex
-          = "988c24ff6070cfa1cfbe1711bf933e2f1033576f51412fdbf04a7cc2bdbb0e61";
+          = "a262bd822f63be30d4162e1b552ca277ca38358784c8ecbfa12ab5114bc9cd44";
       break;
 
     case xaya::Chain::TEST:

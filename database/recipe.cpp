@@ -238,123 +238,52 @@ uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xa
     std::vector<std::string> candidates0collected;
 	std::vector<std::string> candidates1collected;
 
-    if(fork)
-    {
-		int32_t biggetRollSoFar = 0;
-		while(candidates0collected.size() == 0)
-		{
-			for(long long unsigned int e =0; e < position0names.size(); e++)
-			{
-			  int32_t probabilityTreshhold = position0names[e].probability();
-			  int32_t rolCurNum = rnd.NextInt(1001);
-			  
-			  if(probabilityTreshhold < rolCurNum)
-			  {			
-				candidates0collected.push_back(position0names[e].name());				
-			  }
-			}
-			
-			if(candidates0collected.size() == 1)
-			{
-				fname = candidates0collected[0];
-			}
-			else
-			{
-				fname = candidates0collected[rnd.NextInt(candidates0collected.size())];			
-			}	
-		}
-		
-		biggetRollSoFar = 0;
-		while(candidates1collected.size() == 0)
-		{
-			for(long long unsigned int e =0; e < position1names.size(); e++)
-			{
-			  int32_t probabilityTreshhold = position1names[e].probability();
-			  int32_t rolCurNum = rnd.NextInt(1001);
-			  
-			  if(probabilityTreshhold < rolCurNum)
-			  {			
-				 candidates1collected.push_back(position1names[e].name());							
-			  }
-			}
-			
-			if(candidates1collected.size() == 1)
-			{
-				lname = candidates1collected[0];
-			}
-			else
-			{
-				lname = candidates1collected[rnd.NextInt(candidates1collected.size())];			
-			}	
-		}
-	}
-	else
+	int32_t biggetRollSoFar = 0;
+	while(candidates0collected.size() == 0)
 	{
-		int32_t biggetRollSoFar = 0;
-		while(candidates0collected.size() == 0)
+		for(long long unsigned int e =0; e < position0names.size(); e++)
 		{
-			for(long long unsigned int e =0; e < position0names.size(); e++)
-			{
-			  int32_t probabilityTreshhold = position0names[e].probability();
-			  int32_t rolCurNum = rnd.NextInt(1001);
-			  
-			  if(probabilityTreshhold < rolCurNum)
-			  {			
-				if(biggetRollSoFar < probabilityTreshhold)
-				{
-				   candidates0collected.clear();
-				   candidates0collected.push_back(position0names[e].name());
-				   biggetRollSoFar = probabilityTreshhold;			   
-				}
-				if(biggetRollSoFar == probabilityTreshhold)
-				{
-				   candidates0collected.push_back(position0names[e].name());		   
-				}				
-			  }
-			}
-			
-			if(candidates0collected.size() == 1)
-			{
-				fname = candidates0collected[0];
-			}
-			else
-			{
-				fname = candidates0collected[rnd.NextInt(candidates0collected.size())];			
-			}	
+		  int32_t probabilityTreshhold = position0names[e].probability();
+		  int32_t rolCurNum = rnd.NextInt(1001);
+		  
+		  if(probabilityTreshhold < rolCurNum)
+		  {			
+			candidates0collected.push_back(position0names[e].name());				
+		  }
 		}
 		
-		biggetRollSoFar = 0;
-		while(candidates1collected.size() == 0)
+		if(candidates0collected.size() == 1)
 		{
-			for(long long unsigned int e =0; e < position1names.size(); e++)
-			{
-			  int32_t probabilityTreshhold = position1names[e].probability();
-			  int32_t rolCurNum = rnd.NextInt(1001);
-			  
-			  if(probabilityTreshhold < rolCurNum)
-			  {			
-				if(biggetRollSoFar < probabilityTreshhold)
-				{
-				   candidates1collected.clear();
-				   candidates1collected.push_back(position1names[e].name());
-				   biggetRollSoFar = probabilityTreshhold;			   
-				}
-				if(biggetRollSoFar == probabilityTreshhold)
-				{
-				   candidates1collected.push_back(position1names[e].name());			   
-				}							
-			  }
-			}
-			
-			if(candidates1collected.size() == 1)
-			{
-				lname = candidates1collected[0];
-			}
-			else
-			{
-				lname = candidates1collected[rnd.NextInt(candidates1collected.size())];			
-			}	
-		}		
+			fname = candidates0collected[0];
+		}
+		else
+		{
+			fname = candidates0collected[rnd.NextInt(candidates0collected.size())];			
+		}	
+	}
+	
+	biggetRollSoFar = 0;
+	while(candidates1collected.size() == 0)
+	{
+		for(long long unsigned int e =0; e < position1names.size(); e++)
+		{
+		  int32_t probabilityTreshhold = position1names[e].probability();
+		  int32_t rolCurNum = rnd.NextInt(1001);
+		  
+		  if(probabilityTreshhold < rolCurNum)
+		  {			
+			 candidates1collected.push_back(position1names[e].name());							
+		  }
+		}
+		
+		if(candidates1collected.size() == 1)
+		{
+			lname = candidates1collected[0];
+		}
+		else
+		{
+			lname = candidates1collected[rnd.NextInt(candidates1collected.size())];			
+		}	
 	}
 
     pxd::proto::FighterType fighterType;

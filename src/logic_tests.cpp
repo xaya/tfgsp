@@ -661,7 +661,7 @@ TEST_F (ValidateStateTests, GeneratedRecipeMakeSureItWorks)
   EXPECT_EQ (r->GetProto().authoredid(), "generated");
   
   EXPECT_EQ (r->GetProto().moves_size(), 3);
-  EXPECT_EQ (r->GetProto().requiredcandy_size(), 2);
+  EXPECT_EQ (r->GetProto().requiredcandy_size(), 3);
 } 
 
 TEST_F (ValidateStateTests, RecepieInstanceFailWithMissingIngridients)
@@ -1674,8 +1674,8 @@ TEST_F (ValidateStateTests, RatingSweetnessUpgrades)
   }
   
   ftA = tbl3.GetById(ftA1id, ctx.RoConfig());
-  EXPECT_EQ (ftA->GetProto().rating(), 1237);
-  EXPECT_EQ (ftA->GetProto().sweetness(), (int)pxd::Sweetness::Semi_Sweet);
+  EXPECT_EQ (ftA->GetProto().rating(), 1172);
+  EXPECT_EQ (ftA->GetProto().sweetness(), (int)pxd::Sweetness::Bittersweet);
   ftA.reset();  
 }
 /*
