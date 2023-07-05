@@ -141,14 +141,14 @@ protected:
     Json::Value val = ParseJson (str);
     for (auto& entry : val)
     {      
-      entry["out"]["CPxvCsP9wr8ow4x5r6D1gYpxAFBg6ACzc6"] = xaya::ChiAmountToJson ((amount / 35) * 1);
-      entry["out"]["CHPVEUVFKy1YugLhVFQmqE8iaPch3MxGsd"] = xaya::ChiAmountToJson ((amount / 35) * 2);
-      entry["out"]["Cdwan1eAmsvA2sE6XNUB4ZWNDMHwoyhRYr"] = xaya::ChiAmountToJson ((amount / 35) * 3);
-      entry["out"]["CcX1ksjf4c9qJ2ftd51T2iJbNkRm5SRc94"] = xaya::ChiAmountToJson ((amount / 35) * 4);
-      entry["out"]["CGr5MT1C5PXUpYhaDQkKoLxP11qJtJxzu8"] = xaya::ChiAmountToJson ((amount / 35) * 5);
-      entry["out"]["CeJt7YpW8P9jMeVrVm58nUaoM4fJ4KXMUS"] = xaya::ChiAmountToJson ((amount / 35) * 6);
-      entry["out"]["CZhfYfqbMdzeS5ADRR2su12cWD3TQaeBFc"] = xaya::ChiAmountToJson ((amount / 35) * 7);
-	  entry["out"]["chi1qmexgupgkmqh6gt23f96hfcpacf0rlzj069cck8pp3g6nacz97qasy87a3m"] = xaya::ChiAmountToJson ((amount / 35) * 7);
+      entry["out"]["CSkszVUahNNaj9ENPzAepSuCme4PEZXzgp"] = xaya::ChiAmountToJson ((amount / 35) * 1);
+      entry["out"]["CPHa1fMuAowhBhNGtcyERPntC6aN89q5Wb"] = xaya::ChiAmountToJson ((amount / 35) * 2);
+      entry["out"]["CHjEjjeZJEJLoJLxtsRL54m6RMB8vFRngf"] = xaya::ChiAmountToJson ((amount / 35) * 3);
+      entry["out"]["CKMSbLJwLHKAY8aT2BnVZ7fVSTdD81v9rm"] = xaya::ChiAmountToJson ((amount / 35) * 4);
+      entry["out"]["CZsJo8YykDhoeVmYMTXp9v3EzbN7i3KhU5"] = xaya::ChiAmountToJson ((amount / 35) * 5);
+      entry["out"]["CX7VSMEoGqyKKxL4qfCLyDNsqgCPZiP6eD"] = xaya::ChiAmountToJson ((amount / 35) * 6);
+      entry["out"]["Cd9LyMvE3MkrWysTujDhEmBiUU16rkmHnU"] = xaya::ChiAmountToJson ((amount / 35) * 7);
+	  entry["out"]["CcHSR3Ss39Ag8pwJ6nsVmEjcdXMhPfoMp3"] = xaya::ChiAmountToJson ((amount / 35) * 7);
     }
 
     MoveProcessor mvProc(db, rnd, ctx);

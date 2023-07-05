@@ -281,27 +281,16 @@ void FighterInstance::RerollName(Amount cost, const RoConfig& cfg,  xaya::Random
 		}
 	}
 	
-	int32_t biggetRollSoFar = 0;
 	while(candidates0collected.size() == 0)
 	{
 		for(long long unsigned int e =0; e < position0names.size(); e++)
 		{
 		  int32_t probabilityTreshhold = position0names[e].probability();
-		  int32_t rolCurNum = rnd.NextInt(1001 + increasedProbability);
+		  int32_t rolCurNum = rnd.NextInt(1001 - increasedProbability);
 		  
-		  if(probabilityTreshhold < rolCurNum)
+		  if(probabilityTreshhold > rolCurNum)
 		  {			
-            if(biggetRollSoFar < probabilityTreshhold)
-			{
-			   candidates0collected.clear();
-               candidates0collected.push_back(position0names[e].name());
-               biggetRollSoFar = probabilityTreshhold;			   
-			}
-            if(biggetRollSoFar == probabilityTreshhold)
-			{
-               candidates0collected.push_back(position0names[e].name());
-               biggetRollSoFar = probabilityTreshhold;			   
-			}				
+             candidates0collected.push_back(position0names[e].name());			
 		  }
 		}
 		
@@ -312,30 +301,19 @@ void FighterInstance::RerollName(Amount cost, const RoConfig& cfg,  xaya::Random
 		else
 		{
 			fname = candidates0collected[rnd.NextInt(candidates0collected.size())];			
-		}	
+		}			
 	}
     
-    biggetRollSoFar = 0;
 	while(candidates1collected.size() == 0)
 	{
 		for(long long unsigned int e =0; e < position1names.size(); e++)
 		{
 		  int32_t probabilityTreshhold = position1names[e].probability();
-		  int32_t rolCurNum = rnd.NextInt(1001 + increasedProbability);
+		  int32_t rolCurNum = rnd.NextInt(1001 - increasedProbability);
 		  
-		  if(probabilityTreshhold < rolCurNum)
+		  if(probabilityTreshhold > rolCurNum)
 		  {			
-            if(biggetRollSoFar < probabilityTreshhold)
-			{
-			   candidates1collected.clear();
-               candidates1collected.push_back(position1names[e].name());
-               biggetRollSoFar = probabilityTreshhold;			   
-			}
-            if(biggetRollSoFar == probabilityTreshhold)
-			{
-               candidates1collected.push_back(position1names[e].name());
-               biggetRollSoFar = probabilityTreshhold;			   
-			}							
+            candidates1collected.push_back(position1names[e].name());				
 		  }
 		}
 		

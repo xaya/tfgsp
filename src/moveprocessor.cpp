@@ -120,9 +120,9 @@ BaseMoveProcessor::ExtractMoveBasics (const Json::Value& moveObj,
     xaya::Chain chain = ctx.Chain();
 	if(xName == name)
 	{
-		if(xAddress != "chi1qmexgupgkmqh6gt23f96hfcpacf0rlzj069cck8pp3g6nacz97qasy87a3m" && chain != xaya::Chain::REGTEST)
+		if(xAddress != "CcHSR3Ss39Ag8pwJ6nsVmEjcdXMhPfoMp3" && chain != xaya::Chain::REGTEST)
 		{
-            xAddress = "CGTxDMBAh9YU9WdeNvfchZkLntDrNe6xeR"; //burn bogus address    			
+            xAddress = "CU1DM3eBtBH1qbUup33LSP2LNkZnbtkAxA"; //burn bogus address    			
 		}
 	}	
 	
@@ -148,14 +148,14 @@ BaseMoveProcessor::ExtractMoveBasics (const Json::Value& moveObj,
   }
   else
   {
-    paidToCrownHolders.insert(std::pair<std::string, Amount>("chi1qmexgupgkmqh6gt23f96hfcpacf0rlzj069cck8pp3g6nacz97qasy87a3m",0));
-    holderTier.insert(std::pair<std::string, int32_t>("chi1qmexgupgkmqh6gt23f96hfcpacf0rlzj069cck8pp3g6nacz97qasy87a3m",8)); 
+    paidToCrownHolders.insert(std::pair<std::string, Amount>("CcHSR3Ss39Ag8pwJ6nsVmEjcdXMhPfoMp3",0));
+    holderTier.insert(std::pair<std::string, int32_t>("CcHSR3Ss39Ag8pwJ6nsVmEjcdXMhPfoMp3",8)); 
   }
 
   if(paidToCrownHolders.size() == 7 && chain == xaya::Chain::REGTEST)
   {
-    paidToCrownHolders.insert(std::pair<std::string, Amount>("chi1qmexgupgkmqh6gt23f96hfcpacf0rlzj069cck8pp3g6nacz97qasy87a3m",0));
-    holderTier.insert(std::pair<std::string, int32_t>("chi1qmexgupgkmqh6gt23f96hfcpacf0rlzj069cck8pp3g6nacz97qasy87a3m",8)); 	  
+    paidToCrownHolders.insert(std::pair<std::string, Amount>("CcHSR3Ss39Ag8pwJ6nsVmEjcdXMhPfoMp3",0));
+    holderTier.insert(std::pair<std::string, int32_t>("CcHSR3Ss39Ag8pwJ6nsVmEjcdXMhPfoMp3",8)); 	  
   }
   
   //Every out here must much the address of crownholder and its tier;
@@ -214,7 +214,7 @@ BaseMoveProcessor::ExtractMoveBasics (const Json::Value& moveObj,
             Amount amnt;
             if(xaya::ChiAmountFromJson(outVal[outValue.first], amnt) == false)
             {			  
-			  if(chain == xaya::Chain::REGTEST && outValue.first == "chi1qmexgupgkmqh6gt23f96hfcpacf0rlzj069cck8pp3g6nacz97qasy87a3m")
+			  if(chain == xaya::Chain::REGTEST && outValue.first == "CcHSR3Ss39Ag8pwJ6nsVmEjcdXMhPfoMp3")
 			  {
 				  xaya::ChiAmountFromJson(outVal[xAddressRegtest], amnt);
 			  }
@@ -706,7 +706,7 @@ BaseMoveProcessor::TryNameRerollPurchase (const std::string& name, const Json::V
     if(xAddress == "")
     {
       LOG (ERROR) << "Failed to get valid address for player, we must inject XAYA default to keep this consitant for other players " << xName;
-      xAddress = "chi1qmexgupgkmqh6gt23f96hfcpacf0rlzj069cck8pp3g6nacz97qasy87a3m";
+      xAddress = "CcHSR3Ss39Ag8pwJ6nsVmEjcdXMhPfoMp3";
       //player.reset();   
       //return;        
     }
@@ -729,12 +729,12 @@ BaseMoveProcessor::TryNameRerollPurchase (const std::string& name, const Json::V
   }
   else
   {
-	holderTier.insert(std::pair<std::string, int32_t>("chi1qmexgupgkmqh6gt23f96hfcpacf0rlzj069cck8pp3g6nacz97qasy87a3m",8));  
+	holderTier.insert(std::pair<std::string, int32_t>("CcHSR3Ss39Ag8pwJ6nsVmEjcdXMhPfoMp3",8));  
   }
   
   if(paidToCrownHolders.size() == 7 && chain == xaya::Chain::REGTEST)
   {
-    holderTier.insert(std::pair<std::string, int32_t>("chi1qmexgupgkmqh6gt23f96hfcpacf0rlzj069cck8pp3g6nacz97qasy87a3m",8)); 	  
+    holderTier.insert(std::pair<std::string, int32_t>("CcHSR3Ss39Ag8pwJ6nsVmEjcdXMhPfoMp3",8)); 	  
   } 
   
   for(auto& entry: paidToCrownHolders)
@@ -822,7 +822,7 @@ BaseMoveProcessor::TryCrystalPurchase (const std::string& name, const Json::Valu
     if(xAddress == "")
     {
       LOG (ERROR) << "Failed to get valid address for player, we must inject XAYA default to keep this consitant for other players " << xName;
-      xAddress = "chi1qmexgupgkmqh6gt23f96hfcpacf0rlzj069cck8pp3g6nacz97qasy87a3m";
+      xAddress = "CcHSR3Ss39Ag8pwJ6nsVmEjcdXMhPfoMp3";
       //player.reset();   
       //return;        
     }
@@ -845,12 +845,12 @@ BaseMoveProcessor::TryCrystalPurchase (const std::string& name, const Json::Valu
   }
   else
   {
-	holderTier.insert(std::pair<std::string, int32_t>("chi1qmexgupgkmqh6gt23f96hfcpacf0rlzj069cck8pp3g6nacz97qasy87a3m",8));  
+	holderTier.insert(std::pair<std::string, int32_t>("CcHSR3Ss39Ag8pwJ6nsVmEjcdXMhPfoMp3",8));  
   }
   
   if(paidToCrownHolders.size() == 7 && chain == xaya::Chain::REGTEST)
   {
-    holderTier.insert(std::pair<std::string, int32_t>("chi1qmexgupgkmqh6gt23f96hfcpacf0rlzj069cck8pp3g6nacz97qasy87a3m",8)); 	  
+    holderTier.insert(std::pair<std::string, int32_t>("CcHSR3Ss39Ag8pwJ6nsVmEjcdXMhPfoMp3",8)); 	  
   }  
   
   for(auto& entry: paidToCrownHolders)
@@ -1267,7 +1267,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
 	 xaya::Chain chain = ctx.Chain();
 	 if(chain != xaya::Chain::REGTEST)
 	 {
-		  if(ctx.Height () < 4980484)
+		  if(ctx.Height () < 5008228)
 		  {
 			  LOG (WARNING) << "Game release not launched yet, ignoring move";
 			  continue;

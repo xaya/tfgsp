@@ -246,7 +246,7 @@ uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xa
 		  int32_t probabilityTreshhold = position0names[e].probability();
 		  int32_t rolCurNum = rnd.NextInt(1001);
 		  
-		  if(probabilityTreshhold < rolCurNum)
+		  if(probabilityTreshhold > rolCurNum)
 		  {			
 			candidates0collected.push_back(position0names[e].name());				
 		  }
@@ -270,7 +270,7 @@ uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xa
 		  int32_t probabilityTreshhold = position1names[e].probability();
 		  int32_t rolCurNum = rnd.NextInt(1001);
 		  
-		  if(probabilityTreshhold < rolCurNum)
+		  if(probabilityTreshhold > rolCurNum)
 		  {			
 			 candidates1collected.push_back(position1names[e].name());							
 		  }
