@@ -95,6 +95,8 @@ BaseMoveProcessor::ExtractMoveBasics (const Json::Value& moveObj,
   bool tryAndStep = res.Step();
   
   std::string xAddressRegtest = "";
+  bool haveMissingAddress = false;
+  std::string missingPlayerName = "";
   
   while (tryAndStep)
   {
@@ -114,7 +116,9 @@ BaseMoveProcessor::ExtractMoveBasics (const Json::Value& moveObj,
     if(xAddress == "")
     {
       LOG (WARNING) << "Failed to get valid address for player " << xName;
-      return false;        
+	  xAddress = "missing";      
+	  haveMissingAddress = true;
+	  missingPlayerName = xName;
     }
     
     xaya::Chain chain = ctx.Chain();
@@ -128,8 +132,11 @@ BaseMoveProcessor::ExtractMoveBasics (const Json::Value& moveObj,
 	
     player.reset();
     
-    paidToCrownHolders.insert(std::pair<std::string, Amount>(xAddress,0));
-    holderTier.insert(std::pair<std::string, int32_t>(xAddress,(int32_t)spctrm->GetProto().tier()));
+	if(xAddress != "missing")
+	{
+		paidToCrownHolders.insert(std::pair<std::string, Amount>(xAddress,0));
+		holderTier.insert(std::pair<std::string, int32_t>(xAddress,(int32_t)spctrm->GetProto().tier()));
+	}
 	
     if((int32_t)spctrm->GetProto().tier() == 1)
     {
@@ -139,6 +146,40 @@ BaseMoveProcessor::ExtractMoveBasics (const Json::Value& moveObj,
     spctrm.reset();
     tryAndStep = res.Step ();
   }
+  
+  if(haveMissingAddress)
+  {
+	  // we must issue temporarily address here, before player updates to properly one
+	  std::vector<std::string> candidates;
+	  candidates.push_back("CSkszVUahNNaj9ENPzAepSuCme4PEZXzgp");
+	  candidates.push_back("CPHa1fMuAowhBhNGtcyERPntC6aN89q5Wb");
+	  candidates.push_back("CHjEjjeZJEJLoJLxtsRL54m6RMB8vFRngf");
+	  candidates.push_back("CKMSbLJwLHKAY8aT2BnVZ7fVSTdD81v9rm");
+	  candidates.push_back("CZsJo8YykDhoeVmYMTXp9v3EzbN7i3KhU5");
+	  candidates.push_back("CX7VSMEoGqyKKxL4qfCLyDNsqgCPZiP6eD");
+	  candidates.push_back("Cd9LyMvE3MkrWysTujDhEmBiUU16rkmHnU");
+    	 
+	  auto player = xayaplayers.GetByName (missingPlayerName, ctx.RoConfig());
+	  if(player == nullptr)
+	  {
+		  LOG (WARNING) << "Failed to get player with name " << missingPlayerName;
+		  return false;
+	  }     
+	  
+	  for(auto& newAddressCandidate: candidates)
+	  {
+		   if (holderTier.count(newAddressCandidate) == 0) 
+		   {
+				player->MutableProto().set_address(newAddressCandidate);
+				break;
+		   }
+	  }
+
+      player.reset();
+      return false;	  
+  }
+  
+  
 
   xaya::Chain chain = ctx.Chain();
   if(chain == xaya::Chain::REGTEST)
@@ -4848,14 +4889,6 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
     auto a = xayaplayers.GetByName (name, ctx.RoConfig ());
     CHECK (a != nullptr);
 	
-	xaya::Chain chain = ctx.Chain();
-    if (a->GetProto().address() != "" && chain != xaya::Chain::REGTEST) // foir the unit/regtest, we are going to use this function to replaces address with regtest generated addresses
-    {
-      LOG (WARNING) << "Account " << name << " address is already initialised";
-      a.reset();
-      return;
-    }
-
     const auto& address = init["address"];
     if (!address.isString ())
     {
