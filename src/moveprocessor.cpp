@@ -1226,6 +1226,14 @@ MoveProcessor::TryCoinOperation (const std::string& name,
     a->AddBalance (-op.burnt);
   }
 
+  
+  bool isFork2 = false; 
+  auto chain = ctx.Chain ();
+  if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5100772)
+  {
+    isFork2 = true;
+  }	 
+
   for (const auto& entry : op.transfers)
   {
     /* Transfers to self are a no-op, but we have to explicitly handle
@@ -1245,7 +1253,7 @@ MoveProcessor::TryCoinOperation (const std::string& name,
         LOG (INFO)
             << "Creating uninitialised account for coin recipient "
             << entry.first;
-        to = xayaplayers.CreateNew (entry.first, ctx.RoConfig (), rnd, true);
+        to = xayaplayers.CreateNew (entry.first, ctx.RoConfig (), rnd, isFork2);
       }
     to->AddBalance (entry.second);
   }
@@ -1282,7 +1290,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
   
   bool isFork2 = false; 
   auto chain = ctx.Chain ();
-  if(chain == xaya::Chain::REGTEST && ctx.Height () >= 5100772)
+  if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5100772)
   {
     isFork2 = true;
   }	  
@@ -3110,7 +3118,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     }  
 	
     xaya::Chain chain = ctx.Chain();
-	if(chain == xaya::Chain::REGTEST && ctx.Height () >= 5100772)
+	if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5100772)
 	{
 		uint32_t slots = fighters.CountForOwner(a.GetName());
 
@@ -3616,7 +3624,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
 	
 	bool isFork2 = false; 
 	auto chain = ctx.Chain ();
-	if(chain == xaya::Chain::REGTEST && ctx.Height () >= 5100772)
+	if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5100772)
 	{
 	  isFork2 = true;
 	}	
@@ -4291,7 +4299,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 	
 	bool isFork2 = false; 
 	auto chain = ctx.Chain ();
-	if(chain == xaya::Chain::REGTEST && ctx.Height () >= 5100772)
+	if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5100772)
 	{
 	  isFork2 = true;
 	}	
@@ -4401,7 +4409,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 	
 	bool isFork2 = false; 
 	auto chain = ctx.Chain ();
-	if(chain == xaya::Chain::REGTEST && ctx.Height () >= 5100772)
+	if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5100772)
 	{
 	  isFork2 = true;
 	}	
@@ -4524,7 +4532,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 	
 	bool isFork2 = false; 
 	auto chain = ctx.Chain ();
-	if(chain == xaya::Chain::REGTEST && ctx.Height () >= 5100772)
+	if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5100772)
 	{
 	  isFork2 = true;
 	}		
@@ -4556,7 +4564,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
       xp = xayaplayers.GetByName(nName, ctx.RoConfig());
 	  
 	  bool isFork2 = false; 
-	  if(chain == xaya::Chain::REGTEST && ctx.Height () >= 5100772)
+	  if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5100772)
 	  {
 	    isFork2 = true;
 	  }	  
@@ -4939,7 +4947,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
     
 	bool isFork2 = false; 
 	auto chain = ctx.Chain ();
-	if(chain == xaya::Chain::REGTEST && ctx.Height () >= 5100772)
+	if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5100772)
 	{
 	  isFork2 = true;
 	}	
@@ -4986,7 +4994,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 		  
 		  bool isFork2 = false; 
 		  auto chain = ctx.Chain ();
-		  if(chain == xaya::Chain::REGTEST && ctx.Height () >= 5100772)
+		  if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5100772)
 		  {
 		    isFork2 = true;
 		  }		  
@@ -5021,7 +5029,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 
 	bool isFork2 = false; 
 	auto chain = ctx.Chain ();
-	if(chain == xaya::Chain::REGTEST && ctx.Height () >= 5100772)
+	if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5100772)
 	{
 	  isFork2 = true;
 	}

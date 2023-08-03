@@ -389,13 +389,12 @@ void PXLogic::ResolveSweetener(std::unique_ptr<XayaPlayer>& a, std::string sweet
 
   bool isFork2 = false; 
   auto chain = ctx.Chain ();
-  if(chain == xaya::Chain::REGTEST && ctx.Height () >= 5100772)
+  if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5100772)
   {
 	  isFork2 = true;
   }
 
   a->CalculatePrestige(ctx.RoConfig(), isFork2);  
- 
 }
 
 void PXLogic::ResolveDeconstruction(std::unique_ptr<XayaPlayer>& a, const uint32_t fighterID, Database& db, const Context& ctx, xaya::Random& rnd)
@@ -633,7 +632,7 @@ void PXLogic::ResolveCookingRecepie(std::unique_ptr<XayaPlayer>& a, const uint32
 		
 		bool isFork2 = false; 
 		auto chain = ctx.Chain ();
-		if(chain == xaya::Chain::REGTEST && ctx.Height () >= 5100772)
+		if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5100772)
 		{
 		  isFork2 = true;
 		}		
@@ -914,7 +913,7 @@ void PXLogic::ProcessSpecialTournaments(Database& db, const Context& ctx, xaya::
     
 	bool isFork2 = false; 
 	auto chain = ctx.Chain ();
-	if(chain == xaya::Chain::REGTEST && ctx.Height () >= 5100772)
+	if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5100772)
 	{
 	  isFork2 = true;
 	}	
@@ -1872,7 +1871,7 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
 
 				  bool isFork2 = false; 
 				  auto chain = ctx.Chain ();
-				  if(chain == xaya::Chain::REGTEST && ctx.Height () >= 5100772)
+				  if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5100772)
 				  {
 				    isFork2 = true;
 				  }
