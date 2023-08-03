@@ -26,7 +26,7 @@
 namespace pxd
 {
 
-XayaPlayer::XayaPlayer (Database& d, const std::string& n, const RoConfig& cfg, xaya::Random& rnd)
+XayaPlayer::XayaPlayer (Database& d, const std::string& n, const RoConfig& cfg, xaya::Random& rnd, bool isFork)
   : db(d), name(n), tracker(db.TrackHandle ("xayaplayer", n)),
     role(PlayerRole::INVALID), dirtyFields(true)
 {
@@ -116,7 +116,7 @@ XayaPlayer::XayaPlayer (Database& d, const std::string& n, const RoConfig& cfg, 
   recipesTbl.CreateNew (GetName(), starting_recepie_guid, cfg);
   
   AddBalance(cfg->params().starting_crystals());  
-  CalculatePrestige(cfg);
+  CalculatePrestige(cfg, isFork);
   
   rcp1 = recipesTbl.GetById(rcp1Id);
   rcp2 = recipesTbl.GetById(rcp2Id);
@@ -259,59 +259,175 @@ double XayaPlayer::GetFighterPercentageFromQuality(uint32_t quality, std::vector
 }
 
 void
-XayaPlayer::CalculatePrestige(const RoConfig& cfg)
+XayaPlayer::CalculatePrestige(const RoConfig& cfg, bool isFork)
 {
-    std::vector<FighterTable::Handle> fighters = CollectInventoryFighters(cfg);
-    double totalFighters = fighters.size();
-    
-    if(totalFighters == 0)
-    {
-      prestige = cfg->params().base_prestige();
-      return;
-    }
-    
-    double getPercentageEpic  = GetFighterPercentageFromQuality(4, fighters) * cfg->params().prestige_epic_mod() * log10(totalFighters+1);
-    double getPercentageRare  = GetFighterPercentageFromQuality(3, fighters) * cfg->params().prestige_rare_mod() * log10(totalFighters+1);
-    double getPercentageUncommom  = GetFighterPercentageFromQuality(2, fighters) * cfg->params().prestige_uncommon_mod() * log10(totalFighters+1);
-    double getPercentageCommon  = GetFighterPercentageFromQuality(1, fighters) * cfg->params().prestige_common_mod() * log10(totalFighters+1);
+	if(isFork == false)
+	{		
+		std::vector<FighterTable::Handle> fighters = CollectInventoryFighters(cfg);
+		double totalFighters = fighters.size();
+		
+		if(totalFighters == 0)
+		{
+		  prestige = cfg->params().base_prestige();
+		  return;
+		}
+		
+		double getPercentageEpic  = GetFighterPercentageFromQuality(4, fighters) * cfg->params().prestige_epic_mod() * log10(totalFighters+1);
+		double getPercentageRare  = GetFighterPercentageFromQuality(3, fighters) * cfg->params().prestige_rare_mod() * log10(totalFighters+1);
+		double getPercentageUncommom  = GetFighterPercentageFromQuality(2, fighters) * cfg->params().prestige_uncommon_mod() * log10(totalFighters+1);
+		double getPercentageCommon  = GetFighterPercentageFromQuality(1, fighters) * cfg->params().prestige_common_mod() * log10(totalFighters+1);
 
-    uint32_t fighterAverage = 0;
-    
-    for(const auto& fighter: fighters)
-    {
-        if(fighterAverage == 0)
-        {
-            fighterAverage = fighter.get()->GetProto().rating();
-        }
-        else
-        {
-            fighterAverage = (fighterAverage + fighter.get()->GetProto().rating()) / 2;
-        }
-    }
-    
-    double averageRatingScore =  (fighterAverage) * cfg->params().prestige_avg_rating_mod() * log10(totalFighters+1);
-    
-    double winCount = GetProto().tournamentswon();
-    double totalTournaments = GetProto().tournamentscompleted();
-    double winPercent = 0;
-    
-    if(totalTournaments > 0)
-    {
-        winPercent = winCount / totalTournaments * log10(totalTournaments+1); 
-        winPercent *= cfg->params().prestige_tournament_performance_mod();
-    }
-    
-    double winPercentPrestigeMod = winPercent;
-    prestige = (int64_t)(getPercentageEpic + getPercentageRare + getPercentageUncommom + getPercentageCommon + averageRatingScore) * (1 + winPercentPrestigeMod);
-    dirtyFields = true;
-    
-    MutableProto().set_valueepic(getPercentageEpic);
-    MutableProto().set_valuerare(getPercentageRare);
-    MutableProto().set_valueuncommon(getPercentageUncommom);
-    MutableProto().set_valuecommon(getPercentageCommon);
-    
-    MutableProto().set_fighteraverage(averageRatingScore);
-    MutableProto().set_tournamentperformance((1 + winPercentPrestigeMod)); 
+		uint32_t fighterAverage = 0;
+		
+		for(const auto& fighter: fighters)
+		{
+			if(fighterAverage == 0)
+			{
+				fighterAverage = fighter.get()->GetProto().rating();
+			}
+			else
+			{
+				fighterAverage = (fighterAverage + fighter.get()->GetProto().rating()) / 2;
+			}
+		}
+		
+		double averageRatingScore =  (fighterAverage) * cfg->params().prestige_avg_rating_mod() * log10(totalFighters+1);
+		
+		double winCount = GetProto().tournamentswon();
+		double totalTournaments = GetProto().tournamentscompleted();
+		double winPercent = 0;
+		
+		if(totalTournaments > 0)
+		{
+			winPercent = winCount / totalTournaments * log10(totalTournaments+1); 
+			winPercent *= cfg->params().prestige_tournament_performance_mod();
+		}
+		
+		double winPercentPrestigeMod = winPercent;
+		prestige = (int64_t)(getPercentageEpic + getPercentageRare + getPercentageUncommom + getPercentageCommon + averageRatingScore) * (1 + winPercentPrestigeMod);
+				
+		dirtyFields = true;
+		
+		MutableProto().set_valueepic(getPercentageEpic);
+		MutableProto().set_valuerare(getPercentageRare);
+		MutableProto().set_valueuncommon(getPercentageUncommom);
+		MutableProto().set_valuecommon(getPercentageCommon);
+		
+		MutableProto().set_fighteraverage(averageRatingScore);
+		MutableProto().set_tournamentperformance((1 + winPercentPrestigeMod)); 
+	}
+	else
+	{
+		std::vector<FighterTable::Handle> fighters = CollectInventoryFighters(cfg);
+		fpm::fixed_24_8 totalFighters = fpm::fixed_24_8(fighters.size());
+		
+		if(totalFighters == fpm::fixed_24_8(0))
+		{
+		  prestige = cfg->params().base_prestige();
+		  return;
+		}
+		
+		fpm::fixed_24_8 getPercentageEpic  = fpm::fixed_24_8(GetFighterPercentageFromQuality(4, fighters)) * fpm::fixed_24_8(cfg->params().prestige_epic_mod()) * fpm::log10(totalFighters+1);
+		fpm::fixed_24_8 getPercentageRare  = fpm::fixed_24_8(GetFighterPercentageFromQuality(3, fighters)) * fpm::fixed_24_8(cfg->params().prestige_rare_mod()) * fpm::log10(totalFighters+1);
+		fpm::fixed_24_8 getPercentageUncommom  = fpm::fixed_24_8(GetFighterPercentageFromQuality(2, fighters)) * fpm::fixed_24_8(cfg->params().prestige_uncommon_mod()) * fpm::log10(totalFighters+1);
+		fpm::fixed_24_8 getPercentageCommon  = fpm::fixed_24_8(GetFighterPercentageFromQuality(1, fighters)) * fpm::fixed_24_8(cfg->params().prestige_common_mod()) * fpm::log10(totalFighters+1);
+
+		fpm::fixed_24_8 fighterAverage =fpm::fixed_24_8(0);
+		
+		for(const auto& fighter: fighters)
+		{
+			if(fighterAverage == fpm::fixed_24_8(0))
+			{
+				fighterAverage = fpm::fixed_24_8(fighter.get()->GetProto().rating());
+			}
+			else
+			{
+				fighterAverage = (fighterAverage + fpm::fixed_24_8(fighter.get()->GetProto().rating())) / fpm::fixed_24_8(2);
+			}
+		}
+		
+		fpm::fixed_24_8 averageRatingScore =  (fighterAverage) * fpm::fixed_24_8(cfg->params().prestige_avg_rating_mod()) * fpm::log10(totalFighters+1);
+		
+		fpm::fixed_24_8 winCount = fpm::fixed_24_8(GetProto().tournamentswon());
+		fpm::fixed_24_8 totalTournaments = fpm::fixed_24_8(GetProto().tournamentscompleted());		
+		fpm::fixed_24_8 winPercent = fpm::fixed_24_8(0);
+		
+		if(totalTournaments > fpm::fixed_24_8(0))
+		{
+			winPercent = winCount + (totalTournaments /  fpm::fixed_24_8(10));
+		}
+		
+		fpm::fixed_24_8 winPercentPrestigeMod = winPercent;
+
+		// We must reward players, that have the most rare names in their roster
+		std::vector<std::string> namesUsed;
+	    std::vector<std::string> armorUsed;
+
+        // Names
+		fpm::fixed_24_8 uniquePiecesCollected = fpm::fixed_24_8(0);		
+		// ArmorPieces		
+		fpm::fixed_24_8 uniqueArmorCollected = fpm::fixed_24_8(0);		
+		
+        for(const auto& fighter: fighters)
+		{
+			std::vector<std::string> output;
+			
+			// For the names, we only want to include the rare ones, not common, else
+			// "prestige" word would lose it original meaning
+									
+			if(fighter.get()->GetProto().firstnamerarity() < 500)
+			{
+				output.push_back(fighter.get()->GetProto().firstname());
+			}
+	
+			if(fighter.get()->GetProto().secondnamerarity() < 500)
+			{	
+				output.push_back(fighter.get()->GetProto().secondname());
+			}
+			
+			for(auto& piece : output)
+			{
+				if(std::find(namesUsed.begin(), namesUsed.end(), piece) == namesUsed.end()) 
+				{
+					uniquePiecesCollected = uniquePiecesCollected + fpm::fixed_24_8(1);
+					namesUsed.push_back(piece);
+				}
+			}	
+
+			for(auto& armorPiece : fighter.get()->GetProto().armorpieces())
+			{
+				if(std::find(armorUsed.begin(), armorUsed.end(), armorPiece.candy()) == armorUsed.end()) 
+				{
+					uniqueArmorCollected = uniqueArmorCollected + fpm::fixed_24_8(1);
+					armorUsed.push_back(armorPiece.candy());
+				}				
+			}
+		}		
+		
+		fpm::fixed_24_8 nameDiversityCoefficient = uniquePiecesCollected / fpm::fixed_24_8(48);
+		fpm::fixed_24_8 armorDiversityCoefficient = uniqueArmorCollected / fpm::fixed_24_8(48);
+		
+		if(nameDiversityCoefficient < fpm::fixed_24_8(0)) nameDiversityCoefficient = fpm::fixed_24_8(0);
+		if(nameDiversityCoefficient > fpm::fixed_24_8(1)) nameDiversityCoefficient = fpm::fixed_24_8(1);
+		
+		if(armorDiversityCoefficient < fpm::fixed_24_8(0)) armorDiversityCoefficient = fpm::fixed_24_8(0);
+		if(armorDiversityCoefficient > fpm::fixed_24_8(1)) armorDiversityCoefficient = fpm::fixed_24_8(1);		
+				
+		/* We want to make sure, that new prestige formula after fork is somewhat consistent with values users already had */
+		fpm::fixed_24_8 multiplier = fpm::fixed_24_8(0.6);
+				
+		prestige = static_cast<int64_t>((getPercentageEpic + getPercentageRare + getPercentageUncommom + getPercentageCommon + averageRatingScore) * (fpm::fixed_24_8(1) + multiplier + nameDiversityCoefficient + armorDiversityCoefficient) + winPercentPrestigeMod);
+				
+		dirtyFields = true;
+		
+		MutableProto().set_valueepic((int32_t)getPercentageEpic);
+		MutableProto().set_valuerare((int32_t)getPercentageRare);
+		MutableProto().set_valueuncommon((int32_t)getPercentageUncommom);
+		MutableProto().set_valuecommon((int32_t)getPercentageCommon);
+		
+		MutableProto().set_fighteraverage((int32_t)averageRatingScore);
+		MutableProto().set_tournamentperformance((1 + (int32_t)winPercentPrestigeMod)); 		
+	}
 }
 
 void
@@ -414,11 +530,11 @@ XayaPlayer::AddBalance (const Amount val)
 }
 
 XayaPlayersTable::Handle
-XayaPlayersTable::CreateNew (const std::string& name, const RoConfig& cfg, xaya::Random& rnd)
+XayaPlayersTable::CreateNew (const std::string& name, const RoConfig& cfg, xaya::Random& rnd, bool isFork)
 {
   CHECK (GetByName (name, cfg) == nullptr)
       << "Account for " << name << " exists already";
-  return Handle (new XayaPlayer (db, name, cfg, rnd));
+  return Handle (new XayaPlayer (db, name, cfg, rnd, isFork));
 }
 
 XayaPlayersTable::Handle

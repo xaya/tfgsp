@@ -231,7 +231,7 @@ TEST_F (XayaPlayersUpdateTests, Initialisation)
 
 TEST_F (XayaPlayersUpdateTests, RecepieInstanceSheduleTest)
 {
-  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (100);
+  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd, true)->AddBalance (100);
   
   auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
   a->GetInventory().SetFungibleCount("Common_Gumdrop", 1);
@@ -264,7 +264,7 @@ TEST_F (XayaPlayersUpdateTests, TestFractionPaymentRounding)
 
 TEST_F (XayaPlayersUpdateTests, BacthSubmitNormalTest)
 {
-  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (100);
+  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd, true)->AddBalance (100);
   
   auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
   a->GetInventory().SetFungibleCount("Common_Gumdrop", 1);
@@ -289,7 +289,7 @@ TEST_F (XayaPlayersUpdateTests, RecepieDestroyTest)
 {
   ctx.SetHeight (4265752);
   
-  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (100);
+  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd, true)->AddBalance (100);
   
   auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
   a.reset();
@@ -308,7 +308,7 @@ TEST_F (XayaPlayersUpdateTests, RecepieDestroyTest)
 
 TEST_F (XayaPlayersUpdateTests, RecepieInstanceWrongValues)
 {
-  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (100);
+  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd, true)->AddBalance (100);
   
   Process (R"([
     {"name": "domob", "move": {"ca": {"r": {"rid": 4, "fid": 0}}}}
@@ -321,7 +321,7 @@ TEST_F (XayaPlayersUpdateTests, RecepieInstanceWrongValues)
 
 TEST_F (XayaPlayersUpdateTests, RecepieInstanceInsufficientResources)
 {
-  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (100);
+  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd, true)->AddBalance (100);
 
   tbl2.GetById(1)->SetOwner("domob");
   tbl2.GetById(2)->SetOwner("domob");
@@ -344,7 +344,7 @@ TEST_F (XayaPlayersUpdateTests, RecepieInstanceInsufficientResources)
 
 TEST_F (XayaPlayersUpdateTests, SweetenerSubmitForCooking)
 {
-  auto pl = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
+  auto pl = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd, true);
   pl->AddBalance(100);
   pl->GetInventory().SetFungibleCount("Sweetener_R2", 1);
   
@@ -371,7 +371,7 @@ TEST_F (XayaPlayersUpdateTests, SweetenerSubmitForCooking)
 
 TEST_F (XayaPlayersUpdateTests, ExpeditionInstanceSheduleTest)
 {
-  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd, true);
   xp->GetInventory().SetFungibleCount("Common_Gumdrop", 1);
   xp->GetInventory().SetFungibleCount("Common_Icing", 1);    
   
@@ -391,7 +391,7 @@ TEST_F (XayaPlayersUpdateTests, ExpeditionInstanceSheduleTest)
 
 TEST_F (XayaPlayersUpdateTests, ExpeditionMultipleInstanceSheduleTest)
 {
-  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd, true);
   xp->GetInventory().SetFungibleCount("Common_Gumdrop", 1);
   xp->GetInventory().SetFungibleCount("Common_Icing", 1);    
   
@@ -420,7 +420,7 @@ TEST_F (XayaPlayersUpdateTests, ExpeditionMultipleInstanceSheduleTest)
 
 TEST_F (XayaPlayersUpdateTests, ExpeditionInstanceSheduleTestWrongData1)
 {
-  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd, true);
   auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
   ft.reset();
   EXPECT_EQ (xp->CollectInventoryFighters(ctx.RoConfig()).size(), 3);
@@ -437,7 +437,7 @@ TEST_F (XayaPlayersUpdateTests, ExpeditionInstanceSheduleTestWrongData1)
 
 TEST_F (XayaPlayersUpdateTests, ExpeditionInstanceSheduleTestWrongData2)
 {
-  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd, true);
   auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
   ft.reset();
   EXPECT_EQ (xp->CollectInventoryFighters(ctx.RoConfig()).size(), 3);
@@ -480,7 +480,7 @@ protected:
 TEST_F (CoinOperationTests, TransfigureWrongValues)
 {
   proto::ConfigData& cfg = const_cast <proto::ConfigData&>(*ctx.RoConfig());
-  auto a = xayaplayers.CreateNew("domob", ctx.RoConfig(), rnd);
+  auto a = xayaplayers.CreateNew("domob", ctx.RoConfig(), rnd, true);
   a->AddBalance (250 + cfg.params().starting_crystals());  
 
   
@@ -636,7 +636,7 @@ TEST_F (CoinOperationTests, TransfigureWrongValues)
 TEST_F (CoinOperationTests, PutFighterForSaleAndThenBuy)
 {
   proto::ConfigData& cfg = const_cast <proto::ConfigData&>(*ctx.RoConfig());
-  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (250 + cfg.params().starting_crystals());  
+  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd, true)->AddBalance (250 + cfg.params().starting_crystals());  
 	
   Process (R"([
     {"name": "domob", "move": {"a": {"x": 42, "init": {"address": "CGUpAcjsb6MDktSYg8yRDxDutr7FhWtdWC"}}}}
@@ -686,6 +686,9 @@ TEST_F (CoinOperationTests, PutFighterForSaleAndThenBuy)
   a->AddBalance(600);
   a.reset();
 
+  ExpectBalances ({{"domob", 240}});
+  ExpectBalances ({{"andy", 600}});
+
   Process (R"([
     {"name": "andy", "move": {"f": {"b": {"fid": 4}}}}
   ])"); 
@@ -695,12 +698,15 @@ TEST_F (CoinOperationTests, PutFighterForSaleAndThenBuy)
   EXPECT_EQ (ft->GetOwner(), "andy");  
   EXPECT_EQ (ft->GetStatus(), pxd::FighterStatus::Available); 
   ft.reset();
+  
+  ExpectBalances ({{"domob", 720}});
+  ExpectBalances ({{"andy", 100}});
 }
 
 TEST_F (CoinOperationTests, PutFighterForSaleAndThenRemove)
 {
   proto::ConfigData& cfg = const_cast <proto::ConfigData&>(*ctx.RoConfig());
-  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (250 + cfg.params().starting_crystals()); 	
+  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd, true)->AddBalance (250 + cfg.params().starting_crystals()); 	
 	
   Process (R"([
     {"name": "domob", "move": {"a": {"x": 42, "init": {"address": "CGUpAcjsb6MDktSYg8yRDxDutr7FhWtdWC"}}}}
@@ -743,7 +749,7 @@ TEST_F (CoinOperationTests, PutFighterForSaleAndThenRemove)
 TEST_F (CoinOperationTests, PutFighterForSaleCrazyPrices)
 {
   proto::ConfigData& cfg = const_cast <proto::ConfigData&>(*ctx.RoConfig());
-  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (250 + cfg.params().starting_crystals()); 	
+  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd, true)->AddBalance (250 + cfg.params().starting_crystals()); 	
   
   Process (R"([
     {"name": "domob", "move": {"a": {"x": 42, "init": {"address": "CGUpAcjsb6MDktSYg8yRDxDutr7FhWtdWC"}}}}
@@ -775,7 +781,7 @@ TEST_F (CoinOperationTests, PutFighterForSaleCrazyPrices)
 TEST_F (CoinOperationTests, PurchaseStuff)
 {
   proto::ConfigData& cfg = const_cast <proto::ConfigData&>(*ctx.RoConfig());
-  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (250 + cfg.params().starting_crystals()); 		
+  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd, true)->AddBalance (250 + cfg.params().starting_crystals()); 		
 	
   Process (R"([
     {"name": "domob", "move": {"a": {"x": 42, "init": {"address": "CGUpAcjsb6MDktSYg8yRDxDutr7FhWtdWC"}}}}

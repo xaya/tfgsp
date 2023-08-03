@@ -387,7 +387,14 @@ void PXLogic::ResolveSweetener(std::unique_ptr<XayaPlayer>& a, std::string sweet
     }       
   }    
 
-  a->CalculatePrestige(ctx.RoConfig());  
+  bool isFork2 = false; 
+  auto chain = ctx.Chain ();
+  if(chain == xaya::Chain::REGTEST && ctx.Height () >= 5100772)
+  {
+	  isFork2 = true;
+  }
+
+  a->CalculatePrestige(ctx.RoConfig(), isFork2);  
  
 }
 
@@ -623,7 +630,15 @@ void PXLogic::ResolveCookingRecepie(std::unique_ptr<XayaPlayer>& a, const uint32
     else
     {
         auto newFighter = fighters.CreateNew (a->GetName(), recepieID, ctx.RoConfig(), rnd);
-        a->CalculatePrestige(ctx.RoConfig());
+		
+		bool isFork2 = false; 
+		auto chain = ctx.Chain ();
+		if(chain == xaya::Chain::REGTEST && ctx.Height () >= 5100772)
+		{
+		  isFork2 = true;
+		}		
+		
+        a->CalculatePrestige(ctx.RoConfig(), isFork2);
         
         newFighter->SetStatus(FighterStatus::Cooked);
         
@@ -897,6 +912,13 @@ void PXLogic::ProcessSpecialTournaments(Database& db, const Context& ctx, xaya::
     SpecialTournamentTable specialTournamentsDatabase(db);
     XayaPlayersTable xayaplayers(db);
     
+	bool isFork2 = false; 
+	auto chain = ctx.Chain ();
+	if(chain == xaya::Chain::REGTEST && ctx.Height () >= 5100772)
+	{
+	  isFork2 = true;
+	}	
+
     if(totalFightersInSpecialTournament == 0)
     {
         /* This is our very first special tournament running instance. In this case,
@@ -914,7 +936,7 @@ void PXLogic::ProcessSpecialTournaments(Database& db, const Context& ctx, xaya::
             s << "xayatf" << tTier;
             std::string ownerName(s.str());            
            
-            xayaplayers.CreateNew (ownerName, ctx.RoConfig(), rnd);
+            xayaplayers.CreateNew (ownerName, ctx.RoConfig(), rnd, isFork2);
 
 			bool isFork = false;
 
@@ -944,7 +966,6 @@ void PXLogic::ProcessSpecialTournaments(Database& db, const Context& ctx, xaya::
     int64_t timeDiff = currentTime - lastTournamentTime;
     
     int32_t timeTreshhold = 25 * 60 * 60; // !25 hours
-    xaya::Chain chain = ctx.Chain();
     
     if(chain == xaya::Chain::REGTEST)
     {
@@ -1239,7 +1260,7 @@ void PXLogic::RecalculatePlayerTiers(Database& db, const Context& ctx)
     
     XayaPlayersTable xayaplayers(db);
     
-     auto res = xayaplayers.QueryAll ();
+    auto res = xayaplayers.QueryAll ();
 
     std::map<std::string,int64_t> playerPrestigeCollection;
     int64_t highestPrestige = 0;
@@ -1421,6 +1442,9 @@ void PXLogic::ResolveSpecialTournamentFight(std::string attackerName, std::vecto
 
 void PXLogic::ProcessFighterPair(int64_t fighter1, int64_t fighter2, bool isSpecial, std::map<uint32_t, proto::TournamentResult*>& fighterResults, std::map<std::string, fpm::fixed_24_8>& participatingPlayerTotalScore, FighterTable& fighters, const Context& ctx, xaya::Random& rnd)
 {
+   xaya::Chain chain = ctx.Chain();
+   
+   
    auto rhs = fighters.GetById (fighter1, ctx.RoConfig ()); 
    auto lhs = fighters.GetById (fighter2, ctx.RoConfig ()); 
    
@@ -1551,8 +1575,16 @@ void PXLogic::ProcessFighterPair(int64_t fighter1, int64_t fighter2, bool isSpec
           lwin = pxd::MatchResultType::Lose;
           rwin = pxd::MatchResultType::Win;
           scoreB = fpm::fixed_24_8(1);
-          participatingPlayerTotalScore[rhs->GetOwner()] += fpm::fixed_24_8(0.5);
-          
+		  
+		  if(chain != xaya::Chain::REGTEST && ctx.Height () < 5100772)
+		  {
+			participatingPlayerTotalScore[rhs->GetOwner()] += fpm::fixed_24_8(0.5);
+		  }
+		  else
+		  {
+			participatingPlayerTotalScore[rhs->GetOwner()] += fpm::fixed_24_8(1);
+		  }	
+		          
           if(isSpecial == false)
           {
             fighterResults[fighter2]->set_losses(fighterResults[fighter2]->losses() + 1);
@@ -1838,7 +1870,14 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
 					a->MutableProto().set_tournamentswon(a->GetProto().tournamentswon() + 1);
 				  }
 
-                  a->CalculatePrestige(ctx.RoConfig());
+				  bool isFork2 = false; 
+				  auto chain = ctx.Chain ();
+				  if(chain == xaya::Chain::REGTEST && ctx.Height () >= 5100772)
+				  {
+				    isFork2 = true;
+				  }
+
+                  a->CalculatePrestige(ctx.RoConfig(), isFork2);
                   
                   a.reset();
               }
@@ -2006,6 +2045,14 @@ void
 PXLogic::UpdateState (Database& db, xaya::Random& rnd,
                       const Context& ctx, const Json::Value& blockData)
 {
+	
+  /* Lets make sure, that fork properly updates all out prestiges at once */
+   auto chain = ctx.Chain ();
+   if(ctx.Height () == 5100772)
+   {
+	   RecalculatePlayerTiers(db, ctx); 
+   }
+	
   /** We run this very early, as we want to create tournament instances from blueprints ASAP.
   We are going to open tournaments instances if blueprint is not present ir game or already full and running */
   ReopenMissingTournaments(db, ctx);  

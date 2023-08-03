@@ -10,6 +10,7 @@ REGTESTS = \
   accounts.py \
   burnsale.py \
   pending.py \
+  specialtournamentleave.py \
   specialtournament.py
 
 EXTRA_DIST = $(REGTESTS) $(TEST_LIBRARY)

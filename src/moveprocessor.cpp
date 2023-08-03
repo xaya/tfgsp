@@ -1245,7 +1245,7 @@ MoveProcessor::TryCoinOperation (const std::string& name,
         LOG (INFO)
             << "Creating uninitialised account for coin recipient "
             << entry.first;
-        to = xayaplayers.CreateNew (entry.first, ctx.RoConfig (), rnd);
+        to = xayaplayers.CreateNew (entry.first, ctx.RoConfig (), rnd, true);
       }
     to->AddBalance (entry.second);
   }
@@ -1280,13 +1280,20 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
       }
   }
   
+  bool isFork2 = false; 
+  auto chain = ctx.Chain ();
+  if(chain == xaya::Chain::REGTEST && ctx.Height () >= 5100772)
+  {
+    isFork2 = true;
+  }	  
   /* Ensure that the account database entry exists.  In other words, we
+
      have accounts (although perhaps uninitialised) for everyone who
      ever sent a TF move.  */
   if (xayaplayers.GetByName (name, ctx.RoConfig ()) == nullptr)
   {
     LOG (INFO) << "Creating uninitialised account for " << name;
-    xayaplayers.CreateNew (name, ctx.RoConfig (), rnd);
+    xayaplayers.CreateNew (name, ctx.RoConfig (), rnd, isFork2);
   }
 
   /* Handle coin transfers before other game operations.  They are even
@@ -1520,33 +1527,38 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
       LOG (WARNING) << "Asking for non-existant special tournament with id: " << tournamentID;
       return false;
     }    
-    
-    auto res3 = fighters.QueryAll ();
-    bool tryAndStep3 = res3.Step();
-    
-    while (tryAndStep3)
-    {
-        auto fghtr = fighters.GetFromResult (res3, ctx.RoConfig ()); 
-        
-        if(fghtr->GetOwner() == name && fghtr->GetProto().specialtournamentinstanceid() == tournamentID)
-        {
-            
-            // If this fighter is currently also a crown holder, he cannot leave;
-            if(tournamentData->GetProto().crownholder() == fghtr->GetOwner())
-            {
-               fghtr.reset();
-               tournamentData.reset();
-               LOG (WARNING) << "Asking to leave a crown holder for special tournament with id: " << tournamentID;
-               return false;                 
-            }
-            
-            
-            fighterIDS.push_back(fghtr->GetId());
-        }
-        
-        fghtr.reset();
-        tryAndStep3 = res3.Step();        
-    }              
+	
+    xaya::Chain chain = ctx.Chain();
+
+	auto res3 = fighters.QueryAll ();
+	bool tryAndStep3 = res3.Step();
+	
+	while (tryAndStep3)
+	{
+		auto fghtr = fighters.GetFromResult (res3, ctx.RoConfig ()); 
+		
+		if(fghtr->GetOwner() == name && fghtr->GetProto().specialtournamentinstanceid() == tournamentID)
+		{
+			
+			if(chain != xaya::Chain::REGTEST && ctx.Height () < 5100772)
+			{
+				// If this fighter is currently also a crown holder, he cannot leave;
+				if(tournamentData->GetProto().crownholder() == fghtr->GetOwner())
+				{
+				   fghtr.reset();
+				   tournamentData.reset();
+				   LOG (WARNING) << "Asking to leave a crown holder for special tournament with id: " << tournamentID;
+				   return false;                 
+				}
+			}
+					
+			fighterIDS.push_back(fghtr->GetId());
+		}
+		
+		fghtr.reset();
+		tryAndStep3 = res3.Step();        
+	}   
+	
     
     if((pxd::SpecialTournamentState)(uint32_t)tournamentData->GetProto().state() != pxd::SpecialTournamentState::Listed)
     {
@@ -2321,17 +2333,13 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     int32_t playerPrestigeBasedTier = (int32_t)a.GetProto().specialtournamentprestigetier();
     
 	xaya::Chain chain = ctx.Chain();
-	
-	if(chain != xaya::Chain::REGTEST)
+	if(tournamentTier != playerPrestigeBasedTier)
 	{
-		if(tournamentTier != playerPrestigeBasedTier)
-		{
-		  LOG (WARNING) << "Wrong tournament tier, expected  " << tournamentTier << " but actual player is " << playerPrestigeBasedTier;
-		  tournamentData.reset();
-		  return false;        
-		}
+	  LOG (WARNING) << "Wrong tournament tier, expected  " << tournamentTier << " but actual player is " << playerPrestigeBasedTier;
+	  tournamentData.reset();
+	  return false;        
 	}
-
+	
     if((pxd::SpecialTournamentState)(int)tournamentData->GetProto().state() != pxd::SpecialTournamentState::Listed)
     {
       LOG (WARNING) << "Special tournament is calculating, can not process move, tournament id is  " << tournamentID;
@@ -3100,11 +3108,23 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
       fighter.reset();
       return false;              
     }  
+	
+    xaya::Chain chain = ctx.Chain();
+	if(chain == xaya::Chain::REGTEST && ctx.Height () >= 5100772)
+	{
+		uint32_t slots = fighters.CountForOwner(a.GetName());
+
+		if(slots > ctx.RoConfig()->params().max_fighter_inventory_amount())
+		{
+			LOG (WARNING) << "Not enough slots to host a new fighter";
+			return false;         
+		}		
+	}
 
     return true;
   }
   
- bool
+  bool
   BaseMoveProcessor::ParseCookRecepie(const XayaPlayer& a, const std::string& name, const Json::Value& recepie, std::map<std::string, pxd::Quantity>& fungibleItemAmountForDeduction, int32_t& cookCost, int32_t& duration, std::string& weHaveApplibeGoodyName)
   {
     if (!recepie.isObject ())
@@ -3593,7 +3613,15 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     }
     
     fighters.DeleteById(fighterID);
-    a->CalculatePrestige(ctx.RoConfig());
+	
+	bool isFork2 = false; 
+	auto chain = ctx.Chain ();
+	if(chain == xaya::Chain::REGTEST && ctx.Height () >= 5100772)
+	{
+	  isFork2 = true;
+	}	
+	
+    a->CalculatePrestige(ctx.RoConfig(), isFork2);
     a.reset();
     
     
@@ -4260,7 +4288,15 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 	fighterDb.reset();		
 	
 	DestroyUsedElements(a, fighter);
-	a->CalculatePrestige(ctx.RoConfig());
+	
+	bool isFork2 = false; 
+	auto chain = ctx.Chain ();
+	if(chain == xaya::Chain::REGTEST && ctx.Height () >= 5100772)
+	{
+	  isFork2 = true;
+	}	
+	
+	a->CalculatePrestige(ctx.RoConfig(), isFork2);
 	
 	a.reset();  
   }    
@@ -4353,7 +4389,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 	}
 	
     a2->AddBalance((int32_t)finalPrice);
-
+	
     proto::FighterSaleEntry* newSale = fighterDb->MutableProto().add_salehistory();    
     newSale->set_selltime(ctx.Timestamp());
     newSale->set_price(exchangeprice);
@@ -4362,9 +4398,16 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 
     fighterDb->SetOwner(name);
     fighterDb.reset();
+	
+	bool isFork2 = false; 
+	auto chain = ctx.Chain ();
+	if(chain == xaya::Chain::REGTEST && ctx.Height () >= 5100772)
+	{
+	  isFork2 = true;
+	}	
      
-    a->CalculatePrestige(ctx.RoConfig());
-    a2->CalculatePrestige(ctx.RoConfig());
+    a->CalculatePrestige(ctx.RoConfig(), isFork2);
+    a2->CalculatePrestige(ctx.RoConfig(), isFork2);
 
     a.reset();  
     a2.reset();
@@ -4449,8 +4492,6 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
       return;
     }
 
-    //auto tournamentData = specialTournamentsTbl.GetById(tournamentID, ctx.RoConfig ());
-    
     for(long long unsigned int r = 0; r < fighterIDS.size(); r++)
     {
         auto fighter = fighters.GetById (fighterIDS[r], ctx.RoConfig ());
@@ -4458,17 +4499,15 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
         fighter->MutableProto().set_specialtournamentinstanceid(tournamentID);
         fighter->MutableProto().set_specialtournamentstatus((int)pxd::SpecialTournamentStatus::Listed);
       
-        LOG (INFO) << "Fighter " << fighterIDS[r] << " enters special tournament ";
+        LOG (INFO) << "Fighter " << fighterIDS[r] << " enters special tournament with prestige " << a->GetPresitge();
         
         fighter.reset();
     }
 
     a->AddBalance (-10); 
-    //tournamentData.reset();
-    
     a.reset();
     
-    LOG (WARNING) << "Special Tournament " << tournamentID << " entered succesfully ";  
+    LOG (WARNING) << "Special Tournament " << tournamentID << " entered succesfully";  
   }  
   
   void MoveProcessor::MaybeSQLTestInjection2(const std::string& name, const Json::Value& injection)
@@ -4482,6 +4521,13 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
     XayaPlayersTable xayaplayers(db);
     FighterTable tbl3(db);
     RecipeInstanceTable tbl2(db);
+	
+	bool isFork2 = false; 
+	auto chain = ctx.Chain ();
+	if(chain == xaya::Chain::REGTEST && ctx.Height () >= 5100772)
+	{
+	  isFork2 = true;
+	}		
     
     for(int d = 151; d < 161; d++)
     {
@@ -4489,7 +4535,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
       s << "testft" << d;
       std::string nName(s.str());        
 
-      auto xp = xayaplayers.CreateNew (nName, ctx.RoConfig(), rnd);
+      auto xp = xayaplayers.CreateNew (nName, ctx.RoConfig(), rnd, isFork2);
       // Here we want to boost player prestige to make him reach higher special touenament tiers, soo..
       xp->MutableProto().set_tournamentswon(rnd.NextInt(d));  
       xp->MutableProto().set_tournamentscompleted(d); 
@@ -4508,12 +4554,23 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
       }
       
       xp = xayaplayers.GetByName(nName, ctx.RoConfig());
-      xp->CalculatePrestige(ctx.RoConfig());
+	  
+	  bool isFork2 = false; 
+	  if(chain == xaya::Chain::REGTEST && ctx.Height () >= 5100772)
+	  {
+	    isFork2 = true;
+	  }	  
+	  
+      xp->CalculatePrestige(ctx.RoConfig(), isFork2);
+	  
+	  
       LOG (WARNING) << "Injected " << " prestinge is " << xp->GetPresitge();
       
       xp.reset();
       
     }
+	
+	RecalculatePlayerTiers(db, ctx); 	
     
     LOG (WARNING) << "Injected";
   }  
@@ -4526,6 +4583,13 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
         return;   
     }
     
+	bool isFork2 = false; 
+	auto chain = ctx.Chain ();
+	if(chain == xaya::Chain::REGTEST && ctx.Height () >= 5100772)
+	{
+	  isFork2 = true;
+	}		
+	
     XayaPlayersTable xayaplayers(db);
     FighterTable tbl3(db);
     RecipeInstanceTable tbl2(db);
@@ -4536,7 +4600,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
       s << "testft" << d;
       std::string nName(s.str());        
 
-      auto xp = xayaplayers.CreateNew (nName, ctx.RoConfig(), rnd);
+      auto xp = xayaplayers.CreateNew (nName, ctx.RoConfig(), rnd, isFork2);
       xp.reset();
       
       for(int se = 0; se < 4; se++) // we want to have exactly 6 (2+4) to test special tournaments
@@ -4572,7 +4636,38 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
       return;
     }
 
-    auto tournamentData = specialTournamentsTbl.GetById(tournamentID, ctx.RoConfig ());   
+    auto tournamentData = specialTournamentsTbl.GetById(tournamentID, ctx.RoConfig ()); 
+
+	bool fighterIsCrownHolderHimself = false;
+	xaya::Chain chain = ctx.Chain();
+	if(chain != xaya::Chain::REGTEST && ctx.Height () < 5100772)
+    {
+	}
+	else
+	{
+		auto res3 = fighters.QueryAll ();
+		bool tryAndStep3 = res3.Step();
+		
+		while (tryAndStep3)
+		{
+			auto fghtr = fighters.GetFromResult (res3, ctx.RoConfig ()); 
+			
+			if(fghtr->GetOwner() == name && fghtr->GetProto().specialtournamentinstanceid() == tournamentID)
+			{				
+				// If this fighter is currently also a crown holder, we need to replace slots with 
+				if(tournamentData->GetProto().crownholder() == fghtr->GetOwner())
+				{
+					fghtr.reset();
+					fighterIsCrownHolderHimself = true;
+					break;				   
+				}
+			}
+			
+			fghtr.reset();
+			tryAndStep3 = res3.Step();        
+		} 		
+	}
+	
     for(long long unsigned int r = 0; r < fighterIDS.size(); r++)
     {
         auto fighter = fighters.GetById (fighterIDS[r], ctx.RoConfig ());
@@ -4588,10 +4683,45 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
           fighter.reset();
         }
     }
+	
+	if(fighterIsCrownHolderHimself == true)
+	{
+		std::ostringstream s;
+		s << "xayatf" << tournamentData->GetProto().tier();
+		std::string ownerName(s.str());        
+
+        LOG (INFO) << "Default xaya fighter roster needs to get back for " << ownerName;  		
+	   
+	    auto res3 = fighters.QueryForOwner (ownerName);
+		bool tryAndStep3 = res3.Step();
+		int maximum = 6;
+		
+		while (tryAndStep3)
+		{
+			auto fghtr = fighters.GetFromResult (res3, ctx.RoConfig ()); 
+            fghtr->SetStatus(pxd::FighterStatus::SpecialTournament);
+			fghtr->MutableProto().set_specialtournamentinstanceid(tournamentID);
+			fghtr->MutableProto().set_specialtournamentstatus((int)pxd::SpecialTournamentStatus::Listed);
+			
+			LOG (INFO) << "Returning " << fghtr->GetId() << " of " << ownerName; 
+			
+			fghtr.reset();
+			tryAndStep3 = res3.Step();   
+			
+			maximum--;
+			if(maximum <= 0)
+			{
+				break;
+			}
+		}
+		
+		tournamentData->MutableProto().set_crownholder(ownerName);
+		tournamentData->MutableProto().set_state((int)pxd::SpecialTournamentState::Listed); 	
+	}
 
     tournamentData.reset();    
     a.reset();
-    
+
     LOG (INFO) << "Special tournament " << tournamentID << " leaved succesfully ";  
   }  
   
@@ -4807,7 +4937,14 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
       itemInventoryRecipe.reset();
     }
     
-    a->CalculatePrestige(ctx.RoConfig());
+	bool isFork2 = false; 
+	auto chain = ctx.Chain ();
+	if(chain == xaya::Chain::REGTEST && ctx.Height () >= 5100772)
+	{
+	  isFork2 = true;
+	}	
+	
+    a->CalculatePrestige(ctx.RoConfig(), isFork2);
     a.reset();
     LOG (INFO) << "Destroy instance " << recepie << " submitted succesfully ";
   }    
@@ -4846,7 +4983,15 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
         if(fighter != nullptr)
         {
           fighters.DeleteById(fighter->GetId());
-          a->CalculatePrestige(ctx.RoConfig());
+		  
+		  bool isFork2 = false; 
+		  auto chain = ctx.Chain ();
+		  if(chain == xaya::Chain::REGTEST && ctx.Height () >= 5100772)
+		  {
+		    isFork2 = true;
+		  }		  
+		  
+          a->CalculatePrestige(ctx.RoConfig(), isFork2);
         }
     }
 
@@ -4874,7 +5019,14 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
     LOG (WARNING) << "Settign duration as " << duration;
     newOp->set_blocksleft(duration);
 
-    a->CalculatePrestige(ctx.RoConfig());
+	bool isFork2 = false; 
+	auto chain = ctx.Chain ();
+	if(chain == xaya::Chain::REGTEST && ctx.Height () >= 5100772)
+	{
+	  isFork2 = true;
+	}
+
+    a->CalculatePrestige(ctx.RoConfig(), isFork2);
     a.reset();
     LOG (INFO) << "Cooking instance " << recepie << " submitted succesfully ";
   }  

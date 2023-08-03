@@ -55,6 +55,11 @@ RecipeInstance::RecipeInstance (Database& d, const std::string& o, const std::st
       MutableProto().set_duration(recepie.second.duration());
       MutableProto().set_fightername(recepie.second.fightername());
       MutableProto().set_fightertype(recepie.second.fightertype());
+	  
+      MutableProto().set_firstnamerarity(1000);
+      MutableProto().set_secondnamerarity(1000);	  
+      MutableProto().set_firstname(recepie.second.name());
+      MutableProto().set_secondname(recepie.second.name());	 	  
       
       for(std::string move : recepie.second.moves())
       {
@@ -105,7 +110,12 @@ RecipeInstance::RecipeInstance (Database& d, const std::string& o, const pxd::pr
   MutableProto().set_duration(cr.duration());
   MutableProto().set_fightername(cr.fightername());
   MutableProto().set_fightertype(cr.fightertype());
-  
+ 
+  MutableProto().set_firstnamerarity(cr.firstnamerarity());
+  MutableProto().set_secondnamerarity(cr.secondnamerarity());	  
+  MutableProto().set_firstname(cr.firstname());
+  MutableProto().set_secondname(cr.secondname());	
+ 
   for(std::string move : cr.moves())
   {
       std::string* newMove = MutableProto().add_moves();
@@ -222,7 +232,9 @@ uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xa
      
     std::string fname = "";
     std::string lname = "";
-    
+    int32_t fnamer = 1000;
+    int32_t lnamer = 1000;	
+
     if(position0names.size() == 0)
     {
         LOG (ERROR) << "psnm0 The script would and in infinite loop for quality" << (int)quality;
@@ -237,6 +249,9 @@ uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xa
     
     std::vector<std::string> candidates0collected;
 	std::vector<std::string> candidates1collected;
+	
+    std::vector<int32_t> candidates0collectedR;
+	std::vector<int32_t> candidates1collectedR;	
 
 	int32_t biggetRollSoFar = 0;
 	while(candidates0collected.size() == 0)
@@ -248,6 +263,7 @@ uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xa
 		  
 		  if(probabilityTreshhold > rolCurNum)
 		  {			
+	        candidates0collectedR.push_back(rolCurNum);
 			candidates0collected.push_back(position0names[e].name());				
 		  }
 		}
@@ -255,10 +271,13 @@ uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xa
 		if(candidates0collected.size() == 1)
 		{
 			fname = candidates0collected[0];
+			fnamer = candidates0collectedR[0];
 		}
 		else
 		{
-			fname = candidates0collected[rnd.NextInt(candidates0collected.size())];			
+			int32_t rDex = rnd.NextInt(candidates0collected.size());
+			fname = candidates0collected[rDex];
+            fnamer = candidates0collectedR[rDex];			
 		}	
 	}
 	
@@ -271,18 +290,22 @@ uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xa
 		  int32_t rolCurNum = rnd.NextInt(1001);
 		  
 		  if(probabilityTreshhold > rolCurNum)
-		  {			
-			 candidates1collected.push_back(position1names[e].name());							
+		  {	
+			 candidates1collectedR.push_back(rolCurNum);
+			 candidates1collected.push_back(position1names[e].name());      			 
 		  }
 		}
 		
 		if(candidates1collected.size() == 1)
 		{
 			lname = candidates1collected[0];
+			lnamer = candidates1collectedR[0];
 		}
 		else
 		{
-			lname = candidates1collected[rnd.NextInt(candidates1collected.size())];			
+			int32_t rDex = rnd.NextInt(candidates1collected.size());
+			lname = candidates1collected[rDex];	
+            lnamer = candidates1collectedR[rDex];			
 		}	
 	}
 
@@ -355,6 +378,11 @@ uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xa
       generatedRecipe.set_duration(cfg->params().epic_recipe_cook_cost());
     }     
     
+	generatedRecipe.set_firstnamerarity(fnamer);
+	generatedRecipe.set_secondnamerarity(lnamer);	  
+	generatedRecipe.set_firstname(fname);
+	generatedRecipe.set_secondname(lname);		
+	
     generatedRecipe.set_fightername(fname + " " + lname);
     generatedRecipe.set_name(fname + " " + lname);
     generatedRecipe.set_fightertype(fighterType.authoredid());
