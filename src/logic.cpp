@@ -1356,7 +1356,7 @@ void PXLogic::ResolveSpecialTournamentFight(std::string attackerName, std::vecto
       participatingPlayerTotalScore.insert(std::pair<std::string, fpm::fixed_24_8>(defenderName, fpm::fixed_24_8(3))); // Bonus 3 points for crown holder
     }
     
-    std::map<unsigned int32_t, pxd::proto::TournamentResult*> empty;
+    std::map<uint32_t, pxd::proto::TournamentResult*> empty;
     
     for(auto fPair: fighterPairs)
     {
@@ -1441,7 +1441,7 @@ void PXLogic::ResolveSpecialTournamentFight(std::string attackerName, std::vecto
     }                     
 }
 
-void PXLogic::ProcessFighterPair(int64_t fighter1, int64_t fighter2, bool isSpecial, std::map<uint32_t, proto::TournamentResult*> fighterResults, std::map<std::string, fpm::fixed_24_8>& participatingPlayerTotalScore, FighterTable& fighters, const Context& ctx, xaya::Random& rnd)
+void PXLogic::ProcessFighterPair(int64_t fighter1, int64_t fighter2, bool isSpecial, std::map<uint32_t, proto::TournamentResult*>& fighterResults, std::map<std::string, fpm::fixed_24_8>& participatingPlayerTotalScore, FighterTable& fighters, const Context& ctx, xaya::Random& rnd)
 {
    xaya::Chain chain = ctx.Chain();
    
