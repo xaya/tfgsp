@@ -434,7 +434,7 @@ void PXLogic::ResolveDeconstruction(std::unique_ptr<XayaPlayer>& a, const uint32
     uint64_t recovered = (total * returnPercent) / 100;
     std::map<std::string, uint64_t> dict;
     
-    for(int64_t x =0; x < recovered; x++)
+    for(uint64_t x =0; x < recovered; x++)
     {
         std::string candyType = candyTypes[rnd.NextInt(candyTypes.size())];
         
@@ -1441,7 +1441,7 @@ void PXLogic::ResolveSpecialTournamentFight(std::string attackerName, std::vecto
     }                     
 }
 
-void PXLogic::ProcessFighterPair(int64_t fighter1, int64_t fighter2, bool isSpecial, std::map<uint32_t, proto::TournamentResult*>& fighterResults, std::map<std::string, fpm::fixed_24_8>& participatingPlayerTotalScore, FighterTable& fighters, const Context& ctx, xaya::Random& rnd)
+void PXLogic::ProcessFighterPair(int64_t fighter1, int64_t fighter2, bool isSpecial, std::map<uint32_t, proto::TournamentResult*> fighterResults, std::map<std::string, fpm::fixed_24_8>& participatingPlayerTotalScore, FighterTable& fighters, const Context& ctx, xaya::Random& rnd)
 {
    xaya::Chain chain = ctx.Chain();
    
@@ -1915,7 +1915,7 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
 		
 		std::map<std::string, int32_t> tournamentDemand;
 
-        for (int32_t i = 0; i < root.size(); i++) 
+        for (int32_t i = 0; i < (int32_t)root.size(); i++) 
 		{		
             std::string kName = root[i]["tournamentauth"].asString();
 			
