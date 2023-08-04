@@ -208,7 +208,7 @@ uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xa
     
     for (const auto& fighter : sortedNamesTypesmap)
     {
-        if((Quality)(int)fighter.second.quality() == quality)
+        if((Quality)(int32_t)fighter.second.quality() == quality)
         {
             potentialNames.push_back(fighter.second);
         }
@@ -237,13 +237,13 @@ uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xa
 
     if(position0names.size() == 0)
     {
-        LOG (ERROR) << "psnm0 The script would and in infinite loop for quality" << (int)quality;
+        LOG (ERROR) << "psnm0 The script would and in infinite loop for quality" << (int32_t)quality;
         return 0;
     }
     
     if(position1names.size() == 0)
     {
-        LOG (ERROR) << "psnm1 The script would and in infinite loop for quality" << (int)quality;
+        LOG (ERROR) << "psnm1 The script would and in infinite loop for quality" << (int32_t)quality;
         return 0;
     }    
     
@@ -256,7 +256,7 @@ uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xa
 	int32_t biggetRollSoFar = 0;
 	while(candidates0collected.size() == 0)
 	{
-		for(long long unsigned int e =0; e < position0names.size(); e++)
+		for(int32_t e =0; e < (int32_t)position0names.size(); e++)
 		{
 		  int32_t probabilityTreshhold = position0names[e].probability();
 		  int32_t rolCurNum = rnd.NextInt(1001);
@@ -284,7 +284,7 @@ uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xa
 	biggetRollSoFar = 0;
 	while(candidates1collected.size() == 0)
 	{
-		for(long long unsigned int e =0; e < position1names.size(); e++)
+		for(int32_t e =0; e < (int32_t)position1names.size(); e++)
 		{
 		  int32_t probabilityTreshhold = position1names[e].probability();
 		  int32_t rolCurNum = rnd.NextInt(1001);
@@ -322,7 +322,7 @@ uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xa
     } 
     );    
         
-    int probabilityTreshholdMaximum = 0;    
+    int32_t probabilityTreshholdMaximum = 0;    
      
     for (const auto& fighter : sortedfighterTypesmap)
     {
@@ -337,8 +337,8 @@ uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xa
     {
       for (const auto& fighter : sortedfighterTypesmap)
       {
-        int probabilityTreshhold = fighter.second.probability() * 1000;
-        int rolCurNum = rnd.NextInt(probabilityTreshholdMaximum * 2);
+        int32_t probabilityTreshhold = fighter.second.probability() * 1000;
+        int32_t rolCurNum = rnd.NextInt(probabilityTreshholdMaximum * 2);
 
         if(rolCurNum < probabilityTreshhold)
         {
@@ -386,23 +386,23 @@ uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xa
     generatedRecipe.set_fightername(fname + " " + lname);
     generatedRecipe.set_name(fname + " " + lname);
     generatedRecipe.set_fightertype(fighterType.authoredid());
-    generatedRecipe.set_quality((int)quality);
-    generatedRecipe.set_requiredfighterquality((int)Quality::None);
+    generatedRecipe.set_quality((int32_t)quality);
+    generatedRecipe.set_requiredfighterquality((int32_t)Quality::None);
     
     
     if(quality == Quality::Rare)
     {
-      generatedRecipe.set_requiredfighterquality((int)Quality::Common);
+      generatedRecipe.set_requiredfighterquality((int32_t)Quality::Common);
     }
     
     if(quality == Quality::Epic)
     {
-      generatedRecipe.set_requiredfighterquality((int)Quality::Uncommon);
+      generatedRecipe.set_requiredfighterquality((int32_t)Quality::Uncommon);
     }
     
     //Generate moves now
     const auto& moveBlueprints = cfg->fightermoveblueprints();
-    int numberOfMoves  = cfg->params().common_move_count();
+    int32_t numberOfMoves  = cfg->params().common_move_count();
     
     if(quality == Quality::Uncommon)
     {
@@ -441,7 +441,7 @@ uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xa
         }
     }    
     
-    for(int g = 0; g < numberOfMoves; g++)
+    for(int32_t g = 0; g < numberOfMoves; g++)
     {
         while(true)
         {
@@ -449,9 +449,9 @@ uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xa
             
             for(auto& probableMove: fighterType.moveprobabilities())
             {
-                int probabilityTreshhold = probableMove.probability() * 1000;
+                int32_t probabilityTreshhold = probableMove.probability() * 1000;
                 
-                int rolCurNum = rnd.NextInt(probabilityTreshholdMaximum * 2);  
+                int32_t rolCurNum = rnd.NextInt(probabilityTreshholdMaximum * 2);  
                 if(rolCurNum < probabilityTreshhold)
                 {    
                   validMoves.push_back(probableMove);
@@ -481,7 +481,7 @@ uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xa
         }
     }
     
-    for(long long unsigned int d =0; d < generatedMoveblueprints.size(); d++)
+    for(int32_t d =0; d < (int32_t)generatedMoveblueprints.size(); d++)
     { 
         std::string* newMove = generatedRecipe.add_moves();
         newMove->assign(generatedMoveblueprints[d].authoredid());
@@ -524,7 +524,7 @@ uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xa
     RecipeInstanceTable rt(db);
     
     auto handle = rt.CreateNew(owner, generatedRecipe, cfg); 
-    int hdata = handle->GetId();  
+    int32_t hdata = handle->GetId();  
     handle.reset();   
     
     return hdata;

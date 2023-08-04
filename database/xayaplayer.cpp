@@ -91,10 +91,10 @@ XayaPlayer::XayaPlayer (Database& d, const std::string& n, const RoConfig& cfg, 
   auto rcp1 = recipesTbl.CreateNew (GetName(), "5864a19b-c8c0-2d34-eaef-9455af0baf2c", cfg);
   auto rcp2 = recipesTbl.CreateNew (GetName(), "ba0121ba-e8a6-7e64-9bc1-71dfeca27daa", cfg);
   
-  int rcp1Id = rcp1->GetId();
+  int32_t rcp1Id = rcp1->GetId();
   rcp1.reset();
   
-  int rcp2Id = rcp2->GetId();
+  int32_t rcp2Id = rcp2->GetId();
   rcp2.reset();
   
   // This also should be consisten with items we have at the end of front-end tutorial
@@ -206,7 +206,7 @@ std::vector<FighterTable::Handle> XayaPlayer::CollectInventoryFightersFromSpecia
   {
       auto c = fightersTable.GetFromResult (res, cfg);
       
-      if((int)c->GetStatus() == (int)pxd::FighterStatus::SpecialTournament)
+      if((int32_t)c->GetStatus() == (int32_t)pxd::FighterStatus::SpecialTournament)
       {
           int64_t tID = c->GetProto().specialtournamentinstanceid();
           auto tm = sptable.GetById(tID, cfg);
@@ -449,7 +449,7 @@ BindPlayerRoleParameter (Database::Statement& stmt, const unsigned ind,
       return;
     default:
       LOG (FATAL)
-          << "Binding invalid faction to parameter: " << static_cast<int> (f);
+          << "Binding invalid faction to parameter: " << static_cast<int32_t> (f);
     }
 }
 
@@ -473,7 +473,7 @@ PlayerRoleToString (const PlayerRole f)
     case PlayerRole::INVALID:
       return "i";        
     default:
-      LOG (FATAL) << "Invalid faction: " << static_cast<int> (f);
+      LOG (FATAL) << "Invalid faction: " << static_cast<int32_t> (f);
     }
 }
 

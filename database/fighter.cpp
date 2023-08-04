@@ -201,7 +201,7 @@ void FighterInstance::RerollName(Amount cost, const RoConfig& cfg,  xaya::Random
     std::vector<std::pair<std::string, pxd::proto::FighterName>> sortedNamesTypesmap;
     for (auto itr = fighterNames.begin(); itr != fighterNames.end(); ++itr)
 	{
-		if((int)itr->second.quality() <= (int)ql)
+		if((int32_t)itr->second.quality() <= (int32_t)ql)
 		{
 			sortedNamesTypesmap.push_back(*itr);
 		}
@@ -215,7 +215,7 @@ void FighterInstance::RerollName(Amount cost, const RoConfig& cfg,  xaya::Random
     
     for (const auto& fighter : sortedNamesTypesmap)
     {
-        if((Quality)(int)fighter.second.quality() == (Quality)(int)GetProto().quality())
+        if((Quality)(int32_t)fighter.second.quality() == (Quality)(int32_t)GetProto().quality())
         {
             potentialNames.push_back(fighter.second);
         }
@@ -246,13 +246,13 @@ void FighterInstance::RerollName(Amount cost, const RoConfig& cfg,  xaya::Random
     
     if(position0names.size() == 0)
     {
-        LOG (ERROR) << "psnm0 The script would and in infinite loop for quality" << (int)GetProto().quality();
+        LOG (ERROR) << "psnm0 The script would and in infinite loop for quality" << (int32_t)GetProto().quality();
         return;
     }
     
     if(position1names.size() == 0)
     {
-        LOG (ERROR) << "psnm1 The script would and in infinite loop for quality" << (int)GetProto().quality();
+        LOG (ERROR) << "psnm1 The script would and in infinite loop for quality" << (int32_t)GetProto().quality();
         return;
     }    
     
@@ -292,7 +292,7 @@ void FighterInstance::RerollName(Amount cost, const RoConfig& cfg,  xaya::Random
 	
 	while(candidates0collected.size() == 0)
 	{
-		for(long long unsigned int e =0; e < position0names.size(); e++)
+		for(int32_t e =0; e < (int32_t)position0names.size(); e++)
 		{
 		  int32_t probabilityTreshhold = position0names[e].probability();
 		  int32_t rolCurNum = rnd.NextInt(1001 - increasedProbability);
@@ -319,7 +319,7 @@ void FighterInstance::RerollName(Amount cost, const RoConfig& cfg,  xaya::Random
     
 	while(candidates1collected.size() == 0)
 	{
-		for(long long unsigned int e =0; e < position1names.size(); e++)
+		for(int32_t e =0; e < (int32_t)position1names.size(); e++)
 		{
 		  int32_t probabilityTreshhold = position1names[e].probability();
 		  int32_t rolCurNum = rnd.NextInt(1001 - increasedProbability);
