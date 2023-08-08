@@ -38,7 +38,7 @@ def sleepSome ():
   time.sleep (0.1)
 
 
-class SpecialTournamentTest (PXTest):
+class SpecialTournamentLeaveTest (PXTest):
 
   def run (self):
     self.collectPremine ()
@@ -48,10 +48,6 @@ class SpecialTournamentTest (PXTest):
     
     names = ["andy", "evilandy"]
     names2 = ["andy", "evilandy", "xayatf1", "xayatf2", "xayatf3", "xayatf4", "xayatf5", "xayatf6", "xayatf7"]
-    #for x in range(150):
-        #names.append("testft"+str(x)) // too long, below, we will do SQL data injection when testing deeply, but lets keep this in case we need to rebuild full sql data
-    
-    # Prepare the player
 
     self.mainLogger.info ("Creating test account.")
     
@@ -256,10 +252,81 @@ class SpecialTournamentTest (PXTest):
     special = currentState["specialtournaments"]
     tier1Id = 0
     
-    for sp in special:
-        if sp["tier"] == 1:
-            tier1Id = sp["id"]
+    # Now we need to test leaving, while holding the "crown", so the first thing we need is to
+    # actually win the special tournament at all 
     
+    saveUs = 0
+    
+    while saveUs < 2000:
+        saveUs = saveUs + 1    
+    
+        currentState = self.getCustomState ("gamestate", "getcurrentstate")
+        allPlayers = currentState["xayaplayers"]
+        for player in allPlayers:
+            if player["name"] == "andy":
+                for sp in special:
+                    if sp["tier"] == player["specialtournamentprestigetier"]:
+                        tier1Id = sp["id"]    
+    
+        self.sendMove ("andy", {"tms": {"e": {"tid": tier1Id, "fc": playerOwnedFightersIDS["andy"]}}})
+        self.generate (1)
+        self.syncGame ()
+        currentState = self.getCustomState ("gamestate", "getcurrentstate")
+        totalPlayerFightersJoinedTheSpecialTournament = 0
+        allFighters = currentState["fighters"]
+        for fghtr in allFighters:
+                if fghtr["owner"] == "andy" and fghtr["specialtournamentinstanceid"] == tier1Id:
+                    totalPlayerFightersJoinedTheSpecialTournament = totalPlayerFightersJoinedTheSpecialTournament + 1
+                    
+        self.assertEqual(totalPlayerFightersJoinedTheSpecialTournament, 6)
+        
+        # All good, time to cycle until tournaments is resolved
+        
+        self.generate (300)
+        self.syncGame ()
+        
+        currentState = self.getCustomState ("gamestate", "getcurrentstate")
+        totalPlayerFightersJoinedTheSpecialTournament = 0
+        allFighters = currentState["fighters"]
+        for fghtr in allFighters:
+                if fghtr["owner"] == "andy" and fghtr["specialtournamentinstanceid"] == tier1Id:
+                    totalPlayerFightersJoinedTheSpecialTournament = totalPlayerFightersJoinedTheSpecialTournament + 1
+                    
+        if totalPlayerFightersJoinedTheSpecialTournament == 6:
+            saveUs = 2000
+            break;
+   
+    # So now we are crown holder, hence we want to just leave the sp. tournament be
+    
+    self.sendMove ("andy", {"tms": {"l": {"tid": tier1Id}}})
+    self.generate (1)
+    self.syncGame ()    
+    
+    currentState = self.getCustomState ("gamestate", "getcurrentstate")
+    totalPlayerFightersJoinedTheSpecialTournament = 0
+    allFighters = currentState["fighters"]
+    for fghtr in allFighters:
+            if fghtr["owner"] == "andy" and fghtr["specialtournamentinstanceid"] == tier1Id:
+                totalPlayerFightersJoinedTheSpecialTournament = totalPlayerFightersJoinedTheSpecialTournament + 1
+                
+    self.assertEqual(totalPlayerFightersJoinedTheSpecialTournament, 0)    
+
+    comboname = ""
+    
+    allPlayers = currentState["xayaplayers"]
+    for player in allPlayers:  
+        if player["name"] == "andy":
+            comboname = ("xayatf"+  str(player["specialtournamentprestigetier"]))
+    
+    # Additionally, lets check, that default player is holding the tournament now
+    totalDefaultPlayerFightersJoinedTheSpecialTournament = 0
+    for fghtr in allFighters:
+            if fghtr["owner"] == comboname and fghtr["specialtournamentinstanceid"] == tier1Id:
+                totalDefaultPlayerFightersJoinedTheSpecialTournament = totalDefaultPlayerFightersJoinedTheSpecialTournament + 1  
+  
+    self.assertEqual(totalDefaultPlayerFightersJoinedTheSpecialTournament, 6)
+    
+    # Finally, lets confirm, that we can joint same sp. tournament normally again and just compete in it once
     
     self.sendMove ("andy", {"tms": {"e": {"tid": tier1Id, "fc": playerOwnedFightersIDS["andy"]}}})
     self.generate (1)
@@ -276,7 +343,7 @@ class SpecialTournamentTest (PXTest):
     # All good, time to cycle until tournaments is resolved
     
     self.generate (300)
-    self.syncGame ()
+    self.syncGame ()    
     
     currentState = self.getCustomState ("gamestate", "getcurrentstate")
     totalPlayerFightersJoinedTheSpecialTournament = 0
@@ -285,191 +352,16 @@ class SpecialTournamentTest (PXTest):
             if fghtr["owner"] == "andy" and fghtr["specialtournamentinstanceid"] == tier1Id:
                 totalPlayerFightersJoinedTheSpecialTournament = totalPlayerFightersJoinedTheSpecialTournament + 1
                 
-    self.assertEqual(totalPlayerFightersJoinedTheSpecialTournament, 0)    
-    
-    # Lets make sure, that we run it only once per day
-    
-    self.sendMove ("andy", {"tms": {"e": {"tid": tier1Id, "fc": playerOwnedFightersIDS["andy"]}}})
-    self.generate (1)
-    self.syncGame ()
-    
-    self.generate (2)
-    self.syncGame ()
-    
-    currentState = self.getCustomState ("gamestate", "getcurrentstate")
-    totalPlayerFightersJoinedTheSpecialTournament = 0
-    allFighters = currentState["fighters"]
-    for fghtr in allFighters:
-            if fghtr["owner"] == "andy" and fghtr["specialtournamentinstanceid"] == tier1Id:
-                totalPlayerFightersJoinedTheSpecialTournament = totalPlayerFightersJoinedTheSpecialTournament + 1
-                
-    self.assertEqual(totalPlayerFightersJoinedTheSpecialTournament, 6) 
-    
-    self.generate (1)
-    self.syncGame ()   
-    self.sendMove ("andy", {"pc": "T1"}, {"sendCoins": {add1: amnt1,add2: amnt2,add3: amnt3,add4: amnt4,add5: amnt5,add6: amnt6,add7: amnt7}})
-    self.generate (1)
-    self.syncGame ()      
-    self.sendMove ("evilandy", {"pc": "T1"}, {"sendCoins": {add1: amnt1,add2: amnt2,add3: amnt3,add4: amnt4,add5: amnt5,add6: amnt6,add7: amnt7}})
-    self.generate (1)
-    self.syncGame ()          
-            
-    self.generate (298)
-    self.syncGame ()
-
-    self.sendMove ("andy", {"injection": {}})
-
-    self.generate (1)
-    self.syncGame ()
-    
-    for x in range(150):
-        names.append("testft"+str(x))
-        
-
-    # we need to test against all kind of different scenarious now, where it is
-    # draw, 2 winners and 1 we select randomly for the players, and also where all lose and crown stays    
-    # so lets run it several times and inspect logs    
-    # comment this whole for x range block below after development completed, no need to run this part automatically all the time
-    #for x in range(60):
-        #self.sendMove ("andy", {"tms": {"e": {"tid": tier1Id, "fc": playerOwnedFightersIDS}}})
-        #self.sendMove ("evilandy", {"tms": {"e": {"tid": tier1Id, "fc": player2OwnedFightersIDS}}})
-        #self.generate (10)
-        #self.syncGame ()
-        
-    # we need to test now, that more then NNN amount ditributes calculation amoung several blocks propely
-    # for this we need to queue lots of fights
-    # at this point, INJECTION above should be a success
-    
-    currentState = self.getCustomState ("gamestate", "getcurrentstate")
-    allFighters = currentState["fighters"]    
-    
-    playerOwnedFighters = {}
-    playerOwnedFightersIDS = {}
-    
-    for name in names:
-        playerOwnedFighters[name] = 0
-        playerOwnedFightersIDS[name] = []
-      
-    for fghtr in allFighters:
-        for name in names:
-            if fghtr["owner"] == name:
-                playerOwnedFighters[name] = playerOwnedFighters[name] + 1
-                if playerOwnedFighters[name] <= 6:
-                    playerOwnedFightersIDS[name].append(fghtr["id"])    
-    
-    for name in names:
-        self.syncGame ()           
-        self.sendMove (name, {"pc": "T1"}, {"sendCoins": {add1: amnt1,add2: amnt2,add3: amnt3,add4: amnt4,add5: amnt5,add6: amnt6,add7: amnt7, add_dev: amnt8}})
-        self.generate (1)    
-        self.sendMove (name, {"tms": {"e": {"tid": tier1Id, "fc": playerOwnedFightersIDS[name]}}})
-      
-    self.generate (298)
-    self.syncGame ()      
-
-    
-    # Finally, we need to make sure, that fighters can not join invalid tiers, so firstly lets
-    # inject more fighters with highter tier, and they should fail joinig the current special tournament
-    self.sendMove ("andy", {"injection2": {}})
-    self.generate (1)
-    self.syncGame ()
-    
-    namesNew = []
-    
-    for x in range(10):
-        names.append("testft"+str((151+x))) 
-        namesNew.append("testft"+str((151+x)))        
-        
-    for name in names:
-        playerOwnedFighters[name] = 0
-        playerOwnedFightersIDS[name] = []
-        self.generate (1)
-        self.syncGame ()            
-        self.sendMove (name, {"pc": "T1"}, {"sendCoins": {add1: amnt1,add2: amnt2,add3: amnt3,add4: amnt4,add5: amnt5,add6: amnt6,add7: amnt7, add_dev: amnt8}})
-        self.generate (1)
-        self.syncGame ()             
-        
-    self.generate (1)
-    self.syncGame ()
-    currentState = self.getCustomState ("gamestate", "getcurrentstate")
-    allFighters = currentState["fighters"]    
-          
-    for fghtr in allFighters:
-        for name in namesNew:
-            if fghtr["owner"] == name:
-                playerOwnedFighters[name] = playerOwnedFighters[name] + 1
-                if playerOwnedFighters[name] <= 6:
-                    playerOwnedFightersIDS[name].append(fghtr["id"])    
-
-    for name in namesNew:
-        self.sendMove (name, {"tms": {"e": {"tid": tier1Id, "fc": playerOwnedFightersIDS[name]}}})
-                      
-    self.generate (1)                  
-    self.syncGame ()  
-    sleepSome ()
-    
-    currentState = self.getCustomState ("gamestate", "getcurrentstate")
-    totalPlayerFightersJoinedTheSpecialTournamentLastTest = {}
-    for name in namesNew:
-        totalPlayerFightersJoinedTheSpecialTournamentLastTest[name] = 0
-    
-    
-    allFighters = currentState["fighters"]
-    for fghtr in allFighters:
-            for name in namesNew:
-                if fghtr["owner"] == name and fghtr["specialtournamentinstanceid"] != 0:
-                    totalPlayerFightersJoinedTheSpecialTournamentLastTest[name] = totalPlayerFightersJoinedTheSpecialTournamentLastTest[name] + 1
-                
-    howManyAbsent = 0
-    for name in namesNew:
-        if totalPlayerFightersJoinedTheSpecialTournamentLastTest[name] == 0:
-            howManyAbsent = howManyAbsent + 1
-            
-    atLeastSomeAbsent = howManyAbsent > 5
-    self.assertEqual(atLeastSomeAbsent, True)  
-    
-    # And, finally, we can join with proper Tier, and solve tournament succesefully, and that concludes this larget test for now 
-
-    currentState = self.getCustomState ("gamestate", "getcurrentstate")
+    # Lets check, maybe player andy won and holding crown again now
     special = currentState["specialtournaments"]
-    tierIds = {}
-    
+    skipLastTest = False
     for sp in special:
-        tierIds[sp["tier"]] = sp["id"]
+        if sp["crownholder"] == "andy":
+            skipLastTest = True
         
-    allPlayers = currentState["xayaplayers"]    
-        
-    for name in namesNew:
-        playerTierID = 0
-        for player in allPlayers:
-            if player["name"] == name:
-                playerTierID = tierIds[player["specialtournamentprestigetier"]]
-        
-        self.sendMove (name, {"tms": {"e": {"tid": playerTierID, "fc": playerOwnedFightersIDS[name]}}})    
-       
-    self.generate (1)                  
-    self.syncGame ()  
-    sleepSome ()
-    
-    currentState = self.getCustomState ("gamestate", "getcurrentstate")
-    totalPlayerFightersJoinedTheSpecialTournamentLastTest = {}
-    for name in namesNew:
-        totalPlayerFightersJoinedTheSpecialTournamentLastTest[name] = 0
-    
-    
-    allFighters = currentState["fighters"]
-    for fghtr in allFighters:
-            for name in namesNew:
-                if fghtr["owner"] == name and fghtr["specialtournamentinstanceid"] != 0:
-                    totalPlayerFightersJoinedTheSpecialTournamentLastTest[name] = totalPlayerFightersJoinedTheSpecialTournamentLastTest[name] + 1
                 
-    for name in namesNew:
-        if len(playerOwnedFightersIDS[name]) >=6:
-            self.assertEqual(totalPlayerFightersJoinedTheSpecialTournamentLastTest[name], 6)    
-    
-    
-    #self.assertEqual (self.getPendingState (), {
-      #"xayaplayers": ["generateerrorplease"]
-    #})	
-
+    if skipLastTest == False:
+        self.assertEqual(totalPlayerFightersJoinedTheSpecialTournament, 0)    
+ 
 if __name__ == "__main__":
-  SpecialTournamentTest ().main ()
+  SpecialTournamentLeaveTest ().main ()

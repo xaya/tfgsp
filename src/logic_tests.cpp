@@ -196,7 +196,7 @@ TEST_F (ValidateStateTests, RecepieInstanceFullCycleTest)
 {
   proto::ConfigData& cfg = const_cast <proto::ConfigData&>(*ctx.RoConfig());
   
-  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (100);
+  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd, true)->AddBalance (100);
    
   auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
   a->GetInventory().SetFungibleCount("Common_Gumdrop", 1);
@@ -280,7 +280,7 @@ TEST_F (ValidateStateTests, DebugRecipeNamesTest)
 	
 	std::vector<std::string> namesColleced;
 	
-	xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (100);	
+	xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd, true)->AddBalance (100);	
 	for (unsigned i = 0; i < 1000; ++i)
     {
 		auto rcpID = pxd::RecipeInstance::Generate(pxd::Quality::Rare, ctx.RoConfig(), rnd, db, "", true);
@@ -299,7 +299,7 @@ TEST_F (ValidateStateTests, DebugRecipeNamesTest)
 
 TEST_F (ValidateStateTests, RecepieInstanceGeneratedFullCycleTest)
 {
-  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (100);
+  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd, true)->AddBalance (100);
   
   auto rcpID = pxd::RecipeInstance::Generate(pxd::Quality::Common, ctx.RoConfig(), rnd, db, "", true);
   auto r = tbl2.GetById(rcpID);
@@ -396,7 +396,7 @@ TEST_F (ValidateStateTests, DefaultSpecialTournamentsArePlottedTest)
 
 TEST_F (ValidateStateTests, EnterLeaveSpecialCompetitionTest)
 {
-  auto a = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
+  auto a = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd, true);
   a->AddBalance (100); 
   a.reset();
 
@@ -495,7 +495,7 @@ TEST_F (ValidateStateTests, RecepieWithApplicableGoodieTest)
 {
   proto::ConfigData& cfg = const_cast <proto::ConfigData&>(*ctx.RoConfig());
   
-  auto a = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
+  auto a = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd, true);
   a->AddBalance (100);
   
   a->GetInventory().SetFungibleCount("Rare_Jawbreaker", 50);
@@ -543,7 +543,7 @@ TEST_F (ValidateStateTests, RecepieInstanceRevertIfFullRoster)
 {
   proto::ConfigData& cfg = const_cast <proto::ConfigData&>(*ctx.RoConfig());
   
-  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (100);
+  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd, true)->AddBalance (100);
    
   cfg.mutable_params()->set_max_fighter_inventory_amount(2); 
   
@@ -581,7 +581,7 @@ TEST_F (ValidateStateTests, RecepieInstanceRevertIfFullRoster)
 TEST_F (ValidateStateTests, UnitTestExpeditionFailsOnMainNet)
 {  
   ctx.SetChain (xaya::Chain::MAIN);
-  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd, true);
   auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
   ft.reset();
   xp.reset();
@@ -606,7 +606,7 @@ TEST_F (ValidateStateTests, UnitTestExpeditionFailsOnMainNet)
 TEST_F (ValidateStateTests, TestSpecialTournamentPrebuild)
 {  
   ctx.SetChain (xaya::Chain::MAIN);
-  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd, true);
   auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
   ft.reset();
   xp.reset();
@@ -629,7 +629,7 @@ TEST_F (ValidateStateTests, TestSpecialTournamentPrebuild)
 
 TEST_F (ValidateStateTests, GeneratedRecipeMakeSureItWorks)
 {
-  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd, true);
   auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
   ft.reset();
   xp.reset();
@@ -668,7 +668,7 @@ TEST_F (ValidateStateTests, RecepieInstanceFailWithMissingIngridients)
 {
    proto::ConfigData& cfg = const_cast <proto::ConfigData&>(*ctx.RoConfig());
    
-   xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (100);
+   xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd, true)->AddBalance (100);
    auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
 
    a->GetInventory().SetFungibleCount("Common_Icing", 0);
@@ -706,7 +706,7 @@ TEST_F (ValidateStateTests, RecepieInstanceFailWithMissingIngridients)
 
 TEST_F (ValidateStateTests, SweetenerCookAndProperRewardsClaimed)
 {
-  auto pl = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
+  auto pl = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd, true);
   pl->AddBalance(100);
   pl->GetInventory().SetFungibleCount("Sweetener_R2", 1);
   
@@ -764,7 +764,7 @@ TEST_F (ValidateStateTests, SweetenerCookAndProperRewardsClaimed)
 
 TEST_F (ValidateStateTests, ExpeditionInstanceSolveTwiceTest)
 {
-  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd, true);
   auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
   EXPECT_EQ (ft->GetStatus(), FighterStatus::Available);
   ft.reset();
@@ -811,7 +811,7 @@ TEST_F (ValidateStateTests, ExpeditionInstanceSolveTwiceTest)
 
 TEST_F (ValidateStateTests, ClaimRewardsAfterExpedition)
 {
-  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd, true);
   auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
   EXPECT_EQ (ft->GetStatus(), FighterStatus::Available);
   ft.reset();
@@ -857,7 +857,7 @@ TEST_F (ValidateStateTests, ClaimRewardsAfterExpedition)
 
 TEST_F (ValidateStateTests, ClaimRewardsTestAllRewardTypesBeingAwardedProperly)
 {
-  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd, true);
   auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
   ft.reset();
   xp.reset();
@@ -899,7 +899,7 @@ TEST_F (ValidateStateTests, ClaimRewardsTestAllRewardTypesBeingAwardedProperly)
 
 TEST_F (ValidateStateTests, ClaimRewardsInvalidParams)
 {
-  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd, true);
   auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
   ft.reset();
   xp.reset();
@@ -942,7 +942,7 @@ TEST_F (ValidateStateTests, ClaimRewardsInvalidParams)
 
 TEST_F (ValidateStateTests, DeconstructionTest)
 {
-  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd, true);
   auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
   int fID = ft->GetId();
   EXPECT_EQ (ft->GetStatus(), FighterStatus::Available);
@@ -978,7 +978,7 @@ TEST_F (ValidateStateTests, DeconstructionTest)
 
 TEST_F (ValidateStateTests, ClaimRewardsWhenFullSlotsEmptySomeAndFinishClaiming)
 {
-  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd, true);
   auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
   EXPECT_EQ (ft->GetStatus(), FighterStatus::Available);
   ft.reset();
@@ -1025,7 +1025,7 @@ TEST_F (ValidateStateTests, ClaimRewardsWhenFullSlotsEmptySomeAndFinishClaiming)
 
 TEST_F (ValidateStateTests, ExpeditionInstanceBusyFighterNotSending)
 {
-  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd, true);
   auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
   EXPECT_EQ (ft->GetStatus(), FighterStatus::Available);
   ft.reset();
@@ -1060,7 +1060,7 @@ TEST_F (ValidateStateTests, ExpeditionInstanceBusyFighterNotSending)
 
 TEST_F (ValidateStateTests, ExpeditionTestRewards)
 {
-  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd, true);
   auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
   EXPECT_EQ (ft->GetStatus(), FighterStatus::Available);
   ft.reset();
@@ -1091,7 +1091,7 @@ TEST_F (ValidateStateTests, ExpeditionTestRewards)
 
 TEST_F (ValidateStateTests, ExpeditionWithApplicableGoodieTest)
 {
-  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd, true);
   xp->GetInventory().SetFungibleCount("Goodie_Espresso_1", 1);
 
   auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
@@ -1129,7 +1129,7 @@ TEST_F (ValidateStateTests, ExpeditionWithApplicableGoodieTest)
 
 TEST_F (ValidateStateTests, ExpeditionWithWrongTyprApplicableGoodieTest)
 {
-  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd, true);
   xp->GetInventory().SetFungibleCount("Goodie_PressureCooker_1", 1);
 
   auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
@@ -1168,7 +1168,7 @@ TEST_F (ValidateStateTests, ExpeditionWithWrongTyprApplicableGoodieTest)
 
 TEST_F (ValidateStateTests, TournamentInstanceSheduleTest)
 {
-  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd, true);
   auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
   int ftA1id = ft->GetId();
   ft.reset();
@@ -1229,7 +1229,7 @@ TEST_F (ValidateStateTests, TournamentInstanceSheduleTest)
 
 TEST_F (ValidateStateTests, TournamentInstanceVeryHighDemandExtraInstanceAreCreatedTest)
 {
-  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd, true);
   auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
   int ftA1id = ft->GetId();
   ft.reset();
@@ -1242,7 +1242,7 @@ TEST_F (ValidateStateTests, TournamentInstanceVeryHighDemandExtraInstanceAreCrea
   xp.reset();
   
   
-  auto xp__A = xayaplayers.CreateNew ("domob__A", ctx.RoConfig(), rnd);
+  auto xp__A = xayaplayers.CreateNew ("domob__A", ctx.RoConfig(), rnd, true);
   auto ft__A = tbl3.CreateNew ("domob__A", 1, ctx.RoConfig(), rnd);
   int ftA1id__A = ft__A->GetId();
   ft__A.reset();
@@ -1255,7 +1255,7 @@ TEST_F (ValidateStateTests, TournamentInstanceVeryHighDemandExtraInstanceAreCrea
   xp__A.reset();
 
 
-  auto xp__B = xayaplayers.CreateNew ("domob__B", ctx.RoConfig(), rnd);
+  auto xp__B = xayaplayers.CreateNew ("domob__B", ctx.RoConfig(), rnd, true);
   auto ft__B = tbl3.CreateNew ("domob__B", 1, ctx.RoConfig(), rnd);
   int ftA1id__B = ft__B->GetId();
   ft__B.reset();
@@ -1267,7 +1267,7 @@ TEST_F (ValidateStateTests, TournamentInstanceVeryHighDemandExtraInstanceAreCrea
   EXPECT_EQ (xp__B->CollectInventoryFighters(ctx.RoConfig()).size(), 4);
   xp__B.reset();  
   
-  auto xp__C = xayaplayers.CreateNew ("domob__C", ctx.RoConfig(), rnd);
+  auto xp__C = xayaplayers.CreateNew ("domob__C", ctx.RoConfig(), rnd, true);
   auto ft__C = tbl3.CreateNew ("domob__C", 1, ctx.RoConfig(), rnd);
   int ftA1id__C = ft__C->GetId();
   ft__C.reset();
@@ -1279,7 +1279,7 @@ TEST_F (ValidateStateTests, TournamentInstanceVeryHighDemandExtraInstanceAreCrea
   EXPECT_EQ (xp__C->CollectInventoryFighters(ctx.RoConfig()).size(), 4);
   xp__C.reset();
 
-  auto xp__D = xayaplayers.CreateNew ("domob__D", ctx.RoConfig(), rnd);
+  auto xp__D = xayaplayers.CreateNew ("domob__D", ctx.RoConfig(), rnd, true);
   auto ft__D = tbl3.CreateNew ("domob__D", 1, ctx.RoConfig(), rnd);
   int ftA1id__D = ft__D->GetId();
   ft__D.reset();
@@ -1445,7 +1445,7 @@ TEST_F (ValidateStateTests, TournamentInstanceVeryHighDemandExtraInstanceAreCrea
 
 TEST_F (ValidateStateTests, TournamentResolvedTest)
 {
-  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd, true);
   auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
   int ftA1idx = ft->GetId();
   ft.reset();
@@ -1481,7 +1481,7 @@ TEST_F (ValidateStateTests, TournamentResolvedTest)
   ])");     
   
 
-  auto xp2 = xayaplayers.CreateNew ("andy", ctx.RoConfig(), rnd);
+  auto xp2 = xayaplayers.CreateNew ("andy", ctx.RoConfig(), rnd, true);
   auto ftA = tbl3.CreateNew ("andy", 1, ctx.RoConfig(), rnd);
   uint32_t ftA1id = ftA->GetId();
   ftA.reset();
@@ -1491,7 +1491,7 @@ TEST_F (ValidateStateTests, TournamentResolvedTest)
   ftA2.reset();
   
   EXPECT_EQ (xp2->CollectInventoryFighters(ctx.RoConfig()).size(), 4);
-  xp2->CalculatePrestige(ctx.RoConfig());
+  xp2->CalculatePrestige(ctx.RoConfig(), true);
   xp2.reset();
   
   UpdateState ("[]");
@@ -1534,7 +1534,7 @@ TEST_F (ValidateStateTests, TournamentResolvedTest)
 
 TEST_F (ValidateStateTests, FighterSacrifice)
 {
-  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd, true);
   xp.reset();
 
   auto r0f = tbl2.CreateNew("domob", "5864a19b-c8c0-2d34-eaef-9455af0baf2c", ctx.RoConfig());
@@ -1586,7 +1586,7 @@ TEST_F (ValidateStateTests, FighterSacrifice)
 
 TEST_F (ValidateStateTests, RatingSweetnessUpgrades)
 {
-  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd, true);
   xp->AddBalance(100);
   auto ft = tbl3.CreateNew ("domob", 2, ctx.RoConfig(), rnd);
   int ftA1idx = ft->GetId();
@@ -1601,7 +1601,7 @@ TEST_F (ValidateStateTests, RatingSweetnessUpgrades)
   
   UpdateState ("[]");
   
-  auto xp2 = xayaplayers.CreateNew ("andy", ctx.RoConfig(), rnd);
+  auto xp2 = xayaplayers.CreateNew ("andy", ctx.RoConfig(), rnd, true);
   auto ftA = tbl3.CreateNew ("andy", 1, ctx.RoConfig(), rnd);
   uint32_t ftA1id = ftA->GetId();
   EXPECT_EQ (ftA->GetProto().rating(), 1000);
@@ -1613,7 +1613,7 @@ TEST_F (ValidateStateTests, RatingSweetnessUpgrades)
   ftA2.reset();
   
   EXPECT_EQ (xp2->CollectInventoryFighters(ctx.RoConfig()).size(), 4);
-  xp2->CalculatePrestige(ctx.RoConfig());
+  xp2->CalculatePrestige(ctx.RoConfig(), true);
   xp2.reset();
   
   UpdateState ("[]");
@@ -2129,7 +2129,7 @@ TEST_F (ValidateStateTests, TournamentRewardBalance)
 
 TEST_F (ValidateStateTests, SweetnessRatingStaysCapped)
 {
-  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd, true);
   auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
   int ftA1idx = ft->GetId();
   ft.reset();
@@ -2143,7 +2143,7 @@ TEST_F (ValidateStateTests, SweetnessRatingStaysCapped)
   ft2VeryStrongFighter.reset();
   
   EXPECT_EQ (xp->CollectInventoryFighters(ctx.RoConfig()).size(), 4);
-  xp->CalculatePrestige(ctx.RoConfig());
+  xp->CalculatePrestige(ctx.RoConfig(), true);
   xp.reset();
   
   UpdateState ("[]");
@@ -2169,7 +2169,7 @@ TEST_F (ValidateStateTests, SweetnessRatingStaysCapped)
     {"name": "domob", "move": {"tm": {"e": {"tid": )" + converted + R"(, "fc": [)" + converted1x + R"(,)" + converted2x + R"(]}}}}
   ])");   
   
-  auto xp2 = xayaplayers.CreateNew ("andy", ctx.RoConfig(), rnd);
+  auto xp2 = xayaplayers.CreateNew ("andy", ctx.RoConfig(), rnd, true);
   auto ftA = tbl3.CreateNew ("andy", 1, ctx.RoConfig(), rnd);
   uint32_t ftA1id = ftA->GetId();
   ftA.reset();
@@ -2179,7 +2179,7 @@ TEST_F (ValidateStateTests, SweetnessRatingStaysCapped)
   ftA2.reset();
   
   EXPECT_EQ (xp2->CollectInventoryFighters(ctx.RoConfig()).size(), 4);
-  xp2->CalculatePrestige(ctx.RoConfig());
+  xp2->CalculatePrestige(ctx.RoConfig(), true);
   xp2.reset();
   
   UpdateState ("[]");
@@ -2215,9 +2215,167 @@ TEST_F (ValidateStateTests, SweetnessRatingStaysCapped)
   }   
 }
 
+TEST_F (ValidateStateTests, PrestigeValueTest)
+{
+  // Firstly we need to make sure, that maximum prestige values can
+  // be larger then 14000, which is minimum for tier 7 grade
+  
+  // For this, lets 1) award player all epic treats
+  //                2) set large wins count
+  //                3) fighters set maximum rating
+  //                4) roll for rare names
+  
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd, true);
+
+  for (unsigned i = 0; i < 48; ++i)
+  {
+	  auto r0 = tbl2.CreateNew("domob", "c481aeee-d1a1-01c4-7aca-92d0edcddf18", ctx.RoConfig());
+	  uint32_t strongRecepieID = r0->GetId();
+	  r0.reset();  
+	  
+	  auto ft2VeryStrongFighter = tbl3.CreateNew ("domob", strongRecepieID, ctx.RoConfig(), rnd);
+	  ft2VeryStrongFighter.reset(); 
+  }
+  
+  xp->CalculatePrestige(ctx.RoConfig(), true);
+  EXPECT_EQ (xp->GetPresitge(), 7886);
+  
+  xp->MutableProto().set_tournamentscompleted(500);
+  xp->MutableProto().set_tournamentswon(500);
+  
+  xp->CalculatePrestige(ctx.RoConfig(), true);
+ 
+  EXPECT_EQ (xp->GetPresitge(), 8436);
+  
+  auto res3 = tbl3.QueryForOwner ("domob");
+  bool tryAndStep3 = res3.Step();
+
+  while (tryAndStep3)
+  {
+	auto fghtr = tbl3.GetFromResult (res3, ctx.RoConfig ()); 
+	fghtr->MutableProto().set_rating(2000);
+	fghtr.reset();
+	tryAndStep3 = res3.Step();   
+  }  
+  
+  xp->CalculatePrestige(ctx.RoConfig(), true);
+  EXPECT_EQ (xp->GetPresitge(), 10569);
+  
+  xp->MutableProto().set_tournamentscompleted(1000);
+  xp->MutableProto().set_tournamentswon(1000);
+  
+  xp->CalculatePrestige(ctx.RoConfig(), true);
+ 
+  EXPECT_EQ (xp->GetPresitge(), 11119); 
+  
+  xp->MutableProto().set_tournamentscompleted(1000);
+  xp->MutableProto().set_tournamentswon(500);
+  
+  xp->CalculatePrestige(ctx.RoConfig(), true);
+ 
+  EXPECT_EQ (xp->GetPresitge(), 10619);   
+  
+  res3 = tbl3.QueryForOwner ("domob");
+  tryAndStep3 = res3.Step();
+
+  while (tryAndStep3)
+  {  
+    auto fghtr = tbl3.GetFromResult (res3, ctx.RoConfig ()); 
+	fghtr->RerollName(5376000000, ctx.RoConfig (), rnd, pxd::Quality::Epic);
+	fghtr.reset();
+	tryAndStep3 = res3.Step();   
+  }
+  
+  xp->CalculatePrestige(ctx.RoConfig(), true);
+  EXPECT_EQ (xp->GetPresitge(), 16219);  
+  
+  res3 = tbl3.QueryForOwner ("domob");
+  tryAndStep3 = res3.Step();
+
+  while (tryAndStep3)
+  {    
+      auto fghtr = tbl3.GetFromResult (res3, ctx.RoConfig ()); 
+	  const auto& fighterMoveBlueprintList = ctx.RoConfig ()->fightermoveblueprints();
+	  std::map<pxd::ArmorType, std::string> slotsUsed;
+
+	  for(auto& armorPiece : fghtr->GetProto().armorpieces())
+	  {
+		slotsUsed.insert(std::pair<pxd::ArmorType, std::string>((pxd::ArmorType)armorPiece.armortype(), armorPiece.candy()));		
+	  }
+
+	  std::vector<std::pair<std::string, pxd::proto::FighterMoveBlueprint>> sortedMoveBlueprintTypesmap;
+	  for (auto itr = fighterMoveBlueprintList.begin(); itr != fighterMoveBlueprintList.end(); ++itr)
+		  sortedMoveBlueprintTypesmap.push_back(*itr);
+
+	  sort(sortedMoveBlueprintTypesmap.begin(), sortedMoveBlueprintTypesmap.end(), [=](std::pair<std::string, pxd::proto::FighterMoveBlueprint>& a, std::pair<std::string, pxd::proto::FighterMoveBlueprint>& b)
+	  {
+		  return a.first < b.first;
+	  } 
+	  );  
+
+	  int32_t totalMoveSize = sortedMoveBlueprintTypesmap.size();
+	  auto moveBlueprint = sortedMoveBlueprintTypesmap[rnd.NextInt(totalMoveSize)];
+
+	  std::vector<pxd::ArmorType> aType;
+      std::vector<pxd::ArmorType> pieceList;
+
+	  switch((pxd::MoveType)moveBlueprint.second.movetype()) 
+	  {
+		 case pxd::MoveType::Heavy:
+			pieceList.push_back(pxd::ArmorType::Head);
+			pieceList.push_back(pxd::ArmorType::RightShoulder);
+			pieceList.push_back(pxd::ArmorType::LeftShoulder);
+			break;
+		 case pxd::MoveType::Speedy:
+			pieceList.push_back(pxd::ArmorType::UpperRightArm);
+			pieceList.push_back(pxd::ArmorType::LowerRightArm);
+			pieceList.push_back(pxd::ArmorType::UpperLeftArm);
+			pieceList.push_back(pxd::ArmorType::LowerLeftArm);
+			break;
+		 case pxd::MoveType::Tricky:
+			pieceList.push_back(pxd::ArmorType::RightHand);
+			pieceList.push_back(pxd::ArmorType::Torso);
+			pieceList.push_back(pxd::ArmorType::LeftHand);
+			break;
+		 case pxd::MoveType::Distance:
+			pieceList.push_back(pxd::ArmorType::Waist);
+			pieceList.push_back(pxd::ArmorType::UpperRightLeg);
+			pieceList.push_back(pxd::ArmorType::UpperLeftLeg);
+			break;
+		 case pxd::MoveType::Blocking:
+			pieceList.push_back(pxd::ArmorType::LowerRightLeg);
+			pieceList.push_back(pxd::ArmorType::RightFoot);
+			pieceList.push_back(pxd::ArmorType::LeftFoot);
+			break;        
+	  }	  
+	  
+	  aType = pieceList;
+	  
+	  pxd::ArmorType randomElement = aType[rnd.NextInt(aType.size())];
+	 
+	  if(slotsUsed.find(randomElement) == slotsUsed.end())
+	  {
+		slotsUsed.insert(std::pair<pxd::ArmorType, std::string>(randomElement, moveBlueprint.second.candytype()));	   
+		proto::ArmorPiece* newArmorPiece =  fghtr->MutableProto().add_armorpieces();
+		newArmorPiece->set_armortype((uint32_t)randomElement);
+		newArmorPiece->set_candy(moveBlueprint.second.candytype());
+		newArmorPiece->set_rewardsource(0);
+		newArmorPiece->set_rewardsourceid("");
+	  }  
+	  
+	  fghtr.reset();
+	  tryAndStep3 = res3.Step();  
+  }
+ 
+  xp->CalculatePrestige(ctx.RoConfig(), true);
+  EXPECT_EQ (xp->GetPresitge(), 18210);   
+  
+  xp.reset();
+}
+
 TEST_F (ValidateStateTests, TournamentStrongerFighterWins)
 {
-  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd, true);
   auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
   int ftA1idx = ft->GetId();
   ft.reset();
@@ -2232,7 +2390,7 @@ TEST_F (ValidateStateTests, TournamentStrongerFighterWins)
   ft2VeryStrongFighter.reset();
   
   EXPECT_EQ (xp->CollectInventoryFighters(ctx.RoConfig()).size(), 4);
-  xp->CalculatePrestige(ctx.RoConfig());
+  xp->CalculatePrestige(ctx.RoConfig(), true);
   xp.reset();
   
   UpdateState ("[]");
@@ -2258,7 +2416,7 @@ TEST_F (ValidateStateTests, TournamentStrongerFighterWins)
     {"name": "domob", "move": {"tm": {"e": {"tid": )" + converted + R"(, "fc": [)" + converted1x + R"(,)" + converted2x + R"(]}}}}
   ])");   
   
-  auto xp2 = xayaplayers.CreateNew ("andy", ctx.RoConfig(), rnd);
+  auto xp2 = xayaplayers.CreateNew ("andy", ctx.RoConfig(), rnd, true);
   auto ftA = tbl3.CreateNew ("andy", 1, ctx.RoConfig(), rnd);
   uint32_t ftA1id = ftA->GetId();
   ftA.reset();
@@ -2268,7 +2426,7 @@ TEST_F (ValidateStateTests, TournamentStrongerFighterWins)
   ftA2.reset();
   
   EXPECT_EQ (xp2->CollectInventoryFighters(ctx.RoConfig()).size(), 4);
-  xp2->CalculatePrestige(ctx.RoConfig());
+  xp2->CalculatePrestige(ctx.RoConfig(), true);
   xp2.reset();
   
   UpdateState ("[]");

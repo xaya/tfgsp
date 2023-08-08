@@ -499,7 +499,7 @@ BaseMoveProcessor::ParseNameRerollPurchase(const Json::Value& mv, int64_t& treat
 	  return false;               
   }      
 
-  if((pxd::FighterStatus)(int)fighterDb->GetStatus() != pxd::FighterStatus::Available) 
+  if((pxd::FighterStatus)(int32_t)fighterDb->GetStatus() != pxd::FighterStatus::Available) 
   {
 	  LOG (WARNING) << "Fighter status is not available: " << treatId;
 	  fighterDb.reset();
@@ -979,7 +979,7 @@ BaseMoveProcessor::TryCrystalPurchase (const std::string& name, const Json::Valu
 		 
 		 Json::Value result(Json::objectValue);
 		 result["i"] = ft;
-		 result["v"] = (int)fpm::floor(diff);
+		 result["v"] = (int32_t)fpm::floor(diff);
 		 
 		 aif2.append(result);
 	 }
@@ -993,7 +993,7 @@ BaseMoveProcessor::TryCrystalPurchase (const std::string& name, const Json::Valu
 		 
 		 Json::Value result(Json::objectValue);
 		 result["i"] = rc;
-		 result["v"] = (int)fpm::floor(diff);
+		 result["v"] = (int32_t)fpm::floor(diff);
 		 
 		 air2.append(result);
 	 }	
@@ -1012,7 +1012,7 @@ BaseMoveProcessor::TryCrystalPurchase (const std::string& name, const Json::Valu
 		 
 		 Json::Value result(Json::objectValue);
 		 result["i"] = cn;
-		 result["v"] = (int)fpm::floor(diff);
+		 result["v"] = (int32_t)fpm::floor(diff);
 		 
 		 aic2.append(result);
 	 }		 
@@ -1020,7 +1020,7 @@ BaseMoveProcessor::TryCrystalPurchase (const std::string& name, const Json::Valu
 	 outputNewValues["if"] = aif2;
 	 outputNewValues["ic"] = aic2;
 	 outputNewValues["ir"] = air2;	 
-	 outputNewValues["fp"] = (int)fuelPowerOriginal;
+	 outputNewValues["fp"] = (int32_t)fuelPowerOriginal;
 	 
 	 return outputNewValues;
   }	  
@@ -1226,6 +1226,14 @@ MoveProcessor::TryCoinOperation (const std::string& name,
     a->AddBalance (-op.burnt);
   }
 
+  
+  bool isFork2 = false; 
+  auto chain = ctx.Chain ();
+  if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5100772)
+  {
+    isFork2 = true;
+  }	 
+
   for (const auto& entry : op.transfers)
   {
     /* Transfers to self are a no-op, but we have to explicitly handle
@@ -1245,7 +1253,7 @@ MoveProcessor::TryCoinOperation (const std::string& name,
         LOG (INFO)
             << "Creating uninitialised account for coin recipient "
             << entry.first;
-        to = xayaplayers.CreateNew (entry.first, ctx.RoConfig (), rnd);
+        to = xayaplayers.CreateNew (entry.first, ctx.RoConfig (), rnd, isFork2);
       }
     to->AddBalance (entry.second);
   }
@@ -1280,13 +1288,20 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
       }
   }
   
+  bool isFork2 = false; 
+  auto chain = ctx.Chain ();
+  if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5100772)
+  {
+    isFork2 = true;
+  }	  
   /* Ensure that the account database entry exists.  In other words, we
+
      have accounts (although perhaps uninitialised) for everyone who
      ever sent a TF move.  */
   if (xayaplayers.GetByName (name, ctx.RoConfig ()) == nullptr)
   {
     LOG (INFO) << "Creating uninitialised account for " << name;
-    xayaplayers.CreateNew (name, ctx.RoConfig (), rnd);
+    xayaplayers.CreateNew (name, ctx.RoConfig (), rnd, isFork2);
   }
 
   /* Handle coin transfers before other game operations.  They are even
@@ -1389,7 +1404,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
         
     auto res = rewards.QueryForOwner(a.GetName());
     
-    int totalEntries = 0;
+    int32_t totalEntries = 0;
     bool tryAndStep = res.Step();
     while (tryAndStep)
     {
@@ -1472,7 +1487,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
       
       auto res = rewards.QueryForOwner(a.GetName());
       
-      int totalEntries = 0;
+      int32_t totalEntries = 0;
       bool tryAndStep = res.Step();
       while (tryAndStep)
       {
@@ -1520,33 +1535,38 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
       LOG (WARNING) << "Asking for non-existant special tournament with id: " << tournamentID;
       return false;
     }    
-    
-    auto res3 = fighters.QueryAll ();
-    bool tryAndStep3 = res3.Step();
-    
-    while (tryAndStep3)
-    {
-        auto fghtr = fighters.GetFromResult (res3, ctx.RoConfig ()); 
-        
-        if(fghtr->GetOwner() == name && fghtr->GetProto().specialtournamentinstanceid() == tournamentID)
-        {
-            
-            // If this fighter is currently also a crown holder, he cannot leave;
-            if(tournamentData->GetProto().crownholder() == fghtr->GetOwner())
-            {
-               fghtr.reset();
-               tournamentData.reset();
-               LOG (WARNING) << "Asking to leave a crown holder for special tournament with id: " << tournamentID;
-               return false;                 
-            }
-            
-            
-            fighterIDS.push_back(fghtr->GetId());
-        }
-        
-        fghtr.reset();
-        tryAndStep3 = res3.Step();        
-    }              
+	
+    xaya::Chain chain = ctx.Chain();
+
+	auto res3 = fighters.QueryAll ();
+	bool tryAndStep3 = res3.Step();
+	
+	while (tryAndStep3)
+	{
+		auto fghtr = fighters.GetFromResult (res3, ctx.RoConfig ()); 
+		
+		if(fghtr->GetOwner() == name && fghtr->GetProto().specialtournamentinstanceid() == tournamentID)
+		{
+			
+			if(chain != xaya::Chain::REGTEST && ctx.Height () < 5100772)
+			{
+				// If this fighter is currently also a crown holder, he cannot leave;
+				if(tournamentData->GetProto().crownholder() == fghtr->GetOwner())
+				{
+				   fghtr.reset();
+				   tournamentData.reset();
+				   LOG (WARNING) << "Asking to leave a crown holder for special tournament with id: " << tournamentID;
+				   return false;                 
+				}
+			}
+					
+			fighterIDS.push_back(fghtr->GetId());
+		}
+		
+		fghtr.reset();
+		tryAndStep3 = res3.Step();        
+	}   
+	
     
     if((pxd::SpecialTournamentState)(uint32_t)tournamentData->GetProto().state() != pxd::SpecialTournamentState::Listed)
     {
@@ -1693,7 +1713,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
       return false;               
     }      
     
-    if((pxd::FighterStatus)(int)fighterDb->GetStatus() != pxd::FighterStatus::Available) 
+    if((pxd::FighterStatus)(int32_t)fighterDb->GetStatus() != pxd::FighterStatus::Available) 
     {
       LOG (WARNING) << "Fighter status is not available: " << fighterID;
       fighterDb.reset();
@@ -1749,7 +1769,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
       return false;               
     }    
     
-    if((pxd::FighterStatus)(int)fighterDb->GetStatus() != pxd::FighterStatus::Exchange)
+    if((pxd::FighterStatus)(int32_t)fighterDb->GetStatus() != pxd::FighterStatus::Exchange)
     {
       LOG (WARNING) << "Fighter status is not on exchange: " << fighterID;
       fighterDb.reset();
@@ -1793,9 +1813,9 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
       return false;               
     }    
     
-    if((pxd::FighterStatus)(int)fighterDb->GetStatus() != pxd::FighterStatus::Exchange)
+    if((pxd::FighterStatus)(int32_t)fighterDb->GetStatus() != pxd::FighterStatus::Exchange)
     {
-      LOG (WARNING) << "Fighter status is not on exchange: " << fighterID << " but is " << (int)fighterDb->GetStatus();
+      LOG (WARNING) << "Fighter status is not on exchange: " << fighterID << " but is " << (int32_t)fighterDb->GetStatus();
       fighterDb.reset();
       return false;              
     }    
@@ -1869,7 +1889,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
       return false;               
     }    
     
-    if((pxd::FighterStatus)(int)fighterDb->GetStatus() != pxd::FighterStatus::Deconstructing) 
+    if((pxd::FighterStatus)(int32_t)fighterDb->GetStatus() != pxd::FighterStatus::Deconstructing) 
     {
       LOG (WARNING) << "Fighter status is not in deconstruction: " << fighterID;
       fighterDb.reset();
@@ -2053,7 +2073,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
       return false;               
     }    
     
-    if((pxd::FighterStatus)(int)fighterDb->GetStatus() != pxd::FighterStatus::Available)
+    if((pxd::FighterStatus)(int32_t)fighterDb->GetStatus() != pxd::FighterStatus::Available)
     {
       LOG (WARNING) << "Fighter status is busy for decmposition with id: " << fighterID;
       fighterDb.reset();
@@ -2108,7 +2128,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
 		  return false;               
 		}    
 		
-		if((pxd::FighterStatus)(int)fighterToSactifice->GetStatus() != pxd::FighterStatus::Available)
+		if((pxd::FighterStatus)(int32_t)fighterToSactifice->GetStatus() != pxd::FighterStatus::Available)
 		{
 		  LOG (WARNING) << "Fighter status is busy for decomposition with id: " << ft;
 		  fighterToSactifice.reset();
@@ -2254,7 +2274,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
       return false;               
     }    
     
-    if((pxd::FighterStatus)(int)fighterDb->GetStatus() != pxd::FighterStatus::Available)
+    if((pxd::FighterStatus)(int32_t)fighterDb->GetStatus() != pxd::FighterStatus::Available)
     {
       LOG (WARNING) << "Fighter status is busy for decmposition with id: " << fighterID;
       fighterDb.reset();
@@ -2321,25 +2341,21 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     int32_t playerPrestigeBasedTier = (int32_t)a.GetProto().specialtournamentprestigetier();
     
 	xaya::Chain chain = ctx.Chain();
-	
-	if(chain != xaya::Chain::REGTEST)
+	if(tournamentTier != playerPrestigeBasedTier)
 	{
-		if(tournamentTier != playerPrestigeBasedTier)
-		{
-		  LOG (WARNING) << "Wrong tournament tier, expected  " << tournamentTier << " but actual player is " << playerPrestigeBasedTier;
-		  tournamentData.reset();
-		  return false;        
-		}
+	  LOG (WARNING) << "Wrong tournament tier, expected  " << tournamentTier << " but actual player is " << playerPrestigeBasedTier;
+	  tournamentData.reset();
+	  return false;        
 	}
-
-    if((pxd::SpecialTournamentState)(int)tournamentData->GetProto().state() != pxd::SpecialTournamentState::Listed)
+	
+    if((pxd::SpecialTournamentState)(int32_t)tournamentData->GetProto().state() != pxd::SpecialTournamentState::Listed)
     {
       LOG (WARNING) << "Special tournament is calculating, can not process move, tournament id is  " << tournamentID;
       tournamentData.reset();
       return false;
     }
     
-    if((int)fighterIDS.size() != 6)
+    if((int32_t)fighterIDS.size() != 6)
     {
       LOG (WARNING) << "Tournament roster must be exactly 6 fighters, we got: " << fighterIDS.size();
       tournamentData.reset();
@@ -2366,7 +2382,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     
     //We check fighters now against entry validity
       
-    for(long long unsigned int r = 0; r < fighterIDS.size(); r++)
+    for(int32_t r = 0; r < (int32_t)fighterIDS.size(); r++)
     {
         auto fighter = fighters.GetById (fighterIDS[r], ctx.RoConfig ());
         
@@ -2384,7 +2400,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
           return false;               
         }
         
-        if((pxd::FighterStatus)(int)fighter->GetStatus() != pxd::FighterStatus::Available)
+        if((pxd::FighterStatus)(int32_t)fighter->GetStatus() != pxd::FighterStatus::Available)
         {
           LOG (WARNING) << "Fighter status is busy for tournament with id: " << tournamentID;
           tournamentData.reset();
@@ -2410,7 +2426,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     {
         auto fghtr = fighters.GetFromResult (res3, ctx.RoConfig ()); 
         
-        if(fghtr->GetOwner() == name && (pxd::FighterStatus)(int)fghtr->GetStatus() == pxd::FighterStatus::SpecialTournament)
+        if(fghtr->GetOwner() == name && (pxd::FighterStatus)(int32_t)fghtr->GetStatus() == pxd::FighterStatus::SpecialTournament)
         {
             LOG (WARNING) << "Some of the fighters are in the special tournament already: " << tournamentID;
             fghtr.reset();
@@ -2474,14 +2490,14 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
       return false;
     }
 
-    if((pxd::TournamentState)(int)tournamentData->GetInstance().state() != pxd::TournamentState::Listed)
+    if((pxd::TournamentState)(int32_t)tournamentData->GetInstance().state() != pxd::TournamentState::Listed)
     {
       LOG (WARNING) << "Tournament is already running or completed for id: " << tournamentID;
       tournamentData.reset();
       return false;
     }
 	
-    if((int)tournamentData->GetInstance().fighters_size() >= (int)tournamentData->GetProto().teamsize() * (int)tournamentData->GetProto().teamcount())
+    if((int32_t)tournamentData->GetInstance().fighters_size() >= (int32_t)tournamentData->GetProto().teamsize() * (int32_t)tournamentData->GetProto().teamcount())
     {
 	  // Lets fill the demand queue to create more tournament instances next block
 	  
@@ -2560,7 +2576,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     
     //We check fighters now against entry validity
       
-    for(long long unsigned int r = 0; r < fighterIDS.size(); r++)
+    for(int32_t r = 0; r < (int32_t)fighterIDS.size(); r++)
     {
         auto fighter = fighters.GetById (fighterIDS[r], ctx.RoConfig ());
         
@@ -2594,7 +2610,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
           return false;              
         } 
 
-        if((pxd::FighterStatus)(int)fighter->GetStatus() != pxd::FighterStatus::Available)
+        if((pxd::FighterStatus)(int32_t)fighter->GetStatus() != pxd::FighterStatus::Available)
         {
           LOG (WARNING) << "Fighter status is busy for tournament with id: " << tournamentID;
           tournamentData.reset();
@@ -2653,7 +2669,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     return true;
   }
   
-  bool BaseMoveProcessor::ParseExpeditionData(const XayaPlayer& a, const std::string& name, const Json::Value& expedition, pxd::proto::ExpeditionBlueprint& expeditionBlueprint, std::vector<int>& fightersIds, int32_t& duration, std::string& weHaveApplibeGoodyName)
+  bool BaseMoveProcessor::ParseExpeditionData(const XayaPlayer& a, const std::string& name, const Json::Value& expedition, pxd::proto::ExpeditionBlueprint& expeditionBlueprint, std::vector<int32_t>& fightersIds, int32_t& duration, std::string& weHaveApplibeGoodyName)
   {
     if (!expedition.isObject ())
     return false;
@@ -2701,7 +2717,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
         }            
     }
     
-    for(long long unsigned int s =0; s < fightersIds.size(); s++)
+    for(int32_t s =0; s < (int32_t)fightersIds.size(); s++)
     {
       auto fighterDD = fighters.GetById (fightersIds[s], ctx.RoConfig ());
       
@@ -2863,7 +2879,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
       return false;               
     }   
 
-    if((pxd::FighterStatus)(int)fighterDb->GetStatus() != pxd::FighterStatus::Available) 
+    if((pxd::FighterStatus)(int32_t)fighterDb->GetStatus() != pxd::FighterStatus::Available) 
     {
       LOG (WARNING) << "Fighter status is not available: " << fighterID;
       fighterDb.reset();
@@ -2871,7 +2887,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     }    
 
     auto res = rewards.QueryForOwner(a.GetName()); 
-    int totalEntries = 0;
+    int32_t totalEntries = 0;
     bool tryAndStep = res.Step();
     while (tryAndStep)
     {
@@ -2931,7 +2947,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     }       
 
     fighterID = (uint32_t)sweetener["fid"].asInt();
-    const int rewardID = (uint32_t)sweetener["rid"].asInt();
+    const int32_t rewardID = (uint32_t)sweetener["rid"].asInt();
     std::string sweetenerID = sweetener["sid"].asString();
     
     
@@ -2951,7 +2967,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
       return false;               
     }    
     
-    if((pxd::FighterStatus)(int)fighterDb->GetStatus() != pxd::FighterStatus::Available) 
+    if((pxd::FighterStatus)(int32_t)fighterDb->GetStatus() != pxd::FighterStatus::Available) 
     {
       LOG (WARNING) << "Fighter status is not available: " << fighterID;
       fighterDb.reset();
@@ -3094,17 +3110,29 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
       return false;             
     }
     
-    if((pxd::FighterStatus)(int)fighter->GetStatus() != pxd::FighterStatus::Cooked) 
+    if((pxd::FighterStatus)(int32_t)fighter->GetStatus() != pxd::FighterStatus::Cooked) 
     {
       LOG (WARNING) << "Fighter status is not Cooked: " << fighterID;
       fighter.reset();
       return false;              
     }  
+	
+    xaya::Chain chain = ctx.Chain();
+	if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5100772)
+	{
+		uint32_t slots = fighters.CountForOwner(a.GetName());
+
+		if(slots > ctx.RoConfig()->params().max_fighter_inventory_amount())
+		{
+			LOG (WARNING) << "Not enough slots to host a new fighter";
+			return false;         
+		}		
+	}
 
     return true;
   }
   
- bool
+  bool
   BaseMoveProcessor::ParseCookRecepie(const XayaPlayer& a, const std::string& name, const Json::Value& recepie, std::map<std::string, pxd::Quantity>& fungibleItemAmountForDeduction, int32_t& cookCost, int32_t& duration, std::string& weHaveApplibeGoodyName)
   {
     if (!recepie.isObject ())
@@ -3225,7 +3253,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
           return false;             
         }
         
-        if((pxd::FighterStatus)(int)fighter->GetStatus() != pxd::FighterStatus::Available) 
+        if((pxd::FighterStatus)(int32_t)fighter->GetStatus() != pxd::FighterStatus::Available) 
         {
           LOG (WARNING) << "Fighter status is not available: " << fighterID;
           fighter.reset();
@@ -3367,7 +3395,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
               continue;
           }
           
-          if((pxd::RewardType)(int)rewardTableDb.rewards(rewardData->GetProto().positionintable()).type() == pxd::RewardType::CraftedRecipe || (pxd::RewardType)(int)rewardTableDb.rewards(rewardData->GetProto().positionintable()).type() == pxd::RewardType::GeneratedRecipe)
+          if((pxd::RewardType)(int32_t)rewardTableDb.rewards(rewardData->GetProto().positionintable()).type() == pxd::RewardType::CraftedRecipe || (pxd::RewardType)(int32_t)rewardTableDb.rewards(rewardData->GetProto().positionintable()).type() == pxd::RewardType::GeneratedRecipe)
           {
               if(curRecipeSlots >= maxRecipeSlots)
               {
@@ -3385,7 +3413,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
               ourRec.reset();              
           }
           
-          else if((pxd::RewardType)(int)rewardTableDb.rewards(rewardData->GetProto().positionintable()).type() == pxd::RewardType::Candy)
+          else if((pxd::RewardType)(int32_t)rewardTableDb.rewards(rewardData->GetProto().positionintable()).type() == pxd::RewardType::Candy)
           {              
               const std::string candyName = GetCandyKeyNameFromID(rewardTableDb.rewards(rewardData->GetProto().positionintable()).candytype(), ctx);
             
@@ -3394,7 +3422,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
               LOG (INFO) << "Granted " << rewardTableDb.rewards(rewardData->GetProto().positionintable()).quantity() << " candy " << candyName << " reward";
           }          
           
-          else if((pxd::RewardType)(int)rewardTableDb.rewards(rewardData->GetProto().positionintable()).type() == pxd::RewardType::GeneratedRecipe)
+          else if((pxd::RewardType)(int32_t)rewardTableDb.rewards(rewardData->GetProto().positionintable()).type() == pxd::RewardType::GeneratedRecipe)
           {
               if(curRecipeSlots >= maxRecipeSlots)
               {
@@ -3412,7 +3440,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
               ourRec.reset();              
           }          
           
-          else if((pxd::RewardType)(int)rewardTableDb.rewards(rewardData->GetProto().positionintable()).type() == pxd::RewardType::Move)
+          else if((pxd::RewardType)(int32_t)rewardTableDb.rewards(rewardData->GetProto().positionintable()).type() == pxd::RewardType::Move)
           {
               auto fighter = fighters.GetById(rewardData->GetProto().fighterid(), ctx.RoConfig());
               std::string* newMove = fighter->MutableProto().add_moves();
@@ -3421,7 +3449,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
               LOG (INFO) << "Granted " << " move to figher " << rewardData->GetProto().fighterid() << " as reward";   
           }   
 
-          else if((pxd::RewardType)(int)rewardTableDb.rewards(rewardData->GetProto().positionintable()).type() == pxd::RewardType::Animation)
+          else if((pxd::RewardType)(int32_t)rewardTableDb.rewards(rewardData->GetProto().positionintable()).type() == pxd::RewardType::Animation)
           {
               auto fighter = fighters.GetById(rewardData->GetProto().fighterid(), ctx.RoConfig());
               fighter->MutableProto().set_animationid(rewardTableDb.rewards(rewardData->GetProto().positionintable()).animationid()); //TODO into repeated list? Prob... But ok, ignore for now;
@@ -3429,7 +3457,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
               LOG (INFO) << "Granted " << " animation to figher " << rewardData->GetProto().fighterid() << " as reward"; 
           }   
 
-          else if((pxd::RewardType)(int)rewardTableDb.rewards(rewardData->GetProto().positionintable()).type() == pxd::RewardType::Armor)
+          else if((pxd::RewardType)(int32_t)rewardTableDb.rewards(rewardData->GetProto().positionintable()).type() == pxd::RewardType::Armor)
           {
               auto fighter = fighters.GetById(rewardData->GetProto().fighterid(), ctx.RoConfig());
               
@@ -3509,7 +3537,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     }
 
     auto tournamentData = tournamentsTbl.GetById(tournamentID, ctx.RoConfig ());   
-    for(long long unsigned int r = 0; r < fighterIDS.size(); r++)
+    for(int32_t r = 0; r < (int32_t)fighterIDS.size(); r++)
     {
         auto fighter = fighters.GetById (fighterIDS[r], ctx.RoConfig ());
         
@@ -3593,7 +3621,15 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     }
     
     fighters.DeleteById(fighterID);
-    a->CalculatePrestige(ctx.RoConfig());
+	
+	bool isFork2 = false; 
+	auto chain = ctx.Chain ();
+	if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5100772)
+	{
+	  isFork2 = true;
+	}	
+	
+    a->CalculatePrestige(ctx.RoConfig(), isFork2);
     a.reset();
     
     
@@ -3625,8 +3661,8 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
     
     a->AddBalance(-listingfee);
     
-    int secondsInOneDay = 24 * 60 * 60;
-    int blocksInOneDay = secondsInOneDay / 30;
+    int32_t secondsInOneDay = 24 * 60 * 60;
+    int32_t blocksInOneDay = secondsInOneDay / 30;
     fighterDb->MutableProto().set_exchangeexpire(ctx.Height () + (duration * blocksInOneDay));
     fighterDb->MutableProto().set_exchangeprice(price);
     
@@ -3727,8 +3763,8 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 	    fpm::fixed_24_8 appliedSW = fpm::fixed_24_8(fighterToSactifice["has"].asInt());
 		fpm::fixed_24_8 sumToAdd = (appliedSW-basedQualityLevel) * fpm::fixed_24_8(50);
 	
-	    if(outputDebug) LOG (WARNING) << "basedQualityCost: " << (int)basedQualityCost;  
-		if(outputDebug) LOG (WARNING) << "sumToAdd: " << (int)sumToAdd;
+	    if(outputDebug) LOG (WARNING) << "basedQualityCost: " << (int32_t)basedQualityCost;  
+		if(outputDebug) LOG (WARNING) << "sumToAdd: " << (int32_t)sumToAdd;
 	
 	    // We have our final raw crystal worth value now
 		fpm::fixed_24_8 totalCrystalCost =  (basedQualityCost + sumToAdd);
@@ -3849,7 +3885,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 			}
 		}	
 
-        if(outputDebug) LOG (WARNING) << "namesUsed: " << (int)namesUsed.size();
+        if(outputDebug) LOG (WARNING) << "namesUsed: " << (int32_t)namesUsed.size();
 		
 		fpm::fixed_24_8 nameDiversitiCoefficient = (uniquePiecesCollected * fpm::fixed_24_8(1)) / fpm::fixed_24_8(8);
 		
@@ -3865,16 +3901,16 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 			}				
 		}
 		
-		if(outputDebug) LOG (WARNING) << "armorUsed: " << (int)armorUsed.size();
+		if(outputDebug) LOG (WARNING) << "armorUsed: " << (int32_t)armorUsed.size();
 		
 		fpm::fixed_24_8 armorDiversitiCoefficient = (uniqueArmorCollected* fpm::fixed_24_8(1)) / fpm::fixed_24_8(8);
 		
 		
-		if(outputDebug) LOG (WARNING) << "armorDiversitiCoefficient: " << (int)(armorDiversitiCoefficient *  fpm::fixed_24_8(1000));
-		if(outputDebug) LOG (WARNING) << "nameDiversitiCoefficient: " << (int)(nameDiversitiCoefficient *  fpm::fixed_24_8(1000));
-		if(outputDebug) LOG (WARNING) << "sweetnerDiversitiCoefficient: " << (int)(sweetnerDiversitiCoefficient *  fpm::fixed_24_8(1000));
-		if(outputDebug) LOG (WARNING) << "qualityDiversitiCoefficient: " << (int)(qualityDiversitiCoefficient *  fpm::fixed_24_8(1000));
-		if(outputDebug) LOG (WARNING) << "ratingDiversitiCoefficient: " << (int)(ratingDiversitiCoefficient *  fpm::fixed_24_8(1000));
+		if(outputDebug) LOG (WARNING) << "armorDiversitiCoefficient: " << (int32_t)(armorDiversitiCoefficient *  fpm::fixed_24_8(1000));
+		if(outputDebug) LOG (WARNING) << "nameDiversitiCoefficient: " << (int32_t)(nameDiversitiCoefficient *  fpm::fixed_24_8(1000));
+		if(outputDebug) LOG (WARNING) << "sweetnerDiversitiCoefficient: " << (int32_t)(sweetnerDiversitiCoefficient *  fpm::fixed_24_8(1000));
+		if(outputDebug) LOG (WARNING) << "qualityDiversitiCoefficient: " << (int32_t)(qualityDiversitiCoefficient *  fpm::fixed_24_8(1000));
+		if(outputDebug) LOG (WARNING) << "ratingDiversitiCoefficient: " << (int32_t)(ratingDiversitiCoefficient *  fpm::fixed_24_8(1000));
 		
 		diversityFinalCoefficient = diversityFinalCoefficient + armorDiversitiCoefficient + nameDiversitiCoefficient + sweetnerDiversitiCoefficient + qualityDiversitiCoefficient + ratingDiversitiCoefficient;
 		
@@ -3888,13 +3924,13 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 			diversityFinalCoefficient = fpm::fixed_24_8(0);
 		}
 		
-		if(outputDebug) LOG (WARNING) << "totalCrystalCost: " << (int)totalCrystalCost;  
-		if(outputDebug) LOG (WARNING) << "diversityFinalCoefficient: " << (int)(diversityFinalCoefficient *  fpm::fixed_24_8(1000));  
+		if(outputDebug) LOG (WARNING) << "totalCrystalCost: " << (int32_t)totalCrystalCost;  
+		if(outputDebug) LOG (WARNING) << "diversityFinalCoefficient: " << (int32_t)(diversityFinalCoefficient *  fpm::fixed_24_8(1000));  
 		
 		totalCrystalCost = totalCrystalCost * diversityFinalCoefficient;
         fuel80 = fuel80 + totalCrystalCost;
 		
-		if(outputDebug) LOG (WARNING) << "fuel80: " << (int)(fuel80 *  fpm::fixed_24_8(1000));		
+		if(outputDebug) LOG (WARNING) << "fuel80: " << (int32_t)(fuel80 *  fpm::fixed_24_8(1000));		
 	}
 	
 	// now that we have fuel80 from sacrificed treats, lets look into recepies and candies
@@ -3920,7 +3956,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 
 		candyRarityAccumulated = candyRarityAccumulated + (candySets * cRarity);	
 
-        if(outputDebug) LOG (WARNING) << "candyRarityAccumulated: " << (int)(candyRarityAccumulated *  fpm::fixed_24_8(1000));		
+        if(outputDebug) LOG (WARNING) << "candyRarityAccumulated: " << (int32_t)(candyRarityAccumulated *  fpm::fixed_24_8(1000));		
 	}
 	
 	// Recipe difference coefficient should be simple, we do not want to overcomplicate 20% calculation for no reason
@@ -3948,14 +3984,14 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 
 		recipeRarityAccumulated = recipeRarityAccumulated + ((fpm::fixed_24_8(1) / (qualitiesUsedInTransfigureRecipe[recipeQual]))) * 10 * (recipeQual * recipeQual);	
 		
-		if(outputDebug) LOG (WARNING) << "recipeRarityAccumulated: " << (int)(recipeRarityAccumulated *  fpm::fixed_24_8(1000));
+		if(outputDebug) LOG (WARNING) << "recipeRarityAccumulated: " << (int32_t)(recipeRarityAccumulated *  fpm::fixed_24_8(1000));
 	}	
 	
 	// Now we can construct final fuel_20 value
 	
 	fuel20 = recipeRarityAccumulated + candyRarityAccumulated;
 	
-	if(outputDebug) LOG (WARNING) << "fuel20: " << (int)(fuel20 *  fpm::fixed_24_8(1000));
+	if(outputDebug) LOG (WARNING) << "fuel20: " << (int32_t)(fuel20 *  fpm::fixed_24_8(1000));
 	
 	// so, fuel80 is totcal crustal cost, and fuel20 is rarity	
 	// Firstly, lets imagine, how much fule it would be if 80 were actually 20
@@ -3963,7 +3999,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 	fpm::fixed_24_8 imaginary100 = fuel80 * fpm::fixed_24_8(1.25);
 	fpm::fixed_24_8 missingFuelPoints = imaginary100 - fuel80;
 	
-	if(outputDebug) LOG (WARNING) << "imaginary100: " << (int)(imaginary100 *  fpm::fixed_24_8(1000));
+	if(outputDebug) LOG (WARNING) << "imaginary100: " << (int32_t)(imaginary100 *  fpm::fixed_24_8(1000));
 	
 	if(missingFuelPoints > fuel20)
 	{
@@ -3971,7 +4007,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 	}
 
 	fpm::fixed_24_8 fuelPower = (fuel80 + missingFuelPoints) *  fpm::fixed_24_8(100);
-	if(outputDebug) LOG (WARNING) << "fuelPower: " << (int)(fuelPower);
+	if(outputDebug) LOG (WARNING) << "fuelPower: " << (int32_t)(fuelPower);
 
 	return fuelPower;
  }
@@ -4134,7 +4170,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 					fuelPowerUnit = fpm::fixed_24_8(lookUpPrices.size()) - fpm::fixed_24_8(1);
 				}
 				
-				cost = lookUpPrices[(int)(fuelPowerUnit-fpm::fixed_24_8(4))];
+				cost = lookUpPrices[(int32_t)(fuelPowerUnit-fpm::fixed_24_8(4))];
 			}	
 			fighterDb->RerollName(cost, ctx.RoConfig (), rnd, nQL);
 		}
@@ -4145,10 +4181,10 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 			fpm::fixed_24_8 basedQualityLevel = fpm::fixed_24_8(fighterDb->GetProto().quality());
 			fpm::fixed_24_8 minimumPowerToPass = fpm::fixed_24_8(basedQualityLevel);
 			
-			int32_t rollSuccess = rnd.NextInt((int)fuelPowerUnit+1);
+			int32_t rollSuccess = rnd.NextInt((int32_t)fuelPowerUnit+1);
 			fpm::fixed_24_8 valueRolled = fpm::fixed_24_8(rollSuccess);
 			
-			LOG (WARNING) << "Rolled for armor " << (int)valueRolled << " with minimum power needed to pass " << (int)minimumPowerToPass;
+			LOG (WARNING) << "Rolled for armor " << (int32_t)valueRolled << " with minimum power needed to pass " << (int32_t)minimumPowerToPass;
 			
 			if(valueRolled >= minimumPowerToPass)
 			{
@@ -4234,7 +4270,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 				
 				int32_t rollSuccess = rnd.NextInt(40);
 				
-				LOG (WARNING) << "Rolled for move " << rollSuccess << " with treshhold needed to pass " << (int)fuelPowerUnit;
+				LOG (WARNING) << "Rolled for move " << rollSuccess << " with treshhold needed to pass " << (int32_t)fuelPowerUnit;
 				
 				if(fpm::fixed_24_8(rollSuccess) < fuelPowerUnit)
 				{
@@ -4260,7 +4296,15 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 	fighterDb.reset();		
 	
 	DestroyUsedElements(a, fighter);
-	a->CalculatePrestige(ctx.RoConfig());
+	
+	bool isFork2 = false; 
+	auto chain = ctx.Chain ();
+	if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5100772)
+	{
+	  isFork2 = true;
+	}	
+	
+	a->CalculatePrestige(ctx.RoConfig(), isFork2);
 	
 	a.reset();  
   }    
@@ -4353,7 +4397,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 	}
 	
     a2->AddBalance((int32_t)finalPrice);
-
+	
     proto::FighterSaleEntry* newSale = fighterDb->MutableProto().add_salehistory();    
     newSale->set_selltime(ctx.Timestamp());
     newSale->set_price(exchangeprice);
@@ -4362,9 +4406,16 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 
     fighterDb->SetOwner(name);
     fighterDb.reset();
+	
+	bool isFork2 = false; 
+	auto chain = ctx.Chain ();
+	if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5100772)
+	{
+	  isFork2 = true;
+	}	
      
-    a->CalculatePrestige(ctx.RoConfig());
-    a2->CalculatePrestige(ctx.RoConfig());
+    a->CalculatePrestige(ctx.RoConfig(), isFork2);
+    a2->CalculatePrestige(ctx.RoConfig(), isFork2);
 
     a.reset();  
     a2.reset();
@@ -4449,26 +4500,22 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
       return;
     }
 
-    //auto tournamentData = specialTournamentsTbl.GetById(tournamentID, ctx.RoConfig ());
-    
-    for(long long unsigned int r = 0; r < fighterIDS.size(); r++)
+    for(int32_t r = 0; r < (int32_t)fighterIDS.size(); r++)
     {
         auto fighter = fighters.GetById (fighterIDS[r], ctx.RoConfig ());
         fighter->SetStatus(pxd::FighterStatus::SpecialTournament);
         fighter->MutableProto().set_specialtournamentinstanceid(tournamentID);
-        fighter->MutableProto().set_specialtournamentstatus((int)pxd::SpecialTournamentStatus::Listed);
+        fighter->MutableProto().set_specialtournamentstatus((int32_t)pxd::SpecialTournamentStatus::Listed);
       
-        LOG (INFO) << "Fighter " << fighterIDS[r] << " enters special tournament ";
+        LOG (INFO) << "Fighter " << fighterIDS[r] << " enters special tournament with prestige " << a->GetPresitge();
         
         fighter.reset();
     }
 
     a->AddBalance (-10); 
-    //tournamentData.reset();
-    
     a.reset();
     
-    LOG (WARNING) << "Special Tournament " << tournamentID << " entered succesfully ";  
+    LOG (WARNING) << "Special Tournament " << tournamentID << " entered succesfully";  
   }  
   
   void MoveProcessor::MaybeSQLTestInjection2(const std::string& name, const Json::Value& injection)
@@ -4482,25 +4529,32 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
     XayaPlayersTable xayaplayers(db);
     FighterTable tbl3(db);
     RecipeInstanceTable tbl2(db);
+	
+	bool isFork2 = false; 
+	auto chain = ctx.Chain ();
+	if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5100772)
+	{
+	  isFork2 = true;
+	}		
     
-    for(int d = 151; d < 161; d++)
+    for(int32_t d = 151; d < 161; d++)
     {
       std::ostringstream s;
       s << "testft" << d;
       std::string nName(s.str());        
 
-      auto xp = xayaplayers.CreateNew (nName, ctx.RoConfig(), rnd);
+      auto xp = xayaplayers.CreateNew (nName, ctx.RoConfig(), rnd, isFork2);
       // Here we want to boost player prestige to make him reach higher special touenament tiers, soo..
       xp->MutableProto().set_tournamentswon(rnd.NextInt(d));  
       xp->MutableProto().set_tournamentscompleted(d); 
       xp.reset();
       
-      int fCtt = rnd.NextInt(14 + 60);
+      int32_t fCtt = rnd.NextInt(14 + 60);
       
-      for(int se = 0; se < fCtt; se++)
+      for(int32_t se = 0; se < fCtt; se++)
       {
         auto r0 = tbl2.CreateNew(nName, "5864a19b-c8c0-2d34-eaef-9455af0baf2c", ctx.RoConfig());
-        int iDD = r0->GetId();
+        int32_t iDD = r0->GetId();
         r0.reset();          
       
         auto ft1 = tbl3.CreateNew (nName, iDD, ctx.RoConfig(), rnd);
@@ -4508,12 +4562,23 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
       }
       
       xp = xayaplayers.GetByName(nName, ctx.RoConfig());
-      xp->CalculatePrestige(ctx.RoConfig());
+	  
+	  bool isFork2 = false; 
+	  if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5100772)
+	  {
+	    isFork2 = true;
+	  }	  
+	  
+      xp->CalculatePrestige(ctx.RoConfig(), isFork2);
+	  
+	  
       LOG (WARNING) << "Injected " << " prestinge is " << xp->GetPresitge();
       
       xp.reset();
       
     }
+	
+	RecalculatePlayerTiers(db, ctx); 	
     
     LOG (WARNING) << "Injected";
   }  
@@ -4526,23 +4591,30 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
         return;   
     }
     
+	bool isFork2 = false; 
+	auto chain = ctx.Chain ();
+	if(chain == xaya::Chain::REGTEST && ctx.Height () >= 5100772)
+	{
+	  isFork2 = true;
+	}		
+	
     XayaPlayersTable xayaplayers(db);
     FighterTable tbl3(db);
     RecipeInstanceTable tbl2(db);
     
-    for(int d = 0; d < 150; d++)
+    for(int32_t d = 0; d < 150; d++)
     {
       std::ostringstream s;
       s << "testft" << d;
       std::string nName(s.str());        
 
-      auto xp = xayaplayers.CreateNew (nName, ctx.RoConfig(), rnd);
+      auto xp = xayaplayers.CreateNew (nName, ctx.RoConfig(), rnd, isFork2);
       xp.reset();
       
-      for(int se = 0; se < 4; se++) // we want to have exactly 6 (2+4) to test special tournaments
+      for(int32_t se = 0; se < 4; se++) // we want to have exactly 6 (2+4) to test special tournaments
       {
         auto r0 = tbl2.CreateNew(nName, "5864a19b-c8c0-2d34-eaef-9455af0baf2c", ctx.RoConfig());
-        int iDD = r0->GetId();
+        int32_t iDD = r0->GetId();
         r0.reset();          
       
         auto ft1 = tbl3.CreateNew (nName, iDD, ctx.RoConfig(), rnd);
@@ -4572,8 +4644,39 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
       return;
     }
 
-    auto tournamentData = specialTournamentsTbl.GetById(tournamentID, ctx.RoConfig ());   
-    for(long long unsigned int r = 0; r < fighterIDS.size(); r++)
+    auto tournamentData = specialTournamentsTbl.GetById(tournamentID, ctx.RoConfig ()); 
+
+	bool fighterIsCrownHolderHimself = false;
+	xaya::Chain chain = ctx.Chain();
+	if(chain != xaya::Chain::REGTEST && ctx.Height () < 5100772)
+    {
+	}
+	else
+	{
+		auto res3 = fighters.QueryAll ();
+		bool tryAndStep3 = res3.Step();
+		
+		while (tryAndStep3)
+		{
+			auto fghtr = fighters.GetFromResult (res3, ctx.RoConfig ()); 
+			
+			if(fghtr->GetOwner() == name && fghtr->GetProto().specialtournamentinstanceid() == tournamentID)
+			{				
+				// If this fighter is currently also a crown holder, we need to replace slots with 
+				if(tournamentData->GetProto().crownholder() == fghtr->GetOwner())
+				{
+					fghtr.reset();
+					fighterIsCrownHolderHimself = true;
+					break;				   
+				}
+			}
+			
+			fghtr.reset();
+			tryAndStep3 = res3.Step();        
+		} 		
+	}
+	
+    for(int32_t r = 0; r < (int32_t)fighterIDS.size(); r++)
     {
         auto fighter = fighters.GetById (fighterIDS[r], ctx.RoConfig ());
         
@@ -4581,17 +4684,52 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
         {
           fighter->MutableProto().set_specialtournamentinstanceid(0);
           fighter->SetStatus(pxd::FighterStatus::Available);
-          fighter->MutableProto().set_specialtournamentstatus((int)pxd::SpecialTournamentStatus::Listed);
+          fighter->MutableProto().set_specialtournamentstatus((int32_t)pxd::SpecialTournamentStatus::Listed);
           
           LOG (INFO) << "Fighter " << fighter->GetId() << " leaves tournament ";
           
           fighter.reset();
         }
     }
+	
+	if(fighterIsCrownHolderHimself == true)
+	{
+		std::ostringstream s;
+		s << "xayatf" << tournamentData->GetProto().tier();
+		std::string ownerName(s.str());        
+
+        LOG (INFO) << "Default xaya fighter roster needs to get back for " << ownerName;  		
+	   
+	    auto res3 = fighters.QueryForOwner (ownerName);
+		bool tryAndStep3 = res3.Step();
+		int32_t maximum = 6;
+		
+		while (tryAndStep3)
+		{
+			auto fghtr = fighters.GetFromResult (res3, ctx.RoConfig ()); 
+            fghtr->SetStatus(pxd::FighterStatus::SpecialTournament);
+			fghtr->MutableProto().set_specialtournamentinstanceid(tournamentID);
+			fghtr->MutableProto().set_specialtournamentstatus((int32_t)pxd::SpecialTournamentStatus::Listed);
+			
+			LOG (INFO) << "Returning " << fghtr->GetId() << " of " << ownerName; 
+			
+			fghtr.reset();
+			tryAndStep3 = res3.Step();   
+			
+			maximum--;
+			if(maximum <= 0)
+			{
+				break;
+			}
+		}
+		
+		tournamentData->MutableProto().set_crownholder(ownerName);
+		tournamentData->MutableProto().set_state((int32_t)pxd::SpecialTournamentState::Listed); 	
+	}
 
     tournamentData.reset();    
     a.reset();
-    
+
     LOG (INFO) << "Special tournament " << tournamentID << " leaved succesfully ";  
   }  
   
@@ -4616,7 +4754,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 
     auto tournamentData = tournamentsTbl.GetById(tournamentID, ctx.RoConfig ());
     
-    for(long long unsigned int r = 0; r < fighterIDS.size(); r++)
+    for(int32_t r = 0; r < (int32_t)fighterIDS.size(); r++)
     {
         auto fighter = fighters.GetById (fighterIDS[r], ctx.RoConfig ());
         fighter->MutableProto().set_tournamentinstanceid(tournamentID);
@@ -4650,7 +4788,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
     std::string weHaveApplibeGoodyName = "";
     int32_t duration = -1;
     pxd::proto::ExpeditionBlueprint expeditionBlueprint;
-    std::vector<int> fighter;
+    std::vector<int32_t> fighter;
     
     if(!ParseExpeditionData(*a, name, expedition, expeditionBlueprint, fighter, duration, weHaveApplibeGoodyName)) return;
     
@@ -4807,7 +4945,14 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
       itemInventoryRecipe.reset();
     }
     
-    a->CalculatePrestige(ctx.RoConfig());
+	bool isFork2 = false; 
+	auto chain = ctx.Chain ();
+	if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5100772)
+	{
+	  isFork2 = true;
+	}	
+	
+    a->CalculatePrestige(ctx.RoConfig(), isFork2);
     a.reset();
     LOG (INFO) << "Destroy instance " << recepie << " submitted succesfully ";
   }    
@@ -4846,7 +4991,15 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
         if(fighter != nullptr)
         {
           fighters.DeleteById(fighter->GetId());
-          a->CalculatePrestige(ctx.RoConfig());
+		  
+		  bool isFork2 = false; 
+		  auto chain = ctx.Chain ();
+		  if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5100772)
+		  {
+		    isFork2 = true;
+		  }		  
+		  
+          a->CalculatePrestige(ctx.RoConfig(), isFork2);
         }
     }
 
@@ -4874,7 +5027,14 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
     LOG (WARNING) << "Settign duration as " << duration;
     newOp->set_blocksleft(duration);
 
-    a->CalculatePrestige(ctx.RoConfig());
+	bool isFork2 = false; 
+	auto chain = ctx.Chain ();
+	if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5100772)
+	{
+	  isFork2 = true;
+	}
+
+    a->CalculatePrestige(ctx.RoConfig(), isFork2);
     a.reset();
     LOG (INFO) << "Cooking instance " << recepie << " submitted succesfully ";
   }  

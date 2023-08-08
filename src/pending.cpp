@@ -984,7 +984,7 @@ PendingStateUpdater::ProcessMove (const Json::Value& moveObj)
            state.AddSpecialTournamentEntries(*a, tournamentID, fighterIDS, fighters, ctx.RoConfig ());  
         }
         
-        if(ParseSpecialTournamentLeaveData(*a, name, upd3["l"], tournamentID, fighterIDSL))
+        if(ParseSpecialTournamentLeaveData(*a, name, upd3x["l"], tournamentID, fighterIDSL))
         {
            state.AddSpecialTournamentLeaves(*a, tournamentID, fighterIDSL, fighters, ctx.RoConfig ());  
         }     

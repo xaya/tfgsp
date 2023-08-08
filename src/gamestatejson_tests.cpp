@@ -119,11 +119,11 @@ protected:
 
 TEST_F (XayaPlayersJsonTests, KillsAndFame)
 {
-  auto a = tbl.CreateNew ("foo", ctx.RoConfig(), rnd);
+  auto a = tbl.CreateNew ("foo", ctx.RoConfig(), rnd, true);
   a->SetRole (PlayerRole::PLAYER);
   a.reset ();
 
-  a = tbl.CreateNew ("bar", ctx.RoConfig(), rnd);
+  a = tbl.CreateNew ("bar", ctx.RoConfig(), rnd, true);
   a->SetRole (PlayerRole::ROLEADMIN);
   a.reset ();
 
@@ -138,9 +138,9 @@ TEST_F (XayaPlayersJsonTests, KillsAndFame)
 
 TEST_F (XayaPlayersJsonTests, UninitialisedBalance)
 {
-  tbl.CreateNew ("foo", ctx.RoConfig(), rnd)->SetRole (PlayerRole::PLAYER);
+  tbl.CreateNew ("foo", ctx.RoConfig(), rnd, true)->SetRole (PlayerRole::PLAYER);
 
-  auto a = tbl.CreateNew ("bar", ctx.RoConfig(), rnd);
+  auto a = tbl.CreateNew ("bar", ctx.RoConfig(), rnd, true);
   a->AddBalance (42);
   a.reset ();
 
@@ -166,7 +166,7 @@ TEST_F (XayaPlayersJsonTests, UninitialisedBalance)
                         "minted" : 0,
                         "name" : "bar",
                         "ongoings" : [],
-                        "prestige" : 954,
+                        "prestige" : 1586,
                         "recepies" :
                         [
                                 10
@@ -192,7 +192,7 @@ TEST_F (XayaPlayersJsonTests, UninitialisedBalance)
                         "minted" : 0,
                         "name" : "foo",
                         "ongoings" : [],
-                        "prestige" : 954,
+                        "prestige" : 1586,
                         "recepies" :
                         [
                                 5
@@ -207,7 +207,7 @@ TEST_F (XayaPlayersJsonTests, UninitialisedBalance)
 
 TEST_F (XayaPlayersJsonTests, FighterInstance)
 {
-  auto a = tbl.CreateNew ("foo", ctx.RoConfig(), rnd);
+  auto a = tbl.CreateNew ("foo", ctx.RoConfig(), rnd, true);
   a->SetRole (PlayerRole::PLAYER);
   a.reset ();
 
@@ -349,7 +349,7 @@ TEST_F (XayaPlayersJsonTests, FighterInstance)
 
 TEST_F (XayaPlayersJsonTests, RecipeInstance)
 {
-  auto a = tbl.CreateNew ("foo", ctx.RoConfig(), rnd);
+  auto a = tbl.CreateNew ("foo", ctx.RoConfig(), rnd, true);
   a->SetRole (PlayerRole::PLAYER);
   a.reset ();
 
@@ -426,7 +426,7 @@ TEST_F (XayaPlayersJsonTests, RecipeInstance)
 
 TEST_F (XayaPlayersJsonTests, ExpeditionInstance)
 {
-  auto a = tbl.CreateNew ("foo", ctx.RoConfig(), rnd);
+  auto a = tbl.CreateNew ("foo", ctx.RoConfig(), rnd, true);
   a->SetRole (PlayerRole::PLAYER);
   a.reset ();
 
@@ -556,7 +556,7 @@ TEST_F (XayaPlayersJsonTests, ExpeditionInstance)
         [
                 {
                         "name" : "foo",
-                        "prestige" : 954
+                        "prestige" : 1586
                 }
         ],
         "recepies" :
@@ -589,7 +589,7 @@ TEST_F (XayaPlayersJsonTests, ExpeditionInstance)
         "stateblock" : 0,
         "statehex" : "",
         "vanillaurl" : "xaya.io",
-        "version" : "1.1.2",
+        "version" : "1.1.3",
         "xayaplayers" :
         [
                 {
@@ -598,7 +598,7 @@ TEST_F (XayaPlayersJsonTests, ExpeditionInstance)
                         {
                                 "available" : 0
                         },
-                        "fighteraverage" : 477,
+                        "fighteraverage" : 476,
                         "inventory" :
                         {
                                 "fungible" :
@@ -613,7 +613,7 @@ TEST_F (XayaPlayersJsonTests, ExpeditionInstance)
                         "minted" : 0,
                         "name" : "foo",
                         "ongoings" : [],
-                        "prestige" : 954,
+                        "prestige" : 1586,
                         "recepies" :
                         [
                                 5
@@ -621,7 +621,7 @@ TEST_F (XayaPlayersJsonTests, ExpeditionInstance)
                         "role" : "p",
                         "specialtournamentprestigetier" : 1,
                         "tournamentperformance" : 1,
-                        "valuecommon" : 477,
+                        "valuecommon" : 476,
                         "valueepic" : 0,
                         "valuerare" : 0,
                         "valueuncommon" : 0

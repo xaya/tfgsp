@@ -70,6 +70,9 @@ template <>
     res["quality"] = pb.quality ();
     res["isaccountbound"] = pb.isaccountbound ();
     res["requiredfighterquality"] = pb.requiredfighterquality ();
+	
+	res["firstnamerarity"] = IntToJson (pb.firstnamerarity());
+    res["secondnamerarity"] = IntToJson (pb.secondnamerarity());
     
     Json::Value armorD(Json::arrayValue);
     for(auto& armor: pb.armor())
@@ -147,6 +150,9 @@ template <>
   res["specialtournamentstatus"] = IntToJson (pb.specialtournamentstatus());
   res["tournamentpoints"] = IntToJson (pb.tournamentpoints());
   res["lasttournamenttime"] = IntToJson (pb.lasttournamenttime());
+  
+  res["firstnamerarity"] = IntToJson (pb.firstnamerarity());
+  res["secondnamerarity"] = IntToJson (pb.secondnamerarity());
   
   Json::Value moves(Json::arrayValue);
   

@@ -72,4 +72,16 @@ message CraftedRecipe
   
   /*r*/
   optional uint32 RequiredFighterQuality = 12; 
+  
+  /*When name is generated, sets up its rarity for prestige calculations*/
+  optional uint32 FirstNameRarity = 13;      
+  
+  /*When name is generated, sets up its rarity for prestige calculations*/  
+  optional uint32 SecondNameRarity = 14; 
+  
+  /*When name is generated, sets up its rarity for prestige calculations*/
+  optional string FirstName= 15;      
+  
+  /*When name is generated, sets up its rarity for prestige calculations*/  
+  optional string SecondName = 16;     
 }

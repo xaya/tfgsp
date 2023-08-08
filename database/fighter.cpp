@@ -66,6 +66,11 @@ FighterInstance::FighterInstance (Database& d, const std::string& o, uint32_t r,
   MutableProto().set_highestappliedsweetener(0 + recepie->GetProto().quality());
   MutableProto().set_isaccountbound(recepie->GetProto().isaccountbound());
   
+  MutableProto().set_firstnamerarity(recepie->GetProto().firstnamerarity());  
+  MutableProto().set_secondnamerarity(recepie->GetProto().secondnamerarity());  
+  MutableProto().set_firstname(recepie->GetProto().firstname());  
+  MutableProto().set_secondname(recepie->GetProto().secondname());  
+  
   std::map<pxd::ArmorType, std::string> slotsUsed;
   
   std::vector<std::pair<std::string, pxd::proto::FighterMoveBlueprint>> sortedMoveBlueprintTypesmap;
@@ -196,7 +201,7 @@ void FighterInstance::RerollName(Amount cost, const RoConfig& cfg,  xaya::Random
     std::vector<std::pair<std::string, pxd::proto::FighterName>> sortedNamesTypesmap;
     for (auto itr = fighterNames.begin(); itr != fighterNames.end(); ++itr)
 	{
-		if((int)itr->second.quality() <= (int)ql)
+		if((int32_t)itr->second.quality() <= (int32_t)ql)
 		{
 			sortedNamesTypesmap.push_back(*itr);
 		}
@@ -210,7 +215,7 @@ void FighterInstance::RerollName(Amount cost, const RoConfig& cfg,  xaya::Random
     
     for (const auto& fighter : sortedNamesTypesmap)
     {
-        if((Quality)(int)fighter.second.quality() == (Quality)(int)GetProto().quality())
+        if((Quality)(int32_t)fighter.second.quality() == (Quality)(int32_t)GetProto().quality())
         {
             potentialNames.push_back(fighter.second);
         }
@@ -218,6 +223,8 @@ void FighterInstance::RerollName(Amount cost, const RoConfig& cfg,  xaya::Random
     
     std::vector<pxd::proto::FighterName> position0names;
     std::vector<pxd::proto::FighterName> position1names;
+    std::vector<int32_t> candidates0collectedR;
+	std::vector<int32_t> candidates1collectedR;		
     
     for(auto& name: potentialNames)
     {
@@ -234,16 +241,18 @@ void FighterInstance::RerollName(Amount cost, const RoConfig& cfg,  xaya::Random
      
     std::string fname = "";
     std::string lname = "";
+    int32_t fnamer = 1000;
+    int32_t lnamer = 1000;		
     
     if(position0names.size() == 0)
     {
-        LOG (ERROR) << "psnm0 The script would and in infinite loop for quality" << (int)GetProto().quality();
+        LOG (ERROR) << "psnm0 The script would and in infinite loop for quality" << (int32_t)GetProto().quality();
         return;
     }
     
     if(position1names.size() == 0)
     {
-        LOG (ERROR) << "psnm1 The script would and in infinite loop for quality" << (int)GetProto().quality();
+        LOG (ERROR) << "psnm1 The script would and in infinite loop for quality" << (int32_t)GetProto().quality();
         return;
     }    
     
@@ -283,13 +292,14 @@ void FighterInstance::RerollName(Amount cost, const RoConfig& cfg,  xaya::Random
 	
 	while(candidates0collected.size() == 0)
 	{
-		for(long long unsigned int e =0; e < position0names.size(); e++)
+		for(int32_t e =0; e < (int32_t)position0names.size(); e++)
 		{
 		  int32_t probabilityTreshhold = position0names[e].probability();
 		  int32_t rolCurNum = rnd.NextInt(1001 - increasedProbability);
 		  
 		  if(probabilityTreshhold > rolCurNum)
 		  {			
+	         candidates0collectedR.push_back(rolCurNum);
              candidates0collected.push_back(position0names[e].name());			
 		  }
 		}
@@ -297,22 +307,26 @@ void FighterInstance::RerollName(Amount cost, const RoConfig& cfg,  xaya::Random
 		if(candidates0collected.size() == 1)
 		{
 			fname = candidates0collected[0];
+			fnamer = candidates0collectedR[0];
 		}
 		else
 		{
-			fname = candidates0collected[rnd.NextInt(candidates0collected.size())];			
+			int32_t rDex = rnd.NextInt(candidates0collected.size());
+			fname = candidates0collected[rDex];
+            fnamer = candidates0collectedR[rDex];			
 		}			
 	}
     
 	while(candidates1collected.size() == 0)
 	{
-		for(long long unsigned int e =0; e < position1names.size(); e++)
+		for(int32_t e =0; e < (int32_t)position1names.size(); e++)
 		{
 		  int32_t probabilityTreshhold = position1names[e].probability();
 		  int32_t rolCurNum = rnd.NextInt(1001 - increasedProbability);
 		  
 		  if(probabilityTreshhold > rolCurNum)
 		  {			
+	        candidates1collectedR.push_back(rolCurNum);
             candidates1collected.push_back(position1names[e].name());				
 		  }
 		}
@@ -320,13 +334,20 @@ void FighterInstance::RerollName(Amount cost, const RoConfig& cfg,  xaya::Random
 		if(candidates1collected.size() == 1)
 		{
 			lname = candidates1collected[0];
+			lnamer = candidates1collectedR[0];
 		}
 		else
 		{
-			lname = candidates1collected[rnd.NextInt(candidates1collected.size())];			
+			int32_t rDex = rnd.NextInt(candidates1collected.size());
+			lname = candidates1collected[rDex];	
+            lnamer = candidates1collectedR[rDex];			
 		}	
 	}
 
+	MutableProto().set_firstnamerarity(fnamer);
+	MutableProto().set_secondnamerarity(lnamer);	  
+	MutableProto().set_firstname(fname);
+	MutableProto().set_secondname(lname);	
     MutableProto().set_name(fname + " " + lname);   	
 }
 

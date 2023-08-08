@@ -111,5 +111,17 @@ message Fighter
   repeated FighterSaleEntry salehistory = 23;  
   
   /*Only relevant for the starting treats*/
-  optional bool IsNameRerolled = 24;    
+  optional bool IsNameRerolled = 24;
+
+  /*When name is generated, sets up its rarity for prestige calculations*/
+  optional uint32 FirstNameRarity = 25;      
+  
+  /*When name is generated, sets up its rarity for prestige calculations*/  
+  optional uint32 SecondNameRarity = 26; 
+  
+  /*When name is generated, sets up its rarity for prestige calculations*/
+  optional string FirstName= 27;      
+  
+  /*When name is generated, sets up its rarity for prestige calculations*/  
+  optional string SecondName = 28;   
 }
