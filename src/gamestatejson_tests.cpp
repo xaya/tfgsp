@@ -589,7 +589,7 @@ TEST_F (XayaPlayersJsonTests, ExpeditionInstance)
         "stateblock" : 0,
         "statehex" : "",
         "vanillaurl" : "xaya.io",
-        "version" : "1.1.3",
+        "version" : "1.1.4",
         "xayaplayers" :
         [
                 {

@@ -1229,7 +1229,7 @@ MoveProcessor::TryCoinOperation (const std::string& name,
   
   bool isFork2 = false; 
   auto chain = ctx.Chain ();
-  if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5100772)
+  if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5097362)
   {
     isFork2 = true;
   }	 
@@ -1290,7 +1290,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
   
   bool isFork2 = false; 
   auto chain = ctx.Chain ();
-  if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5100772)
+  if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5097362)
   {
     isFork2 = true;
   }	  
@@ -1548,7 +1548,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
 		if(fghtr->GetOwner() == name && fghtr->GetProto().specialtournamentinstanceid() == tournamentID)
 		{
 			
-			if(chain != xaya::Chain::REGTEST && ctx.Height () < 5100772)
+			if(chain != xaya::Chain::REGTEST && ctx.Height () < 5097362)
 			{
 				// If this fighter is currently also a crown holder, he cannot leave;
 				if(tournamentData->GetProto().crownholder() == fghtr->GetOwner())
@@ -3118,7 +3118,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     }  
 	
     xaya::Chain chain = ctx.Chain();
-	if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5100772)
+	if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5097362)
 	{
 		uint32_t slots = fighters.CountForOwner(a.GetName());
 
@@ -3624,7 +3624,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
 	
 	bool isFork2 = false; 
 	auto chain = ctx.Chain ();
-	if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5100772)
+	if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5097362)
 	{
 	  isFork2 = true;
 	}	
@@ -4299,7 +4299,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 	
 	bool isFork2 = false; 
 	auto chain = ctx.Chain ();
-	if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5100772)
+	if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5097362)
 	{
 	  isFork2 = true;
 	}	
@@ -4409,7 +4409,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 	
 	bool isFork2 = false; 
 	auto chain = ctx.Chain ();
-	if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5100772)
+	if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5097362)
 	{
 	  isFork2 = true;
 	}	
@@ -4532,7 +4532,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 	
 	bool isFork2 = false; 
 	auto chain = ctx.Chain ();
-	if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5100772)
+	if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5097362)
 	{
 	  isFork2 = true;
 	}		
@@ -4564,7 +4564,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
       xp = xayaplayers.GetByName(nName, ctx.RoConfig());
 	  
 	  bool isFork2 = false; 
-	  if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5100772)
+	  if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5097362)
 	  {
 	    isFork2 = true;
 	  }	  
@@ -4593,7 +4593,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
     
 	bool isFork2 = false; 
 	auto chain = ctx.Chain ();
-	if(chain == xaya::Chain::REGTEST && ctx.Height () >= 5100772)
+	if(chain == xaya::Chain::REGTEST && ctx.Height () >= 5097362)
 	{
 	  isFork2 = true;
 	}		
@@ -4648,7 +4648,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 
 	bool fighterIsCrownHolderHimself = false;
 	xaya::Chain chain = ctx.Chain();
-	if(chain != xaya::Chain::REGTEST && ctx.Height () < 5100772)
+	if(chain != xaya::Chain::REGTEST && ctx.Height () < 5097362)
     {
 	}
 	else
@@ -4947,7 +4947,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
     
 	bool isFork2 = false; 
 	auto chain = ctx.Chain ();
-	if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5100772)
+	if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5097362)
 	{
 	  isFork2 = true;
 	}	
@@ -4994,7 +4994,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 		  
 		  bool isFork2 = false; 
 		  auto chain = ctx.Chain ();
-		  if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5100772)
+		  if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5097362)
 		  {
 		    isFork2 = true;
 		  }		  
@@ -5029,7 +5029,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 
 	bool isFork2 = false; 
 	auto chain = ctx.Chain ();
-	if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5100772)
+	if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5097362)
 	{
 	  isFork2 = true;
 	}
