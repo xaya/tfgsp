@@ -34,6 +34,9 @@
 #include <memory>
 #include <string>
 
+#include "../src/fpm/fixed.hpp"
+#include "../src/fpm/math.hpp"
+
 namespace pxd
 {
     
@@ -235,7 +238,7 @@ public:
   /**
    * Calculates new sweetness based on the rating
    */  
-  void UpdateSweetness();
+  void UpdateSweetness(bool isFork);
   
   /**
    * Rerolls for the new name based on the paid probability
