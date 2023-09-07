@@ -2092,7 +2092,17 @@ PXLogic::UpdateState (Database& db, xaya::Random& rnd,
 	s.FromHex(blockList.at(hStd).hash());
 	rnd.Seed(s);
 	
-   }	 	
+   }
+   else if ( ctx.Height () > 5155298)
+   {
+    const auto& blockMeta = blockData["block"];
+    CHECK (blockMeta.isObject ());
+    const auto& hashVal = blockMeta["hash"].asString();	
+	
+	xaya::SHA256 seed;
+	seed << hashVal;
+	rnd.Seed (seed.Finalise ());	   
+   }	   
 	
   /* Lets make sure, that fork properly updates all out prestiges at once */
    auto chain = ctx.Chain ();
