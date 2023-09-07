@@ -32,6 +32,7 @@ import "proto/goody.proto";
 import "proto/goody_bundle.proto";
 import "proto/sweetener_blueprint.proto";
 import "proto/tournament_blueprint.proto";
+import "proto/blocks.proto";
 
 package pxd.proto;
 
@@ -165,6 +166,8 @@ message ConfigData
   map<string, SweetenerBlueprint> sweetenerblueprints = 13;
   
   map<string, TournamentBlueprint> tournamentbluprints = 14;
+  
+  map<string, Blocks> blocks = 15;
 
   /**
    * The testnet-specific configuration data.  This is merged into the main

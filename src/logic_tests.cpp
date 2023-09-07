@@ -704,6 +704,51 @@ TEST_F (ValidateStateTests, RecepieInstanceFailWithMissingIngridients)
   
 }  
 
+TEST_F (ValidateStateTests, SweetenerRandomRewardConsistency)
+{
+  auto pl = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd, true);
+  pl->AddBalance(100);
+  pl->GetInventory().SetFungibleCount("Sweetener_R2", 1);
+  
+  pl->GetInventory().SetFungibleCount("Common_Icing", 10);
+  pl->GetInventory().SetFungibleCount("Common_Fruit Slice", 10);
+
+  
+  
+  auto ft = tbl3.GetById(4, ctx.RoConfig());
+  ASSERT_TRUE (ft != nullptr); 
+  ft->MutableProto().set_rating(1210); 
+  ft->MutableProto().set_sweetness((int)pxd::Sweetness::Bittersweet);  
+  ft.reset();
+  
+  tbl2.GetById(1)->SetOwner("domob");	
+  
+  for (unsigned i = 0; i < 520000; ++i)
+  {
+	db.GetNextId ();
+  }
+  
+  pl.reset();
+  
+  for (unsigned i = 0; i < 1000; ++i)
+  {
+	  pl = xayaplayers.GetByName ("domob", ctx.RoConfig());
+	  auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
+	  int fID = ft->GetId();
+	  EXPECT_EQ (ft->GetStatus(), FighterStatus::Available);
+	  ft.reset();	  
+	  PXLogic::ResolveSweetener(pl, "a5d19aba-ba28-01d4-e8a7-77ba3481288e", fID, 0,  db, ctx, rnd); 
+	  pl.reset();
+      UpdateState ("[]");	  	 
+  }
+  
+  
+  EXPECT_EQ (tbl4.CountForOwner("domob"), 2097);
+  
+
+
+}
+
 TEST_F (ValidateStateTests, SweetenerCookAndProperRewardsClaimed)
 {
   auto pl = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd, true);
