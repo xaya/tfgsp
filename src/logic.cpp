@@ -245,8 +245,6 @@ void PXLogic::ResolveSweetener(std::unique_ptr<XayaPlayer>& a, std::string sweet
        totalWeight += (uint32_t)rw.weight();
     }
 
-    LOG (WARNING) << "Rolling for total possible awards: " << sweetenerBlueprint.rewardchoices(rewardID).baserollcount();
-    
     for(int32_t roll = 0; roll < (int32_t)sweetenerBlueprint.rewardchoices(rewardID).baserollcount(); ++roll)
     {
         int32_t rolCurNum = 0;
@@ -255,13 +253,15 @@ void PXLogic::ResolveSweetener(std::unique_ptr<XayaPlayer>& a, std::string sweet
         {
           rolCurNum = rnd.NextInt(totalWeight);
         }
+		
+		VLOG (1) << "rolCurNum: " << rolCurNum;
         
         int32_t accumulatedWeight = 0;
         int32_t posInTableList = 0;
         for(auto& rw: rewardTableDb.rewards())
         {
             accumulatedWeight += rw.weight();
-            
+
             if(rolCurNum <= accumulatedWeight)
             {
                GenerateActivityReward(fighterID, "", 0, rw, ctx, db, a, rnd, posInTableList, sweetenerBlueprint.rewardchoices(rewardID).rewardstableid(), sweetenerAuthID);
@@ -304,7 +304,7 @@ void PXLogic::ResolveSweetener(std::unique_ptr<XayaPlayer>& a, std::string sweet
        totalWeight += (uint32_t)rw.weight();
     }
 
-    LOG (WARNING) << "Rolling for total possible moves: " << sweetenerBlueprint.rewardchoices(rewardID).moverollcount();
+    VLOG (1) << "Rolling for total possible moves: " << sweetenerBlueprint.rewardchoices(rewardID).moverollcount();
     
     for(int32_t roll = 0; roll < (int32_t)sweetenerBlueprint.rewardchoices(rewardID).moverollcount(); ++roll)
     {
@@ -315,6 +315,8 @@ void PXLogic::ResolveSweetener(std::unique_ptr<XayaPlayer>& a, std::string sweet
           rolCurNum = rnd.NextInt(totalWeight);
         }
         
+		VLOG (1) << "rolCurNum: " << rolCurNum;
+		
         int32_t accumulatedWeight = 0;
         int32_t posInTableList = 0;
         for(auto& rw: rewardTableDb.rewards())
@@ -372,6 +374,8 @@ void PXLogic::ResolveSweetener(std::unique_ptr<XayaPlayer>& a, std::string sweet
           rolCurNum = rnd.NextInt(totalWeight);
         }
         
+		VLOG (1) << "rolCurNum: " << rolCurNum;
+		
         int32_t accumulatedWeight = 0;
         int32_t posInTableList = 0;
         for(auto& rw: rewardTableDb.rewards())
@@ -547,6 +551,8 @@ void PXLogic::ResolveExpedition(std::unique_ptr<XayaPlayer>& a, const std::strin
 	    {
 		 rolCurNum = rnd.NextInt((int32_t)totalWeight);
 	    }
+		
+		VLOG (1) << "rolCurNum: " << rolCurNum;
         
         fpm::fixed_24_8 accumulatedWeight = fpm::fixed_24_8(0);
         int32_t posInTableList = 0;
@@ -719,7 +725,7 @@ void PXLogic::TickAndResolveOngoings(Database& db, const Context& ctx, xaya::Ran
 
                 if((pxd::OngoingType)it->type() == pxd::OngoingType::COOK_SWEETENER)
                 {
-                  LOG (INFO) << "Resolving oingoing operation for pxd::OngoingType::COOK_SWEETENER";
+                  LOG (INFO) << "Resolving oingoing operation for pxd::OngoingType::COOK_SWEETENER for " << a->GetName() << " and " << it->appliedgoodykeyname() << " and " << it->fighterdatabaseid();
                     
                   ResolveSweetener(a, it->appliedgoodykeyname(), it->fighterdatabaseid(), it->rewardid(), db, ctx, rnd);
                   ongoings.erase(it); 
@@ -1002,7 +1008,7 @@ void PXLogic::ProcessSpecialTournaments(Database& db, const Context& ctx, xaya::
             fightsPerBlock = totalFightsToProcess / 120;
         }
         
-        LOG (WARNING) << "Total fights to process accumulated: " << totalFightsToProcess;  
+        VLOG (1) << "Total fights to process accumulated: " << totalFightsToProcess;  
         
         int32_t fightsCalculatedThisBlock = 0;
         
@@ -1081,7 +1087,7 @@ void PXLogic::ProcessSpecialTournaments(Database& db, const Context& ctx, xaya::
               matchResult->set_defender(crownHolder);
               matchResult->set_defenderpoints(scoreDefender);        
               
-              LOG (WARNING) << "Resolving fight results attaker" << nextFight.first << " and score " << scoreAttacker << " and defender " << crownHolder << " and score " <<  scoreDefender;
+              VLOG (1) << "Resolving fight results attaker" << nextFight.first << " and score " << scoreAttacker << " and defender " << crownHolder << " and score " <<  scoreDefender;
               
               fightsCalculatedThisBlock++;
               totalFightsToProcess--;
@@ -1107,14 +1113,14 @@ void PXLogic::ProcessSpecialTournaments(Database& db, const Context& ctx, xaya::
         
         if(fightsCalculatedThisBlock >= fightsPerBlock)
         {
-          LOG (WARNING) << "Fights left to process: " << totalFightsToProcess;           
+          VLOG (1) << "Fights left to process: " << totalFightsToProcess;           
         }
         
         int32_t entriesProcessed = 0;
          
         if(totalFightsToProcess == 0)
         {
-          LOG (WARNING) << "Updating tournament results and reevaluating stuff"; 
+          VLOG (1) << "Updating tournament results and reevaluating stuff"; 
           
           gd.SetLastTournamentTime(currentTime);
                       
@@ -1190,12 +1196,12 @@ void PXLogic::ProcessSpecialTournaments(Database& db, const Context& ctx, xaya::
                 if(winnerCandidates.size() == 1)
                 {
                   newCrownHolder = winnerCandidates[0];
-                  LOG (WARNING) << "New crown holder from one candidate is " << newCrownHolder;
+                  VLOG (1) << "New crown holder from one candidate is " << newCrownHolder;
                 }
                 else
                 {
                   newCrownHolder = winnerCandidates[rnd.NextInt(winnerCandidates.size())];
-                  LOG (WARNING) << "New crown holder from several candidates is " << winnerCandidates[rnd.NextInt(winnerCandidates.size())];
+                  VLOG (1) << "New crown holder from several candidates is " << winnerCandidates[rnd.NextInt(winnerCandidates.size())];
                 }
                 
                 trm2->MutableProto().set_crownholder(newCrownHolder);
@@ -1291,19 +1297,44 @@ void PXLogic::RecalculatePlayerTiers(Database& db, const Context& ctx)
         oneGradeStep = 500;
     }
     
-    for(auto& player : playerPrestigeCollection)
-    {
-        int32_t pTier = std::round(((player.second - 1000)) / oneGradeStep);
-        
-        if(pTier < 1)
-        {
-            pTier = 1;
-        }
-        
-        auto a = xayaplayers.GetByName(player.first, ctx.RoConfig());
-        a->MutableProto().set_specialtournamentprestigetier(pTier);
-        a.reset();
-    }
+	
+	if(ctx.Height () < 5155363)
+    {		
+		for(auto& player : playerPrestigeCollection)
+		{
+			int32_t pTier = std::round(((player.second - 1000)) / oneGradeStep);
+			
+			if(pTier < 1)
+			{
+				pTier = 1;
+			}
+			
+			auto a = xayaplayers.GetByName(player.first, ctx.RoConfig());
+			a->MutableProto().set_specialtournamentprestigetier(pTier);
+			a.reset();
+		}
+	}
+	else
+	{
+		for(auto& player : playerPrestigeCollection)
+		{
+			fpm::fixed_24_8 srate = fpm::fixed_24_8(player.second);
+			srate = srate - fpm::fixed_24_8(1000);
+			fpm::fixed_24_8 gStep = fpm::fixed_24_8(oneGradeStep);
+			fpm::fixed_24_8 tier = fpm::round(srate / gStep);
+			
+			int32_t pTier = (int32_t)tier;
+			
+			if(pTier < 1)
+			{
+				pTier = 1;
+			}
+			
+			auto a = xayaplayers.GetByName(player.first, ctx.RoConfig());
+			a->MutableProto().set_specialtournamentprestigetier(pTier);
+			a.reset();
+		}		
+	}
 }
 
 void PXLogic::ResolveSpecialTournamentFight(std::string attackerName, std::vector<int64_t> attackerTeam, std::string defenderName, std::vector<int64_t> defenderTeam, int64_t ID, FighterTable& fighters, const Context& ctx, xaya::Random& rnd, int64_t& scoreAttacker, int64_t& scoreDefender)
@@ -1853,7 +1884,9 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
 					  {
 						rolCurNum = rnd.NextInt((int32_t)totalWeight);
 					  }
-                      
+					  
+					  VLOG (1) << "rolCurNum: " << rolCurNum;
+					  
                       fpm::fixed_24_8 accumulatedWeight = fpm::fixed_24_8(0);
                       int32_t posInTableList = 0;
                       for(auto& rw: rewardTableDb.rewards())
@@ -2046,13 +2079,28 @@ PXLogic::UpdateState (Database& db, xaya::Random& rnd,
                       const Context& ctx, const Json::Value& blockData)
 {
 	
+   // Lets manually seed hashes until the Xaya Core got hard forked (roughly) 
+   if(ctx.Height() >= 4982120 && ctx.Height () <= 5155298)
+   {
+	const auto& blockList = ctx.RoConfig()->blocks();
+
+	std::ostringstream ss;
+	ss << ctx.Height ();
+	std::string hStd = ss.str();	
+
+	xaya::uint256 s;
+	s.FromHex(blockList.at(hStd).hash());
+	rnd.Seed(s);
+	
+   }	 	
+	
   /* Lets make sure, that fork properly updates all out prestiges at once */
    auto chain = ctx.Chain ();
-   if(ctx.Height () == 5097362)
+   if(ctx.Height () == 5097362 || ctx.Height() == 5155364)
    {
 	   RecalculatePlayerTiers(db, ctx); 
    }
-	
+  
   /** We run this very early, as we want to create tournament instances from blueprints ASAP.
   We are going to open tournaments instances if blueprint is not present ir game or already full and running */
   ReopenMissingTournaments(db, ctx);  
@@ -2141,7 +2189,7 @@ PXLogic::InitialiseState (xaya::SQLiteDatabase& db)
 
 void
 PXLogic::UpdateState (xaya::SQLiteDatabase& db, const Json::Value& blockData)
-{
+{  
   SQLiteGameDatabase dbObj(db, *this);
   UpdateState (dbObj, GetContext ().GetRandom (),
                GetChain (), blockData);

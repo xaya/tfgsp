@@ -120,7 +120,13 @@ public:
   static std::vector<uint32_t> GenerateActivityReward(const uint32_t fighterID, const std::string blueprintAuthID, 
   const uint32_t tournamentID,  const pxd::proto::AuthoredActivityReward rw, const Context& ctx, Database& db, 
   std::unique_ptr<XayaPlayer>& a, xaya::Random& rnd, const uint32_t posInTableList, 
-  const std::string basedRewardsTableAuthId, const std::string sweetenerAuthID);						   
+  const std::string basedRewardsTableAuthId, const std::string sweetenerAuthID);
+
+  /**
+   * When cooking sweetener operation reaches 0 blocks, we either
+   * resolve it or cancel, based on cirsumstances. Made public for unit tests */         
+  static void ResolveSweetener(std::unique_ptr<XayaPlayer>& a, std::string sweetenerAuthID, const uint32_t fighterID, const uint32_t rewardID, 
+  Database& db, const Context& ctx, xaya::Random& rnd);  
   
 private:
   
@@ -128,12 +134,6 @@ private:
    * When cooking recepie operation reaches 0 blocks, we either
    * resolve it or reverse, based on cirsumstances */                         
   static void ResolveCookingRecepie(std::unique_ptr<XayaPlayer>& a, const uint32_t recepieID, Database& db, const Context& ctx, xaya::Random& rnd);
-
-  /**
-   * When cooking sweetener operation reaches 0 blocks, we either
-   * resolve it or cancel, based on cirsumstances */         
-  static void ResolveSweetener(std::unique_ptr<XayaPlayer>& a, std::string sweetenerAuthID, const uint32_t fighterID, const uint32_t rewardID, 
-  Database& db, const Context& ctx, xaya::Random& rnd);
 
   /**
    * When expedition block count operation reaches 0 blocks, we either

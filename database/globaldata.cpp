@@ -197,7 +197,7 @@ GlobalData::InitialiseDatabase ()
       (`id`, `lasttournamenttime`, `chimultiplier`, `version`, `url`, `queuedata`) VALUES (?1, ?2, ?3, ?4, ?5, ?6)
   )");
 
-  std::string vd = "1.1.4";
+  std::string vd = "1.1.5";
   std::string ud = "xaya.io";
   std::string none = "";
   

@@ -30,6 +30,7 @@ PROTOS = \
   $(builddir)/../proto/xaya_player.proto \
   $(builddir)/../proto/crafted_recipe.proto \
   $(builddir)/../proto/ongoing.proto \
+  $(builddir)/../proto/blocks.proto \
   $(builddir)/../proto/fighter.proto
 
 libpxproto_la_CXXFLAGS = \
