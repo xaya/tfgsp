@@ -863,7 +863,7 @@ fpm::fixed_24_8 PXLogic::ExecuteOneMoveAgainstAnother(const Context& ctx, std::s
  */
 
 void PXLogic::CreateEloRating(const Context& ctx, fpm::fixed_24_8& ratingA, fpm::fixed_24_8& ratingB, fpm::fixed_24_8& scoreA, fpm::fixed_24_8& scoreB, fpm::fixed_24_8& expectedA, 
-fpm::fixed_24_8& expectedB, fpm::fixed_24_8& newRatingA, fpm::fixed_24_8& newRatingB)
+fpm::fixed_24_8& expectedB, fpm::fixed_24_8& newRatingA, fpm::fixed_24_8& newRatingB, bool isFork)
 {    
   int32_t KFACTOR = ctx.RoConfig()->params().elok_factor();
   fpm::fixed_24_8 ALMS = fpm::fixed_24_8(ctx.RoConfig()->params().alms());
@@ -871,8 +871,31 @@ fpm::fixed_24_8& expectedB, fpm::fixed_24_8& newRatingA, fpm::fixed_24_8& newRat
   fpm::fixed_24_8 val1 = fpm::fixed_24_8(( ratingB - ratingA) / 400);
   fpm::fixed_24_8 val2 = fpm::fixed_24_8(( ratingA - ratingB) / 400);
   
-  expectedA = 1 / (1 + (fpm::pow(fpm::fixed_24_8(10), val1)));
-  expectedB = 1 / (1 + (fpm::pow(fpm::fixed_24_8(10), val2)));
+  if(isFork == false)
+  {
+	expectedA = 1 / (1 + (fpm::pow(fpm::fixed_24_8(10), val1)));
+	expectedB = 1 / (1 + (fpm::pow(fpm::fixed_24_8(10), val2)));
+  }
+  else
+  {
+	  if(fpm::pow(fpm::fixed_24_8(10), -val1) != fpm::fixed_24_8(0))
+	  {
+		 expectedA = fpm::fixed_24_8(1) / (fpm::fixed_24_8(1) + (fpm::pow(fpm::fixed_24_8(10), val1)));
+	  }
+	  else
+	  {
+		 expectedA = fpm::fixed_24_8(1);
+	  }
+	  
+	  if(fpm::pow(fpm::fixed_24_8(10), -val2) != fpm::fixed_24_8(0))
+	  {
+		 expectedB = fpm::fixed_24_8(1) / (fpm::fixed_24_8(1) + (fpm::pow(fpm::fixed_24_8(10), val2)));
+	  }
+	  else
+	  {
+		expectedB  = fpm::fixed_24_8(1);  
+	  }
+  }
   
   if (scoreA == fpm::fixed_24_8(0))
   {
@@ -1631,7 +1654,13 @@ void PXLogic::ProcessFighterPair(int64_t fighter1, int64_t fighter2, bool isSpec
    fpm::fixed_24_8 newRatingA = fpm::fixed_24_8(0);
    fpm::fixed_24_8 newRatingB = fpm::fixed_24_8(0);
 
-   CreateEloRating(ctx, ratingA, ratingB, scoreA, scoreB, expectedA, expectedB, newRatingA, newRatingB);
+   bool isFork = false; 
+   if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5371853)
+   {
+	 isFork = true;
+   }			  
+
+   CreateEloRating(ctx, ratingA, ratingB, scoreA, scoreB, expectedA, expectedB, newRatingA, newRatingB, isFork);
 
    fpm::fixed_24_8 lRatingDelta = fpm::fixed_24_8(lhs->GetProto().rating());
    fpm::fixed_24_8 rRatingDelta = fpm::fixed_24_8(rhs->GetProto().rating());

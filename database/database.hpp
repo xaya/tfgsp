@@ -279,7 +279,7 @@ private:
                  "Result type has an invalid type");
 
   /** Values used as SQLite column "index" when the column is not present.  */
-  static constexpr int MISSING_COLUMN = -1;
+  static const int MISSING_COLUMN = -1;
 
   /** The database this corresponds to.  */
   Database* db;

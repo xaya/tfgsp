@@ -3806,7 +3806,12 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
         {
             qualitiesUsedInTransfigure[basedQualityLevel] = qualitiesUsedInTransfigure[basedQualityLevel] + fpm::fixed_24_8(1);
         }		
-		fpm::fixed_24_8 qualityDiversitiCoefficient =  fpm::fixed_24_8(1) / (qualitiesUsedInTransfigure[basedQualityLevel] * qualitiesUsedInTransfigure[basedQualityLevel]);
+		fpm::fixed_24_8 qualityDiversitiCoefficient =  fpm::fixed_24_8(1);
+		
+		if((qualitiesUsedInTransfigure[basedQualityLevel] * qualitiesUsedInTransfigure[basedQualityLevel]) != fpm::fixed_24_8(0))
+		{
+			qualityDiversitiCoefficient = fpm::fixed_24_8(1) / (qualitiesUsedInTransfigure[basedQualityLevel] * qualitiesUsedInTransfigure[basedQualityLevel]);
+		}
 		
 		// Rating
 		fpm::fixed_24_8 currentRating = fpm::fixed_24_8(fighterToSactifice["r"].asInt());
@@ -3858,7 +3863,12 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
         {
             sweetnersUsedInTransfigure[basedSweetLevel] = sweetnersUsedInTransfigure[basedSweetLevel] + fpm::fixed_24_8(1);
         }		
-		fpm::fixed_24_8 sweetnerDiversitiCoefficient =  fpm::fixed_24_8(1) / (sweetnersUsedInTransfigure[basedSweetLevel] * sweetnersUsedInTransfigure[basedSweetLevel]);		
+		fpm::fixed_24_8 sweetnerDiversitiCoefficient =  fpm::fixed_24_8(1);
+		
+		if((sweetnersUsedInTransfigure[basedSweetLevel] * sweetnersUsedInTransfigure[basedSweetLevel]) != fpm::fixed_24_8(0))
+		{
+		sweetnerDiversitiCoefficient = fpm::fixed_24_8(1) / (sweetnersUsedInTransfigure[basedSweetLevel] * sweetnersUsedInTransfigure[basedSweetLevel]);		
+		}
 		
 		// Name	
 		std::vector<std::string> output;

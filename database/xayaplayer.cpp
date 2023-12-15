@@ -255,7 +255,14 @@ double XayaPlayer::GetFighterPercentageFromQuality(uint32_t quality, std::vector
      }
   }  
   
+  if(fighters.size() > 0)
+  {
   return (totalFighters) / fighters.size();
+  }
+  else
+  {
+	  return 0;
+  }
 }
 
 void
