@@ -166,13 +166,19 @@ public:
 
     inline fixed& operator/=(const fixed& y) noexcept
     {
-        assert(y.m_value != 0);
+        if(y.m_value == 0)
+		{
+			auto value = (static_cast<IntermediateType>(m_value) * FRACTION_MULT * 2) / 1;
+			m_value = static_cast<BaseType>((value / 2) + (value % 2));
+			return *this;
+		}
+
         // Normal fixed-point division is: x * 2**FractionBits / y.
         // To correctly round the last bit in the result, we need one more bit of information.
         // We do this by multiplying by two before dividing and adding the LSB to the real result.
         auto value = (static_cast<IntermediateType>(m_value) * FRACTION_MULT * 2) / y.m_value;
         m_value = static_cast<BaseType>((value / 2) + (value % 2));
-        return *this;
+        return *this;	
     }
 
     template <typename I, typename std::enable_if<std::is_integral<I>::value>::type* = nullptr>

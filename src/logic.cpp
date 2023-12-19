@@ -871,32 +871,9 @@ fpm::fixed_24_8& expectedB, fpm::fixed_24_8& newRatingA, fpm::fixed_24_8& newRat
   fpm::fixed_24_8 val1 = fpm::fixed_24_8(( ratingB - ratingA) / 400);
   fpm::fixed_24_8 val2 = fpm::fixed_24_8(( ratingA - ratingB) / 400);
   
-  if(isFork == false)
-  {
-	expectedA = 1 / (1 + (fpm::pow(fpm::fixed_24_8(10), val1)));
-	expectedB = 1 / (1 + (fpm::pow(fpm::fixed_24_8(10), val2)));
-  }
-  else
-  {
-	  if(fpm::pow(fpm::fixed_24_8(10), -val1) != fpm::fixed_24_8(0))
-	  {
-		 expectedA = fpm::fixed_24_8(1) / (fpm::fixed_24_8(1) + (fpm::pow(fpm::fixed_24_8(10), val1)));
-	  }
-	  else
-	  {
-		 expectedA = fpm::fixed_24_8(1);
-	  }
-	  
-	  if(fpm::pow(fpm::fixed_24_8(10), -val2) != fpm::fixed_24_8(0))
-	  {
-		 expectedB = fpm::fixed_24_8(1) / (fpm::fixed_24_8(1) + (fpm::pow(fpm::fixed_24_8(10), val2)));
-	  }
-	  else
-	  {
-		expectedB  = fpm::fixed_24_8(1);  
-	  }
-  }
-  
+  expectedA = 1 / (1 + (fpm::pow(fpm::fixed_24_8(10), val1)));
+  expectedB = 1 / (1 + (fpm::pow(fpm::fixed_24_8(10), val2)));
+
   if (scoreA == fpm::fixed_24_8(0))
   {
       newRatingA = ratingA + (ALMS * (KFACTOR * ( scoreA - expectedA )));
