@@ -22,6 +22,7 @@ libdatabase_la_SOURCES = \
   tournament.cpp \
   specialtournament.cpp \
   recipe.cpp \
+  ongoings.cpp \
   fighter.cpp \
   uniquehandles.cpp \
   inventory.cpp
@@ -35,6 +36,7 @@ noinst_HEADERS = \
   tournament.hpp \
   specialtournament.hpp \
   recipe.hpp \
+  ongoings.hpp \
   fighter.hpp fighter.tpp\
   xayaplayer.hpp xayaplayer.tpp \
   moneysupply.hpp \

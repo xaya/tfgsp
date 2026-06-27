@@ -45,5 +45,10 @@ message OngoinOperation
   optional string ItemDatabaseID = 7; 
 
   /*Used for sweeteners to select proper reward option*/
-  optional uint32 RewardID = 8;    
+  optional uint32 RewardID = 8;
+
+  /*Block height at which the operation was started (for front-end progress
+    display).  The absolute resolve height lives in the ongoing_operations.height
+    column; remaining blocks = that height - current height.*/
+  optional uint32 StartHeight = 9;
 }

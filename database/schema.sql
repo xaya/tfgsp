@@ -143,8 +143,35 @@ CREATE TABLE IF NOT EXISTS `xayaplayers` (
   `inventory` BLOB NOT NULL, 
   
   -- has BASE PRESTIGE on start and later is acculated accoring to all assets player posseses
-  `prestige` INTEGER NULL   
+  `prestige` INTEGER NULL
 );
+
+-- Height-keyed deferred ongoing operations (cook / expedition / deconstruction /
+-- sweetener).  Replaces the old per-player "repeated ongoings" proto field so the
+-- per-block tick only touches the operations actually due, instead of scanning and
+-- rewriting every player every block (P-E1 / P-E7).
+CREATE TABLE IF NOT EXISTS `ongoing_operations` (
+
+  -- The operation ID, assigned based on libxayagame's AutoIds.
+  `id` INTEGER PRIMARY KEY,
+
+  -- The ABSOLUTE block height at which this operation resolves.
+  `height` INTEGER NOT NULL,
+
+  -- The Xaya p/ name that owns this operation.
+  `owner` TEXT NOT NULL,
+
+  -- Additional data encoded as an OngoinOperation protocol buffer (the type and
+  -- the operation-specific references: recipe / fighter / blueprint / item / ...).
+  `proto` BLOB NOT NULL
+);
+
+-- "Which operations are due now" -- the per-block hot query.
+CREATE INDEX IF NOT EXISTS `ongoing_operations_by_height`
+  ON `ongoing_operations` (`height`);
+-- "Does this player already have an ongoing" + per-player JSON.
+CREATE INDEX IF NOT EXISTS `ongoing_operations_by_owner`
+  ON `ongoing_operations` (`owner`);
 
 -- =============================================================================
 
