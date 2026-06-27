@@ -53,6 +53,7 @@ TESTS = tests
 tests_CXXFLAGS = \
   -I$(top_srcdir) \
   $(GTEST_MAIN_CFLAGS) \
+  $(XAYAGAME_CFLAGS) $(JSON_CFLAGS) \
   $(GTEST_CFLAGS) $(GLOG_CFLAGS) $(PROTOBUF_CFLAGS)
 tests_LDADD = \
   $(builddir)/libpxproto.la \

@@ -76,8 +76,14 @@ tfdheaders = \
 noinst_HEADERS = $(libtfheaders) $(tfdheaders)
 
 check_LTLIBRARIES = libtestutils.la
-check_PROGRAMS = tests
-TESTS = tests
+# goldenreplay_tests is a SEPARATE binary on purpose: it must run in a pristine
+# process.  Several tests in `tests` mutate the process-global RoConfig
+# singleton via const_cast (e.g. logic_tests.cpp set_max_fighter_inventory_amount),
+# and that contamination persists across tests in the same binary -- which would
+# make the deterministic golden snapshot order-dependent.  Isolation keeps it
+# reproducible and independently runnable as the Phase 2 regression net.
+check_PROGRAMS = tests goldenreplay_tests
+TESTS = tests goldenreplay_tests
 
 libtestutils_la_CXXFLAGS = \
   -I$(top_srcdir) \
@@ -111,8 +117,28 @@ tests_SOURCES = \
   burnsale_tests.cpp \
   moveprocessor_tests.cpp \
   testutils_tests.cpp
+
+goldenreplay_tests_CXXFLAGS = \
+  -I$(top_srcdir) \
+  $(GTEST_MAIN_CFLAGS) \
+  $(JSON_CFLAGS) $(GTEST_CFLAGS) \
+  $(GLOG_CFLAGS) $(GFLAGS_CFLAGS) $(PROTOBUF_CFLAGS)
+goldenreplay_tests_LDADD = \
+  $(builddir)/libtf.la \
+  $(builddir)/libtestutils.la \
+  $(top_builddir)/database/libdbtest.la \
+  $(top_builddir)/database/libdatabase.la \
+  $(top_builddir)/proto2/libpxproto.la \
+  $(GTEST_MAIN_LIBS) \
+  $(JSON_LIBS) $(GTEST_LIBS) \
+  $(GLOG_LIBS) $(GFLAGS_LIBS) $(PROTOBUF_LIBS)
+goldenreplay_tests_SOURCES = \
+  goldenreplay_tests.cpp
+
 check_HEADERS = \
   testutils.hpp
+EXTRA_DIST = \
+  goldenreplay.golden.json
 
 rpc-stubs/pxrpcserverstub.h: $(srcdir)/rpc-stubs/tf-rpc.json
 	jsonrpcstub "$<" --cpp-server=PXRpcServerStub --cpp-server-file="$@"
