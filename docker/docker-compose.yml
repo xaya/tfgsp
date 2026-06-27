@@ -1,0 +1,61 @@
+name: ${COMPOSE_PROJECT_NAME:-treatfighter}
+
+# Treatfighter GSP on Polygon: XayaX (eth) bridge + tfd GSP.
+#
+#   docker compose -f docker/docker-compose.yml up -d
+#
+# The network subnet is PINNED to 172.16.99.0/24 to stop Docker from
+# auto-assigning 192.168.0.0/20 (which can shadow host LAN routes).  Verified
+# free on this host (no route / no other docker network uses it).
+# RPC ports are bound to 127.0.0.1 only — never expose the raw GSP RPC (it
+# offers an unauthenticated `stop`).
+
+services:
+  xayax:
+    image: xaya/xayax:latest
+    restart: unless-stopped
+    networks:
+      - tf-net
+    ports:
+      - "127.0.0.1:${XAYAX_PORT:-8700}:8000"
+    volumes:
+      - xayax-data:/xayax
+    command:
+      - "eth"
+      - "--eth_rpc_url=${ETH_RPC_URL:-https://polygon-node.xaya.io}"
+      - "--accounts_contract=${ACCOUNTS_CONTRACT:-0x8C12253F71091b9582908C8a44F78870Ec6F304F}"
+      - "--port=8000"
+      - "--listen_locally=false"
+      - "--zmq_address=tcp://xayax:28555"
+      - "--logtostderr"
+
+  tfd:
+    image: tfd-polygon:latest
+    restart: unless-stopped
+    networks:
+      - tf-net
+    ports:
+      - "127.0.0.1:${TFD_PORT:-8610}:8600"
+    volumes:
+      - tfd-data:/xayagame
+      - tfd-logs:/log
+    environment:
+      - GLOG_alsologtostderr=1
+    depends_on:
+      - xayax
+    # The entrypoint supplies the rest (--xaya_rpc_protocol=2, --pending_moves=false,
+    # --enable_pruning=1000, --game_rpc_port=8600, --datadir).
+    command:
+      - "tfd"
+      - "--xaya_rpc_url=${XAYA_RPC_URL:-http://xayax:8000}"
+
+networks:
+  tf-net:
+    ipam:
+      config:
+        - subnet: 172.16.99.0/24
+
+volumes:
+  xayax-data: {}
+  tfd-data: {}
+  tfd-logs: {}

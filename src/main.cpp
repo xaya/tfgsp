@@ -18,7 +18,6 @@
 
 #include "config.h"
 
-#include "charon.hpp"
 #include "logic.hpp"
 #include "pending.hpp"
 #include "pxrpcserver.hpp"
@@ -55,6 +54,8 @@ namespace
 
 DEFINE_string (xaya_rpc_url, "",
                "URL at which Xaya Core's JSON-RPC interface is available");
+DEFINE_int32 (xaya_rpc_protocol, 1,
+              "JSON-RPC version for connecting to Xaya (use 2 for XayaX)");
 DEFINE_int32 (game_rpc_port, 0,
               "the port at which the game's JSON-RPC server will be started"
               " (if non-zero)");
@@ -127,10 +128,6 @@ public:
   {
     std::vector<std::unique_ptr<xaya::GameComponent>> res;
 
-    auto charonSrv = MaybeBuildCharonServer (game, rules);
-    if (charonSrv != nullptr)
-      res.push_back (std::move (charonSrv));
-
     if (restPort != 0)
       res.push_back (std::make_unique<pxd::RestApi> (game, rules, restPort));
 
@@ -179,29 +176,6 @@ main (int argc, char** argv)
          " slow down syncing";
 #endif // ENABLE_SLOW_ASSERTS
 
-  auto charonClient = pxd::MaybeBuildCharonClient ();
-  if (charonClient != nullptr)
-    {
-      std::unique_ptr<jsonrpc::HttpServer> srv;
-      if (FLAGS_game_rpc_port != 0)
-        {
-          srv = std::make_unique<jsonrpc::HttpServer> (FLAGS_game_rpc_port);
-          if (FLAGS_game_rpc_listen_locally)
-            srv->BindLocalhost ();
-          charonClient->SetupLocalRpc (*srv);
-          LOG (INFO)
-              << "Starting local RPC interface at port " << FLAGS_game_rpc_port;
-        }
-
-      charonClient->Run ();
-
-      /* We have to explicitly free the CharonClient instance here already
-         before its associated HttpServer goes out of scope.  */
-      charonClient.reset ();
-
-      return EXIT_SUCCESS;;
-    }
-
   if (FLAGS_xaya_rpc_url.empty ())
     {
       std::cerr << "Error: --xaya_rpc_url must be set" << std::endl;
@@ -215,6 +189,7 @@ main (int argc, char** argv)
 
   xaya::GameDaemonConfiguration config;
   config.XayaRpcUrl = FLAGS_xaya_rpc_url;
+  config.XayaJsonRpcProtocol = FLAGS_xaya_rpc_protocol;
   if (FLAGS_game_rpc_port != 0)
     {
       config.GameRpcServer = xaya::RpcServerType::HTTP;
@@ -235,10 +210,8 @@ main (int argc, char** argv)
     }
   }       
 
-  /* We need support for coin burns, which was implemented in
-     https://github.com/xaya/xaya/pull/103 and is included in
-     versions from 1.4 up.  */
-  config.MinXayaVersion = 1040000;
+  /* We run on Xaya X Eth (Polygon), which reports its version as 1.0.0.0.  */
+  config.MinXayaVersion = 1'00'00'00;
 
   pxd::PXLogic rules;
   

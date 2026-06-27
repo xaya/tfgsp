@@ -13,7 +13,7 @@ AM_PATH_PYTHON([3.7])
 LT_INIT
 
 AC_LANG([C++])
-AX_CXX_COMPILE_STDCXX([14], [noext])
+AX_CXX_COMPILE_STDCXX([17], [noext])
 AX_CHECK_COMPILE_FLAG([-Wall], [CXXFLAGS="${CXXFLAGS} -Wall"])
 
 # Windows defines ERROR, which requires us to tell glog to not define
@@ -37,7 +37,6 @@ AS_IF([test "x$enable_slow_asserts" = "xyes"], [
 PKG_PROG_PKG_CONFIG
 
 PKG_CHECK_MODULES([XAYAGAME], [libxayautil libxayagame])
-PKG_CHECK_MODULES([CHARON], [charon])
 PKG_CHECK_MODULES([SQLITE3], [sqlite3])
 PKG_CHECK_MODULES([JSON], [jsoncpp])
 PKG_CHECK_MODULES([MHD], [libmicrohttpd])

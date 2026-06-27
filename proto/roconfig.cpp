@@ -74,6 +74,8 @@ RoConfig::RoConfig (const xaya::Chain chain)
   switch (chain)
     {
     case xaya::Chain::MAIN:
+    case xaya::Chain::POLYGON:
+      /* Polygon is the production relaunch chain; use the mainnet config.  */
       instancePtr = &mainnet;
       mergeTestnet = false;
       mergeRegtest = false;

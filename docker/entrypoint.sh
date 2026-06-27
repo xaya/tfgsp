@@ -1,42 +1,25 @@
 #!/bin/sh -e
 
-version="0.1"
-exclude="waitforchange,waitforpendingchange"
+# Entry point for the Treatfighter GSP on the XayaX / Polygon stack.
+# The XayaX RPC URL and ZMQ address are passed as extra args ("$@"),
+# typically from docker-compose, e.g.:
+#   --xaya_rpc_url=http://xayax:8000 --xaya_zmq_address=tcp://xayax:28555
 
 case $1 in
   tfd)
     shift
     exec /usr/local/bin/tfd \
       --datadir="${XAYAGAME_DIR}" \
+      --xaya_rpc_protocol=2 \
       --enable_pruning=1000 \
+      --pending_moves=false \
       --game_rpc_port=8600 \
-      "$@"
-    ;;
-
-  charon-client)
-    shift
-    exec /usr/local/bin/charon-client \
-      --waitforchange --waitforpendingchange \
-      --port=8600 \
-      --backend_version="${version}" \
-      --methods_json_spec="/usr/local/share/tf-rpc.json" \
-      --methods_exclude="${exclude}" \
-      --cafile="/usr/local/share/letsencrypt.pem" \
-      "$@"
-    ;;
-
-  charon-server)
-    shift
-    exec /usr/local/bin/charon-server \
-      --waitforchange --waitforpendingchange \
-      --backend_version="${version}" \
-      --methods_json_spec="/usr/local/share/tf-rpc.json" \
-      --methods_exclude="${exclude}" \
-      --cafile="/usr/local/share/letsencrypt.pem" \
+      --game_rpc_listen_locally=false \
       "$@"
     ;;
 
   *)
-    echo "Provide \"tfd\", \"charon-client\" or \"charon-server\" as command"
+    echo "Provide \"tfd\" as command"
     exit 1
+    ;;
 esac

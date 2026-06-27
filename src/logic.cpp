@@ -2156,6 +2156,17 @@ PXLogic::GetInitialStateBlock (unsigned& height,
   const xaya::Chain chain = GetChain ();
   switch (chain)
     {
+    case xaya::Chain::POLYGON:
+      /* Fresh Treatfighter relaunch genesis on Polygon.  Empty hash accepts
+         any block at this height (verified libxayagame pattern).
+         This is a recent height (Polygon tip was ~89'248'003 on 2026-06-27)
+         chosen for a fast initial sync.
+         TODO(launch): re-set to the Polygon tip at actual launch time to
+         minimise backfill.  Consensus-critical: never change after launch.  */
+      height = 89'246'000;
+      hashHex = "";
+      break;
+
     case xaya::Chain::MAIN:
       height = 4'982'119;
       hashHex
