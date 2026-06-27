@@ -675,8 +675,16 @@ void PXLogic::TickAndResolveOngoings(Database& db, const Context& ctx, xaya::Ran
     while (tryAndStep)
     {
       auto a = xayaplayers.GetFromResult (res, ctx.RoConfig ());
+
+      /* P-E1: only touch players that actually have ongoing operations.
+         GetOngoingsSize() reads via GetProto() (read-only) and does NOT mark
+         the LazyProto dirty, so players with no ongoings stay UNMODIFIED and
+         are never rewritten -- eliminating the per-block full-BLOB rewrite of
+         every player.  Players WITH ongoings are mutated exactly as before. */
+      if (a->GetOngoingsSize () > 0)
+      {
       auto& ongoings = *a->MutableProto().mutable_ongoings();
-        
+
       bool erasingDone = false;
       
       for (auto it = ongoings.begin(); it != ongoings.end(); it++)
@@ -735,9 +743,10 @@ void PXLogic::TickAndResolveOngoings(Database& db, const Context& ctx, xaya::Ran
             }          
         }
       }
+      } /* end if (GetOngoingsSize () > 0) */
 
       tryAndStep = res.Step ();
-    }    
+    }
 }
 
 fpm::fixed_24_8 PXLogic::ExecuteOneMoveAgainstAnother(const Context& ctx, std::string lmv, std::string rmv)
