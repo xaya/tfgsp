@@ -19,7 +19,6 @@ libtf_la_LIBADD = \
   $(GLOG_LIBS) $(GFLAGS_LIBS) $(PROTOBUF_LIBS)
 libtf_la_SOURCES = \
   context.cpp \
-  forks.cpp \
   gamestatejson.cpp \
   jsonutils.cpp \
   logic.cpp \
@@ -29,10 +28,8 @@ libtf_la_SOURCES = \
   pending.cpp
 libtfheaders = \
   fpm/fixed.hpp \
-  fpm/ios.hpp \
   fpm/math.hpp \
   context.hpp \
-  forks.hpp \
   gamestatejson.hpp \
   jsonutils.hpp \
   logic.hpp \
@@ -113,7 +110,6 @@ tests_LDADD = \
   $(JSON_LIBS) $(GTEST_LIBS) \
   $(GLOG_LIBS) $(GFLAGS_LIBS) $(PROTOBUF_LIBS)
 tests_SOURCES = \
-  forks_tests.cpp \
   gamestatejson_tests.cpp \
   jsonutils_tests.cpp \
   logic_tests.cpp \

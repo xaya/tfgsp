@@ -21,7 +21,6 @@
 
 #include "jsonutils.hpp"
 #include "testutils.hpp"
-#include "forks.hpp"
 
 #include "database/dbtest.hpp"
 #include "database/recipe.hpp"
@@ -1061,26 +1060,6 @@ TEST_F (CoinOperationTests, PurchaseCrystalsTwiceInARow)
 
   ExpectBalances ({{"domob", 200 + cfg.params().starting_crystals()}});
 }
-
-/* ************************************************************************** */
-
-class GameStartTests : public CoinOperationTests
-{
-
-protected:
-
-  GameStartTests ()
-  {
-    FLAGS_fork_height_gamestart = 100;
-  }
-
-  ~GameStartTests ()
-  {
-    FLAGS_fork_height_gamestart = -1;
-  }
-
-};
-/* ************************************************************************** */
 
 } // anonymous namespace
 } // namespace pxd

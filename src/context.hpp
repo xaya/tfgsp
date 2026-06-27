@@ -19,7 +19,6 @@
 #ifndef PXD_CONTEXT_HPP
 #define PXD_CONTEXT_HPP
 
-#include "forks.hpp"
 #include "params.hpp"
 
 #include "proto/roconfig.hpp"
@@ -51,9 +50,6 @@ private:
 
   /** RoConfig instance dependant on the chain.  */
   std::unique_ptr<pxd::RoConfig> cfg;
-
-  /** Fork handler based on chain and height.  */
-  std::unique_ptr<ForkHandler> forks;
 
   /**
    * The current block's height.  This is set to the confirmed height plus
@@ -113,12 +109,6 @@ public:
   RoConfig () const
   {
     return *cfg;
-  }
-
-  const ForkHandler&
-  Forks () const
-  {
-    return *forks;
   }
 
   /**

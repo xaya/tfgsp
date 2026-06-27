@@ -19,7 +19,6 @@
 #include "moveprocessor.hpp"
 #include "burnsale.hpp"
 
-#include "forks.hpp"
 #include "jsonutils.hpp"
 #include "proto/config.pb.h"
 

@@ -22,5 +22,12 @@ test-driver
 *.lo
 *.pyc
 
+# autotools-generated (config.h.in is the tracked template; the rest are generated)
+config.h
+config.status
+config.log
+*.log
+*~
+
 Makefile
 Makefile.in
