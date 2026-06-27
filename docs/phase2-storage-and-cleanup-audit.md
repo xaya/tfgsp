@@ -237,8 +237,9 @@ core; §5 + §3-safe + §4 + §6d-ongoings).*
 1. Wire `OngoingsTable`; migrate the 27 sites (§5); **pin resolution `ORDER BY` (determinism trap).**
 2. Drop `repeated ongoings=7` (`reserved`); fold the ongoing-dispatch `switch` + duration-clamp DRY (§6d).
 3. Delete the dead `activities` table + proto + wrappers (remove `logic.cpp:2256` in lockstep).
-4. `reserved` `salehistory`?/`TotalMatches/Won/Lost` (fighter), `FighterAverage`, `RewardAutoTableId`,
+4. `reserved` `TotalMatches/Won/Lost` (fighter), `FighterAverage`, `RewardAutoTableId`,
    `tournaments.name`, recipe `Armor/AnimationId/Name` — the verified safe storage drops.
+   **`salehistory` is KEPT on-chain (user decision 2026-06-27)** — Exchange sales-history stays GSP-side.
 5. Write-amp (§4): 3× `MutableProto→GetProto`, tier value-compare, `teamsjoined` value-compare.
 6. Add the **reorg test** (apply N → `ProcessBackwards` → byte-identical); set `--enable_pruning=1000`.
 7. Regenerate golden (structural verify), re-run loadbench, `make check`.
@@ -256,11 +257,13 @@ helper + the 3 negative gates + launch guard + UpdateSweetness + Generate param.
 - The §6e traps: tier-formula collapse (golden regen), `4596`+CalculatePrestige, **`Chain::MAIN` guard
   restoration (potential live bug)**, prestige knob, `RecalculatePlayerTiers` dedup.
 
-**Open decisions for the user (gating):**
-- **Order:** purge-first (recommended) vs Stage 2b-first.
-- **`Fighter.salehistory`** — drop it (unbounded growth, consensus-safe) and move the Exchange
-  sales-history view off-chain, or keep it on-chain?
-- **`Chain::MAIN` guards (§6e.2)** — are production tutorial/test shortcuts supposed to be off? (They're
-  currently on.) Restore now or leave for a dedicated rules pass?
-- JSON fields recomputed-at-emit (`tournaments.name`, recipe `Armor/AnimationId/Name`, `FighterAverage`)
-  — confirm no browser frontend reads the stored form.
+**User decisions (2026-06-27) — RESOLVED:**
+- **Order:** cleanup first (Commits 1–2), then Stage 2b. ✅
+- **`Fighter.salehistory`:** KEEP on-chain. ✅ (removed from the drop list)
+- **`Chain::MAIN` guards (§6e.2):** treat as a bug, **restore now** — switch to `!=REGTEST`/`==POLYGON`
+  so the tutorial/test-blueprint shortcuts are disabled on production. ✅ Golden-safe (only changes the
+  POLYGON branch; REGTEST stays false). Fold into Commit 4 (chain-guard pass) and re-check golden.
+
+**Still to confirm (non-gating):** JSON fields recomputed-at-emit (`tournaments.name`, recipe
+`Armor/AnimationId/Name`, `FighterAverage`) — confirm the browser frontend doesn't read the stored form
+before those drops land in Commit 3.
