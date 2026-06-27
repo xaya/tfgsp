@@ -1,7 +1,7 @@
 # Phase 2 — State storage & Taurion-cleanup audit + Stage 2b plan
 
-**Status:** living document. Storage audit ✅ complete. Taurion-cleanup audit ⏳ pending (results
-appended below when ready). Stage 2b implementation: not started.
+**Status:** living document. Storage audit ✅ complete. Taurion-cleanup audit ✅ complete.
+Implementation: not started (awaiting user sign-off on order + the gating decisions in §7).
 
 This is the canonical record of *what we did, what we found, and what we will do* for the Phase 2
 efficiency + cleanup pass. It complements `docs/p-e1-loadbench.md` (the before/after benchmarks).
@@ -127,36 +127,140 @@ assert state byte-identical), and set `--enable_pruning=1000`.
 
 ---
 
-## 6. Taurion-cleanup audit results ⏳ PENDING
+## 6. Taurion-cleanup audit results ✅ (audit `w34zjavuf`, 54 agents)
 
-Audit `w34zjavuf` running (fork gates, dead Taurion concepts, dead code, DRY, dead files, dead protos).
-Results + verified delete/refactor/collapse list to be inserted here on completion, then merged into
-the sequenced plan (§7). Known dovetail: the 4 ongoing types are copy-pasted (add-sites + dup-checks +
-resolve dispatch) → factor into one shape during the Stage 2b cutover.
+The heavy Taurion world-sim (regions, movement, hex-grid, combat, vehicles) was already stripped in
+earlier phases. What remains is **CHI-fork/version baggage + orphan files + stale vocabulary** — not
+deep rot. On the Polygon genesis (height 89,246,000) every `>=5097362` gate is permanently true and
+every `<5097362` permanently false, so collapsing them is byte-identical (golden stays green). Total
+reachable reduction: **~1,300–1,800 LOC C++/proto + ~1.38M lines / ~21 MB of dead config data.**
+(2 of 54 verifier agents hit the StructuredOutput retry cap → 2 claims unverified, conservatively
+excluded from the "delete now" set.)
+
+### 6a. Quick wins — pure deletion, `safe_to_delete`, golden byte-identical
+- **Charon client** `src/charon.{cpp,hpp}` (~629 LOC, in no Makefile, won't compile) + `CHARON_PREFIX`
+  (`configure.ac:62-66`, `gametest/Makefile.am:2`) + the `PKG_CHECK`/`CHARON_CFLAGS/LIBS` probe.
+- **ForkHandler subsystem** `src/forks.{cpp,hpp}`, `forks_tests.cpp`, `Context::forks`/`Forks()`,
+  gflag, `GameStartTests`, the `#include "forks.hpp"` in `context.hpp:22`/`pending_tests.cpp:24`/
+  `moveprocessor_tests.cpp:24` + `moveprocessor.cpp:22` + `Makefile.am:22,35,116`.
+- **Orphan files:** `jsonrpclib/` dangling gitlink; `proto/roconfig_blob.s` (byte-dup of the wired
+  `proto2/` one); `data/letsencrypt.pem` + `data/Makefile.am` (+ drop `data` from SUBDIRS & configure);
+  `src/fpm/ios.hpp` (+ `Makefile.am:32`); committed autotools/log cruft (`config.h`, `config.status`,
+  `config.log`, `config.h.in~`, `configure~`, `help.log`, `whelp.log`) + `.gitignore` them.
+- **Dead code:** `IsDirtyCombatData()` ×4 (`fighter/recipe/reward/tournament.hpp`); Taurion RPC error
+  codes (`pxrpcserver.hpp:41,47-55`); one-shot fork-migration trigger (`logic.cpp:2116-2121`); dead
+  `injection==true` branches (`logic.cpp:1420,1447-1460`).
+- **License/comment rewording:** 20 files (incl. 6 `gametest/*.py`); `faction`→`role` prose; Taurion
+  world terms in doc comments. **Prose only** — `PlayerRoleToString` codes / enum ints / SQL `role`
+  column are golden-locked.
+
+### 6b. Dead protos / config — `safe_to_delete`, low/none risk
+- 🟢 **THE BIG ONE — dead `blocks` config (~21 MB / ~1.38M lines).** `Blocks` message +
+  `ConfigData.blocks` (field 15) + `proto/roconfig/blocks.pb.text` + `blocks.proto` + Makefile entries.
+  Read by exactly one unreachable branch. **Must delete together with that reader (`logic.cpp:2091-2104`)
+  in one commit** — a text-proto parse fails on an unknown field otherwise. `reserved 15`. Golden
+  unaffected (REGTEST never reads it). Single biggest footprint win.
+- `XayaPlayer.notused`(1), `role`(2, the *proto* field — live role is the SQL column/`PlayerRole` enum,
+  NOT this) → delete + `reserved`.
+- `Params.*_cook_duration`(14-17) + their `params.pb.text` lines (live duration is per-recipe
+  `duration()`); `Params.fungible_items`(26) (live is `Inventory.fungible`) — delete proto+text together.
+- Unused imports of `fighter_move_blueprint.proto` in `armor_piece.proto:22` + `fighter.proto:22`.
+
+### 6c. Fork-gate collapses — byte-identical on fresh relaunch, `low` risk
+- The **13× `isFork2 = (chain==REGTEST || Height>=5097362)`** sites (`logic.cpp:398,643,933,1834`;
+  `moveprocessor.cpp:1232,1293,3121,3625,4300,4410,4533,4566,4948,4995,5032`) → factor to one
+  `IsPostFork(ctx)` helper returning `true`, drop the boolean.
+- 3 negative gates (`logic.cpp:1620-1627`; `moveprocessor.cpp:1551-1561` delete whole if;
+  `:4651-4677` run else unconditionally); pre-launch move-drop (`moveprocessor.cpp:1322-1331`);
+  manual block-hash reseed (`logic.cpp:2091-2104`, with the blocks delete); `UpdateSweetness` isFork
+  branch (`fighter.cpp:356-371`); `RecipeInstance::Generate(bool fork)` param drop.
+- ⛔ **Do NOT bulk-collapse two same-era look-alikes:** `moveprocessor.cpp:4596` uses **`&&`** (collapses
+  to *false*, live on REGTEST) and `logic.cpp:1310` tier-formula gate (genuine divergence) — see §6e.
+
+### 6d. DRY refactors (dovetail with Stage 2b ongoings cutover)
+- **Ongoing resolve dispatch** (`logic.cpp:704-742`, 4 if-blocks) → `switch(type)` with common
+  erase/restart tail factored; keep per-type field plucking. **Fold into Stage 2b.**
+- **Ongoing duration clamp** (`moveprocessor.cpp:4814,4897,5022`) → one `std::max(1,duration)` helper
+  (clamp only; don't touch the reject-semantics site `1723` or the field-sets). **Fold into Stage 2b.**
+- `RequirePlayer(name)` helper for ~16 `GetByName`+null-log-return blocks in `moveprocessor.cpp`.
+- gamestatejson cooking-recipeid loop helper (`424-438`≈`672-686`) — **preserve COOK_RECIPE-then-
+  SWEETENER grouping** (merging reorders the golden-locked `recepies` array).
+- `TryXxxAction` null-check dispatch inline (`moveprocessor.cpp:5081-5189`); CRTP base for the
+  `(id,owner,proto)` table trio (reward/activity/recipe) **only**.
+- **Keep separate (adversary overturned):** `pending.cpp` ongoing mirror (reduced projection, not a
+  copy; sharing would drag the consensus `isFork2` gate into non-consensus pending); the
+  specialtournament/tournament/ongoings tables (different schemas — unifying = consensus break).
+
+### 6e. ⚠️ Needs a human eye — do NOT touch blindly
+1. **`logic.cpp:1310-1346` tier-formula gate** — no `chain==REGTEST` escape, so golden (REGTEST) locks
+   the *integer* branch while Polygon runs the *fpm* branch (can round differently). Golden does NOT
+   cover the production tier path. Collapsing to fpm is correct but **requires a deliberate
+   `GOLDEN_REGEN=1` re-bless.** Highest-risk single item.
+2. **`Chain::MAIN` guards silently dead on Polygon** (`logic.cpp:481`, `moveprocessor.cpp:1618,2653,
+   2758`) — intended to disable tutorial/test-blueprint shortcuts on production, but `chain==MAIN`
+   never fires on Polygon → **these restrictions are OFF right now.** Possible latent production bug;
+   a *rules* decision (switch to `!=REGTEST`/`==POLYGON` or confirm obsolete), not dead-code removal.
+3. **CalculatePrestige "old" branch** (`xayaplayer.cpp:264-318`) — dead on Polygon but still executed
+   on REGTEST via the `&&` bug at `moveprocessor.cpp:4596` (`{"injection":{}}` →
+   `gametest/specialtournament.py:320`). Keep until 4596 is fixed + gametest re-baselined.
+4. **`moveprocessor.cpp:4596` `&&` copy-paste bug** — fix to `||` (then retire the prestige old branch)
+   or delete `MaybeSQLTestInjection` as debug cruft. Either re-baselines `specialtournament.py`.
+5. `logic.cpp:2105` reseed gate → `if(chain != REGTEST)` is cleaner/identical but controls RNG —
+   re-verify golden; never make reseed unconditional.
+6. `database/ongoings.*` + `ongoing_operations` are the **intended Stage 2b** table (not dead) — wire
+   it, don't delete.
+7. `Params.prestige_total_treats_mod`(32) dead-but-populated (=100) — confirm prestige is meant to
+   ignore it before deleting.
+8. `RecalculatePlayerTiers` duplicated (`logic.cpp:1266` vs `moveprocessor.cpp:4426`) + REGTEST
+   per-block recalc crutch (`logic.cpp:985-990`) + REGTEST injection handlers
+   (`moveprocessor.cpp:4521-4626`) — test-coupled, not consensus-risky; confirm before consolidating.
 
 ---
 
-## 7. Sequenced plan
+## 7. Unified sequenced plan (each step golden-test-guarded)
 
-**Commit A — Stage 2b (ongoings cutover) + safe drops + write-amp** *(this is the next commit)*
-1. Wire `OngoingsTable`; migrate the 27 sites (§5); pin resolution order (determinism trap).
-2. Drop `repeated ongoings=7` (`reserved`); factor the 4 ongoing types DRY.
+Ordering principle: **safest + biggest wins first** (pure deletions, golden byte-identical), then the
+consensus-touching efficiency work (Stage 2b), then gate collapses, then DRY, then the decision-gated
+redesigns. Recommended order:
+
+**Commit 1 — Taurion/Charon dead-file & dead-proto purge** *(§6a + §6b except blocks; zero consensus
+surface, golden byte-identical).* Charon, ForkHandler, orphan files, autotools cruft, dead stubs/RPC
+codes/injection branches, dead proto fields (`notused`/`role`/`cook_duration`/`fungible_items`/imports),
+comment+license rewording. ~1,000–1,300 LOC removed.
+
+**Commit 2 — Drop the dead `blocks` config** *(§6b big-one; coordinated single edit).* Delete reader
+`logic.cpp:2091-2104` + `blocks.proto`/`config.proto` field 15+import + `blocks.pb.text` + Makefile
+entries; collapse `else if(>5155298)`→`if`. **~21 MB / ~1.38M lines gone.** Golden unaffected.
+
+**Commit 3 — Stage 2b: ongoings cutover + safe storage drops + write-amp** *(the consensus efficiency
+core; §5 + §3-safe + §4 + §6d-ongoings).*
+1. Wire `OngoingsTable`; migrate the 27 sites (§5); **pin resolution `ORDER BY` (determinism trap).**
+2. Drop `repeated ongoings=7` (`reserved`); fold the ongoing-dispatch `switch` + duration-clamp DRY (§6d).
 3. Delete the dead `activities` table + proto + wrappers (remove `logic.cpp:2256` in lockstep).
-4. `reserved` the dead proto fields (`notused/role/xayaname/ftuestate/RewardAutoTableId`).
-5. Drop fighter `TotalMatches/Won/Lost` (field + increment lines `logic.cpp:1659-1677`).
-6. Write-amp fixes (§4): 3× `MutableProto→GetProto`, tier value-compare, `teamsjoined` value-compare.
-7. Add the reorg test; set `--enable_pruning=1000`.
-8. Regenerate golden (structural verify), re-run loadbench, `make check`.
+4. `reserved` `salehistory`?/`TotalMatches/Won/Lost` (fighter), `FighterAverage`, `RewardAutoTableId`,
+   `tournaments.name`, recipe `Armor/AnimationId/Name` — the verified safe storage drops.
+5. Write-amp (§4): 3× `MutableProto→GetProto`, tier value-compare, `teamsjoined` value-compare.
+6. Add the **reorg test** (apply N → `ProcessBackwards` → byte-identical); set `--enable_pruning=1000`.
+7. Regenerate golden (structural verify), re-run loadbench, `make check`.
 
-**Commit B — Taurion dead-code sweep** *(after §6 lands)* — fork-gate collapses, dead files/concepts,
-dead protos, remaining DRY refactors.
+**Commit 4 — Collapse CHI fork gates** *(§6c; byte-identical).* The 13 `||` sites → `IsPostFork()`
+helper + the 3 negative gates + launch guard + UpdateSweetness + Generate param. **Skip `4596` &
+`1310`.** If golden moves, stop — you hit a divergence.
 
-**Commit C+ — permanent-growth redesigns** *(separate, carefully replayed each)* —
-recipe-row redesign (§3, biggest size win), rewards/orphan-recipe lifecycle bound, conditional
-Completed-tournament prune, denormalization→RoConfig references.
+**Commit 5 — DRY cleanup** *(§6d remainder).* `RequirePlayer`, gamestatejson cooking-loop helper,
+`TryXxxAction` inline, `(id,owner,proto)` CRTP base.
 
-**Open product decisions (need user):**
-- **`Fighter.salehistory`** — consensus-safe to drop (unbounded growth) but removes the Exchange
-  sales-history view unless that ledger moves to an off-chain indexer.
-- Whether `tournaments.name` / recipe `Armor/AnimationId/Name` / `FighterAverage` JSON fields can be
-  recomputed at emit (yes, per audit) — confirm no frontend depends on stored form.
+**Deferred — own PRs, decision-gated, golden regen expected:**
+- Permanent-growth redesigns (§3): recipe-row redesign (biggest size win), rewards/orphan lifecycle
+  bound, conditional Completed-tournament prune, denormalization→RoConfig refs.
+- The §6e traps: tier-formula collapse (golden regen), `4596`+CalculatePrestige, **`Chain::MAIN` guard
+  restoration (potential live bug)**, prestige knob, `RecalculatePlayerTiers` dedup.
+
+**Open decisions for the user (gating):**
+- **Order:** purge-first (recommended) vs Stage 2b-first.
+- **`Fighter.salehistory`** — drop it (unbounded growth, consensus-safe) and move the Exchange
+  sales-history view off-chain, or keep it on-chain?
+- **`Chain::MAIN` guards (§6e.2)** — are production tutorial/test shortcuts supposed to be off? (They're
+  currently on.) Restore now or leave for a dedicated rules pass?
+- JSON fields recomputed-at-emit (`tournaments.name`, recipe `Armor/AnimationId/Name`, `FighterAverage`)
+  — confirm no browser frontend reads the stored form.
