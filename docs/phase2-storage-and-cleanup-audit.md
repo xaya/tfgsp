@@ -12,8 +12,22 @@
   reseed branch (sole `blocks()` reader) + de-elsed the live `>5155298` branch + removed the dead
   fork-migration trigger. Also fixed a latent footgun: `proto2/roconfig.pb` had no prerequisites so
   config edits never regenerated — added `roconfig_gen` as its prerequisite.
-- ⏭️ NEXT: Commit 3 = Stage 2b (ongoings cutover + storage drops + write-amp + reorg test + pruning);
-  then Commit 4 = fork-gate collapses; Commit 5 = DRY.
+- ✅ **`1c80aa3` Commit 2b** — reserved dead proto fields (xaya_player notused/role/xayaname/ftuestate;
+  config cook_duration 14-17 + fungible_items 26 + params.pb.text; activity_reward_instance
+  RewardAutoTableId 8) + dropped unused fighter_move_blueprint imports. `roconfig.pb` auto-regenerated
+  via the new prerequisite. 92/92.
+- 🔒 **Security/DoS audit launched (`wvwh9cxkd`)** — per the expanded mandate "secure, no exploits or
+  ways to stall the chain" (user 2026-06-28). Classes: crash-halt, unbounded-work, state-bloat,
+  backdoors, overflow, economic, non-determinism, reorg-safety; adversarially traces reachability from
+  an untrusted move on Polygon. Known lead under test: `MaybeSQLTestInjection` spawns 150 fighters.
+- ⏸️ **Fork-gate collapse ON HOLD (deliberate).** The 15× `||` `isFork2` gates collapse to true, BUT the
+  `&&` bug (moveprocessor.cpp:4595/4596), the `MaybeSQLTestInjection` backdoor, and the `isFork`
+  parameter threaded through CalculatePrestige/CreateNew/UpdateSweetness + the dead "old prestige"
+  branches are ENTANGLED. If the security audit greenlights removing the backdoor, do ONE elegant
+  commit: kill backdoor + collapse all gates + drop the `isFork` param + delete old branches — instead
+  of a partial collapse redone later.
+- ⏭️ NEXT (after security audit): security hardening + the elegant fork-gate/backdoor commit; then
+  Stage 2b (ongoings cutover + write-amp + reorg test + pruning); then DRY.
 
 **New notes from execution:**
 - **DEFERRED (was §6a quick-win): the `logic.cpp:1420` dead `injection` branch simplification.** Provably
