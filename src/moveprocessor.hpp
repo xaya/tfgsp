@@ -89,6 +89,14 @@ protected:
    * current state while validating moves).
    */
   Database& db;
+
+  /**
+   * When true, this processor runs in read-only mode against the confirmed
+   * state (the pending-move path).  Move-validation side effects that would
+   * write to the confirmed database are then suppressed.  The confirmed-move
+   * path leaves this false, so its state transitions are unchanged.
+   */
+  const bool readOnly;
   
   /** Access handle for the accounts database table.  */
   XayaPlayersTable xayaplayers;  
@@ -117,7 +125,7 @@ protected:
   /** Access handle for global data*/
   GlobalData globalData;       
   
-  explicit BaseMoveProcessor (Database& d, const Context& c);
+  explicit BaseMoveProcessor (Database& d, const Context& c, bool ro);
 
   /**
    * Parses some basic stuff from a move JSON object.  This extracts the
@@ -534,7 +542,7 @@ public:
 
   explicit MoveProcessor (Database& d, xaya::Random& r,
                           const Context& c)
-    : BaseMoveProcessor(d, c), rnd(r)
+    : BaseMoveProcessor(d, c, false), rnd(r)
   {}
 
   /**

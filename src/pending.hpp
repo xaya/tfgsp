@@ -302,7 +302,7 @@ public:
 
   explicit PendingStateUpdater (Database& d,
                                 PendingState& s, const Context& c)
-    : BaseMoveProcessor(d, c), state(s)
+    : BaseMoveProcessor(d, c, true), state(s)
   {}
 
   /**

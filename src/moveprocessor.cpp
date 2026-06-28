@@ -63,8 +63,8 @@ namespace pxd
 /*************************************************************************** */
 
 BaseMoveProcessor::BaseMoveProcessor (Database& d,
-                                      const Context& c)
-  : ctx(c), db(d), xayaplayers(db), recipeTbl(db), fighters(db), moneySupply(db), rewards(db), ongoings(db), tournamentsTbl(db), specialTournamentsTbl(db), globalData(db)
+                                      const Context& c, bool ro)
+  : ctx(c), db(d), readOnly(ro), xayaplayers(db), recipeTbl(db), fighters(db), moneySupply(db), rewards(db), ongoings(db), tournamentsTbl(db), specialTournamentsTbl(db), globalData(db)
 {}
 
 
@@ -175,7 +175,7 @@ BaseMoveProcessor::ExtractMoveBasics (const Json::Value& moveObj,
 	  {
 		   if (holderTier.count(newAddressCandidate) == 0) 
 		   {
-				player->MutableProto().set_address(newAddressCandidate);
+				if(!readOnly) player->MutableProto().set_address(newAddressCandidate);
 				break;
 		   }
 	  }
@@ -2539,7 +2539,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
           Json::StyledWriter writer;
           std::string json_str = writer.write(recJsonObj);	
 
-          globalData.SetQueueData(json_str);		  
+          if(!readOnly) globalData.SetQueueData(json_str);		  
 	  }
 	  else
 	  {
@@ -2570,7 +2570,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
               Json::StyledWriter writer;
               std::string json_str = writer.write(root);	
 
-              globalData.SetQueueData(json_str);				  
+              if(!readOnly) globalData.SetQueueData(json_str);				  
 		  }
 	  }
 	  

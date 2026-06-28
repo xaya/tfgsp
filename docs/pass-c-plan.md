@@ -45,8 +45,17 @@
   Golden REGEN (deterministic 2x, integrity-verified). 99/99 + golden + loadbench 8/8. Full plan +
   fork analysis: `docs/h3-cutover-plan.md`. Reorg test = scoped follow-up there (undo safety structurally
   guaranteed by the table-agnostic whole-DB session changeset).
-- **NEXT: F1** (pending read-only — lowest priority; Polygon runs --pending_moves=false). Then optional: the
-  reorg test, OVF-01 candy clamp, and the deferred REGTEST chain-gate hygiene pass.
+- **F1 — pending read-only — DONE.** Exhaustive 46-agent audit of all 24 pending-reachable `Parse*`/
+  `ExtractMoveBasics` methods (adversarial refute-pass on every "clean" verdict) found exactly **3** confirmed-DB
+  write sites, all write-only side-effects on `return false` paths: `ExtractMoveBasics:178`
+  (`set_address` on a crown-holder with a missing address) and `ParseTournamentEntryData:2542,2573`
+  (`globalData.SetQueueData`, demand-queue fill on a full roster). Fix: added `const bool readOnly` to
+  `BaseMoveProcessor` (`MoveProcessor` passes `false`, `PendingStateUpdater` passes `true`) and inline-guarded
+  each of the 3 writes `if(!readOnly) ...`. **GOLDEN-SAFE by construction** (confirmed path always takes the
+  branch → byte-identical golden, no regen). New regression test `PendingTournamentEntryDoesNotWriteQueueData`
+  proven non-vacuous (fails with the guard removed). 100/100 unit + golden byte-identical.
+- **Pass C COMPLETE.** Optional tail remaining: the H3 reorg test, OVF-01 candy clamp, the deferred REGTEST
+  chain-gate hygiene pass, and DRY-ing the two identical `RecalculatePlayerTiers` bodies.
 
 ## Golden-regen workflow (verified)
 
@@ -161,9 +170,26 @@ equivalent; verify recipe/fighter/reward outcomes match by reasoning the diff).
 
 ---
 
-## F1 — pending read-only. Likely GOLDEN-SAFE, risk depends. Scope needed (agent failed).
+## F1 — pending read-only — DONE. GOLDEN-SAFE (byte-identical, no regen).
 
-Audit §4: `PendingStateUpdater::ProcessMove` (`src/pending.cpp`) writes to the confirmed DB. Trace every
-mutation it makes; make pending strictly read-only (or on a disposable copy). Golden only exercises confirmed
-UpdateState so a pure pending fix is golden-safe. **Lower priority:** Polygon runs `--pending_moves=false`
-(XayaX has no pending feed) so this path may never execute in production — hygiene, not launch-blocking.
+`PendingStateUpdater::ProcessMove` (`src/pending.cpp`) shares `BaseMoveProcessor`'s `Parse*`/`ExtractMoveBasics`
+methods with the confirmed `MoveProcessor`. A few of those "parse" methods embed genuine consensus side-effects
+that write the confirmed DB — and on the pending path those `UPDATE`s land outside any block transaction
+(pending processing is never rolled back), i.e. latent confirmed-state corruption. Dormant on Polygon only
+because the GSP runs `--pending_moves=false` (XayaX has no pending feed).
+
+**Exhaustive audit (workflow `wj31wkggy`, 46 agents):** all 24 pending-reachable methods read independently,
+with an adversarial refute-pass on every method first reported clean. Grep-by-idiom had missed a site twice, so
+this per-method read was necessary. Exactly **3** write sites, each a write-only side-effect immediately
+followed by `return false`:
+- `ExtractMoveBasics:178` — `player->MutableProto().set_address(...)` (flushed at `player.reset()`,
+  `UPDATE xayaplayers`); fires only when a special-tournament crown-holder has an empty address.
+- `ParseTournamentEntryData:2542` & `:2573` — `globalData.SetQueueData(...)` (`UPDATE globaldata.queuedata`);
+  fires only when a tournament roster is full (demand-queue fill for next block).
+
+**Fix:** `const bool readOnly` member on `BaseMoveProcessor` (ctor 3rd param; `MoveProcessor` → `false`,
+`PendingStateUpdater` → `true`), with each of the 3 writes inline-guarded `if(!readOnly) ...`. Confirmed path
+always takes the branch ⇒ state transitions byte-identical ⇒ golden unchanged (no regen). All 22 other methods
+verified strictly read-only. Regression test `pending_tests.cpp::PendingTournamentEntryDoesNotWriteQueueData`
+forces a full roster and asserts `GlobalData::GetQueueData()` stays `""` across a pending entry; proven
+non-vacuous (fails when the guard is stripped). 100/100 unit + golden byte-identical.

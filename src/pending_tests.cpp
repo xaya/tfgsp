@@ -23,6 +23,7 @@
 #include "testutils.hpp"
 
 #include "database/dbtest.hpp"
+#include "database/globaldata.hpp"
 #include "database/recipe.hpp"
 #include "database/specialtournament.hpp"
 
@@ -541,6 +542,52 @@ TEST_F (PendingStateUpdaterTests, SubmitTournamentEntry)
 
   }
   )");
+}
+
+TEST_F (PendingStateUpdaterTests, PendingTournamentEntryDoesNotWriteQueueData)
+{
+  /* Regression guard for F1: the pending (read-only) move processor must
+     never mutate the confirmed database.  ParseTournamentEntryData writes the
+     globaldata demand queue when a tournament roster is full; that write is
+     suppressed on the pending path via BaseMoveProcessor::readOnly.  This test
+     fails if a future change drops that guard. */
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
+  auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
+  int ft1id = ft->GetId();
+  ft.reset();
+  auto ft2 = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
+  int ft2id = ft2->GetId();
+  ft2.reset();
+  xp.reset();
+
+  PXLogic::ReopenMissingTournaments (db, ctx);
+
+  auto tournament = tbl5.GetByAuthIdName ("cbd2e78a-37ce-b864-793d-8dd27788a774", ctx.RoConfig());
+  ASSERT_TRUE (tournament != nullptr);
+  const uint32_t TID = tournament->GetId();
+
+  /* Force the roster to full capacity so the demand-queue branch is taken.
+     The roster-full check (and its write) runs before any fighter validation,
+     so the placeholder ids here are never dereferenced. */
+  const int capacity = (int)tournament->GetProto().teamsize()
+                       * (int)tournament->GetProto().teamcount();
+  for (int i = 0; i < capacity; ++i)
+    tournament->MutableInstance().add_fighters (90000 + i);
+  ASSERT_GE (tournament->GetInstance().fighters_size(), capacity);
+  tournament.reset();
+
+  GlobalData globalData (db);
+  ASSERT_EQ (globalData.GetQueueData(), "");
+
+  std::ostringstream s;  s  << TID;
+  std::ostringstream s1; s1 << ft1id;
+  std::ostringstream s2; s2 << ft2id;
+  Process ("domob",
+           R"({"tm": {"e": {"tid": )" + s.str()
+           + R"(, "fc": [)" + s1.str() + R"(,)" + s2.str() + R"(]}}})");
+
+  /* The confirmed globaldata queue must be untouched by the pending move. */
+  EXPECT_EQ (globalData.GetQueueData(), "");
 }
 
 TEST_F (PendingStateUpdaterTests, SubmitSpecialTournamentEntry)
