@@ -147,6 +147,16 @@ std::vector<uint32_t> PXLogic::GenerateActivityReward(const uint32_t fighterID, 
     }      
     else
     {
+      /* H5: bound passive unclaimed-reward accumulation. At the cap the reward
+         (and its generated recipe) is not created; the player must claim some
+         first. Deconstruction rewards bypass this (see ResolveDeconstruction). */
+      if(rewardsTbl.CountForOwner(a->GetName()) >= ctx.RoConfig()->params().max_unclaimed_reward_amount())
+      {
+        LOG (WARNING) << "Player " << a->GetName() << " at unclaimed-reward cap ("
+                      << ctx.RoConfig()->params().max_unclaimed_reward_amount() << "); passive reward not granted";
+        return iDS;
+      }
+
       auto newReward = rewardsTbl.CreateNew(a->GetName());              
       newReward->MutableProto().set_expeditionid(blueprintAuthID);
       newReward->MutableProto().set_rewardid(basedRewardsTableAuthId);

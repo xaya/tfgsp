@@ -40,7 +40,9 @@ params:
     max_recipe_inventory_amount: 48
   
     max_fighter_inventory_amount: 48
-  
+
+    max_unclaimed_reward_amount: 100
+
     deconstruction_blocks: 10
   
     deconstruction_return_percent: 50 

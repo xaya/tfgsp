@@ -121,6 +121,13 @@ message Params
   optional uint32 prestige_avg_rating_mod = 33;
   
   optional float prestige_tournament_performance_mod = 34;
+
+  /* Max UNCLAIMED activity rewards (expedition/tournament) a player may hold.
+     Bounds passive reward-row accumulation (the H5 DB-bloat vector); at the cap
+     new passive rewards are not granted until some are claimed. Deconstruction
+     rewards are exempt (1:1 with the 48-fighter cap, and rejecting them would
+     strand a destroyed fighter). */
+  optional uint32 max_unclaimed_reward_amount = 35;
 }
 
 /* ************************************************************************** */
