@@ -232,7 +232,7 @@ public:
   /**
    * Calculates new sweetness based on the rating
    */  
-  void UpdateSweetness(bool isFork);
+  void UpdateSweetness();
   
   /**
    * Rerolls for the new name based on the paid probability

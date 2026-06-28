@@ -89,7 +89,7 @@ TEST_F (PendingStateTests, Empty)
 
 TEST_F (PendingStateTests, Clear)
 {
-  auto a = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd, true);
+  auto a = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
   a->SetRole (PlayerRole::PLAYER);
   CoinTransferBurn coinOp;
   coinOp.minted = 5;
@@ -248,7 +248,7 @@ TEST_F (PendingStateUpdaterTests, UninitialisedAndNonExistantAccount)
 
 TEST_F (PendingStateUpdaterTests, Minting)
 {
-  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd, true);
+  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
 
   ProcessWithBurn ("domob", COIN, R"({
     "vc": {"m": {}}
@@ -275,7 +275,7 @@ TEST_F (PendingStateUpdaterTests, Minting)
 
 TEST_F (PendingStateUpdaterTests, PurchaseCrystals)
 {
-  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd, true)->AddBalance (100);
+  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (100);
   
   ProcessWithDevPayment ("domob", 1 * COIN, R"({
     "pc": "T1"
@@ -297,7 +297,7 @@ TEST_F (PendingStateUpdaterTests, PurchaseCrystals)
 
 TEST_F (PendingStateUpdaterTests, CrystalBalancePendingTestings)
 {
-  auto a =  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd, true);
+  auto a =  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
   a->AddBalance (100);
   a.reset();
   
@@ -326,7 +326,7 @@ TEST_F (PendingStateUpdaterTests, CrystalBalancePendingTestings)
 
 TEST_F (PendingStateUpdaterTests, TestSweetenerCollect) //(*a, sweetenerAuthId, fighterID, fighters, ctx.RoConfig ());  
 {
-    auto a = xayaplayers.CreateNew ("testy2", ctx.RoConfig(), rnd, true);
+    auto a = xayaplayers.CreateNew ("testy2", ctx.RoConfig(), rnd);
     state.AddClaimingSweetenerReward (*a, "authyauth", 14, tbl3, ctx.RoConfig ());
     a.reset();
     
@@ -387,7 +387,7 @@ TEST_F (PendingStateUpdaterTests, BatchSubmitPendingTests)
 
 TEST_F (PendingStateUpdaterTests, SubmitRecepieDestroy)
 {
-  auto a = xayaplayers.CreateNew ("testy2", ctx.RoConfig(), rnd, true);
+  auto a = xayaplayers.CreateNew ("testy2", ctx.RoConfig(), rnd);
   a->AddBalance(100);
   
   a->GetInventory().SetFungibleCount("Common_Gumdrop", 1);
@@ -420,7 +420,7 @@ TEST_F (PendingStateUpdaterTests, SubmitRecepieDestroy)
 
 TEST_F (PendingStateUpdaterTests, SubmitRecepieInstance)
 {
-  auto a = xayaplayers.CreateNew ("testy2", ctx.RoConfig(), rnd, true);
+  auto a = xayaplayers.CreateNew ("testy2", ctx.RoConfig(), rnd);
   a->AddBalance(100);
   
   a->GetInventory().SetFungibleCount("Common_Gumdrop", 1);
@@ -457,7 +457,7 @@ TEST_F (PendingStateUpdaterTests, SubmitRecepieInstance)
 
 TEST_F (PendingStateUpdaterTests, SubmitExpedition)
 {
-  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd, true);
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
   auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
   EXPECT_EQ (ft->GetStatus(), FighterStatus::Available);
   ft.reset();
@@ -488,7 +488,7 @@ TEST_F (PendingStateUpdaterTests, SubmitExpedition)
 
 TEST_F (PendingStateUpdaterTests, SubmitTournamentEntry)
 {
-  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd, true);
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
   auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
   int ft1id = ft->GetId();
   ft.reset();
@@ -545,7 +545,7 @@ TEST_F (PendingStateUpdaterTests, SubmitTournamentEntry)
 
 TEST_F (PendingStateUpdaterTests, SubmitSpecialTournamentEntry)
 {
-  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd, true);
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
   xp->AddBalance(100);
   xp.reset();
   
@@ -649,7 +649,7 @@ TEST_F (PendingStateUpdaterTests, SubmitSpecialTournamentEntry)
 
 TEST_F (PendingStateUpdaterTests, ExpeditionGetRewards)
 {
-  auto a = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd, true);
+  auto a = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
   
   std::vector<std::string> expeditionIDArray;
   expeditionIDArray.push_back("tst");
@@ -686,7 +686,7 @@ TEST_F (PendingStateUpdaterTests, ExpeditionGetRewards)
 
 TEST_F (PendingStateUpdaterTests, SubmitRecepieInstanceMultiple)
 {
-  auto a = xayaplayers.CreateNew ("testy2", ctx.RoConfig(), rnd, true);
+  auto a = xayaplayers.CreateNew ("testy2", ctx.RoConfig(), rnd);
   a->AddBalance(100);
   
   auto r0 = tbl2.CreateNew("testy2", "2729a029-a53e-7b34-38c7-2c6ebe932c94", ctx.RoConfig());
@@ -736,7 +736,7 @@ TEST_F (PendingStateUpdaterTests, SubmitRecepieInstanceMultiple)
 
 TEST_F (PendingStateUpdaterTests, SubmitRecepieNotExistingInPlayerInventory)
 {
-  auto a = xayaplayers.CreateNew ("testy2", ctx.RoConfig(), rnd, true);
+  auto a = xayaplayers.CreateNew ("testy2", ctx.RoConfig(), rnd);
   a->AddBalance(100);
   a.reset();
   

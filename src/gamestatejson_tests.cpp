@@ -119,11 +119,11 @@ protected:
 
 TEST_F (XayaPlayersJsonTests, KillsAndFame)
 {
-  auto a = tbl.CreateNew ("foo", ctx.RoConfig(), rnd, true);
+  auto a = tbl.CreateNew ("foo", ctx.RoConfig(), rnd);
   a->SetRole (PlayerRole::PLAYER);
   a.reset ();
 
-  a = tbl.CreateNew ("bar", ctx.RoConfig(), rnd, true);
+  a = tbl.CreateNew ("bar", ctx.RoConfig(), rnd);
   a->SetRole (PlayerRole::ROLEADMIN);
   a.reset ();
 
@@ -138,9 +138,9 @@ TEST_F (XayaPlayersJsonTests, KillsAndFame)
 
 TEST_F (XayaPlayersJsonTests, UninitialisedBalance)
 {
-  tbl.CreateNew ("foo", ctx.RoConfig(), rnd, true)->SetRole (PlayerRole::PLAYER);
+  tbl.CreateNew ("foo", ctx.RoConfig(), rnd)->SetRole (PlayerRole::PLAYER);
 
-  auto a = tbl.CreateNew ("bar", ctx.RoConfig(), rnd, true);
+  auto a = tbl.CreateNew ("bar", ctx.RoConfig(), rnd);
   a->AddBalance (42);
   a.reset ();
 
@@ -207,7 +207,7 @@ TEST_F (XayaPlayersJsonTests, UninitialisedBalance)
 
 TEST_F (XayaPlayersJsonTests, FighterInstance)
 {
-  auto a = tbl.CreateNew ("foo", ctx.RoConfig(), rnd, true);
+  auto a = tbl.CreateNew ("foo", ctx.RoConfig(), rnd);
   a->SetRole (PlayerRole::PLAYER);
   a.reset ();
 
@@ -349,7 +349,7 @@ TEST_F (XayaPlayersJsonTests, FighterInstance)
 
 TEST_F (XayaPlayersJsonTests, RecipeInstance)
 {
-  auto a = tbl.CreateNew ("foo", ctx.RoConfig(), rnd, true);
+  auto a = tbl.CreateNew ("foo", ctx.RoConfig(), rnd);
   a->SetRole (PlayerRole::PLAYER);
   a.reset ();
 
@@ -426,7 +426,7 @@ TEST_F (XayaPlayersJsonTests, RecipeInstance)
 
 TEST_F (XayaPlayersJsonTests, ExpeditionInstance)
 {
-  auto a = tbl.CreateNew ("foo", ctx.RoConfig(), rnd, true);
+  auto a = tbl.CreateNew ("foo", ctx.RoConfig(), rnd);
   a->SetRole (PlayerRole::PLAYER);
   a.reset ();
 

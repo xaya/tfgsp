@@ -1242,12 +1242,6 @@ MoveProcessor::TryCoinOperation (const std::string& name,
   }
 
   
-  bool isFork2 = false; 
-  auto chain = ctx.Chain ();
-  if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5097362)
-  {
-    isFork2 = true;
-  }	 
 
   for (const auto& entry : op.transfers)
   {
@@ -1268,7 +1262,7 @@ MoveProcessor::TryCoinOperation (const std::string& name,
         LOG (INFO)
             << "Creating uninitialised account for coin recipient "
             << entry.first;
-        to = xayaplayers.CreateNew (entry.first, ctx.RoConfig (), rnd, isFork2);
+        to = xayaplayers.CreateNew (entry.first, ctx.RoConfig (), rnd);
       }
     to->AddBalance (entry.second);
   }
@@ -1305,12 +1299,6 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
       }
   }
   
-  bool isFork2 = false; 
-  auto chain = ctx.Chain ();
-  if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5097362)
-  {
-    isFork2 = true;
-  }	  
   /* Ensure that the account database entry exists.  In other words, we
 
      have accounts (although perhaps uninitialised) for everyone who
@@ -1318,7 +1306,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
   if (xayaplayers.GetByName (name, ctx.RoConfig ()) == nullptr)
   {
     LOG (INFO) << "Creating uninitialised account for " << name;
-    xayaplayers.CreateNew (name, ctx.RoConfig (), rnd, isFork2);
+    xayaplayers.CreateNew (name, ctx.RoConfig (), rnd);
   }
 
   /* Handle coin transfers before other game operations.  They are even
@@ -3680,14 +3668,8 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     
     fighters.DeleteById(fighterID);
 	
-	bool isFork2 = false; 
-	auto chain = ctx.Chain ();
-	if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5097362)
-	{
-	  isFork2 = true;
-	}	
 	
-    a->CalculatePrestige(ctx.RoConfig(), isFork2);
+    a->CalculatePrestige(ctx.RoConfig());
     a.reset();
     
     
@@ -4355,14 +4337,8 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 	
 	DestroyUsedElements(a, fighter);
 	
-	bool isFork2 = false; 
-	auto chain = ctx.Chain ();
-	if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5097362)
-	{
-	  isFork2 = true;
-	}	
 	
-	a->CalculatePrestige(ctx.RoConfig(), isFork2);
+	a->CalculatePrestige(ctx.RoConfig());
 	
 	a.reset();  
   }    
@@ -4465,15 +4441,9 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
     fighterDb->SetOwner(name);
     fighterDb.reset();
 	
-	bool isFork2 = false; 
-	auto chain = ctx.Chain ();
-	if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5097362)
-	{
-	  isFork2 = true;
-	}	
      
-    a->CalculatePrestige(ctx.RoConfig(), isFork2);
-    a2->CalculatePrestige(ctx.RoConfig(), isFork2);
+    a->CalculatePrestige(ctx.RoConfig());
+    a2->CalculatePrestige(ctx.RoConfig());
 
     a.reset();  
     a2.reset();
@@ -4896,14 +4866,8 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
       itemInventoryRecipe.reset();
     }
     
-	bool isFork2 = false; 
-	auto chain = ctx.Chain ();
-	if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5097362)
-	{
-	  isFork2 = true;
-	}	
 	
-    a->CalculatePrestige(ctx.RoConfig(), isFork2);
+    a->CalculatePrestige(ctx.RoConfig());
     a.reset();
     LOG (INFO) << "Destroy instance " << recepie << " submitted succesfully ";
   }    
@@ -4950,14 +4914,8 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
         {
           fighters.DeleteById(fighter->GetId());
 		  
-		  bool isFork2 = false; 
-		  auto chain = ctx.Chain ();
-		  if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5097362)
-		  {
-		    isFork2 = true;
-		  }		  
 		  
-          a->CalculatePrestige(ctx.RoConfig(), isFork2);
+          a->CalculatePrestige(ctx.RoConfig());
         }
     }
 
@@ -4985,14 +4943,8 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
     LOG (WARNING) << "Settign duration as " << duration;
     newOp->set_blocksleft(duration);
 
-	bool isFork2 = false; 
-	auto chain = ctx.Chain ();
-	if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5097362)
-	{
-	  isFork2 = true;
-	}
 
-    a->CalculatePrestige(ctx.RoConfig(), isFork2);
+    a->CalculatePrestige(ctx.RoConfig());
     a.reset();
     LOG (INFO) << "Cooking instance " << recepie << " submitted succesfully ";
   }  

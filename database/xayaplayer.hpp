@@ -158,7 +158,7 @@ private:
    * Constructs an instance with "default / empty" data for the given name
    * and not-yet-set faction.
    */
-  explicit XayaPlayer (Database& d, const std::string& n, const RoConfig& cfg, xaya::Random& rnd, bool isFork);
+  explicit XayaPlayer (Database& d, const std::string& n, const RoConfig& cfg, xaya::Random& rnd);
 
   /**
    * Constructs an instance based on the given DB result set.  The result
@@ -267,7 +267,7 @@ public:
   /*This is calculated every block based on all the different assets 
   player contains globally for the player name*/
   
-  void CalculatePrestige(const RoConfig& cfg, bool isFork);
+  void CalculatePrestige(const RoConfig& cfg);
 
 private:
    
@@ -310,7 +310,7 @@ public:
    * Creates a new entry in the database for the given name.
    * Calling this method for a name that already has an account is an error.
    */
-  Handle CreateNew (const std::string& name, const RoConfig& cfg, xaya::Random& rnd, bool isFork);
+  Handle CreateNew (const std::string& name, const RoConfig& cfg, xaya::Random& rnd);
 
   /**
    * Returns a handle for the instance based on a Database::Result.

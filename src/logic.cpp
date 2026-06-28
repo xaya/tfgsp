@@ -398,14 +398,8 @@ void PXLogic::ResolveSweetener(std::unique_ptr<XayaPlayer>& a, std::string sweet
     }       
   }    
 
-  bool isFork2 = false; 
-  auto chain = ctx.Chain ();
-  if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5097362)
-  {
-	  isFork2 = true;
-  }
 
-  a->CalculatePrestige(ctx.RoConfig(), isFork2);  
+  a->CalculatePrestige(ctx.RoConfig());  
 }
 
 void PXLogic::ResolveDeconstruction(std::unique_ptr<XayaPlayer>& a, const uint32_t fighterID, Database& db, const Context& ctx, xaya::Random& rnd)
@@ -643,14 +637,8 @@ void PXLogic::ResolveCookingRecepie(std::unique_ptr<XayaPlayer>& a, const uint32
     {
         auto newFighter = fighters.CreateNew (a->GetName(), recepieID, ctx.RoConfig(), rnd);
 		
-		bool isFork2 = false; 
-		auto chain = ctx.Chain ();
-		if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5097362)
-		{
-		  isFork2 = true;
-		}		
 		
-        a->CalculatePrestige(ctx.RoConfig(), isFork2);
+        a->CalculatePrestige(ctx.RoConfig());
         
         newFighter->SetStatus(FighterStatus::Cooked);
         
@@ -933,12 +921,6 @@ void PXLogic::ProcessSpecialTournaments(Database& db, const Context& ctx, xaya::
     SpecialTournamentTable specialTournamentsDatabase(db);
     XayaPlayersTable xayaplayers(db);
     
-	bool isFork2 = false; 
-	auto chain = ctx.Chain ();
-	if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5097362)
-	{
-	  isFork2 = true;
-	}	
 
     if(totalFightersInSpecialTournament == 0)
     {
@@ -961,7 +943,7 @@ void PXLogic::ProcessSpecialTournaments(Database& db, const Context& ctx, xaya::
                names and already triggered account creation, re-creating it
                would CHECK-abort.  Get-or-create instead. */
             if (xayaplayers.GetByName (ownerName, ctx.RoConfig ()) == nullptr)
-              xayaplayers.CreateNew (ownerName, ctx.RoConfig(), rnd, isFork2);
+              xayaplayers.CreateNew (ownerName, ctx.RoConfig(), rnd);
 
 			bool isFork = false;
 
@@ -992,9 +974,9 @@ void PXLogic::ProcessSpecialTournaments(Database& db, const Context& ctx, xaya::
     
     int32_t timeTreshhold = 25 * 60 * 60; // !25 hours
     
-    if(chain == xaya::Chain::REGTEST)
+    if(ctx.Chain() == xaya::Chain::REGTEST)
     {
-       timeTreshhold = 3;  
+       timeTreshhold = 3;
        RecalculatePlayerTiers(db, ctx); // needed for unit tests only, because injection flow in there is messed up
     }
 
@@ -1840,12 +1822,6 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
 			  
 			  std::map<std::string, uint32_t> playersAwarded;
               
-			  bool isFork2 = false; 
-			  auto chain = ctx.Chain ();
-			  if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5097362)
-			  {
-				isFork2 = true;
-			  }			  
 			  
               for(const auto& participant: participatingPlayerTotalScore)
               {
@@ -1931,7 +1907,7 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
 					a->MutableProto().set_tournamentswon(a->GetProto().tournamentswon() + 1);
 				  }
 
-                  a->CalculatePrestige(ctx.RoConfig(), isFork2);              
+                  a->CalculatePrestige(ctx.RoConfig());              
                   a.reset();
               }
 
@@ -1941,7 +1917,7 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
                   if (fighter == nullptr) continue;
                   fighter->SetStatus(pxd::FighterStatus::Available);
                   fighter->MutableProto().set_tournamentinstanceid(0);
-                  fighter->UpdateSweetness(isFork2);
+                  fighter->UpdateSweetness();
                   fighter.reset();
               }
 

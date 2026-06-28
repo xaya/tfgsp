@@ -26,7 +26,7 @@
 namespace pxd
 {
 
-XayaPlayer::XayaPlayer (Database& d, const std::string& n, const RoConfig& cfg, xaya::Random& rnd, bool isFork)
+XayaPlayer::XayaPlayer (Database& d, const std::string& n, const RoConfig& cfg, xaya::Random& rnd)
   : db(d), name(n), tracker(db.TrackHandle ("xayaplayer", n)),
     role(PlayerRole::INVALID), dirtyFields(true)
 {
@@ -116,7 +116,7 @@ XayaPlayer::XayaPlayer (Database& d, const std::string& n, const RoConfig& cfg, 
   recipesTbl.CreateNew (GetName(), starting_recepie_guid, cfg);
   
   AddBalance(cfg->params().starting_crystals());  
-  CalculatePrestige(cfg, isFork);
+  CalculatePrestige(cfg);
   
   rcp1 = recipesTbl.GetById(rcp1Id);
   rcp2 = recipesTbl.GetById(rcp2Id);
@@ -259,7 +259,7 @@ double XayaPlayer::GetFighterPercentageFromQuality(uint32_t quality, std::vector
 }
 
 void
-XayaPlayer::CalculatePrestige(const RoConfig& cfg, bool isFork)
+XayaPlayer::CalculatePrestige(const RoConfig& cfg)
 {
 	{
 		std::vector<FighterTable::Handle> fighters = CollectInventoryFighters(cfg);
@@ -474,11 +474,11 @@ XayaPlayer::AddBalance (const Amount val)
 }
 
 XayaPlayersTable::Handle
-XayaPlayersTable::CreateNew (const std::string& name, const RoConfig& cfg, xaya::Random& rnd, bool isFork)
+XayaPlayersTable::CreateNew (const std::string& name, const RoConfig& cfg, xaya::Random& rnd)
 {
   CHECK (GetByName (name, cfg) == nullptr)
       << "Account for " << name << " exists already";
-  return Handle (new XayaPlayer (db, name, cfg, rnd, isFork));
+  return Handle (new XayaPlayer (db, name, cfg, rnd));
 }
 
 XayaPlayersTable::Handle

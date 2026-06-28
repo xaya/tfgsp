@@ -211,11 +211,11 @@ protected:
 
     /* domob is created FIRST, so it auto-owns recipes id 1 & 2 and tutorial
        fighters id 3 & 4 (see XayaPlayersTable::CreateNew).  */
-    xayaplayers.CreateNew ("domob", ctx.RoConfig (), rnd, true)->AddBalance (1000);
-    xayaplayers.CreateNew ("andy",  ctx.RoConfig (), rnd, true)->AddBalance (1000);
-    xayaplayers.CreateNew ("bob",   ctx.RoConfig (), rnd, true)->AddBalance (1000);
-    xayaplayers.CreateNew ("carol", ctx.RoConfig (), rnd, true)->AddBalance (1000);
-    xayaplayers.CreateNew ("dave",  ctx.RoConfig (), rnd, true)->AddBalance (1000);
+    xayaplayers.CreateNew ("domob", ctx.RoConfig (), rnd)->AddBalance (1000);
+    xayaplayers.CreateNew ("andy",  ctx.RoConfig (), rnd)->AddBalance (1000);
+    xayaplayers.CreateNew ("bob",   ctx.RoConfig (), rnd)->AddBalance (1000);
+    xayaplayers.CreateNew ("carol", ctx.RoConfig (), rnd)->AddBalance (1000);
+    xayaplayers.CreateNew ("dave",  ctx.RoConfig (), rnd)->AddBalance (1000);
 
     /* A known Available fighter for each non-domob player (recipe id 1 is used
        only as the generation template -- it stays a valid row after domob

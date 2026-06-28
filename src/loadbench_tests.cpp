@@ -247,7 +247,7 @@ protected:
     for (int i = 0; i < n; ++i)
       {
         xayaplayers.CreateNew ("p" + std::to_string (i), ctx.RoConfig (),
-                               rnd, true);
+                               rnd);
         if (n >= 10000 && (i + 1) % 10000 == 0)
           std::cout << "    seeded " << (i + 1) << "/" << n << " players"
                     << std::endl;

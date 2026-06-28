@@ -165,7 +165,7 @@ TEST_F (SecurityTests, CookCannotDeleteAnotherPlayersFighter)
 {
   /* Attacker bob owns a quality-0 recipe (does NOT validate its fid) plus the
      balance + candy to cook it.  */
-  xayaplayers.CreateNew ("bob", ctx.RoConfig (), rnd, true)->AddBalance (100);
+  xayaplayers.CreateNew ("bob", ctx.RoConfig (), rnd)->AddBalance (100);
   auto bob = xayaplayers.GetByName ("bob", ctx.RoConfig ());
   bob->GetInventory ().SetFungibleCount ("Common_Gumdrop", 1);
   bob->GetInventory ().SetFungibleCount ("Common_Icing", 1);
@@ -173,7 +173,7 @@ TEST_F (SecurityTests, CookCannotDeleteAnotherPlayersFighter)
   tbl2.GetById (1)->SetOwner ("bob");
 
   /* Victim alice owns an Available fighter.  */
-  xayaplayers.CreateNew ("alice", ctx.RoConfig (), rnd, true);
+  xayaplayers.CreateNew ("alice", ctx.RoConfig (), rnd);
   auto vf = tbl3.CreateNew ("alice", 1, ctx.RoConfig (), rnd);
   const auto victimId = vf->GetId ();
   vf->SetStatus (pxd::FighterStatus::Available);
@@ -193,7 +193,7 @@ TEST_F (SecurityTests, CookCannotDeleteBusyFighter)
   /* A fighter that is a tournament participant (status != Available) must not
      be consumable by a cook, or its dangling roster reference halts the
      chain at tournament resolution.  */
-  xayaplayers.CreateNew ("bob", ctx.RoConfig (), rnd, true)->AddBalance (100);
+  xayaplayers.CreateNew ("bob", ctx.RoConfig (), rnd)->AddBalance (100);
   auto bob = xayaplayers.GetByName ("bob", ctx.RoConfig ());
   bob->GetInventory ().SetFungibleCount ("Common_Gumdrop", 1);
   bob->GetInventory ().SetFungibleCount ("Common_Icing", 1);
@@ -217,7 +217,7 @@ TEST_F (SecurityTests, CookCannotDeleteBusyFighter)
 
 TEST_F (SecurityTests, CrystalBundleArrayReplayMintsOnce)
 {
-  xayaplayers.CreateNew ("domob", ctx.RoConfig (), rnd, true)
+  xayaplayers.CreateNew ("domob", ctx.RoConfig (), rnd)
       ->AddBalance (250 + ctx.RoConfig ()->params ().starting_crystals ());
 
   Process (R"([

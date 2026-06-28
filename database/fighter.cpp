@@ -356,39 +356,20 @@ void FighterInstance::RerollName(Amount cost, const RoConfig& cfg,  xaya::Random
     MutableProto().set_name(fname + " " + lname);   	
 }
 
-void FighterInstance::UpdateSweetness(bool isFork)
+void FighterInstance::UpdateSweetness()
 {
-	if(isFork == false)
+	if(GetProto().rating() >= 2000)
 	{
-		if(GetProto().rating() > 2000)
-		{
-			MutableProto().set_sweetness((int)pxd::Sweetness::Super_Sweet);
-			return;
-		}
-		
-		double srate = (double)(GetProto().sweetness() * 100.0 + 1000);
-		
-		if(GetProto().rating() >= srate)
-		{
-			pxd::Sweetness newSW = (pxd::Sweetness)(((GetProto().rating() - 1000) / 100.0) + 1);
-			MutableProto().set_sweetness((int)newSW);
-		} 
+		MutableProto().set_sweetness((int)pxd::Sweetness::Super_Sweet);
+		return;
 	}
-	else
+
+	fpm::fixed_24_8 srate = fpm::fixed_24_8(GetProto().sweetness()) * fpm::fixed_24_8(100.0) + fpm::fixed_24_8(1000);
+
+	if(fpm::fixed_24_8(GetProto().rating()) >= srate)
 	{
-		if(GetProto().rating() >= 2000)
-		{
-			MutableProto().set_sweetness((int)pxd::Sweetness::Super_Sweet);
-			return;
-		}
-		
-		fpm::fixed_24_8 srate = fpm::fixed_24_8(GetProto().sweetness()) * fpm::fixed_24_8(100.0) + fpm::fixed_24_8(1000);
-		
-		if(fpm::fixed_24_8(GetProto().rating()) >= srate)
-		{
-			pxd::Sweetness newSW = (pxd::Sweetness)(((GetProto().rating() - 1000) / 100.0) + 1);
-			MutableProto().set_sweetness((int32_t)newSW);
-		} 		
+		pxd::Sweetness newSW = (pxd::Sweetness)(((GetProto().rating() - 1000) / 100.0) + 1);
+		MutableProto().set_sweetness((int32_t)newSW);
 	}
 }
 
