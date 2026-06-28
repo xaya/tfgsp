@@ -47,6 +47,12 @@ using CallbackDuration = std::chrono::microseconds;
 /** Unit (as string) for the callback timings.  */
 constexpr const char* CALLBACK_DURATION_UNIT = "us";
 
+/** DoS caps on attacker-controlled move arrays (Pass B: H1, H2, H6).
+    Legitimate moves are far below these; the caps only bound malicious inputs
+    so a single gas-bounded move cannot impose super-linear per-block work. */
+constexpr unsigned MAX_MOVE_ARRAY = 1000;
+constexpr unsigned MAX_SUBMOVES = 100;
+
 } // anonymous namespace
 
 
@@ -1293,6 +1299,8 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
   {
       for(auto& mvx: mv)
       {
+          /* DoS cap (H6): bound sub-moves per move; each runs ~12 handlers. */
+          if(moves.size() >= MAX_SUBMOVES) break;
           moves.push_back(mvx);
       }
   }
@@ -1986,7 +1994,17 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
 	const auto& itemFighter = fighter["if"];
 	const auto& itemCandy = fighter["ic"];
 	const auto& itemRecipe = fighter["ir"];
-	
+
+	/* DoS cap (H1): bound the duplicate-detection and per-element work on the
+	   attacker-supplied sacrifice arrays.  Real transfigures use a handful. */
+	if(itemFighter.size() > MAX_MOVE_ARRAY
+	   || itemCandy.size() > MAX_MOVE_ARRAY
+	   || itemRecipe.size() > MAX_MOVE_ARRAY)
+	{
+	  LOG (WARNING) << "Transfigure sacrifice arrays exceed the size cap";
+	  return false;
+	}
+
 	if(itemFighter.size() == 0)
 	{
       LOG (WARNING) << "Fighter array is null";
@@ -2705,7 +2723,14 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     }    
 
     const std::string expeditionID = expedition["eid"].asString ();
-    
+
+    /* DoS cap (H2): bound the fighter-id party array before dedup/lookups.  */
+    if(expedition["fid"].isArray() && expedition["fid"].size() > MAX_MOVE_ARRAY)
+    {
+      LOG (WARNING) << "Expedition fid array exceeds the size cap";
+      return false;
+    }
+
     if(expedition["fid"].isInt())
     {
       fightersIds.push_back(expedition["fid"].asInt()); 

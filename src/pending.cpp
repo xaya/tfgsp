@@ -857,6 +857,8 @@ PendingStateUpdater::ProcessMove (const Json::Value& moveObj)
   {
       for(auto& mvx: mv)
       {
+          /* DoS cap (H6): bound sub-moves per move; mirrors ProcessOne. */
+          if(moves.size() >= 100) break;
           moves.push_back(mvx);
       }
   }

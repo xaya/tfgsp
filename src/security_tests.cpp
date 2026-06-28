@@ -246,6 +246,32 @@ TEST_F (SecurityTests, CrystalBundleArrayReplayMintsOnce)
 }
 
 /* ************************************************************************** */
+/* Pass B: attacker-controlled arrays are capped, not super-linear.           */
+
+TEST_F (SecurityTests, OversizedMoveArraysAreCappedNotFatal)
+{
+  /* A huge expedition party array (> MAX_MOVE_ARRAY) is rejected before the
+     dedup / per-element lookups; a huge sub-move array (> MAX_SUBMOVES) is
+     capped.  Neither may crash or stall.  */
+  std::string bigFid = "[";
+  for (int i = 0; i < 5000; ++i)
+    bigFid += (i ? "," : "") + std::to_string (i);
+  bigFid += "]";
+  EXPECT_NO_THROW (Process (
+      R"([{"name":"atk","move":{"exp":{"f":{"eid":"x","fid":)" + bigFid
+      + R"(}}}}])"));
+
+  std::string bigArr = "[";
+  for (int i = 0; i < 5000; ++i)
+    bigArr += std::string (i ? "," : "") + R"({"pg":"x"})";
+  bigArr += "]";
+  EXPECT_NO_THROW (Process (
+      R"([{"name":"atk","move":)" + bigArr + R"(}])"));
+
+  EXPECT_TRUE (xayaplayers.GetByName ("atk", ctx.RoConfig ()) != nullptr);
+}
+
+/* ************************************************************************** */
 
 } // anonymous namespace
 } // namespace pxd
