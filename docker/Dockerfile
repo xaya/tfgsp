@@ -31,8 +31,10 @@ WORKDIR /usr/src/tfgsp
 COPY . .
 RUN make distclean || true
 RUN ./autogen.sh && ./configure && make
-# Run the C++ unit + golden-replay regression suite as a build gate.  The
-# Python gametest/ tests SKIP cleanly here (no regtest Xaya Core in the image).
+# Run the full C++ suite as a build gate: unit tests, the golden-replay
+# regression, and the reorg tests (in-process + production-path).  The live
+# Polygon end-to-end + reorg tests are separate (polygon-test/, run against the
+# forked-evm-testing harness), not part of the image build.
 RUN make check || (cat src/test-suite.log proto2/test-suite.log database/test-suite.log 2>/dev/null; exit 1)
 RUN make install-strip
 

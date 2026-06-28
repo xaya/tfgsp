@@ -63,7 +63,6 @@ AC_CONFIG_FILES([
   Makefile \
   libwinsane/Makefile \
   database/Makefile \
-  gametest/Makefile \
   proto/Makefile \
   proto2/Makefile \
   src/Makefile
