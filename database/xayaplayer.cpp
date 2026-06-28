@@ -244,18 +244,18 @@ std::vector<TournamentTable::Handle> XayaPlayer::CollectTournaments(const RoConf
   return tournaments;
 }
 
-double XayaPlayer::GetFighterPercentageFromQuality(uint32_t quality, std::vector<FighterTable::Handle>& fighters)
+fpm::fixed_24_8 XayaPlayer::GetFighterPercentageFromQuality(uint32_t quality, std::vector<FighterTable::Handle>& fighters)
 {
-  double totalFighters = 0;
+  fpm::fixed_24_8 totalFighters = fpm::fixed_24_8(0);
   for(const auto& fighter: fighters)
   {
      if(fighter.get()->GetProto().quality() == quality)
      {
-         totalFighters++;
+         totalFighters = totalFighters + fpm::fixed_24_8(1);
      }
-  }  
-  
-  return (totalFighters) / fighters.size();
+  }
+
+  return totalFighters / fpm::fixed_24_8(fighters.size());
 }
 
 void
@@ -271,10 +271,10 @@ XayaPlayer::CalculatePrestige(const RoConfig& cfg)
 		  return;
 		}
 		
-		fpm::fixed_24_8 getPercentageEpic  = fpm::fixed_24_8(GetFighterPercentageFromQuality(4, fighters)) * fpm::fixed_24_8(cfg->params().prestige_epic_mod()) * fpm::log10(totalFighters+1);
-		fpm::fixed_24_8 getPercentageRare  = fpm::fixed_24_8(GetFighterPercentageFromQuality(3, fighters)) * fpm::fixed_24_8(cfg->params().prestige_rare_mod()) * fpm::log10(totalFighters+1);
-		fpm::fixed_24_8 getPercentageUncommom  = fpm::fixed_24_8(GetFighterPercentageFromQuality(2, fighters)) * fpm::fixed_24_8(cfg->params().prestige_uncommon_mod()) * fpm::log10(totalFighters+1);
-		fpm::fixed_24_8 getPercentageCommon  = fpm::fixed_24_8(GetFighterPercentageFromQuality(1, fighters)) * fpm::fixed_24_8(cfg->params().prestige_common_mod()) * fpm::log10(totalFighters+1);
+		fpm::fixed_24_8 getPercentageEpic  = GetFighterPercentageFromQuality(4, fighters) * fpm::fixed_24_8(cfg->params().prestige_epic_mod()) * fpm::log10(totalFighters+1);
+		fpm::fixed_24_8 getPercentageRare  = GetFighterPercentageFromQuality(3, fighters) * fpm::fixed_24_8(cfg->params().prestige_rare_mod()) * fpm::log10(totalFighters+1);
+		fpm::fixed_24_8 getPercentageUncommom  = GetFighterPercentageFromQuality(2, fighters) * fpm::fixed_24_8(cfg->params().prestige_uncommon_mod()) * fpm::log10(totalFighters+1);
+		fpm::fixed_24_8 getPercentageCommon  = GetFighterPercentageFromQuality(1, fighters) * fpm::fixed_24_8(cfg->params().prestige_common_mod()) * fpm::log10(totalFighters+1);
 
 		fpm::fixed_24_8 fighterAverage =fpm::fixed_24_8(0);
 		

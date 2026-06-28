@@ -272,7 +272,7 @@ public:
 private:
    
   /*Helper utility function used in perstige calculations*/
-  double GetFighterPercentageFromQuality(uint32_t quality, std::vector<FighterTable::Handle>& fighters);
+  fpm::fixed_24_8 GetFighterPercentageFromQuality(uint32_t quality, std::vector<FighterTable::Handle>& fighters);
   
   /*We are not writing those in the database, so we need to create them on each 
   time we load account or create fresh*/
