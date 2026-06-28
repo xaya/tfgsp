@@ -111,10 +111,12 @@ protected:
     : xaya::GameTestWithBlockchain(GAME_ID), game(GAME_ID)
   {
     rules.Initialise (":memory:");
-    /* MAIN (not REGTEST): it has a defined genesis hash, and avoids the REGTEST
-       height cross-checks that SetStorage would enable -- those need a live RPC
-       client, which we don't have (null).  The undo path is chain-independent.  */
-    rules.InitialiseGameContext (xaya::Chain::MAIN, GAME_ID, nullptr);
+    /* POLYGON -- the production chain (Treatfighter runs on Polygon via the
+       XayaX eth bridge; there is no Xaya Core).  A Polygon reorg reaches the GSP
+       as a XayaX-delivered block detach, which is exactly the Game::BlockDetach
+       path this test drives.  (REGTEST would enable height cross-checks in
+       SetStorage that need a live RPC client we don't have; POLYGON does not.)  */
+    rules.InitialiseGameContext (xaya::Chain::POLYGON, GAME_ID, nullptr);
 
     /* SetStorage opens the database (storage->Initialise), so it must precede
        GetInitialState, which writes the initial state into that open DB.  */
@@ -126,8 +128,14 @@ protected:
     const xaya::GameStateData state
         = rules.GetInitialState (height, hashHex, nullptr);
 
+    /* POLYGON's genesis hash is empty ("accept any block at the genesis
+       height"), so use a synthetic starting-block hash for the simulated chain;
+       the undo path does not depend on its value.  */
     xaya::uint256 genHash;
-    CHECK (genHash.FromHex (hashHex));
+    if (hashHex.empty ())
+      genHash = xaya::BlockHash (200);
+    else
+      CHECK (genHash.FromHex (hashHex));
     SetStartingBlock (height, genHash);
 
     /* Record the genesis as the storage's current state so the first attach's

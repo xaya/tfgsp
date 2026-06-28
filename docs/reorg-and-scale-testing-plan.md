@@ -33,8 +33,21 @@
   `timestamp` and an empty `admin` array, both of which PXLogic::UpdateState
   requires but the upstream helper omits.  Chain MAIN (defined genesis hash; no
   REGTEST cross-checks needing a live RPC).  2 tests, green in `make check`.
-- **Tier 3 (gametest/reorg.py end-to-end) remains TODO** (SKIP-only here — no
-  xayad/xayagametest daemon in the container).
+- **Tier 3 — REFRAMED for Polygon (there is NO xayad).** Treatfighter runs on
+  Polygon via the XayaX `eth` bridge; Xaya Core / `xayad` is not part of this
+  stack.  The real end-to-end test is the LIVE stack: `tfd` + XayaX
+  (`xaya/xayax` eth connector) against a Polygon RPC — sync from genesis
+  (89'246'000), send a real `g/tf` move signed from the project's Polygon wallet,
+  confirm via the GSP RPC (`getnullstate` up-to-date → move → `getcurrentstate`),
+  and confirm two independently-synced GSPs return byte-identical state.  A
+  Polygon reorg reaches the GSP as a XayaX-delivered block detach — the exact
+  `Game::BlockDetach` undo path Tier 2 already proves in-process.
+- **OLD STUFF TO REMOVE (once the Polygon harness is in):** the entire
+  `gametest/*.py` suite (`pxtest.py` extends `XayaGameTest`, which needs a
+  Xaya Core `xayad` regtest daemon) is DEAD for this relaunch — it can only ever
+  SKIP.  It must be deleted (and unwired from the top-level build) and replaced
+  by the Polygon/XayaX live-integration harness above.  Likewise scrub any
+  `invalidateblock`/`reconsiderblock`/`mover/gametest/reorg.py` references.
 
 ---
 
@@ -71,7 +84,11 @@
   handler) → DB rolled back. This is the EXACT primitive `xaya::SQLiteGame` uses — testing it at scale
   directly validates the h3 "structural guarantee" (ongoing_operations undone like the 8 proven tables).
 
-### C. End-to-end integration reorg — Python `gametest/` (real regtest daemon)
+### C. ~~End-to-end integration reorg — Python `gametest/` (real regtest daemon)~~ WRONG — DO NOT USE
+> SUPERSEDED: this whole section assumed Xaya Core (`xayad`) regtest, which is
+> NOT part of the Polygon stack.  See the Tier 3 reframe in STATUS above.  The
+> `gametest/*.py` suite is dead and slated for removal.  Kept only as a record of
+> what NOT to do.
 - Base `gametest/pxtest.py` (`PXTest(XayaGameTest)`, gameid `tf`, binary `../src/tfd`).
 - Real reorg via Xaya Core RPC: `self.rpc.xaya.invalidateblock(blk)` then `reconsiderblock(blk)`.
 - Template: `/home/acoloss/libxayagame/mover/gametest/reorg.py` (88 lines) — build fork, invalidate,
