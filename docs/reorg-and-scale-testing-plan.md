@@ -21,8 +21,20 @@
   unit tests pass.  Fresh relaunch ⇒ no legacy-format compatibility concern.
 - Also fixed an UNRELATED pre-existing gate breakage: `proto2/roconfig_tests.cpp`
   referenced the renamed `CrystalBundle.chicost` (now `chicostsats`).
-- **Tier 2 (GameTestWithBlockchain production path) and Tier 3 (gametest/reorg.py
-  end-to-end) remain TODO.**
+- **Tier 2 — DONE.** `src/reorg_game_tests.cpp` drives a REAL `xaya::Game` +
+  PXLogic through `Game::BlockAttach`/`BlockDetach` (the live reorg path) and
+  asserts exact game-table round-trips + fork switching.  Needed vendoring a
+  TRIMMED copy of libxayagame's test harness (`src/xgametestutils.{hpp,cpp}` —
+  `BlockHash` + `GameTestFixture` + `GameTestWithBlockchain` only; the upstream
+  mock-RPC/gmock/jsonrpc stack is dropped since the reorg path uses a null RPC
+  client and no live server) because `GameTestWithBlockchain` is not in the
+  installed headers and `Game::BlockAttach` is private (friend `GameTestFixture`
+  only).  Two deliberate divergences in the vendored block builder: it adds
+  `timestamp` and an empty `admin` array, both of which PXLogic::UpdateState
+  requires but the upstream helper omits.  Chain MAIN (defined genesis hash; no
+  REGTEST cross-checks needing a live RPC).  2 tests, green in `make check`.
+- **Tier 3 (gametest/reorg.py end-to-end) remains TODO** (SKIP-only here — no
+  xayad/xayagametest daemon in the container).
 
 ---
 

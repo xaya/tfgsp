@@ -89,8 +89,15 @@ check_LTLIBRARIES = libtestutils.la
 # asserts the whole database round-trips exactly.  Like loadbench it needs
 # -DSQLITE_ENABLE_SESSION; unlike loadbench it IS a correctness gate (in TESTS),
 # defaulting to a fast moderate scale (crank with TF_REORG_N=20000 ./reorg_tests).
-check_PROGRAMS = tests goldenreplay_tests loadbench_tests reorg_tests
-TESTS = tests goldenreplay_tests reorg_tests
+# reorg_game_tests is the Tier 2 production-path reorg gate: it drives a real
+# xaya::Game + PXLogic through Game::BlockAttach / BlockDetach (the live reorg
+# path) and asserts exact game-table round-trips + fork switching.  It uses the
+# vendored xayagame test harness (xgametestutils.{hpp,cpp}), since
+# GameTestWithBlockchain is not installed and Game's block entry points are
+# private (friend GameTestFixture only).
+check_PROGRAMS = tests goldenreplay_tests loadbench_tests reorg_tests \
+  reorg_game_tests
+TESTS = tests goldenreplay_tests reorg_tests reorg_game_tests
 
 libtestutils_la_CXXFLAGS = \
   -I$(top_srcdir) \
@@ -185,8 +192,27 @@ reorg_tests_LDADD = \
 reorg_tests_SOURCES = \
   reorg_tests.cpp
 
+reorg_game_tests_CXXFLAGS = \
+  -I$(top_srcdir) \
+  $(XAYAGAME_CFLAGS) \
+  $(GTEST_MAIN_CFLAGS) \
+  $(JSON_CFLAGS) $(GTEST_CFLAGS) \
+  $(GLOG_CFLAGS) $(GFLAGS_CFLAGS) $(PROTOBUF_CFLAGS)
+reorg_game_tests_LDADD = \
+  $(builddir)/libtf.la \
+  $(top_builddir)/database/libdatabase.la \
+  $(top_builddir)/proto2/libpxproto.la \
+  $(XAYAGAME_LIBS) \
+  $(GTEST_MAIN_LIBS) \
+  $(JSON_LIBS) $(GTEST_LIBS) \
+  $(GLOG_LIBS) $(GFLAGS_LIBS) $(PROTOBUF_LIBS)
+reorg_game_tests_SOURCES = \
+  reorg_game_tests.cpp \
+  xgametestutils.cpp
+
 check_HEADERS = \
-  testutils.hpp
+  testutils.hpp \
+  xgametestutils.hpp
 EXTRA_DIST = \
   goldenreplay.golden.json
 
