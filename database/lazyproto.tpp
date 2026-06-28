@@ -20,6 +20,9 @@
 
 #include <glog/logging.h>
 
+#include <google/protobuf/io/coded_stream.h>
+#include <google/protobuf/io/zero_copy_stream_impl_lite.h>
+
 namespace pxd
 {
 
@@ -157,7 +160,20 @@ template <typename Proto>
 
     case State::MODIFIED:
       CHECK (msg != nullptr);
-      CHECK (msg->SerializeToString (&data));
+      /* DETERMINISTIC serialisation is consensus-critical.  protobuf map<>
+         fields (e.g. the player Inventory's fungible items) otherwise serialise
+         their entries in a per-message randomised order, so the SAME logical
+         proto yields DIFFERENT bytes across nodes and across replays of the same
+         block.  Because xaya::SQLiteGame hashes the stored bytes, that is a
+         silent chain fork (and it breaks reorg replay).  SetSerializationDeter-
+         ministic sorts map keys, making the blob a pure function of content.  */
+      {
+        data.clear ();
+        google::protobuf::io::StringOutputStream zos (&data);
+        google::protobuf::io::CodedOutputStream cos (&zos);
+        cos.SetSerializationDeterministic (true);
+        CHECK (msg->SerializeToCodedStream (&cos));
+      }
       return data;
 
     default:
