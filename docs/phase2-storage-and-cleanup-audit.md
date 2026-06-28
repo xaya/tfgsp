@@ -1,7 +1,28 @@
 # Phase 2 — State storage & Taurion-cleanup audit + Stage 2b plan
 
-**Status:** living document. Storage audit ✅ complete. Taurion-cleanup audit ✅ complete.
-Implementation: not started (awaiting user sign-off on order + the gating decisions in §7).
+**Status:** living document. Storage audit ✅. Taurion-cleanup audit ✅. Implementation IN PROGRESS.
+
+### Execution log (each commit golden-byte-identical + full unit suite green in the `tfdev` container)
+- ✅ **`6c44e4e` Commit 1** — Charon, Fork subsystem (Context::forks/Forks(), gflag, dead
+  GameStartTests), orphan files (jsonrpclib, proto/roconfig_blob.s dup, data/ certs, fpm/ios.hpp),
+  build cruft (untrack config.h/status/log, .gitignore). 92/92 (was 93: forks_tests.cpp removed).
+- ✅ **`993454e` Commit 1b** — dead `IsDirtyCombatData()` ×4 + Taurion RPC error codes.
+- ✅ **`7a1cae8` Commit 2** — dropped the dead `blocks` config (CHI-era manual block-hash table):
+  source −21 MB / −1.38M lines, **runtime roconfig blob 16 MB → 2.6 MB**. Removed the unreachable
+  reseed branch (sole `blocks()` reader) + de-elsed the live `>5155298` branch + removed the dead
+  fork-migration trigger. Also fixed a latent footgun: `proto2/roconfig.pb` had no prerequisites so
+  config edits never regenerated — added `roconfig_gen` as its prerequisite.
+- ⏭️ NEXT: Commit 3 = Stage 2b (ongoings cutover + storage drops + write-amp + reorg test + pruning);
+  then Commit 4 = fork-gate collapses; Commit 5 = DRY.
+
+**New notes from execution:**
+- **DEFERRED (was §6a quick-win): the `logic.cpp:1420` dead `injection` branch simplification.** Provably
+  dead by static analysis, but the `injection` naming overlaps the human-eye regtest-injection path
+  (`specialtournament.py`, §6e.2/3) which can't be exercised here (gametests skip without regtest Core).
+  Deferred to the careful gametest-coupled pass rather than rushed.
+- **libxayagame pin (launch checklist):** `docker/Dockerfile` uses `FROM xaya/libxayagame` untagged
+  (`:latest`). That lib provides the undo/session + SQLiteGame consensus machinery, so an unpinned
+  rebuild could shift behavior. Pin to a digest/commit before launch.
 
 This is the canonical record of *what we did, what we found, and what we will do* for the Phase 2
 efficiency + cleanup pass. It complements `docs/p-e1-loadbench.md` (the before/after benchmarks).
