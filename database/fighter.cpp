@@ -289,7 +289,12 @@ void FighterInstance::RerollName(Amount cost, const RoConfig& cfg,  xaya::Random
 			increasedProbability += excessive / COIN;
 		}
 	}
-	
+
+	/* Clamp so (1001 - increasedProbability) stays >= 1: a large CHI
+	   overpayment must not drive Random::NextInt() to a zero/negative bound
+	   (chain-halt via CHECK_GT, or an infinite reroll loop). */
+	if (increasedProbability > 1000) increasedProbability = 1000;
+
 	while(candidates0collected.size() == 0)
 	{
 		for(int32_t e =0; e < (int32_t)position0names.size(); e++)

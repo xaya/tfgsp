@@ -878,6 +878,12 @@ PendingStateUpdater::ProcessMove (const Json::Value& moveObj)
 
   for(auto& mrl: moves)
   {
+      /* Mirror of ProcessOne: skip non-object sub-moves and backstop any
+         unanticipated jsoncpp type-exception so a malformed pending move
+         cannot crash the pending processor. */
+      if (!mrl.isObject ()) continue;
+      try
+      {
       CoinTransferBurn coinOps;
       if (ParseCoinTransferBurn (*a, mrl, coinOps, burnt))
         state.AddCoinTransferBurn (*a, coinOps, fighters, ctx.RoConfig ());
@@ -1057,7 +1063,14 @@ PendingStateUpdater::ProcessMove (const Json::Value& moveObj)
       if(ParseGoodyBundlePurchase(mrl, cost, name, fungibles, aState.balance))
       {
           state.AddPurchasing(*a, mrl["pgb"].asString(), cost, fighters, ctx.RoConfig ());
-      }  
+      }
+      }
+      catch (const std::exception& exc)
+      {
+        LOG (WARNING) << "Skipping malformed pending sub-move from " << name
+                      << " due to exception: " << exc.what ();
+        continue;
+      }
   }
   
   /* Release the account again.  It is not needed anymore, and some of

@@ -202,7 +202,12 @@ void PXLogic::ResolveSweetener(std::unique_ptr<XayaPlayer>& a, std::string sweet
   } 
 
   auto fighterDb = fighters.GetById (fighterID, ctx.RoConfig ());
-    
+  if (fighterDb == nullptr)
+  {
+      LOG (WARNING) << "Could not resolve fighter at sweetener resolve: " << fighterID;
+      return;
+  }
+
   if(sweetenerBlueprint.requiredsweetness() <= fighterDb->GetProto().highestappliedsweetener())
   {
       LOG (WARNING) << "Already applied equal or higher sweetener to this fighter " << fighterID;
@@ -952,7 +957,11 @@ void PXLogic::ProcessSpecialTournaments(Database& db, const Context& ctx, xaya::
             s << "xayatf" << tTier;
             std::string ownerName(s.str());            
            
-            xayaplayers.CreateNew (ownerName, ctx.RoConfig(), rnd, isFork2);
+            /* Idempotent: if a player pre-registered one of the xayatf<N>
+               names and already triggered account creation, re-creating it
+               would CHECK-abort.  Get-or-create instead. */
+            if (xayaplayers.GetByName (ownerName, ctx.RoConfig ()) == nullptr)
+              xayaplayers.CreateNew (ownerName, ctx.RoConfig(), rnd, isFork2);
 
 			bool isFork = false;
 
@@ -1712,6 +1721,7 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
         for(auto participantFighter : tnm->GetInstance().fighters())
         {
             auto fighter = fighters.GetById (participantFighter, ctx.RoConfig ());
+            if (fighter == nullptr) continue;
             std::string owner = fighter->GetOwner();
             
             if (teams.find(owner) == teams.end())
@@ -1754,6 +1764,7 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
         for(auto participantFighter : tnm->GetInstance().fighters())
         {
             auto fighter = fighters.GetById (participantFighter, ctx.RoConfig ());
+            if (fighter == nullptr) continue;
             std::string owner = fighter->GetOwner();
             
             if (teams.find(owner) == teams.end())
@@ -1927,6 +1938,7 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
               for(auto participantFighter : tnm->GetInstance().fighters())
               {
                   auto fighter = fighters.GetById (participantFighter, ctx.RoConfig ());
+                  if (fighter == nullptr) continue;
                   fighter->SetStatus(pxd::FighterStatus::Available);
                   fighter->MutableProto().set_tournamentinstanceid(0);
                   fighter->UpdateSweetness(isFork2);

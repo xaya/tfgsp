@@ -320,8 +320,11 @@ BaseMoveProcessor::ParseSweetenerPurchase(const Json::Value& mv, Amount& cost, c
 			result.push_back (item);
 		}	  
 		
-		total = std::stoi(result[1]);
-		cmdStr = result[0];
+		if (result.size () >= 2)
+		{
+			total = std::stoi(result[1]);
+			cmdStr = result[0];
+		}
 	  }	  
   }
   catch(...)
@@ -1030,11 +1033,8 @@ BaseMoveProcessor::ParseCoinTransferBurn (const XayaPlayer& a,
                                           CoinTransferBurn& op,
                                           Amount& burntChi)
 {
-  if(moveObj.isArray())
-  {
-      return false;
-  }
-  CHECK (moveObj.isObject ());
+  if (!moveObj.isObject ())
+    return false;
   const auto& cmd = moveObj["vc"];
   if (!cmd.isObject ())
     return false;
@@ -1312,6 +1312,16 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
      
   for(auto& mrl: moves)
   {
+    /* A top-level move array may carry scalar/array elements; calling
+       mrl["..."] on a non-object throws Json::LogicError.  Skip them. */
+    if (!mrl.isObject ()) continue;
+
+    /* Backstop: any unanticipated jsoncpp type-exception inside a handler
+       deterministically skips only this sub-move instead of halting the
+       chain.  Per-element guards in the Parse* helpers are the primary fix;
+       this catches anything missed. */
+    try
+    {
     //TryCoinOperation (name, mrl, burnt);// not need for final TF release, but lets keep if needed to burn coins in the future
     
 	/* We perform account updates first.  That ensures that it is possible to
@@ -1365,8 +1375,15 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
 
     /* We are trying all kind of fighter related actions*/
     TryFighterAction (name, mrl["f"]);     
+    }
+    catch (const std::exception& exc)
+    {
+      LOG (WARNING) << "Skipping malformed sub-move from " << name
+                    << " due to exception: " << exc.what ();
+      continue;
+    }
   }
-  
+
   Amount totalPaidLeft = 0;
 
   for(auto& entry: paidToCrownHolders)
@@ -1447,6 +1464,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     {
       for(auto& eID: expedition["eid"])
       {
+        if (!eID.isString ()) return false;
         authIds.push_back(eID.asString ());   
       }
     }
@@ -2693,6 +2711,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     {
         for(auto ft: expedition["fid"])
         {
+            if (!ft.isInt ()) return false;
             fightersIds.push_back(ft.asInt());
         }
         
@@ -3317,6 +3336,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
    
     for(auto ft: recepie["rid"])
     {
+      if (!ft.isInt ()) return false;
       recepieIDS.push_back(ft.asInt());
 
       auto itemInventoryRecipe = GetRecepieObjectFromID(ft.asInt(), ctx);
@@ -3561,7 +3581,10 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
         }
     }
 
-    a->AddBalance(-tournamentData->GetProto().joincost()); 
+    /* Leaving forfeits the join cost; do NOT charge it again here.  The old
+       code double-deducted (chain-halt via AddBalance CHECK_GE underflow once
+       a non-zero joincost ships), and a +refund would be a faucet because
+       this runs OUTSIDE the ownership-validated loop above. */
     tournamentData.reset();
     
     a.reset();
@@ -4986,8 +5009,15 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
     if(fighterID > 0)
     {
         auto fighter = fighters.GetById(fighterID, ctx.RoConfig());
-        
-        if(fighter != nullptr)
+
+        /* Only the player's OWN, Available fighter may be consumed.  Without
+           this guard a quality-0 recipe (whose fighter is NOT validated in
+           ParseCookRecepie) could delete any fighter by id: griefing, and a
+           chain-halt when the victim is a tournament participant or mid-cook
+           (dangling reference -> null deref at resolution). */
+        if(fighter != nullptr
+           && fighter->GetOwner() == name
+           && (pxd::FighterStatus)(int32_t)fighter->GetStatus() == pxd::FighterStatus::Available)
         {
           fighters.DeleteById(fighter->GetId());
 		  

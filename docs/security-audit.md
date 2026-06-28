@@ -131,3 +131,35 @@ Ordered by when to do it. **"Golden-safe"** = the fix changes behavior *only on 
 - **C9** — run the UnitTest expedition farm to confirm reward-weight-0 selection and exchange-sellability of the resulting fighter.
 - **F1 (REORG-01)** — demonstrate (or refute) that an addressless account can be driven to win a special tournament, to upgrade from "mechanism proven, medium confidence" to confirmed.
 - **H1–H3 magnitude** — measure actual per-block processing time on the production `-O2` binary under sustained spam at gas-bounded N and at realistic player/fighter counts, to set the array caps and confirm the slowdown threshold.
+
+---
+
+## 8. Pass A1 — crash-class hardening (DONE, golden-safe)
+
+Implemented in one commit; **golden replay byte-identical, 92/92 unit tests green** on the `-O2` container build. An exhaustive adversarial sweep (82-agent workflow: 250 candidate sites → 53 unguarded move-derived → 15 confirmed reachable crash sites) drove this, beyond the originally-named C1–C7. Every fix is golden-safe (changes behavior only on inputs that currently crash).
+
+**Dispatch / backstop:**
+- **C1** — `if(!mrl.isObject()) continue;` at the top of the per-sub-move loop in `MoveProcessor::ProcessOne` and `PendingStateUpdater::ProcessMove`. Kills the `[0]`/`[1]`/`["x"]` top-level-array-element crash (`mrl["a"]` → `Json::LogicError`) and every sibling `mrl[...]`.
+- **Backstop** — per-sub-move `try/catch(const std::exception&){ log+continue; }` in both dispatchers. Verified deterministic (skip is identical on all nodes; logs are not hashed). Catches any *thrown* jsoncpp type-error missed by the per-element guards. NOTE: it does **not** catch `CHECK`/abort/UB — those are fixed at source below.
+
+**Per-element / size guards (validate-before-mutate, the primary fix):**
+- **C5** — `result.size() >= 2` before `std::stoi(result[1])` in `ParseSweetenerPurchase` (OOB `vector::operator[]` UB; the existing `catch(...)` never covered it).
+- **C6** — `ParseCoinTransferBurn`: `CHECK(isObject())` → `if(!isObject()) return false;` (subsumes the old array guard, DRY).
+- **C2** — `ParseExpeditionData`: `if(!ft.isInt()) return false;` per `fid` element.
+- **C3** — `ParseDestroyRecepie`: `if(!ft.isInt()) return false;` per `rid` element.
+- **C4** — `ParseRewardData`: `if(!eID.isString()) return false;` per `eid` element (also closes the jsoncpp version-dependent `asString()`-on-number fork hazard).
+
+**Abort/UB fixed at source (backstop cannot catch these):**
+- **C7** — `RerollName`: clamp `increasedProbability` to `<= 1000` (kills both `NextInt(0)` `CHECK_GT` abort and the negative-wrap infinite reroll loop at ~1738 CHI overpay).
+- **NEW — fighter-deletion root cause (`MaybeCookRecepie`).** `ParseCookRecepie` only validates `fid` ownership/status when `requiredfighterquality()>0`, but `MaybeCookRecepie` deleted `fid` for any `fid>0` with **no owner/status check** → (a) griefing: delete *any* player's fighter via a quality-0 recipe; (b) chain-halt: deleting a tournament participant / mid-cook fighter left a dangling reference. Fixed: delete only when `fighter` exists **and** `GetOwner()==name` **and** status `Available`. This single root-cause fix removes the dangling reference that caused the four null-derefs below.
+- **NEW — `logic.cpp` null-deref defense-in-depth** (in case any other delete path appears): `ResolveSweetener` (null-check `fighterDb`), `ProcessTournaments` `if(fighter==nullptr) continue;` at all three `fighters.GetById(participant)` sites (Running/Listed/Completed).
+- **NEW — `xayaplayer` `CreateNew` non-idempotent abort.** `ProcessSpecialTournaments` first-run init `CreateNew("xayatf<N>")` would `CHECK`-abort if an attacker pre-registered that name and triggered account creation. Fixed: get-or-create guard at `logic.cpp:955`.
+
+**Economic latent halt:**
+- **ECON-03** — `MaybeLeaveTournament`: removed the erroneous second `AddBalance(-joincost)` (double-charge → `CHECK_GE` underflow abort once a non-zero joincost ships). A `+refund` was rejected as a faucet (the deduction ran *outside* the ownership-validated loop).
+
+**Trusted (swept, not a bug):** `CalculateFuelPower`'s `fighterToSactifice["ap"]/["c"].asString()` (~3917) reads `wholeFightersData`, which is reconstructed server-side from the DB fighter proto (`moveprocessor.cpp:4095-4149`), not the move — no attacker control.
+
+**Remaining in Pass A:**
+- **A2 (golden-safe cleanliness):** delete the regtest backdoors `MaybeSQLTestInjection`/`2` (+ decls + dispatch) and the dead `log10` prestige branch; collapse the always-true `isFork` param. NOTE: the backdoors are used by `gametest/specialtournament.py:320,372`, so that gametest must be updated in the same commit.
+- **A3 (golden-regen):** C8 crystal accounting (stale `fraction=paidToDev/35` computed before the sum + shared `paidToCrownHolders` across array sub-moves → N-for-1 mint) and the twin `TryNameRerollPurchase` bug; C9 `Chain::MAIN` guards → POLYGON + strip `UnitTest_*`/tutorial blueprints from the base mainnet roconfig + CI blob assertion.
