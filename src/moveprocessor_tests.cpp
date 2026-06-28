@@ -300,9 +300,11 @@ TEST_F (XayaPlayersUpdateTests, RecepieDestroyTest)
   
   Process (R"([
     {"name": "domob", "move": {"ca": {"d": {"rid": [1]}}}}
-  ])");  
-  
-  EXPECT_EQ (tbl2.GetById(1)->GetOwner(), "");
+  ])");
+
+  /* H4: destroying a recipe now deletes the row outright (was: orphaned to
+     owner="" and leaked forever). */
+  EXPECT_TRUE (tbl2.GetById(1) == nullptr);
 }
 
 TEST_F (XayaPlayersUpdateTests, RecepieInstanceWrongValues)

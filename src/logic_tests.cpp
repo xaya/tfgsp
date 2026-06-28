@@ -1041,8 +1041,16 @@ TEST_F (ValidateStateTests, DeconstructionTest)
   EXPECT_EQ (xp->CollectInventoryFighters(ctx.RoConfig()).size(), 3);
   xp.reset();
 
+  /* H4: the fighter's source recipe must be deleted once it is deconstructed and
+     the reward claimed, instead of being orphaned (owner='') forever. */
+  ft = tbl3.GetById (fID, ctx.RoConfig());
+  const uint32_t srcRecipe = ft->GetProto().recipeid();
+  ft.reset();
+  EXPECT_GT (srcRecipe, 0u);
+  EXPECT_TRUE (tbl2.GetById(srcRecipe) != nullptr);
+
   EXPECT_EQ (tbl4.CountForOwner("domob"), 0);
-  
+
   std::ostringstream s;
   s << fID;
   std::string converted(s.str());  
@@ -1063,8 +1071,11 @@ TEST_F (ValidateStateTests, DeconstructionTest)
   ])");    
   
   UpdateState ("[]");
-  
+
   EXPECT_EQ (tbl4.CountForOwner("domob"), 0);
+
+  /* H4: the source recipe of the now-deconstructed fighter is gone, not leaked. */
+  EXPECT_TRUE (tbl2.GetById(srcRecipe) == nullptr);
 }
 
 TEST_F (ValidateStateTests, ClaimRewardsWhenFullSlotsEmptySomeAndFinishClaiming)

@@ -3514,6 +3514,15 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
       
       for(auto entry: markedToRemove)
       {
+          /* H4: a reward that could not be granted (unsolved, or recipe inventory
+             full) never had its generated recipe re-owned, so that owner='' recipe
+             would leak. Delete it together with the discarded reward row. */
+          auto discardedReward = rewards.GetById(entry);
+          if(discardedReward != nullptr && discardedReward->GetProto().generatedrecipeid() > 0)
+          {
+              recipeTbl.DeleteById(discardedReward->GetProto().generatedrecipeid());
+          }
+          discardedReward.reset();
           rewards.DeleteById(entry);
       }
   }
@@ -3610,7 +3619,10 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     std::vector<uint32_t> rewardDatabaseIds;
     auto res = rewards.QueryForOwner(a->GetName());
     
-    auto fighterDb = fighters.GetById (fighterID, ctx.RoConfig ());  
+    auto fighterDb = fighters.GetById (fighterID, ctx.RoConfig ());
+    /* H4: capture the recipe this fighter was cooked from; once the fighter is
+       deleted below nothing else references it, so it must be deleted too. */
+    const uint32_t deconstructedRecipeId = (fighterDb != nullptr) ? fighterDb->GetProto().recipeid() : 0;
     bool tryAndStep = res.Step();
     while (tryAndStep)
     {
@@ -3641,8 +3653,11 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     }
     
     fighters.DeleteById(fighterID);
-	
-	
+    if(deconstructedRecipeId > 0)
+    {
+      recipeTbl.DeleteById(deconstructedRecipeId);
+    }
+
     a->CalculatePrestige(ctx.RoConfig());
     a.reset();
     
@@ -4831,9 +4846,10 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 
     for(auto& rcp: recepieIDS)
     {
-      auto itemInventoryRecipe = GetRecepieObjectFromID(rcp, ctx);
-      itemInventoryRecipe->SetOwner("");
-      itemInventoryRecipe.reset();
+      /* H4: a destroyed inventory recipe is owned by the player and not yet
+         cooked (ParseDestroyRecepie validated ownership), so nothing references
+         it -- delete the row outright instead of orphaning it as owner=''. */
+      recipeTbl.DeleteById(rcp);
     }
     
 	
@@ -4882,9 +4898,15 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
            && fighter->GetOwner() == name
            && (pxd::FighterStatus)(int32_t)fighter->GetStatus() == pxd::FighterStatus::Available)
         {
+          /* H4: the replaced fighter is consumed; delete its source recipe
+             (referenced only by this fighter) so it does not leak. */
+          const uint32_t consumedRecipeId = fighter->GetProto().recipeid();
           fighters.DeleteById(fighter->GetId());
-		  
-		  
+          if(consumedRecipeId > 0)
+          {
+            recipeTbl.DeleteById(consumedRecipeId);
+          }
+
           a->CalculatePrestige(ctx.RoConfig());
         }
     }
