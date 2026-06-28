@@ -116,6 +116,7 @@ tests_SOURCES = \
   pending_tests.cpp \
   burnsale_tests.cpp \
   moveprocessor_tests.cpp \
+  security_tests.cpp \
   testutils_tests.cpp
 
 goldenreplay_tests_CXXFLAGS = \
