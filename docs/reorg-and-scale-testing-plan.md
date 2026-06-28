@@ -1,5 +1,33 @@
 # Reorg + scale ("10000s of stuff") testing plan — VERIFIED APIs + design
 
+## STATUS (2026-06-28)
+
+- **Tier 1 — DONE.** `src/reorg_tests.cpp` written, wired into `src/Makefile.am`
+  (`check_PROGRAMS` + `TESTS`, with `-DSQLITE_ENABLE_SESSION=1` + `-lsqlite3`).
+  Three tests, all green in `make check`:
+  `IdleBlockReorgIsExactAndCheapAtScale`, `BuildResolveAndDeepReorgRestoresState`,
+  `MultiBlockReorgUnwindsExactly`.  Default scale 1000 players (~2 s);
+  `TF_REORG_N=20000 ./reorg_tests` exercises the user's "10000s" (verified at
+  20 000 — undo exact, idle block still nets 21 redundant rewrites + ZERO undo
+  bytes regardless of N, i.e. the event-driven guarantee survives reorg).
+- **CONSENSUS BUG found + fixed (the test's first catch).** The re-apply
+  determinism check exposed that `LazyProto::GetSerialised()`
+  (`database/lazyproto.tpp`) used plain `SerializeToString`, which serialises
+  protobuf `map<>` fields (e.g. the player Inventory's fungible items) in a
+  per-message RANDOMISED order.  Same logical proto → different bytes per node /
+  per replay → silent chain fork (xaya::SQLiteGame hashes the stored bytes).
+  Fix: `CodedOutputStream::SetSerializationDeterministic(true)` at that single
+  chokepoint (covers every proto in every table).  Golden byte-identical, 100/100
+  unit tests pass.  Fresh relaunch ⇒ no legacy-format compatibility concern.
+- Also fixed an UNRELATED pre-existing gate breakage: `proto2/roconfig_tests.cpp`
+  referenced the renamed `CrystalBundle.chicost` (now `chicostsats`).
+- **Tier 2 (GameTestWithBlockchain production path) and Tier 3 (gametest/reorg.py
+  end-to-end) remain TODO.**
+
+---
+
+# Reorg + scale ("10000s of stuff") testing plan — VERIFIED APIs + design
+
 > User directive (2026-06-28): "do the reorg tests … should also have some fake data to put in, like
 > 10000s of stuff to see how it all works, with building stuff, and reorging. we need super good testing
 > for this. very important." Pass C is complete (F1 committed `5d60f18`); this is the next work.

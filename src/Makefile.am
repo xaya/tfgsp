@@ -83,8 +83,14 @@ check_LTLIBRARIES = libtestutils.la
 # (so `make check` keeps it compiling) but deliberately NOT in TESTS: it is an
 # on-demand efficiency measurement, run with TF_LOADBENCH=1 ./loadbench_tests,
 # not a correctness gate.
-check_PROGRAMS = tests goldenreplay_tests loadbench_tests
-TESTS = tests goldenreplay_tests
+# reorg_tests is the chain-reorg / undo-correctness gate: it drives building
+# activity at scale through PXLogic::UpdateState, then undoes each block via the
+# same sqlite3 session-changeset invert+apply that xaya::SQLiteGame uses, and
+# asserts the whole database round-trips exactly.  Like loadbench it needs
+# -DSQLITE_ENABLE_SESSION; unlike loadbench it IS a correctness gate (in TESTS),
+# defaulting to a fast moderate scale (crank with TF_REORG_N=20000 ./reorg_tests).
+check_PROGRAMS = tests goldenreplay_tests loadbench_tests reorg_tests
+TESTS = tests goldenreplay_tests reorg_tests
 
 libtestutils_la_CXXFLAGS = \
   -I$(top_srcdir) \
@@ -159,6 +165,25 @@ loadbench_tests_LDADD = \
   -lsqlite3
 loadbench_tests_SOURCES = \
   loadbench_tests.cpp
+
+reorg_tests_CXXFLAGS = \
+  -I$(top_srcdir) \
+  -DSQLITE_ENABLE_SESSION=1 \
+  $(GTEST_MAIN_CFLAGS) \
+  $(JSON_CFLAGS) $(GTEST_CFLAGS) \
+  $(GLOG_CFLAGS) $(GFLAGS_CFLAGS) $(PROTOBUF_CFLAGS)
+reorg_tests_LDADD = \
+  $(builddir)/libtf.la \
+  $(builddir)/libtestutils.la \
+  $(top_builddir)/database/libdbtest.la \
+  $(top_builddir)/database/libdatabase.la \
+  $(top_builddir)/proto2/libpxproto.la \
+  $(GTEST_MAIN_LIBS) \
+  $(JSON_LIBS) $(GTEST_LIBS) \
+  $(GLOG_LIBS) $(GFLAGS_LIBS) $(PROTOBUF_LIBS) \
+  -lsqlite3
+reorg_tests_SOURCES = \
+  reorg_tests.cpp
 
 check_HEADERS = \
   testutils.hpp
