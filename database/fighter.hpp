@@ -222,12 +222,6 @@ protected:
 
   void Validate () const;
 
-  bool
-  IsDirtyCombatData () const
-  {
-    return data.IsDirty ();
-  }
-
 public:
 
   /**

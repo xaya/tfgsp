@@ -37,22 +37,13 @@ namespace pxd
 enum class ErrorCode
 {
 
-  /* Invalid values for arguments (e.g. passing a malformed JSON value for
-     a HexCoord or an out-of-range integer.  */
+  /* Invalid values for arguments (e.g. a malformed JSON value or an
+     out-of-range integer).  */
   INVALID_ARGUMENT = -1,
 
   /* Non-existing account passed as associated name for some RPC.  */
   INVALID_ACCOUNT = -2,
 
-  /* Specific errors with findpath.  */
-  FINDPATH_NO_CONNECTION = 1,
-  FINDPATH_ENCODE_FAILED = 4,
-
-  /* Specific errors with getregionat.  */
-  REGIONAT_OUT_OF_MAP = 2,
-
-  /* Specific errors with getregions.  */
-  GETREGIONS_FROM_TOO_LOW = 3,
   /* This method is considered unsafe and not enabled in the server.  */
   UNSAFE_METHOD = -4,  
 
