@@ -483,9 +483,9 @@ void PXLogic::ResolveExpedition(std::unique_ptr<XayaPlayer>& a, const std::strin
     
 	const auto chain = ctx.Chain ();	
 	
-    if (blueprintAuthID == "00000000-0000-0000-zzzz-zzzzzzzzzzzz" && chain == xaya::Chain::MAIN)
+    if (blueprintAuthID == "00000000-0000-0000-zzzz-zzzzzzzzzzzz" && chain != xaya::Chain::REGTEST)
     {
-        LOG (WARNING) << "Unit test blueprint is not allowed on the mainnet " << blueprintAuthID;
+        LOG (WARNING) << "Unit test blueprint is not allowed on a production chain " << blueprintAuthID;
         return;
     }
     

@@ -720,6 +720,10 @@ BaseMoveProcessor::TryNameRerollPurchase (const std::string& name, const Json::V
   fighterDb->RerollName(cost, cfg, rnd, pxd::Quality::Common);
   fighterDb.reset();
 
+  /* C8 (twin): consume the crown-holder payment budget so the same payment
+     cannot be replayed by a repeated nr/pc command in an array move. */
+  for(auto& budgetEntry: paidToCrownHolders) budgetEntry.second = 0;
+
   std::map<std::string, int32_t> holderTier;
   
   auto res = specialTournamentsTbl.QueryAll();
@@ -833,8 +837,14 @@ BaseMoveProcessor::TryCrystalPurchase (const std::string& name, const Json::Valu
       return;
   }
 
-  player->AddBalance (crystalAmount); 
+  player->AddBalance (crystalAmount);
   player.reset();
+
+  /* C8: consume the crown-holder payment budget so a repeated pc/nr command
+     in the same (array) move cannot re-mint against the same on-chain
+     payment.  paidToCrownHolders is non-persisted bookkeeping, so zeroing it
+     here changes no DB state for a single legitimate purchase. */
+  for(auto& budgetEntry: paidToCrownHolders) budgetEntry.second = 0;
   
   std::map<std::string, int32_t> holderTier;
   
@@ -1632,7 +1642,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     }
     
     const auto chain = ctx.Chain ();
-    if(tournamentData->GetProto().authoredid() == "cbd2e78a-37ce-b864-793d-8dd27788a774" && chain == xaya::Chain::MAIN)
+    if(tournamentData->GetProto().authoredid() == "cbd2e78a-37ce-b864-793d-8dd27788a774" && chain != xaya::Chain::REGTEST)
     {
       LOG (WARNING) << "Can not leave tutorial tournament entry";
       return false;        
@@ -2667,7 +2677,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     }
     
     const auto chain = ctx.Chain ();
-    if(tournamentData->GetProto().authoredid() == "cbd2e78a-37ce-b864-793d-8dd27788a774" && chain == xaya::Chain::MAIN)
+    if(tournamentData->GetProto().authoredid() == "cbd2e78a-37ce-b864-793d-8dd27788a774" && chain != xaya::Chain::REGTEST)
     {
       LOG (WARNING) << "Can't join FTUE tournament again! With id: " << tournamentID;
       tournamentData.reset();
@@ -2773,7 +2783,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
       }
       
       const auto chain = ctx.Chain ();
-      if(expeditionBlueprint.authoredid() == "c064e7f7-acbf-4f74-fab8-cccd7b2d4004" && chain == xaya::Chain::MAIN)
+      if(expeditionBlueprint.authoredid() == "c064e7f7-acbf-4f74-fab8-cccd7b2d4004" && chain != xaya::Chain::REGTEST)
       {
           LOG (WARNING) << "Could not resolve tutorial expedition twice " << expeditionID;
           fighterDD.reset();
