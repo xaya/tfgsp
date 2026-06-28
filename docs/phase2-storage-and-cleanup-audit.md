@@ -26,8 +26,39 @@
   branches are ENTANGLED. If the security audit greenlights removing the backdoor, do ONE elegant
   commit: kill backdoor + collapse all gates + drop the `isFork` param + delete old branches — instead
   of a partial collapse redone later.
-- ⏭️ NEXT (after security audit): security hardening + the elegant fork-gate/backdoor commit; then
-  Stage 2b (ongoings cutover + write-amp + reorg test + pruning); then DRY.
+- 🔴 **SECURITY AUDIT COMPLETE — chain NOT launch-safe.** Full report: `docs/security-audit.md`
+  (8 confirmed move-reachable chain-fatal/economy-fatal vectors). **This is now the top priority,
+  ahead of the fork-gate collapse and Stage 2b.** Plan = `docs/security-audit.md` §7 (Pass A/B/C).
+
+### ⏭️ NEXT ACTIONS (post-compaction pickup order) — see `docs/security-audit.md` §7
+1. **Security Pass A (blockers, BEFORE launch):**
+   - **Crash-class kill (C1–C7)** — per-element `is*()` guards on every move-array `as*()` in
+     moveprocessor.cpp + pending.cpp (C2 2694, C3 3318, C4 1448 + a full sweep); `if(!mrl.isObject())
+     continue;` in `ProcessOne` + `PendingStateUpdater::ProcessMove` (C1 1278-1319); `ps` `size()>=2`
+     guard (C5 312); replace `ParseCoinTransferBurn` CHECK with `return false` (C6 1033); clamp reroll
+     `increasedProbability∈[0,1000]`/cap cost (C7 fighter.cpp:284). **Backstop:** deterministic
+     `try/catch(std::exception)` around ProcessOne/ProcessMove that skips the offending sub-move
+     identically on all nodes. → GOLDEN-SAFE.
+   - **Delete regtest backdoors** `MaybeSQLTestInjection`/`2` (+ decls moveprocessor.hpp:404-405 +
+     dispatch 1347-1352) and the dead `log10`/`double` OLD-prestige branch (xayaplayer.cpp:262-318).
+     This UNBLOCKS the elegant fork-gate collapse (then isFork2 is always-true everywhere → drop the
+     `isFork` param from CalculatePrestige/CreateNew/UpdateSweetness, collapse the 15 `||` gates).
+     → GOLDEN-SAFE (all dead on Polygon).
+   - **C9 + Chain::MAIN** (the user-approved restore): `chain==MAIN` → `!=REGTEST`/`==POLYGON` at
+     logic.cpp:481, moveprocessor.cpp:1617/2652/2757; strip `UnitTest_*`/`*zzzz*`/tutorial blueprints
+     out of the base mainnet roconfig into the regtest merge; add CI blob assertion. → GOLDEN REGEN.
+   - **C8 crystal accounting** (+ twin `TryNameRerollPurchase` bug): single mutable remaining-budget,
+     decrement per purchase, cap repeated paid commands/move. **ECON-03** tournament-leave refund/guard
+     (latent today, joincost=0). → GOLDEN REGEN.
+2. **Security Pass B (DoS/bloat, this cleanup pass / alongside Stage 2b):** H1/H2 array caps + sort+unique
+   dedup; H6 sub-move cap; H7 dedupe/cap eid; H4/H5 row-lifecycle GC + caps; SB-06 remove hardcoded
+   name gift; OVF-01 candy clamp.
+3. **Stage 2b + determinism (Pass C):** H3 event-driven (the P-E1 migration — indexed/WHERE queries +
+   height-keyed ongoing queue) + the ongoings cutover; F2/F3 kill raw double/float in consensus
+   (fpm/int) + CI lint; F1 make pending strictly read-only (reorg fork fix). Then DRY.
+
+Still-needs-runtime-check before launch sign-off: C7 preconditions, C9 end-to-end farm, F1 reorg repro,
+H1–H3 magnitude on the -O2 binary.
 
 **New notes from execution:**
 - **DEFERRED (was §6a quick-win): the `logic.cpp:1420` dead `injection` branch simplification.** Provably
