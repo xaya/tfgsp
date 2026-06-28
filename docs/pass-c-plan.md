@@ -24,7 +24,20 @@
   fixed dev addresses) — a separate, delicate pass, NOT touched. (b) the two now-identical
   `RecalculatePlayerTiers` bodies could be DRYed into one free function. (c) `xaya_player.proto`/protos
   may still hold magic Taurion heights elsewhere.
-- **NEXT: H4/H5 row GC** (needs the user cap/overflow decision below), then H3 Stage 2b, then F1.
+- **H5 — DONE** (`c48e46d`). Per-player cap on UNCLAIMED rewards: new RoConfig param
+  `Params.max_unclaimed_reward_amount` (field 35) = 100, enforced at the passive-reward creation site
+  (`GenerateActivityReward`); at the cap the reward + its generated recipe are not created (reject-new).
+  Deconstruction rewards exempt (1:1 with the 48-fighter cap; rejecting would strand a fighter). Golden
+  byte-identical + new `UnclaimedRewardCapRejectsPassiveRewards` test (99/99).
+- **H4 — DONE** (`8365ed9`). Source-level recipe deletes (NOT the rejected GC-sweep — refs live in proto
+  BLOBs so a column-based GC would chain-halt at the no-null-check claim derefs). Delete each recipe where
+  its 1:1 reference dies: deconstruct-claim (delete fighter's source recipe), cook-onto-existing-fighter
+  (delete replaced fighter's recipe), destroy-recipe (DeleteById not SetOwner('')), discarded reward
+  (delete its owner='' generated recipe). Golden byte-identical + RecepieDestroyTest/DeconstructionTest
+  now assert deletion (99/99). Mapping + adversarial GC/cap verdicts: workflow `wh3a8qjdi`.
+  **KEY by-product finding: the `ongoing_operations` TABLE IS DEAD** (no live writer; ongoings live in the
+  player proto BLOB) — directly relevant to H3 below (H3 is what makes that table live).
+- **NEXT: H3 Stage 2b event-driven**, then F1.
 
 ## Golden-regen workflow (verified)
 
