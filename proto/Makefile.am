@@ -23,7 +23,8 @@ BUILT_SOURCES = \
   roconfig_gen.cpp
 
 ROCONFIG_TEXT_PROTOS_REGTEST = \
-  roconfig/test_params.pb.text
+  roconfig/test_params.pb.text \
+  roconfig/regtest_unittest.pb.text
 
 PROTOS = \
   config.proto \
