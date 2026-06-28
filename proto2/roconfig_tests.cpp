@@ -327,11 +327,11 @@ RoConfigSanityTests::IsConfigValid (const RoConfig& cfg)
           return false;
       }    
 
-      if (!i.has_chicost())
+      if (!i.has_chicostsats())
       {
-          LOG (WARNING) << "No has_chicost defined for crystalbundles: " << entry.first;
+          LOG (WARNING) << "No CHICostSats defined for crystalbundles: " << entry.first;
           return false;
-      }          
+      }
   }
 
   for (const auto& entry : cfg->expeditionblueprints ())
