@@ -1334,16 +1334,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     e.g. choose one's faction and create characters in a single move.  */
     TryXayaPlayerUpdate (name, mrl["a"]);
 	
-	 // Block until launch time  
-	 xaya::Chain chain = ctx.Chain();
-	 if(chain != xaya::Chain::REGTEST)
-	 {
-		  if(ctx.Height () < 5008228)
-		  {
-			  LOG (WARNING) << "Game release not launched yet, ignoring move";
-			  continue;
-		  }
-	 }	
+	 /* Launch-date gate dropped (Taurion baggage): Polygon genesis is post-launch; REGTEST never gated. */
 	
     /* Handle crystal purchace now */
     TryCrystalPurchase (name, mrl, paidToCrownHolders);
@@ -1560,7 +1551,6 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
       return false;
     }    
 	
-    xaya::Chain chain = ctx.Chain();
 
 	auto res3 = fighters.QueryAll ();
 	bool tryAndStep3 = res3.Step();
@@ -1572,17 +1562,6 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
 		if(fghtr->GetOwner() == name && fghtr->GetProto().specialtournamentinstanceid() == tournamentID)
 		{
 			
-			if(chain != xaya::Chain::REGTEST && ctx.Height () < 5097362)
-			{
-				// If this fighter is currently also a crown holder, he cannot leave;
-				if(tournamentData->GetProto().crownholder() == fghtr->GetOwner())
-				{
-				   fghtr.reset();
-				   tournamentData.reset();
-				   LOG (WARNING) << "Asking to leave a crown holder for special tournament with id: " << tournamentID;
-				   return false;                 
-				}
-			}
 					
 			fighterIDS.push_back(fghtr->GetId());
 		}
@@ -2374,7 +2353,6 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     int32_t tournamentTier = (int32_t)tournamentData->GetProto().tier();
     int32_t playerPrestigeBasedTier = (int32_t)a.GetProto().specialtournamentprestigetier();
     
-	xaya::Chain chain = ctx.Chain();
 	if(tournamentTier != playerPrestigeBasedTier)
 	{
 	  LOG (WARNING) << "Wrong tournament tier, expected  " << tournamentTier << " but actual player is " << playerPrestigeBasedTier;
@@ -3159,9 +3137,6 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
       return false;              
     }  
 	
-    xaya::Chain chain = ctx.Chain();
-	if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5097362)
-	{
 		uint32_t slots = fighters.CountForOwner(a.GetName());
 
 		if(slots > ctx.RoConfig()->params().max_fighter_inventory_amount())
@@ -3169,7 +3144,6 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
 			LOG (WARNING) << "Not enough slots to host a new fighter";
 			return false;         
 		}		
-	}
 
     return true;
   }
@@ -4568,12 +4542,6 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
     auto tournamentData = specialTournamentsTbl.GetById(tournamentID, ctx.RoConfig ()); 
 
 	bool fighterIsCrownHolderHimself = false;
-	xaya::Chain chain = ctx.Chain();
-	if(chain != xaya::Chain::REGTEST && ctx.Height () < 5097362)
-    {
-	}
-	else
-	{
 		auto res3 = fighters.QueryAll ();
 		bool tryAndStep3 = res3.Step();
 		
@@ -4595,7 +4563,6 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 			fghtr.reset();
 			tryAndStep3 = res3.Step();        
 		} 		
-	}
 	
     for(int32_t r = 0; r < (int32_t)fighterIDS.size(); r++)
     {

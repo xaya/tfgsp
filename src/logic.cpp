@@ -1474,7 +1474,6 @@ void PXLogic::ResolveSpecialTournamentFight(std::string attackerName, std::vecto
 
 void PXLogic::ProcessFighterPair(int64_t fighter1, int64_t fighter2, bool isSpecial, std::map<uint32_t, proto::TournamentResult*>& fighterResults, std::map<std::string, fpm::fixed_24_8>& participatingPlayerTotalScore, FighterTable& fighters, const Context& ctx, xaya::Random& rnd)
 {
-   xaya::Chain chain = ctx.Chain();
    
    
    auto rhs = fighters.GetById (fighter1, ctx.RoConfig ()); 
@@ -1608,14 +1607,7 @@ void PXLogic::ProcessFighterPair(int64_t fighter1, int64_t fighter2, bool isSpec
           rwin = pxd::MatchResultType::Win;
           scoreB = fpm::fixed_24_8(1);
 		  
-		  if(chain != xaya::Chain::REGTEST && ctx.Height () < 5097362)
-		  {
-			participatingPlayerTotalScore[rhs->GetOwner()] += fpm::fixed_24_8(0.5);
-		  }
-		  else
-		  {
-			participatingPlayerTotalScore[rhs->GetOwner()] += fpm::fixed_24_8(1);
-		  }	
+		  participatingPlayerTotalScore[rhs->GetOwner()] += fpm::fixed_24_8(1);
 		          
           if(isSpecial == false)
           {
@@ -2077,7 +2069,7 @@ PXLogic::UpdateState (Database& db, xaya::Random& rnd,
 {
    /* Seed the per-block RNG from the confirmed block hash.  Skipped on REGTEST
       (low height) so the golden-replay deterministic no-reseed behaviour holds. */
-   if ( ctx.Height () > 5155298)
+   if (ctx.Chain () != xaya::Chain::REGTEST)
    {
     const auto& blockMeta = blockData["block"];
     CHECK (blockMeta.isObject ());
