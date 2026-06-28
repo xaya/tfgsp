@@ -29,6 +29,7 @@ message CrystalBundle
   /*q*/
   optional uint32 Quantity = 2;
 
-  /*c*/
-  optional float CHICost = 3;    
+  /*Cost in CHI satoshis (integer; 1 CHI = 1e8). Integer avoids any
+    float in the consensus payment gate.*/
+  optional int64 CHICostSats = 3;
 }

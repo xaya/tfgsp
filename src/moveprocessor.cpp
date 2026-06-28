@@ -557,29 +557,29 @@ BaseMoveProcessor::ParseCrystalPurchase(const Json::Value& mv, std::string& bund
       return false;
   }      
      
-  float chiPRICE = -1;
+  int64_t chiPRICE_sats = -1;
 
   for(auto& bundle: ctx.RoConfig ()->crystalbundles())
   {
       if(bundle.first == bundle_key_name)
       {
           auto& vals = bundle.second;
-          chiPRICE = vals.chicost();
+          chiPRICE_sats = vals.chicostsats();
           crystalAmount = vals.quantity();
           break;
       }
   }
-  
-  if(chiPRICE == -1)
+
+  if(chiPRICE_sats == -1)
   {
       LOG (WARNING) << "Could not solve crystal bundle entry for: " << bundle_key_name;
       return false;
   }
-  
+
   int64_t multiplier = globalData.GetChiMultiplier();
-  
- 
-  cost = chiPRICE * COIN * (multiplier / 1000);
+
+
+  cost = chiPRICE_sats * (multiplier / 1000);
   VLOG (1) << "Trying to purchace bundle, amount paid left: " << paidToDev << "with multiplier as " << multiplier << " and totcal cost being as " << cost;
   
   if (paidToDev < cost)
