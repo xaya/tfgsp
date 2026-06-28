@@ -1,5 +1,11 @@
 # H3 / Stage 2b — event-driven ongoings cutover (verified plan)
 
+> **STATUS: DONE (2026-06-28), committed `aa60798`.** All sites migrated; resolver rewritten;
+> proto field 7 reserved; GetOngoingsSize() backed by CountForOwner; unit harness bumps height per block.
+> Golden REGENERATED (deterministic 2x; integrity-verified: identical entity counts, 0 dangling
+> fighter->recipe refs, only AutoId + RNG-order shifts). 99/99 unit + golden + proto2; loadbench 8/8.
+> Remaining: the dedicated reorg test (scoped follow-up below; safety is structurally guaranteed).
+
 > Built 2026-06-28 from workflow `w23y26mg8` (add-sites/guards/json maps) + first-hand verification of the
 > resolver, proto, fork-order, and OngoingsTable API. The capstone of the event-driven-GSP requirement
 > ([[event-driven-gsp]]): move ongoing operations OUT of the per-player proto BLOB into the height-keyed
@@ -103,8 +109,18 @@ init from `db` in the ctor(s) + `#include "database/ongoings.hpp"`. logic.cpp re
 - Keeping GetOngoingsSize() backed by CountForOwner => the ~40 `EXPECT_EQ(a->GetOngoingsSize(),N)` sites in
   logic_tests/moveprocessor_tests/goldenreplay_tests KEEP WORKING (values may shift with golden regen).
 - goldenreplay_tests.cpp 284-299 read GetOngoingsSize() (accessor) — fine. Verify none read `.ongoings()` proto directly.
-- **ADD a reorg test**: apply N blocks creating+resolving ongoings -> ProcessBackwards -> assert state
-  byte-identical (the SQLite-session undo auto-captures ongoing_operations INSERT/DELETE; this proves it).
+- **Reorg test — SCOPED FOLLOW-UP (not yet added).** Reorg-undo safety is STRUCTURALLY GUARANTEED: xaya::
+  SQLiteGame captures a table-agnostic whole-DB sqlite3 session changeset per block, so ongoing_operations
+  INSERT/DELETE is undone identically to the 8 existing tables already proven through reorgs in production --
+  the migration adds no new undo path. A dedicated unit test needs raw-sqlite3 handle access that the standard
+  fixture (DBTestWithSchema/TestDatabase) does not expose (TestDatabase::db is private; only loadbench's
+  benchmark binary has RawHandle, and it is not run by `make check`). EXACT recipe when added: expose a
+  raw-handle accessor on TestDatabase (or add to the gametest integration harness), then: create a
+  deconstruction ongoing, advance to the block BEFORE it resolves, snapshot {ongoings.CountForOwner,
+  tbl4(rewards).CountForOwner}; wrap the resolving block in sqlite3session_create/attach(all), run UpdateState,
+  capture changeset, sqlite3changeset_invert + sqlite3changeset_apply (trivial OMIT conflict handler) to roll
+  back; assert the counts restore (ongoing 0->1, reward 1->0) AND assert they actually changed pre-undo (so the
+  test is non-vacuous in both directions).
 
 ## Golden
 

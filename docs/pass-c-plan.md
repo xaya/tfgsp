@@ -37,7 +37,16 @@
   now assert deletion (99/99). Mapping + adversarial GC/cap verdicts: workflow `wh3a8qjdi`.
   **KEY by-product finding: the `ongoing_operations` TABLE IS DEAD** (no live writer; ongoings live in the
   player proto BLOB) — directly relevant to H3 below (H3 is what makes that table live).
-- **NEXT: H3 Stage 2b event-driven**, then F1.
+- **H3 / Stage 2b — DONE** (`aa60798`). Event-driven ongoings: migrated out of the player proto BLOB into the
+  height-keyed `ongoing_operations` table (was dead since Stage 2a). New resolver = `QueryForHeight(now)`
+  (WHERE height<=now ORDER BY id), materialize-then-resolve-then-DeleteById. 4 add-sites + 4 guards + JSON +
+  GetOngoingsSize()->CountForOwner + proto field 7 reserved. Unit harness now bumps height per block (required:
+  resolution is height-based; timing preserved — old & new both resolve at the D-th block after create).
+  Golden REGEN (deterministic 2x, integrity-verified). 99/99 + golden + loadbench 8/8. Full plan +
+  fork analysis: `docs/h3-cutover-plan.md`. Reorg test = scoped follow-up there (undo safety structurally
+  guaranteed by the table-agnostic whole-DB session changeset).
+- **NEXT: F1** (pending read-only — lowest priority; Polygon runs --pending_moves=false). Then optional: the
+  reorg test, OVF-01 candy clamp, and the deferred REGTEST chain-gate hygiene pass.
 
 ## Golden-regen workflow (verified)
 
