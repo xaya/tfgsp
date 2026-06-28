@@ -1364,13 +1364,6 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     /* Handle goody bundle purchace now */
     TryGoodyBundlePurchase (name, mrl);    
     
-    if(chain == xaya::Chain::REGTEST)
-    {
-    /*Running special unittest from python*/
-      MaybeSQLTestInjection(name, mrl);  
-      MaybeSQLTestInjection2(name, mrl);    
-    }  
-
     /* We are trying all kind of cooking actions*/
     TryCookingAction (name, mrl["ca"]);
     
@@ -4549,113 +4542,6 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
     
     LOG (WARNING) << "Special Tournament " << tournamentID << " entered succesfully";  
   }  
-  
-  void MoveProcessor::MaybeSQLTestInjection2(const std::string& name, const Json::Value& injection)
-  {
-    const auto& cmd = injection["injection2"];
-    if (!cmd.isObject ()) 
-    {
-        return;   
-    }
-    
-    XayaPlayersTable xayaplayers(db);
-    FighterTable tbl3(db);
-    RecipeInstanceTable tbl2(db);
-	
-	bool isFork2 = false; 
-	auto chain = ctx.Chain ();
-	if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5097362)
-	{
-	  isFork2 = true;
-	}		
-    
-    for(int32_t d = 151; d < 161; d++)
-    {
-      std::ostringstream s;
-      s << "testft" << d;
-      std::string nName(s.str());        
-
-      auto xp = xayaplayers.CreateNew (nName, ctx.RoConfig(), rnd, isFork2);
-      // Here we want to boost player prestige to make him reach higher special touenament tiers, soo..
-      xp->MutableProto().set_tournamentswon(rnd.NextInt(d));  
-      xp->MutableProto().set_tournamentscompleted(d); 
-      xp.reset();
-      
-      int32_t fCtt = rnd.NextInt(14 + 60);
-      
-      for(int32_t se = 0; se < fCtt; se++)
-      {
-        auto r0 = tbl2.CreateNew(nName, "5864a19b-c8c0-2d34-eaef-9455af0baf2c", ctx.RoConfig());
-        int32_t iDD = r0->GetId();
-        r0.reset();          
-      
-        auto ft1 = tbl3.CreateNew (nName, iDD, ctx.RoConfig(), rnd);
-        ft1.reset();
-      }
-      
-      xp = xayaplayers.GetByName(nName, ctx.RoConfig());
-	  
-	  bool isFork2 = false; 
-	  if(chain == xaya::Chain::REGTEST || ctx.Height () >= 5097362)
-	  {
-	    isFork2 = true;
-	  }	  
-	  
-      xp->CalculatePrestige(ctx.RoConfig(), isFork2);
-	  
-	  
-      LOG (WARNING) << "Injected " << " prestinge is " << xp->GetPresitge();
-      
-      xp.reset();
-      
-    }
-	
-	RecalculatePlayerTiers(db, ctx); 	
-    
-    LOG (WARNING) << "Injected";
-  }  
-  
-  void MoveProcessor::MaybeSQLTestInjection(const std::string& name, const Json::Value& injection)
-  {
-    const auto& cmd = injection["injection"];
-    if (!cmd.isObject ()) 
-    {
-        return;   
-    }
-    
-	bool isFork2 = false; 
-	auto chain = ctx.Chain ();
-	if(chain == xaya::Chain::REGTEST && ctx.Height () >= 5097362)
-	{
-	  isFork2 = true;
-	}		
-	
-    XayaPlayersTable xayaplayers(db);
-    FighterTable tbl3(db);
-    RecipeInstanceTable tbl2(db);
-    
-    for(int32_t d = 0; d < 150; d++)
-    {
-      std::ostringstream s;
-      s << "testft" << d;
-      std::string nName(s.str());        
-
-      auto xp = xayaplayers.CreateNew (nName, ctx.RoConfig(), rnd, isFork2);
-      xp.reset();
-      
-      for(int32_t se = 0; se < 4; se++) // we want to have exactly 6 (2+4) to test special tournaments
-      {
-        auto r0 = tbl2.CreateNew(nName, "5864a19b-c8c0-2d34-eaef-9455af0baf2c", ctx.RoConfig());
-        int32_t iDD = r0->GetId();
-        r0.reset();          
-      
-        auto ft1 = tbl3.CreateNew (nName, iDD, ctx.RoConfig(), rnd);
-        ft1.reset();
-      }
-    }
-    
-    LOG (WARNING) << "Injected";
-  }
   
   void MoveProcessor::MaybeLeaveSpecialTournament (const std::string& name, const Json::Value& tournament)
   {    

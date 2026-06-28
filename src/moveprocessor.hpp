@@ -398,11 +398,6 @@ private:
    */  
   void MaybePutFighterForSale (const std::string& name, const Json::Value& fighter);
      
-  /**
-  * Tries to run special command from pythin unittest
-  */   
-  void MaybeSQLTestInjection(const std::string& name, const Json::Value& injection);  
-  void MaybeSQLTestInjection2(const std::string& name, const Json::Value& injection);  
      
    /**
    * Tries to put the fighter for sale on the exchange
