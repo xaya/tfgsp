@@ -2087,22 +2087,9 @@ void
 PXLogic::UpdateState (Database& db, xaya::Random& rnd,
                       const Context& ctx, const Json::Value& blockData)
 {
-	
-   // Lets manually seed hashes until the Xaya Core got hard forked (roughly) 
-   if(ctx.Height() >= 4982120 && ctx.Height () <= 5155298)
-   {
-	const auto& blockList = ctx.RoConfig()->blocks();
-
-	std::ostringstream ss;
-	ss << ctx.Height ();
-	std::string hStd = ss.str();	
-
-	xaya::uint256 s;
-	s.FromHex(blockList.at(hStd).hash());
-	rnd.Seed(s);
-	
-   }
-   else if ( ctx.Height () > 5155298)
+   /* Seed the per-block RNG from the confirmed block hash.  Skipped on REGTEST
+      (low height) so the golden-replay deterministic no-reseed behaviour holds. */
+   if ( ctx.Height () > 5155298)
    {
     const auto& blockMeta = blockData["block"];
     CHECK (blockMeta.isObject ());
@@ -2113,12 +2100,6 @@ PXLogic::UpdateState (Database& db, xaya::Random& rnd,
 	rnd.Seed (seed.Finalise ());	   
    }	   
 	
-  /* Lets make sure, that fork properly updates all out prestiges at once */
-   auto chain = ctx.Chain ();
-   if(ctx.Height () == 5097362 || ctx.Height() == 5155364)
-   {
-	   RecalculatePlayerTiers(db, ctx); 
-   }
   
   /** We run this very early, as we want to create tournament instances from blueprints ASAP.
   We are going to open tournaments instances if blueprint is not present ir game or already full and running */

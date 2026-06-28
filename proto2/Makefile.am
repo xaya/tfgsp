@@ -30,7 +30,6 @@ PROTOS = \
   $(builddir)/../proto/xaya_player.proto \
   $(builddir)/../proto/crafted_recipe.proto \
   $(builddir)/../proto/ongoing.proto \
-  $(builddir)/../proto/blocks.proto \
   $(builddir)/../proto/fighter.proto
 
 libpxproto_la_CXXFLAGS = \
@@ -62,7 +61,7 @@ tests_LDADD = \
 tests_SOURCES = \
   roconfig_tests.cpp
 
-roconfig.pb roconfig.pb.text:
+roconfig.pb roconfig.pb.text: $(builddir)/../proto/roconfig_gen
 	$(builddir)/../proto/roconfig_gen \
           --out_binary="$(builddir)/roconfig.pb" \
           --out_text="$(builddir)/roconfig.pb.text"
