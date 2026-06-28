@@ -5,6 +5,27 @@
 > after A2b, C9b, SB-06 (all golden-safe, committed: `ffd6f1e`, `a18a0eb`, SB-06, `0851510` docs).
 > Companion to `docs/security-audit.md` (findings) and `docs/p-e1-loadbench.md` (Stage 1/2 plan).
 
+## STATUS (updated 2026-06-28)
+
+- **F2/F3 — DONE.** All three raw-double consensus sites fixed + verified:
+  - Site B sweetness `/100.0`→`/100` (`e425598`, golden byte-identical).
+  - Site A prestige percentage → fixed-point, dropped the 4 double wrappers (`b97182e`,
+    golden byte-identical — test rosters never hit a ratio where round-from-double ≠ fixed div).
+  - Site C crystal cost → proto `CHICost`(float)→`CHICostSats`(int64), pure-int64 gate (`c8dcc98`,
+    golden byte-identical; blob verified to carry the six int64 sat varints, old float32 patterns gone).
+  - Swept the rest of `src/`+`database/`: remaining FP is `fpm` fixed-point (deterministic),
+    gamestatejson display-only, and `std::round` over int64 quotients (deterministic). Clean.
+- **A2c — DONE (newly discovered).** Stripped the remaining Taurion *height*-fork gates that A2b
+  (isFork2 blocks) didn't cover. 6 golden-safe strips + 3 orphaned `chain` decls (`36bf135`) and
+  R1 the special-tournament tier de-gate/unify on `fpm::round` (`7f44da5`). All golden byte-identical
+  + 98/98. Detail: each gate was dead on both REGTEST(h~46) and Polygon(genesis 89.2M), OR always-true,
+  OR (RNG reseed) a magic height replaced by the equivalent `Chain()!=REGTEST`. **Open follow-ups:**
+  (a) ~9 remaining `chain==/!=REGTEST` gates are REGTEST test-harness accommodations (payout splits,
+  fixed dev addresses) — a separate, delicate pass, NOT touched. (b) the two now-identical
+  `RecalculatePlayerTiers` bodies could be DRYed into one free function. (c) `xaya_player.proto`/protos
+  may still hold magic Taurion heights elsewhere.
+- **NEXT: H4/H5 row GC** (needs the user cap/overflow decision below), then H3 Stage 2b, then F1.
+
 ## Golden-regen workflow (verified)
 
 `goldenreplay_tests.cpp` regen mode (lines 38-39, 354-373):
