@@ -44,11 +44,11 @@ message XayaPlayer
    */
   optional uint64 burnsale_balance = 4;  
   
-  /**
-   * Stores all operations that takes several blocks to resolve
-   */  
-  repeated OngoinOperation ongoings = 7;
-  
+  /* H3 / Stage 2b: ongoing operations moved OUT of the player proto into the
+     height-keyed ongoing_operations table (database/ongoings.*).  Field 7 is
+     reserved so it is never reused. */
+  reserved 7;
+
   /**
    * Tournaments bookeeping entry
    */

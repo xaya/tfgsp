@@ -227,10 +227,10 @@ public:
     return data.Mutable ();
   }
   
-  uint32_t GetOngoingsSize()
-  {
-      return GetProto().ongoings().size();
-  }
+  /* H3: ongoings now live in the height-keyed ongoing_operations table, not the
+     player proto.  This returns the player's live ongoing count from that table
+     (definition in xayaplayer.cpp to avoid a header dependency on ongoings.hpp). */
+  uint32_t GetOngoingsSize();
 
   /**
    * Updates the account balance by the given (signed) amount.  This should

@@ -64,7 +64,7 @@ namespace pxd
 
 BaseMoveProcessor::BaseMoveProcessor (Database& d,
                                       const Context& c)
-  : ctx(c), db(d), xayaplayers(db), recipeTbl(db), fighters(db), moneySupply(db), rewards(db), tournamentsTbl(db), specialTournamentsTbl(db), globalData(db)
+  : ctx(c), db(d), xayaplayers(db), recipeTbl(db), fighters(db), moneySupply(db), rewards(db), ongoings(db), tournamentsTbl(db), specialTournamentsTbl(db), globalData(db)
 {}
 
 
@@ -1491,15 +1491,19 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
           return false;              
       }    
       
-      for(const auto& ongoing: a.GetProto().ongoings())
       {
-          if(ongoing.expeditionblueprintid() == expeditionID && ongoing.type() == (uint32_t)pxd::OngoingType::EXPEDITION)
+        auto ores = ongoings.QueryForOwner(a.GetName());
+        while(ores.Step())
+        {
+          auto op = ongoings.GetFromResult(ores);
+          if(op->GetProto().expeditionblueprintid() == expeditionID && op->GetProto().type() == (uint32_t)pxd::OngoingType::EXPEDITION)
           {
             LOG (WARNING) << "Could not get rewards, expedition is in process: " << expeditionID;
-            return false;                
+            return false;
           }
+        }
       }
-      
+
       auto res = rewards.QueryForOwner(a.GetName());
       
       int32_t totalEntries = 0;
@@ -1840,14 +1844,18 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     uint32_t slots = fighters.CountForOwner(a.GetName());
     uint32_t slots_already_cooking = 0;
     
-    for(const auto& ongoing: a.GetProto().ongoings())
     {
-        if(ongoing.type() == (uint32_t)pxd::OngoingType::COOK_RECIPE)
+      auto ores = ongoings.QueryForOwner(a.GetName());
+      while(ores.Step())
+      {
+        auto op = ongoings.GetFromResult(ores);
+        if(op->GetProto().type() == (uint32_t)pxd::OngoingType::COOK_RECIPE)
         {
             slots_already_cooking++;
         }
-    } 
-    
+      }
+    }
+
     slots += slots_already_cooking;
 
     if(slots > ctx.RoConfig()->params().max_fighter_inventory_amount())
@@ -1901,14 +1909,18 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
 
     bool isFinished = true;
     
-    for(const auto& ongoing: a.GetProto().ongoings())
     {
-        if(ongoing.fighterdatabaseid() == fighterID && ongoing.type() == (uint32_t)pxd::OngoingType::DECONSTRUCTION)
+      auto ores = ongoings.QueryForOwner(a.GetName());
+      while(ores.Step())
+      {
+        auto op = ongoings.GetFromResult(ores);
+        if(op->GetProto().fighterdatabaseid() == fighterID && op->GetProto().type() == (uint32_t)pxd::OngoingType::DECONSTRUCTION)
         {
             isFinished = false;
         }
+      }
     }
-    
+
     if(isFinished == false)
     {
       LOG (WARNING) << "Ongoing operation still presetent for fighter with id: " << fighterID;
@@ -2803,14 +2815,18 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
           return false;              
       }     
       
-      for(const auto& ongoing: a.GetProto().ongoings())
       {
-          if(ongoing.expeditionblueprintid() == expeditionID && ongoing.type() == (uint32_t)pxd::OngoingType::EXPEDITION)
+        auto ores = ongoings.QueryForOwner(a.GetName());
+        while(ores.Step())
+        {
+          auto op = ongoings.GetFromResult(ores);
+          if(op->GetProto().expeditionblueprintid() == expeditionID && op->GetProto().type() == (uint32_t)pxd::OngoingType::EXPEDITION)
           {
             LOG (WARNING) << "Player already has this expedition ongoing: " << expeditionID;
-            return false;                
+            return false;
           }
-      }	  
+        }
+      }
 	  
       fighterDD.reset();  
     }
@@ -4352,14 +4368,17 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
     auto fighterDb = fighters.GetById (fighterID, ctx.RoConfig ());
     fighterDb->SetStatus(pxd::FighterStatus::Deconstructing);
     
-    proto::OngoinOperation* newOp = a->MutableProto().add_ongoings();
-    
-    newOp->set_type((uint32_t)pxd::OngoingType::DECONSTRUCTION);
-    newOp->set_fighterdatabaseid(fighterID);  
-    newOp->set_blocksleft(ctx.RoConfig()->params().deconstruction_blocks());
-    
-    fighterDb.reset(); 
-    a.reset();    
+    /* H3: ongoing now lives in the height-keyed ongoing_operations table with an
+       ABSOLUTE resolve height instead of a per-block BlocksLeft countdown. */
+    auto newOp = ongoings.CreateNew(ctx.Height());
+    newOp->SetOwner(name);
+    newOp->SetHeight(ctx.Height() + ctx.RoConfig()->params().deconstruction_blocks());
+    newOp->MutableProto().set_type((uint32_t)pxd::OngoingType::DECONSTRUCTION);
+    newOp->MutableProto().set_fighterdatabaseid(fighterID);
+    newOp.reset();
+
+    fighterDb.reset();
+    a.reset();
     
   }        
   
@@ -4701,28 +4720,30 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
     for(auto& ft: fighter)
     {
       auto fighterDD = fighters.GetById (ft, ctx.RoConfig ());
-        
-      proto::OngoinOperation* newOp = a->MutableProto().add_ongoings();
-      
-      newOp->set_type((uint32_t)pxd::OngoingType::EXPEDITION);
-      newOp->set_fighterdatabaseid(ft);
-      newOp->set_expeditionblueprintid(expedition["eid"].asString ());
+
+      /** We need to make it at least 1 block, else if will make no sense executing immediately logic flow wise*/
+      int32_t d = duration;
+      if(d < 1)
+      {
+          d = 1;
+      }
+
+      /* H3: one ongoing_operations row per fighter, absolute resolve height. */
+      auto newOp = ongoings.CreateNew(ctx.Height());
+      newOp->SetOwner(name);
+      newOp->SetHeight(ctx.Height() + d);
+      newOp->MutableProto().set_type((uint32_t)pxd::OngoingType::EXPEDITION);
+      newOp->MutableProto().set_fighterdatabaseid(ft);
+      newOp->MutableProto().set_expeditionblueprintid(expedition["eid"].asString ());
+      if(weHaveApplibeGoodyName != "")
+      {
+          newOp->MutableProto().set_appliedgoodykeyname(weHaveApplibeGoodyName);
+      }
+      newOp.reset();
 
       fighterDD->SetStatus(FighterStatus::Expedition);
       fighterDD->MutableProto().set_expeditioninstanceid(expedition["eid"].asString ());
-      
-      if(weHaveApplibeGoodyName != "")
-      {
-          newOp->set_appliedgoodykeyname(weHaveApplibeGoodyName);
-      }
-      
-      /** We need to make it at least 1 block, else if will make no sense executing immediately logic flow wise*/
-      if(duration < 1)
-      {
-          duration = 1;
-      }    
-          
-      newOp->set_blocksleft(duration);    
+
       LOG (INFO) << "Expedition " << expedition << " submitted succesfully ";
       fighterDD.reset();
     }
@@ -4787,25 +4808,26 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
   
     auto fighterDb = fighters.GetById (fighterID, ctx.RoConfig ());
     fighterDb->SetStatus(pxd::FighterStatus::Cooking);
-    
-    
-    proto::OngoinOperation* newOp = a->MutableProto().add_ongoings();
-
-    newOp->set_type((uint32_t)pxd::OngoingType::COOK_SWEETENER);
-    newOp->set_recipeid(fighterDb->GetProto().recipeid());
-    newOp->set_appliedgoodykeyname(sweetener["sid"].asString());
-    newOp->set_rewardid(sweetener["rid"].asInt());
-    newOp->set_fighterdatabaseid(fighterID);
-    
+    const uint32_t sweetenedRecipeId = fighterDb->GetProto().recipeid();
     fighterDb.reset();
-    
+
     /** We need to make it at least 1 block, else if will make no sense executing immediately logic flow wise*/
     if(duration < 1)
     {
         duration = 1;
-    }    
-    newOp->set_blocksleft(duration);    
-  }  
+    }
+
+    /* H3: ongoing row with absolute resolve height (recipeid captured before reset). */
+    auto newOp = ongoings.CreateNew(ctx.Height());
+    newOp->SetOwner(name);
+    newOp->SetHeight(ctx.Height() + duration);
+    newOp->MutableProto().set_type((uint32_t)pxd::OngoingType::COOK_SWEETENER);
+    newOp->MutableProto().set_recipeid(sweetenedRecipeId);
+    newOp->MutableProto().set_appliedgoodykeyname(sweetener["sid"].asString());
+    newOp->MutableProto().set_rewardid(sweetener["rid"].asInt());
+    newOp->MutableProto().set_fighterdatabaseid(fighterID);
+    newOp.reset();
+  }
   
   void MoveProcessor::MaybeCollectCookedRecepie(const std::string& name, const Json::Value& recepie)
   {     
@@ -4911,30 +4933,29 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
         }
     }
 
-    proto::OngoinOperation* newOp = a->MutableProto().add_ongoings();
-
-    newOp->set_type((uint32_t)pxd::OngoingType::COOK_RECIPE);
-    newOp->set_recipeid(recepie["rid"].asInt());
-    
-    auto itemInventoryRecipe = GetRecepieObjectFromID((uint32_t)recepie["rid"].asInt(), ctx);
-    itemInventoryRecipe->SetOwner("");
-    
-
-    if(weHaveApplibeGoodyName != "")
-    {
-        playerInventory.AddFungibleCount(weHaveApplibeGoodyName, -1);
-        newOp->set_appliedgoodykeyname(weHaveApplibeGoodyName);
-    }
-    
     /** We need to make it at least 1 block, else if will make no sense executing immediately logic flow wise*/
     if(duration < 1)
     {
         duration = 1;
-    }    
+    }
 
-    LOG (WARNING) << "Settign duration as " << duration;
-    newOp->set_blocksleft(duration);
+    /* H3: ongoing row with absolute resolve height. */
+    auto newOp = ongoings.CreateNew(ctx.Height());
+    newOp->SetOwner(name);
+    newOp->SetHeight(ctx.Height() + duration);
+    newOp->MutableProto().set_type((uint32_t)pxd::OngoingType::COOK_RECIPE);
+    newOp->MutableProto().set_recipeid(recepie["rid"].asInt());
 
+    auto itemInventoryRecipe = GetRecepieObjectFromID((uint32_t)recepie["rid"].asInt(), ctx);
+    itemInventoryRecipe->SetOwner("");
+    itemInventoryRecipe.reset();
+
+    if(weHaveApplibeGoodyName != "")
+    {
+        playerInventory.AddFungibleCount(weHaveApplibeGoodyName, -1);
+        newOp->MutableProto().set_appliedgoodykeyname(weHaveApplibeGoodyName);
+    }
+    newOp.reset();
 
     a->CalculatePrestige(ctx.RoConfig());
     a.reset();

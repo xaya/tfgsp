@@ -60,6 +60,7 @@
 
 #include "database/dbtest.hpp"
 #include "database/xayaplayer.hpp"
+#include "database/ongoings.hpp"
 
 #include <glog/logging.h>
 #include <gtest/gtest.h>
@@ -262,15 +263,16 @@ protected:
   {
     for (int i = 0; i < k; ++i)
       {
-        auto a = xayaplayers.GetByName ("p" + std::to_string (i),
-                                        ctx.RoConfig ());
-        CHECK (a != nullptr);
-        auto* op = a->MutableProto ().add_ongoings ();
-        op->set_type (static_cast<uint32_t> (pxd::OngoingType::DECONSTRUCTION));
-        /* Huge countdown => decremented every block but never hits 0, so it
-           ticks (and dirties its player) forever without resolving.  */
-        op->set_blocksleft (1000000000);
-        op->set_fighterdatabaseid (0);
+        /* H3: ongoing now lives in the ongoing_operations table.  Give it a
+           far-future absolute resolve height so it is never reached within the
+           measured window (the O(K) work the event-driven path still does). */
+        OngoingsTable ongoings (db);
+        auto op = ongoings.CreateNew (ctx.Height ());
+        op->SetOwner ("p" + std::to_string (i));
+        op->SetHeight (ctx.Height () + 1000000000);
+        op->MutableProto ().set_type (static_cast<uint32_t> (pxd::OngoingType::DECONSTRUCTION));
+        op->MutableProto ().set_fighterdatabaseid (0);
+        op.reset ();
       }
   }
 

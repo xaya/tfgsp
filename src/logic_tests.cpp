@@ -148,6 +148,10 @@ protected:
   void
   UpdateStateJson (const Json::Value& moves)
   {
+    /* H3: ongoings now resolve by ABSOLUTE block height, so each processed block
+       must advance the height (real blocks always do).  This mirrors the
+       goldenreplay harness, which bumps height before every block. */
+    ctx.SetHeight (ctx.Height () + 1);
     UpdateStateWithData (BuildBlockData (moves));
   }
 

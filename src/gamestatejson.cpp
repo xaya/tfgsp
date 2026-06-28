@@ -24,6 +24,7 @@
 #include "database/globaldata.hpp"
 #include "database/specialtournament.hpp"
 #include "database/reward.hpp"
+#include "database/ongoings.hpp"
 #include "database/activity.hpp"
 #include "database/moneysupply.hpp"
 
@@ -188,20 +189,23 @@ template <>
   // If fighter is participating in any activity, front-end needs 'blocksleft' information for that
   res["blocksleft"] = IntToJson (0);
   
-  XayaPlayersTable xayaplayers(db);
-  auto a = xayaplayers.GetByName (fighter.GetOwner (), ctx.RoConfig ());
-  for (auto it = a->GetProto().ongoings().begin(); it != a->GetProto().ongoings().end(); it++)
+  /* H3: blocksleft is now DERIVED from the ongoing_operations row's absolute
+     resolve height minus the current height. */
   {
-      if(it->fighterdatabaseid() == fighter.GetId())
-      { 
-        res["blocksleft"] = IntToJson (it->blocksleft());        
+    OngoingsTable ongoings(db);
+    auto ores = ongoings.QueryForOwner (fighter.GetOwner ());
+    while (ores.Step ())
+    {
+      auto op = ongoings.GetFromResult (ores);
+      if(op->GetProto().fighterdatabaseid() == fighter.GetId())
+      {
+        res["blocksleft"] = IntToJson ((int) op->GetHeight () - (int) ctx.Height ());
       }
+    }
   }
-  
+
   res["exchangeexpire"] = IntToJson (pb.exchangeexpire());
   res["exchangeprice"] = IntToJson (pb.exchangeprice());
-  
-  a.reset();
 
   if(pb.tournamentinstanceid() > 0)
   {
@@ -421,51 +425,66 @@ template <>
   // will be missing from the front-end roster until fighter
   // is cooked
   
-  for(auto& ongoing: pb.ongoings())
+  /* H3: ongoings now live in the height-keyed ongoing_operations table; fetch
+     this player's rows once (QueryForOwner is ORDER BY id == insertion order, so
+     the JSON ordering and the FullState hash stay stable). */
+  std::vector<std::pair<unsigned, proto::OngoinOperation>> playerOngoings;
   {
-    if((pxd::OngoingType)ongoing.type() == pxd::OngoingType::COOK_RECIPE)
+    OngoingsTable ongoingsTbl(db);
+    auto ores = ongoingsTbl.QueryForOwner (a.GetName ());
+    while (ores.Step ())
     {
-       recJsonObj.append (ongoing.recipeid()); 
+      auto op = ongoingsTbl.GetFromResult (ores);
+      playerOngoings.push_back ({op->GetHeight (), op->GetProto ()});
     }
   }
-  
-  for(auto& ongoing: pb.ongoings())
+
+  for(const auto& ong: playerOngoings)
   {
-    if((pxd::OngoingType)ongoing.type() == pxd::OngoingType::COOK_SWEETENER)
+    if((pxd::OngoingType)ong.second.type() == pxd::OngoingType::COOK_RECIPE)
     {
-       recJsonObj.append (ongoing.recipeid()); 
+       recJsonObj.append (ong.second.recipeid());
     }
-  }  
+  }
+
+  for(const auto& ong: playerOngoings)
+  {
+    if((pxd::OngoingType)ong.second.type() == pxd::OngoingType::COOK_SWEETENER)
+    {
+       recJsonObj.append (ong.second.recipeid());
+    }
+  }
 
   res["recepies"] = recJsonObj;
-    
+
   Json::Value ongoingOps(Json::arrayValue);
-  
-  for(auto& ongoing: pb.ongoings())
+
+  for(const auto& ong: playerOngoings)
   {
+      const auto& ongoing = ong.second;
       Json::Value ongOB(Json::objectValue);
       ongOB["type"] = ongoing.type();
-      ongOB["blocksleft"] = IntToJson(ongoing.blocksleft());
-      
+      ongOB["blocksleft"] = IntToJson((int) ong.first - (int) ctx.Height ());
+
       if((pxd::OngoingType)(int)ongoing.type() == pxd::OngoingType::COOK_RECIPE)
       {
         ongOB["recipeid"] = ongoing.recipeid();
       }
-      
+
       if((pxd::OngoingType)(int)ongoing.type() == pxd::OngoingType::COOK_SWEETENER)
       {
         ongOB["recipeid"] = ongoing.recipeid();
-      }      
-      
+      }
+
       if((pxd::OngoingType)(int)ongoing.type() == pxd::OngoingType::EXPEDITION)
       {
         ongOB["fighterdatabaseid"] = ongoing.fighterdatabaseid();
         ongOB["expeditionblueprintid"] = ongoing.expeditionblueprintid();
       }
-      
+
       ongoingOps.append(ongOB);
   }
-  
+
   res["ongoings"] = ongoingOps;
   res["prestige"] = IntToJson (a.GetPresitge());
   
@@ -666,26 +685,29 @@ GameStateJson::User(const std::string& userName)
   Json::Value arrAllPotentialRecipes(Json::arrayValue);
   if(a != nullptr)
   {
-	  const auto& pb = a->GetProto ();
-	  
+	  /* H3: collect in-progress cook recipe ids from the ongoing_operations table. */
 	  Json::Value recJsonObj(Json::arrayValue);
-	  for(auto& ongoing: pb.ongoings())
 	  {
-		if((pxd::OngoingType)ongoing.type() == pxd::OngoingType::COOK_RECIPE)
-		{
-		   recJsonObj.append (ongoing.recipeid()); 
-		}
+	    OngoingsTable ongoingsTbl(db);
+	    auto ores = ongoingsTbl.QueryForOwner (a->GetName ());
+	    std::vector<proto::OngoinOperation> ops;
+	    while (ores.Step ())
+	    {
+	      ops.push_back (ongoingsTbl.GetFromResult (ores)->GetProto ());
+	    }
+	    for(const auto& ongoing: ops)
+	    {
+	      if((pxd::OngoingType)ongoing.type() == pxd::OngoingType::COOK_RECIPE)
+	         recJsonObj.append (ongoing.recipeid());
+	    }
+	    for(const auto& ongoing: ops)
+	    {
+	      if((pxd::OngoingType)ongoing.type() == pxd::OngoingType::COOK_SWEETENER)
+	         recJsonObj.append (ongoing.recipeid());
+	    }
 	  }
-	  
-	  for(auto& ongoing: pb.ongoings())
-	  {
-		if((pxd::OngoingType)ongoing.type() == pxd::OngoingType::COOK_SWEETENER)
-		{
-		   recJsonObj.append (ongoing.recipeid()); 
-		}
-	  }  
-	   
-	  a.reset();   
+
+	  a.reset();
 	  
 	  RecipeInstanceTable tblRecipe(db);
 	  auto recipeAllResults =  tblRecipe.QueryAll ();

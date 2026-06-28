@@ -32,6 +32,7 @@
 #include "database/specialtournament.hpp"
 #include "database/recipe.hpp"
 #include "database/reward.hpp"
+#include "database/ongoings.hpp"
 #include "database/moneysupply.hpp"
 #include "database/amount.hpp"
 #include "database/globaldata.hpp"
@@ -102,8 +103,11 @@ protected:
   MoneySupply moneySupply;  
     
   /** Access handle for the rewards database table.  */
-  RewardsTable rewards;    
-  
+  RewardsTable rewards;
+
+  /** Access handle for the height-keyed ongoing-operations table.  */
+  OngoingsTable ongoings;
+
   /** Access handle tournaments database instances*/
   TournamentTable tournamentsTbl;     
   

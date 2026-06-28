@@ -23,6 +23,7 @@
 #include "logic.hpp"
 #include "database/reward.hpp"
 #include "database/recipe.hpp"
+#include "database/ongoings.hpp"
 #include "database/globaldata.hpp"
 #include "database/specialtournament.hpp"
 
@@ -670,85 +671,72 @@ void PXLogic::ResolveCookingRecepie(std::unique_ptr<XayaPlayer>& a, const uint32
 void PXLogic::TickAndResolveOngoings(Database& db, const Context& ctx, xaya::Random& rnd)
 {
     LOG (INFO) << "Ticking ongoing operations.";
-    
-    XayaPlayersTable xayaplayers(db);
-    auto res = xayaplayers.QueryAll ();
 
-    bool tryAndStep = res.Step();
-    while (tryAndStep)
+    /* P-E1 / event-driven: ongoings live in the height-keyed ongoing_operations
+       table, each with an ABSOLUTE resolve height.  An idle block runs only this
+       one indexed `WHERE height <= now` SELECT (returns nothing) -- no per-block
+       scan or rewrite of every player.  We materialise the due rows first (in the
+       deterministic `ORDER BY id` the query guarantees) so resolving + deleting
+       cannot invalidate the cursor, and so the RNG-draw order is fixed across all
+       nodes (creation order == id order). */
+    OngoingsTable ongoings(db);
+
+    struct DueOp { Database::IdT id; std::string owner; proto::OngoinOperation proto; };
+    std::vector<DueOp> due;
+
     {
-      auto a = xayaplayers.GetFromResult (res, ctx.RoConfig ());
-
-      /* P-E1: only touch players that actually have ongoing operations.
-         GetOngoingsSize() reads via GetProto() (read-only) and does NOT mark
-         the LazyProto dirty, so players with no ongoings stay UNMODIFIED and
-         are never rewritten -- eliminating the per-block full-BLOB rewrite of
-         every player.  Players WITH ongoings are mutated exactly as before. */
-      if (a->GetOngoingsSize () > 0)
+      auto res = ongoings.QueryForHeight (ctx.Height ());
+      while (res.Step ())
       {
-      auto& ongoings = *a->MutableProto().mutable_ongoings();
-
-      bool erasingDone = false;
-      
-      for (auto it = ongoings.begin(); it != ongoings.end(); it++)
-      {
-        it->set_blocksleft(it->blocksleft() - 1);
+        auto op = ongoings.GetFromResult (res);
+        due.push_back ({op->GetId (), op->GetOwner (), op->GetProto ()});
       }
-      
-      while(erasingDone == false)
+    }
+
+    if (due.empty ())
+      return;
+
+    XayaPlayersTable xayaplayers(db);
+
+    for (const auto& d : due)
+    {
+      auto a = xayaplayers.GetByName (d.owner, ctx.RoConfig ());
+      if (a == nullptr)
       {
-        erasingDone = true;
-        ongoings = *a->MutableProto().mutable_ongoings();
-        
-        for (auto it = ongoings.begin(); it != ongoings.end(); it++)
-        {
-            if(it->blocksleft() == 0)
-            {
-                if((pxd::OngoingType)it->type() == pxd::OngoingType::COOK_RECIPE)
-                {
-                  LOG (INFO) << "Resolving oingoing operation for pxd::OngoingType::COOK_RECIPE";
-                  
-                  ResolveCookingRecepie(a, (uint32_t)it->recipeid(), db, ctx, rnd);
-                  ongoings.erase(it);
-                  erasingDone = false;
-                  break;
-                }
-                
-                if((pxd::OngoingType)it->type() == pxd::OngoingType::EXPEDITION)
-                {
-                  LOG (INFO) << "Resolving oingoing operation for pxd::OngoingType::EXPEDITION";
-                  
-                  ResolveExpedition(a, it->expeditionblueprintid(), (uint32_t)it->fighterdatabaseid(), db, ctx, rnd);
-                  ongoings.erase(it);
-                  erasingDone = false;
-                  break;
-                }     
-
-                if((pxd::OngoingType)it->type() == pxd::OngoingType::DECONSTRUCTION)
-                {
-                  LOG (INFO) << "Resolving oingoing operation for pxd::OngoingType::DECONSTRUCTION";
-                    
-                  ResolveDeconstruction(a, (uint32_t)it->fighterdatabaseid(), db, ctx, rnd);
-                  ongoings.erase(it); 
-                  erasingDone = false;
-                  break;                  
-                }  
-
-                if((pxd::OngoingType)it->type() == pxd::OngoingType::COOK_SWEETENER)
-                {
-                  LOG (INFO) << "Resolving oingoing operation for pxd::OngoingType::COOK_SWEETENER for " << a->GetName() << " and " << it->appliedgoodykeyname() << " and " << it->fighterdatabaseid();
-                    
-                  ResolveSweetener(a, it->appliedgoodykeyname(), it->fighterdatabaseid(), it->rewardid(), db, ctx, rnd);
-                  ongoings.erase(it); 
-                  erasingDone = false;
-                  break;                  
-                }                 
-            }          
-        }
+        LOG (ERROR) << "Ongoing operation " << d.id << " owner '" << d.owner << "' no longer exists; dropping";
+        ongoings.DeleteById (d.id);
+        continue;
       }
-      } /* end if (GetOngoingsSize () > 0) */
 
-      tryAndStep = res.Step ();
+      switch ((pxd::OngoingType) d.proto.type ())
+      {
+        case pxd::OngoingType::COOK_RECIPE:
+          LOG (INFO) << "Resolving ongoing operation COOK_RECIPE";
+          ResolveCookingRecepie (a, (uint32_t) d.proto.recipeid (), db, ctx, rnd);
+          break;
+
+        case pxd::OngoingType::EXPEDITION:
+          LOG (INFO) << "Resolving ongoing operation EXPEDITION";
+          ResolveExpedition (a, d.proto.expeditionblueprintid (), (uint32_t) d.proto.fighterdatabaseid (), db, ctx, rnd);
+          break;
+
+        case pxd::OngoingType::DECONSTRUCTION:
+          LOG (INFO) << "Resolving ongoing operation DECONSTRUCTION";
+          ResolveDeconstruction (a, (uint32_t) d.proto.fighterdatabaseid (), db, ctx, rnd);
+          break;
+
+        case pxd::OngoingType::COOK_SWEETENER:
+          LOG (INFO) << "Resolving ongoing operation COOK_SWEETENER for " << d.owner << " and " << d.proto.appliedgoodykeyname () << " and " << d.proto.fighterdatabaseid ();
+          ResolveSweetener (a, d.proto.appliedgoodykeyname (), d.proto.fighterdatabaseid (), d.proto.rewardid (), db, ctx, rnd);
+          break;
+
+        default:
+          LOG (ERROR) << "Ongoing operation " << d.id << " has unknown type " << d.proto.type ();
+          break;
+      }
+
+      a.reset ();
+      ongoings.DeleteById (d.id);
     }
 }
 

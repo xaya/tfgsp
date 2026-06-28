@@ -18,6 +18,7 @@
 
 #include "xayaplayer.hpp"
 #include "specialtournament.hpp"
+#include "ongoings.hpp"
 
 #include <xayautil/random.hpp>
 
@@ -144,6 +145,12 @@ XayaPlayer::XayaPlayer (Database& d, const Database::Result<XayaPlayerResult>& r
   roster_slots = cfg->params().max_fighter_inventory_amount();
   
   prestige = res.Get<XayaPlayerResult::prestige> ();
+}
+
+uint32_t
+XayaPlayer::GetOngoingsSize ()
+{
+  return OngoingsTable (db).CountForOwner (name);
 }
 
 XayaPlayer::~XayaPlayer ()
