@@ -1466,7 +1466,15 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     }
     
     std::vector<std::string> authIds;
-    
+
+    /* DoS cap (H7): bound the reward-id array before the per-element reward
+       table scans.  */
+    if(expedition["eid"].isArray() && expedition["eid"].size() > MAX_MOVE_ARRAY)
+    {
+      LOG (WARNING) << "Reward eid array exceeds the size cap";
+      return false;
+    }
+
     if(expedition["eid"].isString())
     {
       authIds.push_back(expedition["eid"].asString ());   
