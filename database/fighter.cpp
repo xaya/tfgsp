@@ -368,7 +368,7 @@ void FighterInstance::UpdateSweetness()
 
 	if(fpm::fixed_24_8(GetProto().rating()) >= srate)
 	{
-		pxd::Sweetness newSW = (pxd::Sweetness)(((GetProto().rating() - 1000) / 100.0) + 1);
+		pxd::Sweetness newSW = (pxd::Sweetness)(((GetProto().rating() - 1000) / 100) + 1);
 		MutableProto().set_sweetness((int32_t)newSW);
 	}
 }
