@@ -179,8 +179,14 @@ Both landed with **golden replay byte-identical, 92/92 green** — and both turn
 
 Test count: **98 unit tests** (was 92) + golden replay, all green on the `-O2` container build.
 
-**Remaining (lower priority — hardening / cleanliness / golden-regen):**
-- **A2b — finish the `isFork` collapse (cosmetic, golden-safe).** The dead branch is gone; `isFork` is now a silently-unused param (not warned under `-Wall`, no `-Werror`). Dropping it from `CalculatePrestige`/`CreateNew`/`UpdateSweetness`/the `XayaPlayer` ctor + ~80 call sites (incl. test files) is wide — best done in a focused/attended pass.
-- **C9b (config strip, golden-regen via blob rebuild).** C9a already closed the faucet, so this is defense-in-depth: move the `UnitTest_Expedition` (`zzzz`) blueprint + its `UnitTest_*` reward tables from the base config into the **regtest merge** so they don't exist on Polygon. Owner guidance received: tutorial/FTUE (`c064e7f7`/`cbd2e78a`) is needed for new players but *can live off-chain* (frontend-driven) — so strip only `zzzz` on-chain for now and treat the tutorial as a frontend-track candidate, leaving it on-chain (C9a-guarded) until the frontend handles it. Add the CI blob assertion.
-- **H4/H5 (row GC, golden-regen):** delete orphan `recepies` rows on consume; cap unclaimed rewards. **SB-06:** remove the hardcoded name-gift. **OVF-01 (low):** clamp candy magnitude before `fixed_24_8`.
+**DONE (continuation, 2026-06-28 — each golden replay byte-identical, 98/98 unit tests pass):**
+- `ffd6f1e` **A2b** — drop the dead `isFork` param from the `XayaPlayer` ctor / `CalculatePrestige` / `CreateNew` / `UpdateSweetness` (+ ~100 call sites incl. tests); collapse `UpdateSweetness` to the deterministic `fpm::fixed_24_8` branch only; delete all 12 always-true `isFork2=(chain==REGTEST||height>=5097362)` fork-gate blocks (4 logic.cpp, 8 moveprocessor.cpp). `RecipeInstance::Generate`'s `fork` param kept (genuinely bivalued: prod=false, tests=true). Net −91 lines.
+- `a18a0eb` **C9b** — move the `UnitTest_Expedition` (`zzzz`) blueprint + `UnitTest_Reward` (`xxxx`) table out of the base config into a new `proto/roconfig/regtest_unittest.pb.text` registered in `ROCONFIG_TEXT_PROTOS_REGTEST` (regtest_merge only). Both fields are protobuf maps consumed strictly by-key (`logic.cpp:114` sorts-by-key, proving order is never relied on), so `MergeFrom` keeps REGTEST's keyset identical → golden-safe; production base loses the keys (verified via blob dump: `zzzz`/`xxxx` now only under `regtest_merge`). Tutorial (`c064e7f7`/`cbd2e78a`) left on-chain (C9a-guarded) per owner guidance — frontend-track candidate.
+
+**Remaining (being scoped via a parallel deep-read workflow, then implemented sequentially):**
+- **H3 / Pass C "Stage 2b" — event-driven GSP (hard requirement):** drive ticks off `OngoingsTable.QueryForHeight()` so idle blocks do ~zero per-player work; eliminate the per-block full-table scans (`logic.cpp` UpdateState ~2087-2129).
+- **H4/H5 (row GC, golden-regen):** delete orphan `recepies` rows on consume (excluding live-fighter-referenced recipeids); cap unclaimed rewards per player.
+- **F2/F3 (determinism):** replace any raw `double`/float reaching persisted consensus state with `fpm::fixed_24_8` (e.g. sweetness `((rating-1000)/100.0)+1`).
+- **F1 (reorg):** make `PendingStateUpdater::ProcessMove` strictly read-only (no writes to the confirmed DB).
+- **SB-06:** remove the hardcoded name-gift. **OVF-01 (low):** clamp candy magnitude before `fixed_24_8`.
 - **Pass C (event-driven + determinism):** H3 = Stage 2b height-keyed ongoing table + indexed per-block queries; F2/F3 = remove raw `double`/`float` from consensus (sweetness/percentage/bundle cost) + CI lint; F1 = make pending strictly read-only.
