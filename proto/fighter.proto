@@ -19,7 +19,6 @@
 syntax = "proto2";
 option cc_enable_arenas = true;
 
-import "proto/fighter_move_blueprint.proto";
 import "proto/armor_piece.proto";
 
 package pxd.proto;

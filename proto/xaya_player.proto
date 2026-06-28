@@ -28,13 +28,11 @@ package pxd.proto;
  */
 message XayaPlayer
 {
-  optional uint32 notused = 1;
-    
-  /**
-   * Role of the XAYA name in relation to the game, deperecated for TF
-   */
-  optional uint32 role = 2;
-  
+  /* Fields 1 (notused), 2 (role), 5 (xayaname), 6 (ftuestate) were dead
+     Taurion/CHI-era player fields, never read; dropped at the Polygon fresh
+     relaunch.  Reserved so the wire tags are never reused. */
+  reserved 1, 2, 5, 6;
+
   /**
    * vCHI based value
    */ 
@@ -45,16 +43,6 @@ message XayaPlayer
    * the balance that will be carried over to the full game.
    */
   optional uint64 burnsale_balance = 4;  
-  
-  /**
-   * The XAYA name itself
-   */
-  optional string xayaname = 5;  
-  
-  /**
-   * Current tutorial state
-   */
-  optional uint32 ftuestate = 6; 
   
   /**
    * Stores all operations that takes several blocks to resolve

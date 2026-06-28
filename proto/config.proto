@@ -82,14 +82,10 @@ message Params
   
   optional uint32 epic_recipe_cook_cost = 13;
   
-  optional uint32 common_cook_duration = 14;
-  
-  optional uint32 uncommon_cook_duration = 15;
-  
-  optional uint32 rare_cook_duration = 16;
-  
-  optional uint32 epic_cook_duration = 17;
-  
+  /* Fields 14-17 were per-rarity cook durations; dead (live cook duration is
+     the per-recipe duration()).  Reserved at the Polygon fresh relaunch. */
+  reserved 14, 15, 16, 17;
+
   optional uint32 common_move_count = 18;
   
   optional uint32 uncommon_move_count = 19;
@@ -105,9 +101,11 @@ message Params
   optional uint32 deconstruction_blocks = 24;
   
   optional float deconstruction_return_percent = 25;
-  
-  map<string, string> fungible_items = 26;
-  
+
+  /* Field 26 (fungible_items) was never populated or read; live inventory is
+     Inventory.fungible.  Reserved at the Polygon fresh relaunch. */
+  reserved 26;
+
   optional uint32 base_prestige = 27;
   
   optional uint32 prestige_epic_mod = 28;

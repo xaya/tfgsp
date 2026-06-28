@@ -44,10 +44,11 @@ message ActivityRewardInstance
 
   optional uint32 PositionInTable = 6; 
 
-  optional uint32 FighterID = 7;  
-  
-  optional string RewardAutoTableId = 8;
-  
+  optional uint32 FighterID = 7;
+
+  /* Field 8 (RewardAutoTableId) was never set or read.  Reserved. */
+  reserved 8;
+
   repeated Deconstruction Deconstructions = 9;
 }
 

@@ -19,8 +19,6 @@
 syntax = "proto2";
 option cc_enable_arenas = true;
 
-import "proto/fighter_move_blueprint.proto";
-
 package pxd.proto;
 
 message ArmorPiece

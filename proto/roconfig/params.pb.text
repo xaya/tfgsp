@@ -28,15 +28,7 @@ params:
     rare_recipe_cook_cost: 60
   
     epic_recipe_cook_cost: 120
-  
-    common_cook_duration: 10
-  
-    uncommon_cook_duration: 20
-  
-    rare_cook_duration: 50
-  
-    epic_cook_duration: 100
-  
+
     common_move_count: 3
   
     uncommon_move_count: 5
