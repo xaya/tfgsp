@@ -4470,7 +4470,10 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
     
     for(auto& player : playerPrestigeCollection)
     {
-        int32_t pTier = std::round(((player.second - 1000)) / oneGradeStep);
+        fpm::fixed_24_8 srate = fpm::fixed_24_8(player.second);
+        srate = srate - fpm::fixed_24_8(1000);
+        fpm::fixed_24_8 gStep = fpm::fixed_24_8(oneGradeStep);
+        int32_t pTier = (int32_t)fpm::round(srate / gStep);
         
         if(pTier < 1)
         {

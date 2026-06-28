@@ -1298,42 +1298,23 @@ void PXLogic::RecalculatePlayerTiers(Database& db, const Context& ctx)
     }
     
 	
-	if(ctx.Height () < 5155363)
-    {		
-		for(auto& player : playerPrestigeCollection)
-		{
-			int32_t pTier = std::round(((player.second - 1000)) / oneGradeStep);
-			
-			if(pTier < 1)
-			{
-				pTier = 1;
-			}
-			
-			auto a = xayaplayers.GetByName(player.first, ctx.RoConfig());
-			a->MutableProto().set_specialtournamentprestigetier(pTier);
-			a.reset();
-		}
-	}
-	else
+	for(auto& player : playerPrestigeCollection)
 	{
-		for(auto& player : playerPrestigeCollection)
+		fpm::fixed_24_8 srate = fpm::fixed_24_8(player.second);
+		srate = srate - fpm::fixed_24_8(1000);
+		fpm::fixed_24_8 gStep = fpm::fixed_24_8(oneGradeStep);
+		fpm::fixed_24_8 tier = fpm::round(srate / gStep);
+
+		int32_t pTier = (int32_t)tier;
+
+		if(pTier < 1)
 		{
-			fpm::fixed_24_8 srate = fpm::fixed_24_8(player.second);
-			srate = srate - fpm::fixed_24_8(1000);
-			fpm::fixed_24_8 gStep = fpm::fixed_24_8(oneGradeStep);
-			fpm::fixed_24_8 tier = fpm::round(srate / gStep);
-			
-			int32_t pTier = (int32_t)tier;
-			
-			if(pTier < 1)
-			{
-				pTier = 1;
-			}
-			
-			auto a = xayaplayers.GetByName(player.first, ctx.RoConfig());
-			a->MutableProto().set_specialtournamentprestigetier(pTier);
-			a.reset();
-		}		
+			pTier = 1;
+		}
+
+		auto a = xayaplayers.GetByName(player.first, ctx.RoConfig());
+		a->MutableProto().set_specialtournamentprestigetier(pTier);
+		a.reset();
 	}
 }
 
