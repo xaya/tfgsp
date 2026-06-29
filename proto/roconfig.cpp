@@ -112,13 +112,20 @@ RoConfig::RoConfig (const xaya::Chain chain)
       CHECK (!pb.regtest_merge ().has_testnet_merge ());
       CHECK (!pb.regtest_merge ().has_regtest_merge ());
 
+      /* MergeFrom does not support the source aliasing the destination, and
+         here the source is a sub-message OF pb.  Merging in place silently
+         corrupts copied values (e.g. it dropped reward Weights); this stayed
+         invisible only while every regtest/testnet override value was 0.  Copy
+         the sub-message out first so source and destination do not alias. */
       if (mergeTestnet)
       {
-        pb.MergeFrom (pb.testnet_merge ());
+        const proto::ConfigData merge = pb.testnet_merge ();
+        pb.MergeFrom (merge);
       }
       if (mergeRegtest)
       {
-          pb.MergeFrom (pb.regtest_merge ());
+        const proto::ConfigData merge = pb.regtest_merge ();
+        pb.MergeFrom (merge);
       }
       pb.clear_testnet_merge ();
       pb.clear_regtest_merge ();

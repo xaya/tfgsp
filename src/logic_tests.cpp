@@ -608,7 +608,11 @@ TEST_F (ValidateStateTests, SweetenerRandomRewardConsistency)
   }
   
   
-  EXPECT_EQ (tbl4.CountForOwner("domob"), 2063);
+  /* Deterministic total across 1000 sweetener rolls.  Re-pinned 2063 -> 2046
+     after the FN1 reward-roll fix (`<=` -> `<`): the corrected roll shifts a
+     handful of per-roll bucket selections (last bucket now reachable, first no
+     longer over-weighted), changing the cumulative reward count. */
+  EXPECT_EQ (tbl4.CountForOwner("domob"), 2046);
   
 
 

@@ -275,7 +275,7 @@ void PXLogic::ResolveSweetener(std::unique_ptr<XayaPlayer>& a, std::string sweet
         {
             accumulatedWeight += rw.weight();
 
-            if(rolCurNum <= accumulatedWeight)
+            if(rolCurNum < accumulatedWeight)
             {
                GenerateActivityReward(fighterID, "", 0, rw, ctx, db, a, rnd, posInTableList, sweetenerBlueprint.rewardchoices(rewardID).rewardstableid(), sweetenerAuthID);
                break;
@@ -336,7 +336,7 @@ void PXLogic::ResolveSweetener(std::unique_ptr<XayaPlayer>& a, std::string sweet
         {
             accumulatedWeight += rw.weight();
             
-            if(rolCurNum <= accumulatedWeight)
+            if(rolCurNum < accumulatedWeight)
             {
                GenerateActivityReward(fighterID, "", 0, rw, ctx, db, a, rnd, posInTableList, sweetenerBlueprint.rewardchoices(rewardID).moverewardstableid(), sweetenerAuthID);
                break;
@@ -395,7 +395,7 @@ void PXLogic::ResolveSweetener(std::unique_ptr<XayaPlayer>& a, std::string sweet
         {
             accumulatedWeight += rw.weight();
             
-            if(rolCurNum <= accumulatedWeight)
+            if(rolCurNum < accumulatedWeight)
             {
                GenerateActivityReward(fighterID, "", 0, rw, ctx, db, a, rnd, posInTableList, sweetenerBlueprint.rewardchoices(rewardID).armorrewardstableid(), sweetenerAuthID);
                break;
@@ -543,39 +543,38 @@ void PXLogic::ResolveExpedition(std::unique_ptr<XayaPlayer>& a, const std::strin
    
     fighter->SetStatus(FighterStatus::Available);
 
-    fpm::fixed_24_8 totalWeight = fpm::fixed_24_8(0);
+    uint32_t totalWeight = 0;
     for(auto& rw: rewardTableDb.rewards())
     {
-	 totalWeight = totalWeight + fpm::fixed_24_8(rw.weight());
+       totalWeight += (uint32_t)rw.weight();
     }
 
     for(int32_t roll = 0; roll < rollCount; ++roll)
     {
         int32_t rolCurNum = 0;
-        
-	    if(totalWeight != fpm::fixed_24_8(0) && (int32_t)totalWeight != 0)
-	    {
-		 rolCurNum = rnd.NextInt((int32_t)totalWeight);
-	    }
-		
-		VLOG (1) << "rolCurNum: " << rolCurNum;
-        
-        fpm::fixed_24_8 accumulatedWeight = fpm::fixed_24_8(0);
+
+        if(totalWeight != 0)
+        {
+          rolCurNum = rnd.NextInt((int32_t)totalWeight);
+        }
+
+        VLOG (1) << "rolCurNum: " << rolCurNum;
+
+        int32_t accumulatedWeight = 0;
         int32_t posInTableList = 0;
         for(auto& rw: rewardTableDb.rewards())
         {
-			accumulatedWeight = accumulatedWeight + fpm::fixed_24_8(rw.weight());
-			fpm::fixed_24_8  rolCurNumC = fpm::fixed_24_8(rolCurNum);
-			  
-			if(rolCurNumC <= accumulatedWeight)
-			{
+            accumulatedWeight += rw.weight();
+
+            if(rolCurNum < accumulatedWeight)
+            {
               GenerateActivityReward(fighterID, blueprintAuthID, 0, rw, ctx, db, a, rnd, posInTableList, basedRewardsTableAuthId, "");
               break;
             }
-            
-             posInTableList++;
+
+            posInTableList++;
         }
-    }   
+    }
 }
 
 void PXLogic::ResolveCookingRecepie(std::unique_ptr<XayaPlayer>& a, const uint32_t recepieID, Database& db, const Context& ctx, xaya::Random& rnd)
@@ -1241,39 +1240,38 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
                       continue;
                   }
                                         									
-                  fpm::fixed_24_8 totalWeight = fpm::fixed_24_8(0);
-				  for(auto& rw: rewardTableDb.rewards())
-				  {
-					 totalWeight = totalWeight + fpm::fixed_24_8(rw.weight());
-				  }
+                  uint32_t totalWeight = 0;
+                  for(auto& rw: rewardTableDb.rewards())
+                  {
+                     totalWeight += (uint32_t)rw.weight();
+                  }
 
                   for(uint32_t roll = 0; roll < rollCount; ++roll)
                   {
                       int32_t rolCurNum = 0;
-                      
-					  if(totalWeight != fpm::fixed_24_8(0))
-					  {
-						rolCurNum = rnd.NextInt((int32_t)totalWeight);
-					  }
-					  
-					  VLOG (1) << "rolCurNum: " << rolCurNum;
-					  
-                      fpm::fixed_24_8 accumulatedWeight = fpm::fixed_24_8(0);
+
+                      if(totalWeight != 0)
+                      {
+                        rolCurNum = rnd.NextInt((int32_t)totalWeight);
+                      }
+
+                      VLOG (1) << "rolCurNum: " << rolCurNum;
+
+                      int32_t accumulatedWeight = 0;
                       int32_t posInTableList = 0;
                       for(auto& rw: rewardTableDb.rewards())
                       {
-						  accumulatedWeight = accumulatedWeight + fpm::fixed_24_8(rw.weight());
-						  fpm::fixed_24_8  rolCurNumC = fpm::fixed_24_8(rolCurNum);
-						  
-						  if(rolCurNumC <= accumulatedWeight)
-						  {					  
+                          accumulatedWeight += rw.weight();
+
+                          if(rolCurNum < accumulatedWeight)
+                          {
                              GenerateActivityReward(0, "", tnm->GetId(), rw, ctx, db, a, rnd, posInTableList, rewardTableId, "");
                              break;
                           }
-                          
-                           posInTableList++;
+
+                          posInTableList++;
                       }
-                  }                  
+                  }
                   
                   a->MutableProto().set_tournamentscompleted(a->GetProto().tournamentscompleted() + 1);
 				  
