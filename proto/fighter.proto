@@ -34,8 +34,8 @@ message FighterSaleEntry
   /*Buyer Name*/
   optional string ToOwner = 3;    
   
-  /*Selling price*/
-  optional uint32 Price = 4;
+  /*Selling price (uint64 to match ExchangePrice; uint32 silently narrowed it)*/
+  optional uint64 Price = 4;
 }
 
 message Fighter

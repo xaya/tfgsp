@@ -53,9 +53,7 @@ params:
     prestige_uncommon_mod: 1100
   
     prestige_common_mod: 1000
-  
-    prestige_total_treats_mod: 100
-  
+
     prestige_avg_rating_mod: 1
   
     prestige_tournament_performance_mod: 0.5   

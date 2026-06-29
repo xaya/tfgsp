@@ -102,8 +102,8 @@ message Params
   
   optional uint32 prestige_common_mod = 31;
   
-  optional uint32 prestige_total_treats_mod = 32;
-  
+  reserved 32; // was prestige_total_treats_mod (never read by any C++ code)
+
   optional uint32 prestige_avg_rating_mod = 33;
   
   optional float prestige_tournament_performance_mod = 34;
@@ -126,8 +126,8 @@ message Params
 
 /**
  * The hardcoded "configuration data" for tf.  This includes all data
- * that describes read-only aspects of the game, like known item or vehicle
- * types and stats for them.
+ * that describes read-only aspects of the game, like item, reward and
+ * blueprint definitions and the parameters that drive them.
  *
  * An instance of this proto is populated from text format encoded in
  * roconfig/<files>.pb.text and made available to all parts of the code.
@@ -175,10 +175,8 @@ message ConfigData
 
   /**
    * The regtest-specific configuration data.  This is merged into the testnet
-   * data by the RoConfig-helper class when running on regtest.
-   *
-   * Safe zones and prizes in there will completely replace the values
-   * in the mainnet config, instead of being added to them.
+   * data by the RoConfig-helper class when running on regtest: map entries
+   * override the corresponding mainnet entries, new keys are added.
    */
   optional ConfigData regtest_merge = 101;
 
