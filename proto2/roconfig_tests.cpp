@@ -374,12 +374,6 @@ RoConfigSanityTests::IsConfigValid (const RoConfig& cfg)
           return false;
       }
 
-      if (!i.has_maxrewardquality())
-      {
-          LOG (WARNING) << "No has_maxrewardquality defined for expeditionblueprints: " << entry.first;
-          return false;
-      }     
-
       if (!i.has_baserewardstableid())
       {
           LOG (WARNING) << "No BaseRewardsTableId defined for expeditionblueprints: " << entry.first;
@@ -931,12 +925,6 @@ RoConfigSanityTests::IsConfigValid (const RoConfig& cfg)
           LOG (WARNING) << "No has_maxsweetness defined for tournamentbluprints: " << entry.first;
           return false;
       }   
-
-      if (!i.has_maxrewardquality())
-      {
-          LOG (WARNING) << "No has_maxrewardquality defined for tournamentbluprints: " << entry.first;
-          return false;
-      }      
 
       if (!i.has_baserewardstableid())
       {

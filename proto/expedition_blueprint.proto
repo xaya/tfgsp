@@ -38,8 +38,7 @@ message ExpeditionBlueprint
   /*mas*/
   optional uint32 MaxSweetness = 5;    
   
-  /*mr*/
-  optional uint32 MaxRewardQuality = 6;
+  reserved 6; // was MaxRewardQuality (never applied as a cap)
 
   /*rt*/
   optional string BaseRewardsTableId = 7;

@@ -468,7 +468,6 @@ void PXLogic::ResolveDeconstruction(std::unique_ptr<XayaPlayer>& a, const uint32
     for(const auto& entry: dict)
     {
       proto::Deconstruction* newD = newReward->MutableProto().add_deconstructions();
-      newD->set_deconstructionid(fighterID);
       newD->set_candytype(entry.first);
       newD->set_quantity(entry.second);
     }

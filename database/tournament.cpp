@@ -50,7 +50,6 @@ TournamentInstance::TournamentInstance (Database& d, const std::string& blueprin
           MutableProto().set_teamsize(tournamentBluprint.second.teamsize());
           MutableProto().set_minsweetness(tournamentBluprint.second.minsweetness());
           MutableProto().set_maxsweetness(tournamentBluprint.second.maxsweetness());
-          MutableProto().set_maxrewardquality(tournamentBluprint.second.maxrewardquality());
           MutableProto().set_baserewardstableid(tournamentBluprint.second.baserewardstableid());
           MutableProto().set_baserollcount(tournamentBluprint.second.baserollcount());
           MutableProto().set_winnerrewardstableid(tournamentBluprint.second.winnerrewardstableid());

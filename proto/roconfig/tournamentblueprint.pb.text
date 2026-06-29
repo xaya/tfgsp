@@ -10,7 +10,6 @@ tournamentbluprints:
     TeamSize: 2
     MinSweetness: 1
     MaxSweetness: 10
-    MaxRewardQuality: 2
     BaseRewardsTableId: "e6d106ef-38e1-67d4-db02-fd1fde4d94a1"
     BaseRollCount: 1
     WinnerRewardsTableId: "4c95fe23-e5e4-15d4-2a99-dbac2f3daeed"
@@ -30,7 +29,6 @@ tournamentbluprints:
     TeamSize: 3
     MinSweetness: 4
     MaxSweetness: 6
-    MaxRewardQuality: 2
     BaseRewardsTableId: "facf013d-6328-82a4-8b61-32db1c3c5282"
     BaseRollCount: 2
     WinnerRewardsTableId: "facf013d-6328-82a4-8b61-32db1c3c5282"
@@ -50,7 +48,6 @@ tournamentbluprints:
     TeamSize: 4
     MinSweetness: 4
     MaxSweetness: 6
-    MaxRewardQuality: 2
     BaseRewardsTableId: "facf013d-6328-82a4-8b61-32db1c3c5282"
     BaseRollCount: 3
     WinnerRewardsTableId: "facf013d-6328-82a4-8b61-32db1c3c5282"
@@ -70,7 +67,6 @@ tournamentbluprints:
     TeamSize: 2
     MinSweetness: 3
     MaxSweetness: 5
-    MaxRewardQuality: 2
     BaseRewardsTableId: "f222e20f-3157-f314-6803-692d4ea1c9f2"
     BaseRollCount: 2
     WinnerRewardsTableId: "f222e20f-3157-f314-6803-692d4ea1c9f2"
@@ -90,7 +86,6 @@ tournamentbluprints:
     TeamSize: 4
     MinSweetness: 3
     MaxSweetness: 5
-    MaxRewardQuality: 2
     BaseRewardsTableId: "f222e20f-3157-f314-6803-692d4ea1c9f2"
     BaseRollCount: 3
     WinnerRewardsTableId: "f222e20f-3157-f314-6803-692d4ea1c9f2"
@@ -110,7 +105,6 @@ tournamentbluprints:
     TeamSize: 10
     MinSweetness: 9
     MaxSweetness: 10
-    MaxRewardQuality: 4
     BaseRewardsTableId: "53f146c5-6d06-d7e4-e970-5dd72dbef229"
     BaseRollCount: 3
     WinnerRewardsTableId: "53f146c5-6d06-d7e4-e970-5dd72dbef229"
@@ -130,7 +124,6 @@ tournamentbluprints:
     TeamSize: 3
     MinSweetness: 2
     MaxSweetness: 4
-    MaxRewardQuality: 1
     BaseRewardsTableId: "bd3bfc25-5636-a704-a96e-59473e39a368"
     BaseRollCount: 1
     WinnerRewardsTableId: "bd3bfc25-5636-a704-a96e-59473e39a368"
@@ -150,7 +143,6 @@ tournamentbluprints:
     TeamSize: 4
     MinSweetness: 2
     MaxSweetness: 4
-    MaxRewardQuality: 1
     BaseRewardsTableId: "bd3bfc25-5636-a704-a96e-59473e39a368"
     BaseRollCount: 1
     WinnerRewardsTableId: "bd3bfc25-5636-a704-a96e-59473e39a368"
@@ -170,7 +162,6 @@ tournamentbluprints:
     TeamSize: 4
     MinSweetness: 8
     MaxSweetness: 10
-    MaxRewardQuality: 4
     BaseRewardsTableId: "ba99802e-6d0c-3da4-b9b1-99fc8105e54a"
     BaseRollCount: 6
     WinnerRewardsTableId: "ba99802e-6d0c-3da4-b9b1-99fc8105e54a"
@@ -190,7 +181,6 @@ tournamentbluprints:
     TeamSize: 2
     MinSweetness: 1
     MaxSweetness: 3
-    MaxRewardQuality: 1
     BaseRewardsTableId: "be507768-f89e-7114-3a40-655521f5ecad"
     BaseRollCount: 2
     WinnerRewardsTableId: "be507768-f89e-7114-3a40-655521f5ecad"
@@ -210,7 +200,6 @@ tournamentbluprints:
     TeamSize: 4
     MinSweetness: 7
     MaxSweetness: 9
-    MaxRewardQuality: 3
     BaseRewardsTableId: "6c280e9c-2326-ce44-895c-b350dd01543a"
     BaseRollCount: 2
     WinnerRewardsTableId: "6c280e9c-2326-ce44-895c-b350dd01543a"
@@ -230,7 +219,6 @@ tournamentbluprints:
     TeamSize: 4
     MinSweetness: 7
     MaxSweetness: 9
-    MaxRewardQuality: 3
     BaseRewardsTableId: "6c280e9c-2326-ce44-895c-b350dd01543a"
     BaseRollCount: 5
     WinnerRewardsTableId: "6c280e9c-2326-ce44-895c-b350dd01543a"
@@ -250,7 +238,6 @@ tournamentbluprints:
     TeamSize: 5
     MinSweetness: 9
     MaxSweetness: 10
-    MaxRewardQuality: 4
     BaseRewardsTableId: "53f146c5-6d06-d7e4-e970-5dd72dbef229"
     BaseRollCount: 3
     WinnerRewardsTableId: "53f146c5-6d06-d7e4-e970-5dd72dbef229"
@@ -270,7 +257,6 @@ tournamentbluprints:
     TeamSize: 3
     MinSweetness: 6
     MaxSweetness: 8
-    MaxRewardQuality: 3
     BaseRewardsTableId: "6ca739e1-18c3-9b04-4bb6-cb38d82462ea"
     BaseRollCount: 5
     WinnerRewardsTableId: "6ca739e1-18c3-9b04-4bb6-cb38d82462ea"
@@ -290,7 +276,6 @@ tournamentbluprints:
     TeamSize: 4
     MinSweetness: 6
     MaxSweetness: 8
-    MaxRewardQuality: 3
     BaseRewardsTableId: "6ca739e1-18c3-9b04-4bb6-cb38d82462ea"
     BaseRollCount: 5
     WinnerRewardsTableId: "6ca739e1-18c3-9b04-4bb6-cb38d82462ea"
@@ -310,7 +295,6 @@ tournamentbluprints:
     TeamSize: 4
     MinSweetness: 1
     MaxSweetness: 3
-    MaxRewardQuality: 1
     BaseRewardsTableId: "be507768-f89e-7114-3a40-655521f5ecad"
     BaseRollCount: 3
     WinnerRewardsTableId: "be507768-f89e-7114-3a40-655521f5ecad"
@@ -330,7 +314,6 @@ tournamentbluprints:
     TeamSize: 4
     MinSweetness: 8
     MaxSweetness: 10
-    MaxRewardQuality: 4
     BaseRewardsTableId: "ba99802e-6d0c-3da4-b9b1-99fc8105e54a"
     BaseRollCount: 5
     WinnerRewardsTableId: "ba99802e-6d0c-3da4-b9b1-99fc8105e54a"
@@ -350,7 +333,6 @@ tournamentbluprints:
     TeamSize: 3
     MinSweetness: 5
     MaxSweetness: 7
-    MaxRewardQuality: 3
     BaseRewardsTableId: "d73e36c9-4533-0ff4-cb72-2137ae467bd8"
     BaseRollCount: 5
     WinnerRewardsTableId: "d73e36c9-4533-0ff4-cb72-2137ae467bd8"
@@ -370,7 +352,6 @@ tournamentbluprints:
     TeamSize: 4
     MinSweetness: 5
     MaxSweetness: 7
-    MaxRewardQuality: 3
     BaseRewardsTableId: "d73e36c9-4533-0ff4-cb72-2137ae467bd8"
     BaseRollCount: 5
     WinnerRewardsTableId: "d73e36c9-4533-0ff4-cb72-2137ae467bd8"
@@ -390,7 +371,6 @@ tournamentbluprints:
     TeamSize: 10
     MinSweetness: 10
     MaxSweetness: 10
-    MaxRewardQuality: 4
     BaseRewardsTableId: "a8c278b1-2a20-db84-d9ca-977c84fe9cb8"
     BaseRollCount: 2
     WinnerRewardsTableId: "a8c278b1-2a20-db84-d9ca-977c84fe9cb8"
@@ -410,7 +390,6 @@ tournamentbluprints:
     TeamSize: 20
     MinSweetness: 10
     MaxSweetness: 10
-    MaxRewardQuality: 4
     BaseRewardsTableId: "a8c278b1-2a20-db84-d9ca-977c84fe9cb8"
     BaseRollCount: 2
     WinnerRewardsTableId: "a8c278b1-2a20-db84-d9ca-977c84fe9cb8"

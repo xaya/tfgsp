@@ -13,7 +13,6 @@ expeditionblueprints:
     Duration: 1
     MinSweetness: 1
     MaxSweetness: 10
-    MaxRewardQuality: 1
     BaseRewardsTableId: "00000000-0000-0000-xxxx-xxxxxxxxxxxx"
     BaseRollCount: 1
   }

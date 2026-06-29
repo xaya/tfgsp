@@ -23,9 +23,9 @@ package pxd.proto;
 
 message Deconstruction
 {
-  optional uint32 DeconstructionId = 1;  
+  reserved 1; // was DeconstructionId (set to fighterID but never read)
 
-  optional string CandyType = 2;  
+  optional string CandyType = 2;
   
   optional uint32 Quantity = 3;   
 }

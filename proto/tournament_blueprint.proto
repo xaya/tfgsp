@@ -44,8 +44,7 @@ message TournamentBlueprint
   /*mas*/
   optional uint32 MaxSweetness = 7;
 
-  /*mrq*/
-  optional uint32 MaxRewardQuality = 8; 
+  reserved 8; // was MaxRewardQuality (copied to instance but never applied as a cap)
 
   /*brt*/
   optional string BaseRewardsTableId = 9;  
