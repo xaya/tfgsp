@@ -855,6 +855,63 @@ TEST_F (CoinOperationTests, HighPriceFighterSaleDoesNotOverflowOrHalt)
   }
 }
 
+/* EXCH-6: a buy of an EXPIRED listing must be rejected -- the buyer keeps their
+   coins and the fighter stays with the seller.  ParseBuyData rejects once
+   ctx.Height() has passed the listing's exchangeexpire. */
+TEST_F (CoinOperationTests, BuyOfExpiredListingIsRejected)
+{
+  proto::ConfigData& cfg = const_cast <proto::ConfigData&>(*ctx.RoConfig());
+  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (250 + cfg.params().starting_crystals());
+
+  Process (R"([
+    {"name": "domob", "move": {"a": {"x": 42, "init": {"address": "CGUpAcjsb6MDktSYg8yRDxDutr7FhWtdWC"}}}}
+  ])");
+  ctx.SetTimestamp(1000);
+  UpdateState ("[]");
+
+  auto ft = tbl3.GetById(4, ctx.RoConfig());
+  ASSERT_TRUE (ft != nullptr);
+  ft->MutableProto().set_isaccountbound(false);
+  ft.reset();
+
+  Process (R"([
+    {"name": "domob", "move": {"f": {"s": {"fid": 4, "d": 3, "p": 500}}}}
+  ])");
+
+  uint64_t expireHeight;
+  ft = tbl3.GetById(4, ctx.RoConfig());
+  ASSERT_EQ (ft->GetStatus(), pxd::FighterStatus::Exchange);
+  expireHeight = ft->GetProto().exchangeexpire();
+  ft.reset();
+
+  Process (R"([
+    {"name": "andy", "move": {"a": {"x": 42, "init": {"address": "psss"}}}}
+  ])");
+  Amount buyerBefore;
+  {
+    auto a = xayaplayers.GetByName ("andy", ctx.RoConfig());
+    a->AddBalance (2000);
+    buyerBefore = a->GetBalance ();
+  }
+
+  /* Jump past the listing's expiry, then attempt the buy. */
+  ctx.SetHeight (expireHeight + 1);
+
+  Process (R"([
+    {"name": "andy", "move": {"f": {"b": {"fid": 4}}}}
+  ])");
+
+  /* Rejected: ownership unchanged, no coins moved. */
+  ft = tbl3.GetById(4, ctx.RoConfig());
+  ASSERT_TRUE (ft != nullptr);
+  EXPECT_EQ (ft->GetOwner(), "domob") << "expired listing was still bought";
+  ft.reset();
+  {
+    auto a = xayaplayers.GetByName ("andy", ctx.RoConfig());
+    EXPECT_EQ (a->GetBalance (), buyerBefore) << "buyer was charged for an expired listing";
+  }
+}
+
 /* EXCH-5: replaying a buy of the same listing within a single move must charge
    and transfer only ONCE.  After the first buy the fighter leaves Exchange
    status and changes owner, so the second buy in the same move is rejected. */
