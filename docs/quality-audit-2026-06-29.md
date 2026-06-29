@@ -61,6 +61,13 @@ worth a config balance glance. Flagged to user.
 | FN50 | QuantityProduct (GMP bignum) dead outside tests; drops whole GMP dep | Build-dependency change — verify GMP isn't needed elsewhere before removing |
 
 ## Progress log
+<!-- Pass B (1947cd0): 43 dead-code/DRY findings, golden byte-identical, 98 unit + 4 reorg + 2
+     reorg-game. Orchestrated via 4 disjoint-file subagents + direct edits. The moveprocessor agent
+     died mid-run (API overload) leaving 2 incomplete cross-file edits (CalculateFuelPower header decl;
+     pending.cpp Parse* callers for the dropped name param) — both completed by hand; build+golden gate
+     caught and validated everything. B2 deferred: FN11, FN33, FN50, FN61 + pending.hpp dead member +
+     repo-wide Taurion copyright headers (7 files). -->
+
 
 - 2026-06-29: audit run; tracking doc created; baseline captured; `gametest/` stale `__pycache__`
   removed (untracked).
