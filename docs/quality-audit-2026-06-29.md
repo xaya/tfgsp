@@ -60,6 +60,40 @@ worth a config balance glance. Flagged to user.
 | DEF7 | Per-entity table boilerplate copy-pasted across 6 DB classes | Large cross-cutting templatization; high churn |
 | FN50 | QuantityProduct (GMP bignum) dead outside tests; drops whole GMP dep | Build-dependency change — verify GMP isn't needed elsewhere before removing |
 
+## RESUME STATE (2026-06-29, after Pass B; before FN1/C/D/F/B2)
+
+**Done + committed** (branch `polygon-rewrite`, on top of `e2f4183`): Pass A1 `0c02348`, A2 `f6ffde4`,
+B `1947cd0` (+ doc commits). 46 findings fixed; suite green (98 unit + golden + 4 reorg + 2 reorg-game);
+net −202 LOC. Per-finding status in `quality-audit-findings.md`.
+
+**User decisions (this session):**
+1. **FN1 reward-roll** = *"Fix + you re-tune for me"* — apply strict `<` at all 5 roll sites + FN2
+   (fpm→int), then **adjust the weight tables in `proto/roconfig/activityrewardstable.pb.text` so
+   observed drop rates stay ~the same as today**, and **get user sign-off on the target rates** before
+   committing. Then regen golden + recalibrate the 4 RNG `ValidateStateTests`
+   (GeneratedRecipeMakeSureItWorks, SweetenerRandomRewardConsistency,
+   ClaimRewardsTestAllRewardTypesBeingAwardedProperly, ClaimRewardsInvalidParams).
+   FN1 analysis so far: reward table file has 1086 `Rewards:` entries; MANY tables end with a
+   `Weight: 1` last entry (currently UNREACHABLE under `<=`) — these need a sign-off decision (make
+   reachable vs keep starved). Effect of `<=`→`<`: first bucket loses its +1 over-weight, last bucket
+   gains its missing share. To preserve observed rates exactly per table: new_w[first]=old+1,
+   new_w[last]=old−1 (but that perpetuates the weight-1-unreachable pathology → flag those tables).
+2. **Remaining passes** = *"Continue all now"* → after FN1: **Pass C** (dead proto/config fields:
+   FN34/62/63/64/65/66/67/68, incl. removing the dead Activity message+table), **Pass D** (determinism:
+   DEF8/DEF9 float→int proto probabilities), **Pass F** (split the 4157-line moveprocessor.cpp +
+   logic.cpp into cohesive TUs, each golden byte-identical), **Pass B2** (FN11 rename, FN33 delete dead
+   Params class [context.* + Makefile + autoreconf], FN50 drop QuantityProduct/GMP dep, FN61 merge
+   recipe ctors, pending.hpp dead member, repo-wide Taurion copyright headers ×7).
+
+**Build/test loop (resume):** `tfdev` container holds the source at `/usr/src/tfgsp` (plain copy). Edit
+host → `docker cp src/F tfdev:/usr/src/tfgsp/src/F` → `docker exec tfdev touch …` → `make -C database`
+and/or `make -C src goldenreplay_tests tests reorg_tests reorg_game_tests` → run from
+`/usr/src/tfgsp/src`. Golden = `./goldenreplay_tests` (must PASS byte-identical for neutral changes;
+`GOLDEN_REGEN=1 ./goldenreplay_tests` to regen, then `docker cp` the new golden back, run TWICE for
+determinism, diff entity counts + no dangling refs). Proto/Makefile/schema changes need
+`autoreconf -i && ./config.status` (+ delete generated schema.cpp / roconfig.pb so they regen). Full
+detail of every finding is in the workflow output `wgm9hkdph` (scratchpad `audit-full.md`).
+
 ## Progress log
 <!-- Pass B (1947cd0): 43 dead-code/DRY findings, golden byte-identical, 98 unit + 4 reorg + 2
      reorg-game. Orchestrated via 4 disjoint-file subagents + direct edits. The moveprocessor agent
