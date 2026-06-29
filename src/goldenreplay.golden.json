@@ -1,13 +1,4 @@
 {
-  "moneysupply" : 
-  {
-    "entries" : 
-    {
-      "burnsale" : 0,
-      "gifted" : 0
-    },
-    "total" : 0
-  },
   "state" : 
   {
     "activities" : [],

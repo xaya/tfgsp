@@ -16,7 +16,6 @@ libdatabase_la_SOURCES = \
   schema.cpp \
   reward.cpp \
   activity.cpp \
-  moneysupply.cpp \
   globaldata.cpp \
   xayaplayer.cpp \
   tournament.cpp \
@@ -39,7 +38,6 @@ noinst_HEADERS = \
   ongoings.hpp \
   fighter.hpp fighter.tpp\
   xayaplayer.hpp xayaplayer.tpp \
-  moneysupply.hpp \
   globaldata.hpp \
   uniquehandles.hpp uniquehandles.tpp
 
@@ -74,7 +72,6 @@ tests_LDADD = \
 tests_SOURCES = \
   database_tests.cpp \
   schema_tests.cpp \
-  moneysupply_tests.cpp \
   xayaplayer_tests.cpp \
   fighter_tests.cpp \
   uniquehandles_tests.cpp \

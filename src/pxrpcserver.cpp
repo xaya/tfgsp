@@ -95,17 +95,6 @@ PXRpcServer::getpendingstate ()
 }
 
 Json::Value
-PXRpcServer::getmoneysupply ()
-{
-  LOG (INFO) << "RPC method called: getmoneysupply";
-  return logic.GetCustomStateData (game,
-    [] (GameStateJson& gsj)
-      {
-        return gsj.MoneySupply ();
-      });
-}
-
-Json::Value
 PXRpcServer::getxayaplayers ()
 {
   LOG (INFO) << "RPC method called: getxayaplayers";

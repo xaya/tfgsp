@@ -26,7 +26,6 @@
 #include "database/reward.hpp"
 #include "database/ongoings.hpp"
 #include "database/activity.hpp"
-#include "database/moneysupply.hpp"
 
 #include "jsonutils.hpp"
 
@@ -500,33 +499,6 @@ template <>
   return res;
 }
 
-Json::Value
-GameStateJson::MoneySupply()
-{
-  const auto& params = ctx.RoConfig ()->params ();
-  pxd::MoneySupply ms(db);
-
-  Amount total = 0;
-  Json::Value entries(Json::objectValue);
-  for (const auto& key : ms.GetValidKeys ())
-    {
-      if (key == "gifted" && !params.god_mode ())
-        {
-          CHECK_EQ (ms.Get (key), 0);
-          continue;
-        }
-
-      const Amount value = ms.Get (key);
-      entries[key] = IntToJson (value);
-      total += value;
-    }
-
-  Json::Value res(Json::objectValue);
-  res["total"] = IntToJson (total);
-  res["entries"] = entries;
-
-  return res;
-}
 
 Json::Value
 GameStateJson::XayaPlayers()

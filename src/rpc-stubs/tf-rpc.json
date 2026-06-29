@@ -62,10 +62,5 @@
     "name": "getxayaplayers",
     "params": {},
     "returns": {}
-  },  
-  {
-    "name": "getmoneysupply",
-    "params": {},
-    "returns": {}
-  }  
+  }
 ]

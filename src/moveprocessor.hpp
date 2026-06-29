@@ -33,7 +33,6 @@
 #include "database/recipe.hpp"
 #include "database/reward.hpp"
 #include "database/ongoings.hpp"
-#include "database/moneysupply.hpp"
 #include "database/amount.hpp"
 #include "database/globaldata.hpp"
 

@@ -165,8 +165,7 @@ protected:
    * FullState() is the single full-state serializer (deterministic ORDER BY
    * everywhere).  We strip statehex/stateblock -- those are process-level
    * static globals updated only every 100 blocks (gamestatejson.hpp), so they
-   * are stale/irrelevant at an arbitrary height.  MoneySupply() is captured
-   * separately because it is NOT part of FullState().
+   * are stale/irrelevant at an arbitrary height.
    */
   std::string
   BuildSnapshot ()
@@ -177,7 +176,6 @@ protected:
 
     Json::Value root(Json::objectValue);
     root["state"] = full;
-    root["moneysupply"] = converter.MoneySupply ();
 
     Json::StreamWriterBuilder wbuilder;
     wbuilder["indentation"] = "  ";

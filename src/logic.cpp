@@ -2144,11 +2144,8 @@ PXLogic::InitialiseState (xaya::SQLiteDatabase& db)
 {
   SQLiteGameDatabase dbObj(db, *this);
 
-  MoneySupply ms(dbObj);
-  ms.InitialiseDatabase ();
-  
   GlobalData gd(dbObj);
-  gd.InitialiseDatabase ();  
+  gd.InitialiseDatabase ();
 
   /* The initialisation uses up some auto IDs, namely for placed buildings.
      We start "regular" IDs at a later value to avoid shifting them always

@@ -80,10 +80,6 @@ public:
   
   Json::Value CrystalBundles(); 
   
-  /**
-   * Returns the JSON data about the money supply.
-   */
-  Json::Value MoneySupply();
   
   /**
    * Returns the JSON data about fighters.
