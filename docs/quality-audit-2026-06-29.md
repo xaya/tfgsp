@@ -64,7 +64,7 @@ worth a config balance glance. Flagged to user.
 
 **Done + committed** (branch `polygon-rewrite`, on top of `e2f4183`): Pass A1 `0c02348`, A2 `f6ffde4`,
 B `1947cd0`, **FN1+FN2+FN72 `bf5271b`**, **Pass C** = `183f13a` + `419dd57` + `84c56f1`,
-**Pass D DEF8/DEF9** = `<pending-commit>` (FighterName/FighterType/MoveProbability `Probability`
+**Pass D DEF8/DEF9** = `11ee008` (FighterName/FighterType/MoveProbability `Probability`
 float→uint32 + recipe.cpp `(int32_t)` casts; golden byte-identical, full suite green, independently
 verified value-exact by sweep `wqfneq70y`). Per-finding status in `quality-audit-findings.md`.
 
@@ -164,7 +164,7 @@ detail of every finding is in the workflow output `wgm9hkdph` (scratchpad `audit
     make -C database libdbtest.la` -> `make -C src <targets>`. Verify with
     `strings src/tests | grep -c <a-unique-string-from-your-edit>`.
 
-- 2026-06-29: **Pass D DEF8/DEF9 DONE** (`<pending-commit>`): `FighterName.Probability` (field 5),
+- 2026-06-29: **Pass D DEF8/DEF9 DONE** (`11ee008`): `FighterName.Probability` (field 5),
   `FighterType.Probability` (field 3), `FighterTypeMoveProbability.Probability` (field 2) changed
   `float`→`uint32`; `fightertype.pb.text` `Probability: N.0`→`N`; recipe.cpp's six `*1000` sites given
   explicit `(int32_t)` casts (pure signed-int math). All config probability values are exact integers
