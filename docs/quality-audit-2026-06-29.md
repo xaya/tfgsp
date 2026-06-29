@@ -60,6 +60,17 @@ worth a config balance glance. Flagged to user.
 | DEF7 | Per-entity table boilerplate copy-pasted across 6 DB classes | Large cross-cutting templatization; high churn |
 | FN50 | QuantityProduct (GMP bignum) dead outside tests; drops whole GMP dep | Build-dependency change — verify GMP isn't needed elsewhere before removing |
 
+## RESUME STATE (2026-06-29, SWEEP COMPLETE — A1/A2/B/C/D/DEF10-14/Taurion/B2/F all done)
+
+**Pass F DONE** — `d374718` (logic.cpp 1685→335 + logic_resolve/_combat/_tournament) and `f4b89e4`
+(moveprocessor.cpp 4154→531 + moveprocessor_internal.hpp shared helpers + _purchase/_cooking/_exchange/
+_fighter/_activity). Pure code movement: all 66 moveprocessor + 20 logic top-level defs brace-matched and
+verified to land in exactly one TU; no duplicate/undefined symbols; golden byte-identical. **The entire
+quality-audit sweep is complete. Final full suite green: golden + 98 unit + 4 reorg + 2 reorg-game + 4
+roconfig + 32 database.**
+
+---
+_(historical resume state below)_
 ## RESUME STATE (2026-06-29, after Pass D + B2 + Taurion removal COMPLETE; only Pass F remains)
 
 **Done + committed** (branch `polygon-rewrite`, on top of `e2f4183`): Pass A1 `0c02348`, A2 `f6ffde4`,
