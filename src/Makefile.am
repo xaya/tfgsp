@@ -26,6 +26,11 @@ libtf_la_SOURCES = \
   logic_combat.cpp \
   logic_tournament.cpp \
   moveprocessor.cpp \
+  moveprocessor_purchase.cpp \
+  moveprocessor_cooking.cpp \
+  moveprocessor_exchange.cpp \
+  moveprocessor_fighter.cpp \
+  moveprocessor_activity.cpp \
   pending.cpp
 libtfheaders = \
   fpm/fixed.hpp \
@@ -35,6 +40,7 @@ libtfheaders = \
   jsonutils.hpp \
   logic.hpp \
   moveprocessor.hpp \
+  moveprocessor_internal.hpp \
   pending.hpp
 
 tfd_CXXFLAGS = \
