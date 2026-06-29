@@ -60,7 +60,7 @@ worth a config balance glance. Flagged to user.
 | DEF7 | Per-entity table boilerplate copy-pasted across 6 DB classes | Large cross-cutting templatization; high churn |
 | FN50 | QuantityProduct (GMP bignum) dead outside tests; drops whole GMP dep | Build-dependency change — verify GMP isn't needed elsewhere before removing |
 
-## RESUME STATE (2026-06-29, after Pass D COMPLETE — DEF8/DEF9 + DEF10-14; next = Pass F)
+## RESUME STATE (2026-06-29, after Pass D + B2 + Taurion removal COMPLETE; only Pass F remains)
 
 **Done + committed** (branch `polygon-rewrite`, on top of `e2f4183`): Pass A1 `0c02348`, A2 `f6ffde4`,
 B `1947cd0`, **FN1+FN2+FN72 `bf5271b`**, **Pass C** = `183f13a` + `419dd57` + `84c56f1`,
@@ -83,10 +83,23 @@ deterministic and suitable, like fixed point math."*
 **ALL of Pass D done. Suite green (golden byte-identical + 98 unit + 4 reorg + 2 reorg-game + roconfig +
 database).**
 
-**NEXT = Pass F** (split the 4157-line moveprocessor.cpp + logic.cpp into cohesive TUs by domain
-[cooking / expedition / tournament / exchange / transfigure / crystal], each split verified golden
-byte-identical), then **Pass B2** (FN11 rename, FN33 dead Params class, FN50 drop GMP dep, FN61 merge
-recipe ctors, pending.hpp dead member, repo-wide legacy copyright headers x7).
+**Taurion removal DONE** `55e355f` (user: "no relation to taurion") — every Taurion mention stripped
+repo-wide (8 copyright headers → "tf", 2 comments reworded, audit-doc "Taurion-baggage" category →
+"fork-baggage"); comment-only, golden byte-identical.
+
+**Pass B2 DONE** — `f0940de` (FN11 combat lmt/rmt honest rename + drop "0____0" comment; FN33 delete dead
+`Params` class incl. context member/accessor + Makefile + autoreconf; FN50 drop `QuantityProduct` and the
+whole GMP dependency — configure.ac + database/Makefile.am; dead `pending.hpp` onChainPlayerFighterData
+member) and `<pending-fn61>` (FN61 merge the two RecipeInstance create-ctors via a `PopulateRecipeCommon`
+helper — both sources are `CraftedRecipe`). All golden byte-identical, full suite green.
+
+**NEXT = Pass F (the only remaining pass)** — split the 4154-line moveprocessor.cpp + 1682-line logic.cpp
+into cohesive TUs by domain (logic: core/state · resolve · combat · tournament; moveprocessor: core ·
+purchase · cooking · expedition · tournament · exchange · fighter), each verified golden byte-identical.
+Pure code movement: distribute class member-method definitions across new .cpp files all including the same
+header; relocate the 4 shared moveprocessor free helpers (AsciiToLower/DedupInPlace/SortPairsByKey/
+FindApplicableGoody) to a small internal header. Each new .cpp → src/Makefile.am + autoreconf. No proto
+change, so fast incremental `make -C src` builds (not the slow full rebuild). User chose "B2 first, then F".
 **Heed the BUILD GOTCHA in the progress log before any proto/proto2/*.pb.text edit. Pass C's activities
 teardown needed autoreconf -i + ./config.status (Makefile.am changes) -- D/F may too.**
 

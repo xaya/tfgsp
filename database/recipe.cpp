@@ -23,6 +23,48 @@
 namespace pxd
 {
 
+namespace
+{
+
+/* Copies the recipe fields shared by both create-constructors (everything
+   except AuthoredId and the first/second name + rarity, which the two callers
+   set differently) from one CraftedRecipe into the instance's proto.  */
+void
+PopulateRecipeCommon (pxd::proto::CraftedRecipe& dst,
+                      const pxd::proto::CraftedRecipe& src)
+{
+  dst.set_animationid (src.animationid ());
+
+  for (const auto& armor : src.armor ())
+  {
+    pxd::proto::AuthoredArmor* newArmor = dst.add_armor ();
+    newArmor->set_candytype (armor.candytype ());
+    newArmor->set_armortype (armor.armortype ());
+  }
+
+  dst.set_name (src.name ());
+  dst.set_duration (src.duration ());
+  dst.set_fightername (src.fightername ());
+  dst.set_fightertype (src.fightertype ());
+
+  for (const std::string& move : src.moves ())
+    dst.add_moves ()->assign (move);
+
+  dst.set_quality (src.quality ());
+  dst.set_isaccountbound (src.isaccountbound ());
+
+  for (const auto& candy : src.requiredcandy ())
+  {
+    pxd::proto::CandyAmount* newCandy = dst.add_requiredcandy ();
+    newCandy->set_candytype (candy.candytype ());
+    newCandy->set_amount (candy.amount ());
+  }
+
+  dst.set_requiredfighterquality (src.requiredfighterquality ());
+}
+
+} // anonymous namespace
+
 RecipeInstance::RecipeInstance (Database& d, const std::string& o, const std::string& cr, const RoConfig& cfg)
   : id(d.GetNextId ()),
     tracker(d.TrackHandle ("recipe", id)),  
@@ -41,43 +83,13 @@ RecipeInstance::RecipeInstance (Database& d, const std::string& o, const std::st
   {
     if(recepie.second.authoredid() == cr)
     {
+      PopulateRecipeCommon(MutableProto(), recepie.second);
+
       MutableProto().set_authoredid(recepie.second.authoredid());
-      MutableProto().set_animationid(recepie.second.animationid());
-
-      for(auto& armor: recepie.second.armor())
-      {
-          pxd::proto::AuthoredArmor* newArmor = MutableProto().add_armor();
-          newArmor->set_candytype(armor.candytype());
-          newArmor->set_armortype(armor.armortype());
-      }
-      
-      MutableProto().set_name(recepie.second.name());
-      MutableProto().set_duration(recepie.second.duration());
-      MutableProto().set_fightername(recepie.second.fightername());
-      MutableProto().set_fightertype(recepie.second.fightertype());
-	  
       MutableProto().set_firstnamerarity(1000);
-      MutableProto().set_secondnamerarity(1000);	  
+      MutableProto().set_secondnamerarity(1000);
       MutableProto().set_firstname(recepie.second.name());
-      MutableProto().set_secondname(recepie.second.name());	 	  
-      
-      for(std::string move : recepie.second.moves())
-      {
-          std::string* newMove = MutableProto().add_moves();
-          newMove->assign(move);
-      }
-      
-      MutableProto().set_quality(recepie.second.quality());
-      MutableProto().set_isaccountbound(recepie.second.isaccountbound());
-      
-      for(auto& candy : recepie.second.requiredcandy())
-      {
-          pxd::proto::CandyAmount* newCandy = MutableProto().add_requiredcandy();
-          newCandy->set_candytype(candy.candytype());
-          newCandy->set_amount(candy.amount());
-      }      
-
-      MutableProto().set_requiredfighterquality(recepie.second.requiredfighterquality());
+      MutableProto().set_secondname(recepie.second.name());
     }
   }
   
@@ -96,43 +108,13 @@ RecipeInstance::RecipeInstance (Database& d, const std::string& o, const pxd::pr
   
   data.SetToDefault ();
   
+  PopulateRecipeCommon(MutableProto(), cr);
+
   MutableProto().set_authoredid("generated");
-  MutableProto().set_animationid(cr.animationid());
-
-  for(auto& armor: cr.armor())
-  {
-      pxd::proto::AuthoredArmor* newArmor = MutableProto().add_armor();
-      newArmor->set_candytype(armor.candytype());
-      newArmor->set_armortype(armor.armortype());
-  }
-  
-  MutableProto().set_name(cr.name());
-  MutableProto().set_duration(cr.duration());
-  MutableProto().set_fightername(cr.fightername());
-  MutableProto().set_fightertype(cr.fightertype());
- 
   MutableProto().set_firstnamerarity(cr.firstnamerarity());
-  MutableProto().set_secondnamerarity(cr.secondnamerarity());	  
+  MutableProto().set_secondnamerarity(cr.secondnamerarity());
   MutableProto().set_firstname(cr.firstname());
-  MutableProto().set_secondname(cr.secondname());	
- 
-  for(std::string move : cr.moves())
-  {
-      std::string* newMove = MutableProto().add_moves();
-      newMove->assign(move);
-  }
-  
-  MutableProto().set_quality(cr.quality());
-  MutableProto().set_isaccountbound(cr.isaccountbound());
-  
-  for(auto& candy : cr.requiredcandy())
-  {
-      pxd::proto::CandyAmount* newCandy = MutableProto().add_requiredcandy();
-      newCandy->set_candytype(candy.candytype());
-      newCandy->set_amount(candy.amount());
-  }      
-
-  MutableProto().set_requiredfighterquality(cr.requiredfighterquality());
+  MutableProto().set_secondname(cr.secondname());
 
   Validate ();
 }
