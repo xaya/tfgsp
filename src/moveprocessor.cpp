@@ -17,7 +17,6 @@
 */
 
 #include "moveprocessor.hpp"
-#include "burnsale.hpp"
 
 #include "jsonutils.hpp"
 #include "proto/config.pb.h"
@@ -64,15 +63,14 @@ namespace pxd
 
 BaseMoveProcessor::BaseMoveProcessor (Database& d,
                                       const Context& c, bool ro)
-  : ctx(c), db(d), readOnly(ro), xayaplayers(db), recipeTbl(db), fighters(db), moneySupply(db), rewards(db), ongoings(db), tournamentsTbl(db), specialTournamentsTbl(db), globalData(db)
+  : ctx(c), db(d), readOnly(ro), xayaplayers(db), recipeTbl(db), fighters(db), rewards(db), ongoings(db), tournamentsTbl(db), specialTournamentsTbl(db), globalData(db)
 {}
 
 
 bool
 BaseMoveProcessor::ExtractMoveBasics (const Json::Value& moveObj,
                                       std::string& name, Json::Value& mv,
-                                      std::map<std::string, Amount>& paidToCrownHolders,
-                                      Amount& burnt)
+                                      std::map<std::string, Amount>& paidToCrownHolders)
 {
   VLOG (1) << "Processing move:\n" << moveObj;
   CHECK (moveObj.isObject ());
@@ -292,11 +290,6 @@ BaseMoveProcessor::ExtractMoveBasics (const Json::Value& moveObj,
         }
     }
   }
-  
-  if (moveObj.isMember ("burnt"))
-    CHECK (xaya::ChiAmountFromJson (moveObj["burnt"], burnt));
-  else
-    burnt = 0;
 
   return true;
 }
@@ -1048,90 +1041,6 @@ BaseMoveProcessor::TryCrystalPurchase (const std::string& name, const Json::Valu
 	 return outputNewValues;
   }	  
   
-bool
-BaseMoveProcessor::ParseCoinTransferBurn (const XayaPlayer& a,
-                                          const Json::Value& moveObj,
-                                          CoinTransferBurn& op,
-                                          Amount& burntChi)
-{
-  if (!moveObj.isObject ())
-    return false;
-  const auto& cmd = moveObj["vc"];
-  if (!cmd.isObject ())
-    return false;
-
-  Amount balance = a.GetBalance ();
-  Amount total = 0;
-
-  const auto& mint = cmd["m"];
-  if (mint.isObject () && mint.empty ())
-    {
-      const Amount soldBefore = moneySupply.Get ("burnsale");
-      op.minted = ComputeBurnsaleAmount (burntChi, soldBefore, ctx);
-      balance += op.minted;
-    }
-  else
-    {
-      op.minted = 0;
-      LOG_IF (WARNING, !mint.isNull ()) << "Invalid mint command: " << mint;
-    }
-
-  const auto& burn = cmd["b"];
-  if (CoinAmountFromJson (burn, op.burnt))
-    {
-      if (total + op.burnt <= balance)
-        total += op.burnt;
-      else
-        {
-          LOG (WARNING)
-              << a.GetName () << " has only a balance of " << balance
-              << ", can't burn " << op.burnt << " coins";
-          op.burnt = 0;
-        }
-    }
-  else
-    op.burnt = 0;
-
-  const auto& transfers = cmd["t"];
-  if (transfers.isObject ())
-    {
-      op.transfers.clear ();
-      for (auto it = transfers.begin (); it != transfers.end (); ++it)
-        {
-          CHECK (it.key ().isString ());
-          const std::string to = it.key ().asString ();
-
-          Amount amount;
-          if (!CoinAmountFromJson (*it, amount))
-            {
-              LOG (WARNING)
-                  << "Invalid coin transfer from " << a.GetName ()
-                  << " to " << to << ": " << *it;
-              continue;
-            }
-
-          if (total + amount > balance)
-            {
-              LOG (WARNING)
-                  << "Transfer of " << amount << " from " << a.GetName ()
-                  << " to " << to << " would exceed the balance";
-              continue;
-            }
-
-          /* Self transfers are a no-op, so we just ignore them (and do not
-             update the total sent, so the balance is still available for
-             future transfers).  */
-          if (to == a.GetName ())
-            continue;
-
-          total += amount;
-          CHECK (op.transfers.emplace (to, amount).second);
-        }
-    }
-
-  CHECK_LE (total, balance);
-  return total > 0 || op.minted > 0;
-}
 
 void
 MoveProcessor::ProcessAll (const Json::Value& moveArray)
@@ -1232,61 +1141,6 @@ MoveProcessor::MaybeSetNewVanillaDownloadUrl (const Json::Value& cmd)
   globalData.SetUrl(dd);
 }
 
-void
-MoveProcessor::TryCoinOperation (const std::string& name,
-                                 const Json::Value& mv,
-                                 Amount& burntChi)
-{
-  auto a = xayaplayers.GetByName (name, ctx.RoConfig ());
-  CHECK (a != nullptr);
-
-  CoinTransferBurn op;
-  if (!ParseCoinTransferBurn (*a, mv, op, burntChi))
-  return;
-
-  if (op.minted > 0)
-  {
-    LOG (INFO) << name << " minted " << op.minted << " coins in the burnsale";
-    a->AddBalance (op.minted);
-    const Amount oldBurnsale = a->GetProto ().burnsale_balance ();
-    a->MutableProto ().set_burnsale_balance (oldBurnsale + op.minted);
-    moneySupply.Increment ("burnsale", op.minted);
-  }
-
-  if (op.burnt > 0)
-  {
-    LOG (INFO) << name << " is burning " << op.burnt << " coins";
-    a->AddBalance (-op.burnt);
-  }
-
-  
-
-  for (const auto& entry : op.transfers)
-  {
-    /* Transfers to self are a no-op, but we have to explicitly handle
-       them here.  Else we would run into troubles by having a second
-       active Account handle for the same account.  */
-    if (entry.first == name)
-      continue;
-
-    LOG (INFO)
-        << name << " is sending " << entry.second
-        << " coins to " << entry.first;
-    a->AddBalance (-entry.second);
-
-    auto to = xayaplayers.GetByName (entry.first, ctx.RoConfig ());
-    if (to == nullptr)
-      {
-        LOG (INFO)
-            << "Creating uninitialised account for coin recipient "
-            << entry.first;
-        to = xayaplayers.CreateNew (entry.first, ctx.RoConfig (), rnd);
-      }
-    to->AddBalance (entry.second);
-  }
-  
-  a.reset();
-}
 
 void
 MoveProcessor::ProcessOne (const Json::Value& moveObj)
@@ -1294,9 +1148,8 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
   std::string name;
   Json::Value mv;
   std::map<std::string, Amount> paidToCrownHolders;
-  Amount  burnt;
-  
-  if (!ExtractMoveBasics (moveObj, name, mv, paidToCrownHolders, burnt))
+
+  if (!ExtractMoveBasics (moveObj, name, mv, paidToCrownHolders))
   {
     return;
   }
@@ -1346,8 +1199,6 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
        this catches anything missed. */
     try
     {
-    //TryCoinOperation (name, mrl, burnt);// not need for final TF release, but lets keep if needed to burn coins in the future
-    
 	/* We perform account updates first.  That ensures that it is possible to
     e.g. choose one's faction and create characters in a single move.  */
     TryXayaPlayerUpdate (name, mrl["a"]);
@@ -1398,13 +1249,12 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
   {
     totalPaidLeft += entry.second;
   }
-      
-  /* If any burnt or paid-to-dev coins are left, it means probably something
-     has gone wrong and the user overpaid due to a frontend bug.  */
-  LOG_IF (WARNING, totalPaidLeft > 0 || burnt > 0)
+
+  /* If any paid-to-dev coins are left, it means probably something has gone
+     wrong and the user overpaid due to a frontend bug.  */
+  LOG_IF (WARNING, totalPaidLeft > 0)
       << "At the end of the move, " << name
-      << " has " << totalPaidLeft << " paid-to-dev and "
-      << burnt << " burnt CHI satoshi left";
+      << " has " << totalPaidLeft << " paid-to-dev CHI satoshi left";
 }
 
   bool BaseMoveProcessor::ParseTournamentRewardData(const XayaPlayer& a, const std::string& name, const Json::Value& tournament, std::vector<uint32_t>& rewardDatabaseIds, uint32_t& tournamentID)

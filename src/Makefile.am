@@ -23,7 +23,6 @@ libtf_la_SOURCES = \
   jsonutils.cpp \
   logic.cpp \
   moveprocessor.cpp \
-  burnsale.cpp \
   params.cpp \
   pending.cpp
 libtfheaders = \
@@ -34,7 +33,6 @@ libtfheaders = \
   jsonutils.hpp \
   logic.hpp \
   moveprocessor.hpp \
-  burnsale.hpp \
   params.hpp \
   pending.hpp
 
@@ -127,7 +125,6 @@ tests_SOURCES = \
   jsonutils_tests.cpp \
   logic_tests.cpp \
   pending_tests.cpp \
-  burnsale_tests.cpp \
   moveprocessor_tests.cpp \
   security_tests.cpp \
   testutils_tests.cpp

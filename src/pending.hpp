@@ -55,15 +55,10 @@ public:
    * situation without any pending moves).
    */
   void Clear ();
-  
-   /**
-   * Updates the state for a new coin transfer / burn.
-   */
-  void AddCoinTransferBurn (const XayaPlayer& a, const CoinTransferBurn& op, FighterTable& fighters, const pxd::RoConfig& config);  
-  
+
    /**
    * Updates the state for a new crystal bundle purchase.
-   */  
+   */
   void AddCrystalPurchase (const XayaPlayer& a, std::string crystalBundleKey, Amount crystalAmount, FighterTable& fighters, const pxd::RoConfig& config);
   
    /**
@@ -166,9 +161,6 @@ public:
    */
   struct XayaPlayerState
   {
-    /** The combined coin transfer / burn for this account.  */
-    std::unique_ptr<CoinTransferBurn> coinOps;
-
     /** List of crystal purchases, pending to be bought*/
     std::vector<std::string> crystalpurchace;
     

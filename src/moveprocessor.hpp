@@ -49,29 +49,6 @@ namespace pxd
 {
 
 /**
- * Raw data for a coin transfer and burn command.
- */
-struct CoinTransferBurn
-{
-
-  /** Amount of coins transferred to each account.  */
-  std::map<std::string, Amount> transfers;
-
-  /** Amount of coins burnt.  */
-  Amount burnt = 0;
-
-  /** Amount of coins bought for CHI in the burnsale.  */
-  Amount minted = 0;
-
-  CoinTransferBurn () = default;
-  CoinTransferBurn (CoinTransferBurn&&) = default;
-  CoinTransferBurn (const CoinTransferBurn&) = default;
-
-  void operator= (const CoinTransferBurn&) = delete;
-
-};
-
-/**
  * Base class for MoveProcessor (handling confirmed moves) and PendingProcessor
  * (for processing pending moves).  It holds some common stuff for both
  * as well as some basic logic for processing some moves.
@@ -107,9 +84,6 @@ protected:
   /** Access handle for the fighters database table.  */
   FighterTable fighters;    
   
-  /** MoneySupply database table.  */
-  MoneySupply moneySupply;  
-    
   /** Access handle for the rewards database table.  */
   RewardsTable rewards;
 
@@ -135,23 +109,10 @@ protected:
    */
   bool ExtractMoveBasics (const Json::Value& moveObj,
                           std::string& name, Json::Value& mv,
-                          std::map<std::string, Amount>& paidToCrownHolders,
-                          Amount& burnt);
+                          std::map<std::string, Amount>& paidToCrownHolders);
                           
                        
                           
- /**
-   * Parses and validates a move to transfer and burn coins (vCHI), as well
-   * as to mint coins through the burnsale.
-   *
-   * Returns true if at least one part of the transfer/burn was parsed
-   * successfully and needs to be executed.  The amount of burnt CHI
-   * is updated accordingly if all or some is used up.
-   */
-  bool ParseCoinTransferBurn (const XayaPlayer& a, const Json::Value& moveObj,
-                              CoinTransferBurn& op,
-                              Amount& burntChi);   
-
   /**
    * Tries to handle a move that purchases crystals
    */                       
@@ -521,12 +482,6 @@ private:
    */  
   void TryFighterAction (const std::string& name, const Json::Value& upd);    
   
-  /**
-   * Tries to handle a coin (Crystal) transfer / burn operation.  The amount
-   * of burnt CHI in the move is updated if any is used for minting vCHI.
-   */
-  void TryCoinOperation (const std::string& name, const Json::Value& mv,
-                         Amount& burntChi);   
   /**
    * Destroys all submited resources
    */		

@@ -163,7 +163,6 @@ TEST_F (XayaPlayersJsonTests, UninitialisedBalance)
                                         "Common_Nonpareil" : 10
                                 }
                         },
-                        "minted" : 0,
                         "name" : "bar",
                         "ongoings" : [],
                         "prestige" : 1586,
@@ -189,7 +188,6 @@ TEST_F (XayaPlayersJsonTests, UninitialisedBalance)
                                         "Common_Nonpareil" : 10
                                 }
                         },
-                        "minted" : 0,
                         "name" : "foo",
                         "ongoings" : [],
                         "prestige" : 1586,
@@ -610,7 +608,6 @@ TEST_F (XayaPlayersJsonTests, ExpeditionInstance)
                                         "Common_Nonpareil" : 10
                                 }
                         },
-                        "minted" : 0,
                         "name" : "foo",
                         "ongoings" : [],
                         "prestige" : 1586,

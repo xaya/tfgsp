@@ -120,25 +120,6 @@ PendingState::GetXayaPlayerState (const XayaPlayer& a, FighterTable& fighters, c
 }
 
 void
-PendingState::AddCoinTransferBurn (const XayaPlayer& a, const CoinTransferBurn& op, FighterTable& fighters, const pxd::RoConfig& config)
-{
-  VLOG (1) << "Adding pending coin operation for " << a.GetName ();
-
-  auto& aState = GetXayaPlayerState (a, fighters, config);
-
-  if (aState.coinOps == nullptr)
-    {
-      aState.coinOps = std::make_unique<CoinTransferBurn> (op);
-      return;
-    }
-
-  aState.coinOps->minted += op.minted;
-  aState.coinOps->burnt += op.burnt;
-  for (const auto& entry : op.transfers)
-    aState.coinOps->transfers[entry.first] += entry.second;
-}
-
-void
 PendingState::AddCrystalPurchase (const XayaPlayer& a, std::string crystalBundleKey, Amount crystalAmount, FighterTable& fighters, const pxd::RoConfig& config)
 {
   VLOG (1) << "Adding pending crystal purchase operation for " << a.GetName ();
@@ -445,20 +426,6 @@ PendingState::XayaPlayerState::ToJson () const
 {
   Json::Value res(Json::objectValue);
 
-  if (coinOps != nullptr)
-    {
-      Json::Value coin(Json::objectValue);
-      coin["minted"] = IntToJson (coinOps->minted);
-      coin["burnt"] = IntToJson (coinOps->burnt);
-
-      Json::Value transfers(Json::objectValue);
-      for (const auto& entry : coinOps->transfers)
-        transfers[entry.first] = IntToJson (entry.second);
-      coin["transfers"] = transfers;
-
-      res["coinops"] = coin;
-    }
-  
   if(crystalpurchace.size() > 0)
   {
       Json::Value bundles(Json::arrayValue);
@@ -842,9 +809,8 @@ PendingStateUpdater::ProcessMove (const Json::Value& moveObj)
   std::string name, bundleKeyCode;
   Json::Value mv;
   std::map<std::string, Amount> paidToCrownHolders;
-  Amount  burnt;
 
-  if (!ExtractMoveBasics (moveObj, name, mv, paidToCrownHolders, burnt))
+  if (!ExtractMoveBasics (moveObj, name, mv, paidToCrownHolders))
     return;
 
   std::vector<Json::Value> moves;
@@ -886,10 +852,6 @@ PendingStateUpdater::ProcessMove (const Json::Value& moveObj)
       if (!mrl.isObject ()) continue;
       try
       {
-      CoinTransferBurn coinOps;
-      if (ParseCoinTransferBurn (*a, mrl, coinOps, burnt))
-        state.AddCoinTransferBurn (*a, coinOps, fighters, ctx.RoConfig ());
-
       /*If we have any recepies trying to submit for cooking, check here*/
       std::map<std::string, pxd::Quantity> fungibleItemAmountForDeduction;
       int32_t cookCost = -1;

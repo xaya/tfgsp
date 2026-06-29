@@ -399,7 +399,6 @@ template <>
 
   Json::Value res(Json::objectValue);
   res["name"] = a.GetName ();
-  res["minted"] = IntToJson (pb.burnsale_balance ());
 
   Json::Value bal(Json::objectValue);
   bal["available"] = IntToJson (a.GetBalance ());
@@ -522,30 +521,9 @@ GameStateJson::MoneySupply()
       total += value;
     }
 
-  Json::Value burnsale(Json::arrayValue);
-  Amount burnsaleAmount = ms.Get ("burnsale");
-  for (int i = 0; i < params.burnsale_stages_size (); ++i)
-    {
-      const auto& data = params.burnsale_stages (i);
-      const Amount alreadySold = std::min<Amount> (burnsaleAmount,
-                                                   data.amount_sold ());
-      burnsaleAmount -= alreadySold;
-
-      Json::Value stage(Json::objectValue);
-      stage["stage"] = IntToJson (i + 1);
-      stage["price"] = static_cast<double> (data.price_sat ()) / COIN;
-      stage["total"] = IntToJson (data.amount_sold ());
-      stage["sold"] = IntToJson (alreadySold);
-      stage["available"] = IntToJson (data.amount_sold () - alreadySold);
-
-      burnsale.append (stage);
-    }
-  CHECK_EQ (burnsaleAmount, 0);
-
   Json::Value res(Json::objectValue);
   res["total"] = IntToJson (total);
   res["entries"] = entries;
-  res["burnsale"] = burnsale;
 
   return res;
 }

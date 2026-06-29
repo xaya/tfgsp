@@ -92,11 +92,7 @@ TEST_F (PendingStateTests, Clear)
 {
   auto a = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
   a->SetRole (PlayerRole::PLAYER);
-  CoinTransferBurn coinOp;
-  coinOp.minted = 5;
-  coinOp.burnt = 10;
-  coinOp.transfers["andy"] = 20;
-  state.AddCoinTransferBurn (*a, coinOp, tbl3, ctx.RoConfig ());
+  state.AddCrystalPurchase (*a, "T1", 100, tbl3, ctx.RoConfig ());
   a.reset ();
 
   ExpectStateJson (R"(
@@ -133,45 +129,37 @@ protected:
   /**
    * Processes a move for the given name and with the given move data, parsed
    * from JSON string.  If paidToDev is non-zero, then add an "out" entry
-   * paying the given amount to the dev address.  If burntChi is non-zero,
-   * then also a CHI burn is added to the JSON data.
+   * paying the given amount to the dev address(es).
    */
   void
-  ProcessWithDevPaymentAndBurn (const std::string& name,
-                                const Amount paidToDev, const Amount burntChi,
-                                const std::string& mvStr)
+  ProcessWithDevPayment (const std::string& name, const Amount paidToDev,
+                         const std::string& mvStr)
   {
     Json::Value moveObj(Json::objectValue);
     moveObj["name"] = name;
     moveObj["move"] = ParseJson (mvStr);
 
     if (paidToDev != 0)
-    {   
+    {
       moveObj["out"]["CSkszVUahNNaj9ENPzAepSuCme4PEZXzgp"] = xaya::ChiAmountToJson ((paidToDev / 28) * 1);
       moveObj["out"]["CPHa1fMuAowhBhNGtcyERPntC6aN89q5Wb"] = xaya::ChiAmountToJson ((paidToDev / 28) * 2);
       moveObj["out"]["CHjEjjeZJEJLoJLxtsRL54m6RMB8vFRngf"] = xaya::ChiAmountToJson ((paidToDev / 28) * 3);
       moveObj["out"]["CKMSbLJwLHKAY8aT2BnVZ7fVSTdD81v9rm"] = xaya::ChiAmountToJson ((paidToDev / 28) * 4);
       moveObj["out"]["CZsJo8YykDhoeVmYMTXp9v3EzbN7i3KhU5"] = xaya::ChiAmountToJson ((paidToDev / 28) * 5);
       moveObj["out"]["CX7VSMEoGqyKKxL4qfCLyDNsqgCPZiP6eD"] = xaya::ChiAmountToJson ((paidToDev / 28) * 6);
-      moveObj["out"]["Cd9LyMvE3MkrWysTujDhEmBiUU16rkmHnU"] = xaya::ChiAmountToJson ((paidToDev / 28) * 7);    
-    }    
-          
-    if (burntChi != 0)
-      moveObj["burnt"] = xaya::ChiAmountToJson (burntChi);
+      moveObj["out"]["Cd9LyMvE3MkrWysTujDhEmBiUU16rkmHnU"] = xaya::ChiAmountToJson ((paidToDev / 28) * 7);
+    }
 
     PendingStateUpdater updater(db, state, ctx);
     updater.ProcessMove (moveObj);
   }
-  
+
   /**
-   * Processes a move for the given name and with the given move data, parsed
-   * from JSON string.  If paidToDev is non-zero, then add an "out" entry
-   * paying the given amount to the dev address.  If burntChi is non-zero,
-   * then also a CHI burn is added to the JSON data.
+   * As ProcessWithDevPayment, but wraps the move data in a single-element array
+   * so the batch (array-move) code path is exercised.
    */
   void
-  ProcessWithDevPaymentAndBurnAsBatch (const std::string& name,
-                                const Amount paidToDev, const Amount burntChi,
+  ProcessWithDevPaymentAsBatch (const std::string& name, const Amount paidToDev,
                                 const std::string& mvStr)
   {
     Json::Value moveObj(Json::objectValue);
@@ -179,54 +167,31 @@ protected:
     moveObj["move"] = ParseJson ("["+mvStr+"]");
 
     if (paidToDev != 0)
-    {   
+    {
       moveObj["out"]["CSkszVUahNNaj9ENPzAepSuCme4PEZXzgp"] = xaya::ChiAmountToJson ((paidToDev / 28) * 1);
       moveObj["out"]["CPHa1fMuAowhBhNGtcyERPntC6aN89q5Wb"] = xaya::ChiAmountToJson ((paidToDev / 28) * 2);
       moveObj["out"]["CHjEjjeZJEJLoJLxtsRL54m6RMB8vFRngf"] = xaya::ChiAmountToJson ((paidToDev / 28) * 3);
       moveObj["out"]["CKMSbLJwLHKAY8aT2BnVZ7fVSTdD81v9rm"] = xaya::ChiAmountToJson ((paidToDev / 28) * 4);
       moveObj["out"]["CZsJo8YykDhoeVmYMTXp9v3EzbN7i3KhU5"] = xaya::ChiAmountToJson ((paidToDev / 28) * 5);
       moveObj["out"]["CX7VSMEoGqyKKxL4qfCLyDNsqgCPZiP6eD"] = xaya::ChiAmountToJson ((paidToDev / 28) * 6);
-      moveObj["out"]["Cd9LyMvE3MkrWysTujDhEmBiUU16rkmHnU"] = xaya::ChiAmountToJson ((paidToDev / 28) * 7);    
-    }    
-          
-    if (burntChi != 0)
-      moveObj["burnt"] = xaya::ChiAmountToJson (burntChi);
+      moveObj["out"]["Cd9LyMvE3MkrWysTujDhEmBiUU16rkmHnU"] = xaya::ChiAmountToJson ((paidToDev / 28) * 7);
+    }
 
     PendingStateUpdater updater(db, state, ctx);
     updater.ProcessMove (moveObj);
-  }  
-
-  /**
-   * Processes a move for the given name, data and dev payment, without burn.
-   */
-  void
-  ProcessWithDevPayment (const std::string& name, const Amount paidToDev,
-                         const std::string& mvStr)
-  {
-    ProcessWithDevPaymentAndBurn (name, paidToDev, 0, mvStr);
-  }
-
-  /**
-   * Processes a move for the given name, data and burn.
-   */
-  void
-  ProcessWithBurn (const std::string& name, const Amount burntChi,
-                   const std::string& mvStr)
-  {
-    ProcessWithDevPaymentAndBurn (name, 0, burntChi, mvStr);
   }
 
   /**
    * Processes a move for the given name and with the given move data
-   * as JSON string, without developer payment or burn.
+   * as JSON string, without developer payment.
    */
   void
   Process (const std::string& name, const std::string& mvStr)
   {
-      
+
     LOG (WARNING) << "Processing: " << mvStr;
-    
-    ProcessWithDevPaymentAndBurn (name, 0, 0, mvStr);
+
+    ProcessWithDevPayment (name, 0, mvStr);
   }
 };
 
@@ -238,40 +203,13 @@ TEST_F (PendingStateUpdaterTests, UninitialisedAndNonExistantAccount)
      are not tracked.  */
 
   Process ("domob", R"({
-    "vc": {"x": 5}
+    "xq": {"x": 5}
   })");
   Process ("domob", R"({
     "a": {"init": {"role": "p"}}
   })");
 
   ASSERT_EQ (xayaplayers.GetByName ("domob",  ctx.RoConfig()), nullptr);
-}
-
-TEST_F (PendingStateUpdaterTests, Minting)
-{
-  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
-
-  ProcessWithBurn ("domob", COIN, R"({
-    "vc": {"m": {}}
-  })");
-  ProcessWithBurn ("domob", 2 * COIN, R"({
-    "vc": {"m": {}}
-  })");
-
-  ExpectStateJson (R"(
-    {
-      "xayaplayers":
-        [
-          {
-            "name": "domob",
-            "coinops":
-              {
-                "minted": 30000
-              }
-          }
-        ]
-    }
-  )");
 }
 
 TEST_F (PendingStateUpdaterTests, PurchaseCrystals)
@@ -367,7 +305,7 @@ TEST_F (PendingStateUpdaterTests, BatchSubmitPendingTests)
   
   tbl2.GetById(1)->SetOwner("testy2");
   
-  ProcessWithDevPaymentAndBurnAsBatch ("testy2", 0, 0, R"({"ca": {"d": {"rid": [1]}}})");  
+  ProcessWithDevPaymentAsBatch ("testy2", 0, R"({"ca": {"d": {"rid": [1]}}})");  
   
   ExpectStateJson (R"(
     {

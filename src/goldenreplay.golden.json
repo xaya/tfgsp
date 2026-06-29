@@ -1,37 +1,6 @@
 {
   "moneysupply" : 
   {
-    "burnsale" : 
-    [
-      {
-        "available" : 10000000000,
-        "price" : 0.0001,
-        "sold" : 0,
-        "stage" : 1,
-        "total" : 10000000000
-      },
-      {
-        "available" : 10000000000,
-        "price" : 0.00020000000000000001,
-        "sold" : 0,
-        "stage" : 2,
-        "total" : 10000000000
-      },
-      {
-        "available" : 10000000000,
-        "price" : 0.00050000000000000001,
-        "sold" : 0,
-        "stage" : 3,
-        "total" : 10000000000
-      },
-      {
-        "available" : 20000000000,
-        "price" : 0.001,
-        "sold" : 0,
-        "stage" : 4,
-        "total" : 20000000000
-      }
-    ],
     "entries" : 
     {
       "burnsale" : 0,
@@ -7165,7 +7134,6 @@
             "Common_Nonpareil" : 10
           }
         },
-        "minted" : 0,
         "name" : "andy",
         "ongoings" : [],
         "prestige" : 1586,
@@ -7199,7 +7167,6 @@
             "Common_Nonpareil" : 10
           }
         },
-        "minted" : 0,
         "name" : "bob",
         "ongoings" : 
         [
@@ -7238,7 +7205,6 @@
             "Common_Nonpareil" : 10
           }
         },
-        "minted" : 0,
         "name" : "carol",
         "ongoings" : 
         [
@@ -7280,7 +7246,6 @@
             "Common_Nonpareil" : 10
           }
         },
-        "minted" : 0,
         "name" : "dave",
         "ongoings" : 
         [
@@ -7321,7 +7286,6 @@
             "Common_Nonpareil" : 10
           }
         },
-        "minted" : 0,
         "name" : "domob",
         "ongoings" : [],
         "prestige" : 1586,
@@ -7355,7 +7319,6 @@
             "Common_Nonpareil" : 10
           }
         },
-        "minted" : 0,
         "name" : "xayatf1",
         "ongoings" : [],
         "prestige" : 1586,
@@ -7395,7 +7358,6 @@
             "Common_Nonpareil" : 10
           }
         },
-        "minted" : 0,
         "name" : "xayatf2",
         "ongoings" : [],
         "prestige" : 1586,
@@ -7435,7 +7397,6 @@
             "Common_Nonpareil" : 10
           }
         },
-        "minted" : 0,
         "name" : "xayatf3",
         "ongoings" : [],
         "prestige" : 1586,
@@ -7475,7 +7436,6 @@
             "Common_Nonpareil" : 10
           }
         },
-        "minted" : 0,
         "name" : "xayatf4",
         "ongoings" : [],
         "prestige" : 1586,
@@ -7515,7 +7475,6 @@
             "Common_Nonpareil" : 10
           }
         },
-        "minted" : 0,
         "name" : "xayatf5",
         "ongoings" : [],
         "prestige" : 1586,
@@ -7555,7 +7514,6 @@
             "Common_Nonpareil" : 10
           }
         },
-        "minted" : 0,
         "name" : "xayatf6",
         "ongoings" : [],
         "prestige" : 1586,
@@ -7595,7 +7553,6 @@
             "Common_Nonpareil" : 10
           }
         },
-        "minted" : 0,
         "name" : "xayatf7",
         "ongoings" : [],
         "prestige" : 1586,
