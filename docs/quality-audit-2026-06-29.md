@@ -63,7 +63,15 @@ worth a config balance glance. Flagged to user.
 ## Progress log
 
 - 2026-06-29: audit run; tracking doc created; baseline captured; `gametest/` stale `__pycache__`
-  removed (untracked). Starting Pass A1.
+  removed (untracked).
+- 2026-06-29: **Pass A1 DONE** (`0c02348`): FN10,13/69,40,46,54,55,56,70,71 — golden-neutral
+  correctness & money-path hardening. Golden byte-identical, 98 unit + 4 reorg + 2 reorg-game green.
+  FN2 reassigned to A2 (shares the reward-roll lines with FN1).
+- User directive added mid-pass: *"dry, compact, elegant, well-structured; avoid gigantic monolithic
+  files."* → added **Pass F (structural)**: after the dead-code cull (Pass B shrinks them), split the
+  monoliths `moveprocessor.cpp` (4274 LOC) and `logic.cpp` (1717 LOC) into cohesive translation units
+  by domain (cooking / expedition / tournament / exchange / transfigure / crystal), each split verified
+  golden byte-identical. Done last because consensus-file splits are the highest-churn change.
 
 <!-- STATUS: per-finding status tracked in the table at docs/quality-audit-findings.md -->
 
