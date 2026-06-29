@@ -38,12 +38,9 @@ message XayaPlayer
    */ 
   optional uint64 balance = 3;
   
-  /**
-   * Balance of vCHI minted through the burnsale, which corresponds to
-   * the balance that will be carried over to the full game.
-   */
-  optional uint64 burnsale_balance = 4;  
-  
+  /* Tag 4 was burnsale_balance (vCHI); retired with the burnsale removal. */
+  reserved 4;
+
   /* H3 / Stage 2b: ongoing operations moved OUT of the player proto into the
      height-keyed ongoing_operations table (database/ongoings.*).  Field 7 is
      reserved so it is never reused. */

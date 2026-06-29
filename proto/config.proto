@@ -36,30 +36,16 @@ import "proto/tournament_blueprint.proto";
 package pxd.proto;
 
 /**
- * A stage in the burnsale schedule.
- */
-message BurnsaleStage
-{
-
-  /** Amount of vCHI to be sold in the stage.  */
-  optional uint64 amount_sold = 1;
-
-  /** Price of one coin in CHI satoshi.  */
-  optional uint64 price_sat = 2;
-
-}
-
-/**
  * Basic parameters of the game.
  */
 message Params
 {
   /** Whether or not god mode is enabled.  */
   optional bool god_mode = 1;
-  
- /** Data about the burnsale schedule.  */
-  repeated BurnsaleStage burnsale_stages = 2;  
-  
+
+  /* Tag 2 was burnsale_stages; retired with the burnsale removal. */
+  reserved 2;
+
   optional string starting_recipes = 3;
   
   optional uint32 elok_factor = 4;
