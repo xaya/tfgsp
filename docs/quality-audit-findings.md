@@ -7,7 +7,7 @@ See `quality-audit-2026-06-29.md` for plan + baseline. Status: TODO / DONE / DEF
 | # | Pass | File:Lines | Cat | Sev | Golden | Title | Status |
 |---|------|-----------|-----|-----|--------|-------|--------|
 | FN1 | A2 | src/logic.cpp:263-289 (also 324-348, 383-407, 555-581, 1275-1301) | money-correctness | medium | regen | Weighted reward roll uses `<=` -> first reward over-weighted, last reward can be unreachable | TODO |
-| FN2 | A1 | src/logic.cpp:549-573, 1269-1293 | overengineering | low | neutral | fpm::fixed_24_8 used for integer reward weights (ResolveExpedition, ProcessTournaments) | TODO |
+| FN2 | A2 | src/logic.cpp:549-573, 1269-1293 | overengineering | low | neutral | fpm::fixed_24_8 used for integer reward weights (ResolveExpedition, ProcessTournaments) | TODO |
 | FN3 | B | src/logic.cpp:1103-1122 vs 1146-1165 | dry-duplication | low | neutral | Team-collection loop duplicated between Running and Listed branches in ProcessTournaments | TODO |
 | FN4 | B | src/logic.hpp:173 | dead-code | low | neutral | EloGetNewRatings() declared but never defined or called | TODO |
 | FN5 | B | src/logic.cpp:187-189 | taurion-baggage | low | neutral | Dead fork-gate param: isFork/fork threaded into RecipeInstance::Generate but never used | TODO |
@@ -15,10 +15,10 @@ See `quality-audit-2026-06-29.md` for plan + baseline. Status: TODO / DONE / DEF
 | FN7 | B | src/logic.cpp:1223-1244 | dead-code | low | neutral | Vestigial playersAwarded map / dead cap check in tournament rewards | TODO |
 | FN8 | B | src/logic.cpp:1262-1267 | clarity | low | neutral | Unresolved reward-table aborts ALL tournament + queue processing for the block | TODO |
 | FN9 | B | src/logic.cpp:1173-1177 | dead-code | low | neutral | Empty else block in ProcessTournaments Listed branch | TODO |
-| FN10 | A1 | src/logic.cpp:599,642 | money-correctness | low | neutral | cookCost sentinel -1 can reach AddBalance on out-of-range recipe quality | TODO |
+| FN10 | A1 | src/logic.cpp:599,642 | money-correctness | low | neutral | cookCost sentinel -1 can reach AddBalance on out-of-range recipe quality | DONE |
 | FN11 | B | src/logic.cpp:742-765 | taurion-baggage | low | neutral | Confusing lmt/rmt swap with leftover scratch comment in ExecuteOneMoveAgainstAnother | TODO |
 | FN12 | B | src/logic.cpp:1625-1637 | clarity | low | neutral | `sortedFighterNames` is never sorted; per-100-block full GetStateAsJson only feeds an RPC display hash | TODO |
-| FN13 | A1 | src/moveprocessor.cpp:351 | determinism | medium | neutral | Floating-point literal in consensus reroll-price math (0.14 * COIN) | TODO |
+| FN13 | A1 | src/moveprocessor.cpp:351 | determinism | medium | neutral | Floating-point literal in consensus reroll-price math (0.14 * COIN) | DONE |
 | FN14 | A2 | src/moveprocessor.cpp:1869-1871 | money-correctness | high | regen | Duplicate root.append(resEntry) writes the tournament demand-queue entry twice | TODO |
 | FN15 | B | src/moveprocessor.cpp:456-460 | dead-code | low | neutral | Unreachable `if (cmd.isObject())` after `if (!cmd.isString()) return;` (3 copies) | TODO |
 | FN16 | B | src/moveprocessor.cpp:1569-1590 | dead-code | medium | neutral | playerHasAtLeastOneEpicTreat computed via O(fighters) scan but never enforced | TODO |
@@ -45,13 +45,13 @@ See `quality-audit-2026-06-29.md` for plan + baseline. Status: TODO / DONE / DEF
 | FN37 | B | src/rest.cpp:22-54 | overengineering | medium | neutral | REST API is dead scaffolding: Process() always 404s, dead flag, dead stop machinery | TODO |
 | FN38 | B | src/rest.hpp:65-72 | dead-code | low | neutral | RestClient class never instantiated | TODO |
 | FN39 | B | src/gamestatejson.cpp:703-858 | dry-duplication | medium | neutral | UserTournaments duplicates the foreign-fighter collection block 3x | TODO |
-| FN40 | A1 | src/gamestatejson.cpp:735-742 | clarity | medium | neutral | UserTournaments state 1/2 branch dereferences fighter handle without null check | TODO |
+| FN40 | A1 | src/gamestatejson.cpp:735-742 | clarity | medium | neutral | UserTournaments state 1/2 branch dereferences fighter handle without null check | DONE |
 | FN41 | B | src/gamestatejson.cpp:383-397 | dry-duplication | low | neutral | In-progress cook-recipe id collection duplicated between Convert<XayaPlayer> and User | TODO |
 | FN42 | B | src/main.cpp:204-211 | dead-code | low | neutral | Dead local nonAnsiDetected in main() | TODO |
 | FN43 | B | src/main.cpp:40-41 | dead-code | low | neutral | Unused <locale>/<codecvt> includes in main.cpp | TODO |
 | FN44 | B | src/main.cpp:165-167 | clarity | low | neutral | Version log prints literal string "GIT_VERSION" | TODO |
 | FN45 | B | src/main.cpp:55-56 | taurion-baggage | low | neutral | xaya_rpc_url help text still says 'Xaya Core' | TODO |
-| FN46 | A1 | database/xayaplayer.tpp:38-42 | clarity | high | neutral | Role-validation bound `val <= 6` contradicts PlayerRole enum (8, 15) -> latent consensus halt | TODO |
+| FN46 | A1 | database/xayaplayer.tpp:38-42 | clarity | high | neutral | Role-validation bound `val <= 6` contradicts PlayerRole enum (8, 15) -> latent consensus halt | DONE |
 | FN47 | B | database/xayaplayer.cpp:143-152, 388-401 | dead-code | medium | neutral | Dead stub methods on XayaPlayer (GetIsMine/SendCHI/HasRole/GrantRole/RevokeRole) | TODO |
 | FN48 | B | database/xayaplayer.hpp:84-85 | dead-code | low | neutral | GetPlayerRoleFromColumn template is never used | TODO |
 | FN49 | B | database/xayaplayer.hpp:279-280 | dead-code | low | neutral | recipe_slots / roster_slots are write-only dead fields | TODO |
@@ -59,9 +59,9 @@ See `quality-audit-2026-06-29.md` for plan + baseline. Status: TODO / DONE / DEF
 | FN51 | B | database/activity.hpp:118-122 | dead-code | low | neutral | IsDirtyActivityData() is never called | TODO |
 | FN52 | B | database/recipe.cpp:194 | dead-code | low | neutral | Dead `bool fork` parameter threaded through RecipeInstance::Generate and all call sites | TODO |
 | FN53 | B | database/recipe.cpp:256, 284 | dead-code | low | neutral | Dead local `biggetRollSoFar` in RecipeInstance::Generate | TODO |
-| FN54 | A1 | database/recipe.cpp:144 | clarity | medium | neutral | UniqueHandles type string mismatch: 'recepie' on load vs 'recipe' on create defeats the duplicate-handle guard | TODO |
-| FN55 | A1 | database/fighter.cpp:266-290 | money-correctness | medium | neutral | RerollName: top-of-table payment yields the LOWEST probability bonus (probabilityIndex stays 0) | TODO |
-| FN56 | A1 | database/xayaplayer.cpp:131, 138 | clarity | low | neutral | Out-of-sequence SQL bind index ?108 for the inventory column | TODO |
+| FN54 | A1 | database/recipe.cpp:144 | clarity | medium | neutral | UniqueHandles type string mismatch: 'recepie' on load vs 'recipe' on create defeats the duplicate-handle guard | DONE |
+| FN55 | A1 | database/fighter.cpp:266-290 | money-correctness | medium | neutral | RerollName: top-of-table payment yields the LOWEST probability bonus (probabilityIndex stays 0) | DONE |
+| FN56 | A1 | database/xayaplayer.cpp:131, 138 | clarity | low | neutral | Out-of-sequence SQL bind index ?108 for the inventory column | DONE |
 | FN57 | B | database/globaldata.cpp:40-158 | dry-duplication | low | neutral | Four identical SELECT getters and four identical UPDATE setters in GlobalData | TODO |
 | FN58 | B | database/globaldata.hpp:22-25 | dead-code | low | neutral | Unused includes (<set>, amount.hpp) and stale 'money supply' class comment in GlobalData | TODO |
 | FN59 | B | database/inventory.hpp:1-3 | taurion-baggage | low | neutral | Stale 'Taurion blockchain game' copyright headers and vestigial 'after fork' prestige comments | TODO |
@@ -74,9 +74,9 @@ See `quality-audit-2026-06-29.md` for plan + baseline. Status: TODO / DONE / DEF
 | FN66 | C | proto/activity_reward_instance.proto:26 | dead-code | low | regen | Deconstruction.DeconstructionId (field 1) is write-only | TODO |
 | FN67 | C | proto/fighter.proto:37-38 | money-correctness | low | neutral | FighterSaleEntry.Price is uint32 while ExchangePrice is uint64 (silent narrowing of sale price) | TODO |
 | FN68 | B | proto/config.proto:129-180 | taurion-baggage | low | neutral | Vestigial Taurion comments in ConfigData (vehicles / safe zones / prizes) | TODO |
-| FN69 | A1 | src/moveprocessor.cpp:351 | money-correctness | low | neutral | Floating-point money threshold 0.14 * COIN in a consensus path | TODO |
-| FN70 | A1 | src/moveprocessor.cpp:3743-3751 | money-correctness | low | neutral | Exchange payout lacks a value-conservation guard (sale_percentage > 1.0 would mint) | TODO |
-| FN71 | A1 | src/moveprocessor.cpp:3729-3751 | money-correctness | low | neutral | Seller handle dereferenced without null-check in exchange payout | TODO |
+| FN69 | A1 | src/moveprocessor.cpp:351 | money-correctness | low | neutral | Floating-point money threshold 0.14 * COIN in a consensus path | DONE |
+| FN70 | A1 | src/moveprocessor.cpp:3743-3751 | money-correctness | low | neutral | Exchange payout lacks a value-conservation guard (sale_percentage > 1.0 would mint) | DONE |
+| FN71 | A1 | src/moveprocessor.cpp:3729-3751 | money-correctness | low | neutral | Seller handle dereferenced without null-check in exchange payout | DONE |
 
 ## Deferred (9) — design-level, not in this sweep
 

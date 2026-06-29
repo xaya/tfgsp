@@ -348,7 +348,8 @@ BaseMoveProcessor::ParseNameRerollPurchase(const Json::Value& mv, int64_t& treat
      
   VLOG (1) << "Trying to purchace reroll, amount paid left: " << paidToDev;
 
-  Amount needed = 0.14 * COIN;
+  /* Integer satoshi math (== 14000000); no raw double in a consensus path. */
+  Amount needed = 14 * COIN / 100;
   
   if (paidToDev < needed)
   {
@@ -3725,8 +3726,23 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
     }
 
     auto fighterDb = fighters.GetById (fighterID, ctx.RoConfig ());
-    fighterDb->SetStatus(pxd::FighterStatus::Available);
+
+    /* Fetch and null-check the seller BEFORE mutating any state: ParseBuyData
+       guarantees the listing (and therefore its owner account) exists, so this
+       guard is dead on every reachable input, but it keeps the money-credit
+       path symmetric with the buyer check above rather than dereferencing a
+       possibly-null handle. */
     auto a2 = xayaplayers.GetByName (fighterDb->GetOwner(), ctx.RoConfig ());
+    if (a2 == nullptr)
+    {
+      LOG (ERROR) << "Exchange seller " << fighterDb->GetOwner ()
+                  << " not found; aborting buy";
+      fighterDb.reset ();
+      a.reset ();
+      return;
+    }
+
+    fighterDb->SetStatus(pxd::FighterStatus::Available);
 
     a->AddBalance (-exchangeprice);
 
@@ -3743,6 +3759,11 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
     const int64_t pctRaw
         = fpm::fixed_24_8 (ctx.RoConfig ()->params ().exchange_sale_percentage ())
             .raw_value ();
+    /* Value-conservation invariant: the seller must never receive more than the
+       buyer paid.  raw 256 == 1.0; a misconfigured percentage > 1.0 would mint
+       crystals on every trade.  Halt deterministically (identical on all nodes,
+       no fork) rather than mint. */
+    CHECK_LE (pctRaw, 256) << "exchange_sale_percentage > 1.0 would mint crystals";
     Amount finalPrice = (exchangeprice * pctRaw) / 256;
 
     if (finalPrice == exchangeprice)

@@ -128,14 +128,14 @@ XayaPlayer::~XayaPlayer ()
   auto stmt = db.Prepare (R"(
     INSERT OR REPLACE INTO `xayaplayers`
       (`name`, `role`, `proto`, `inventory`, `prestige`)
-      VALUES (?1, ?2, ?3, ?108, ?5)
+      VALUES (?1, ?2, ?3, ?4, ?5)
   )");
 
   stmt.Bind (1, name);
   BindPlayerRoleParameter (stmt, 2, role);
   stmt.BindProto (3, data);
   stmt.Bind (5, prestige);
-  stmt.BindProto (108, inv.GetProtoForBinding ());
+  stmt.BindProto (4, inv.GetProtoForBinding ());
 
   stmt.Execute ();
 }

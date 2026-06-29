@@ -639,8 +639,13 @@ void PXLogic::ResolveCookingRecepie(std::unique_ptr<XayaPlayer>& a, const uint32
           playerInventory.AddFungibleCount(itemToDeduct.first, itemToDeduct.second);
         }
     
-        a->AddBalance(cookCost); 
-        
+        /* cookCost is the -1 sentinel until a quality 1..4 branch overwrites it.
+           Recipe quality is immutable and validated to 1..4 upstream, so this
+           never fires on valid state; guard anyway so an unexpected quality
+           halts loudly rather than silently subtracting from the balance. */
+        CHECK_GE (cookCost, 0) << "cook refund hit unexpected recipe quality";
+        a->AddBalance(cookCost);
+
         recepie->SetOwner(a->GetName());
     }
     else

@@ -733,6 +733,7 @@ GameStateJson::UserTournaments(const std::string& userName)
 		  for(const auto ft: h->GetInstance().fighters())
           { 
               auto resDD = ftbl.GetById (ft, ctx.RoConfig ());
+              if(resDD == nullptr) continue; // fighter may have been destroyed
 
               if(resDD->GetOwner() == userName)
 			  {

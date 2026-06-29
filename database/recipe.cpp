@@ -141,7 +141,10 @@ RecipeInstance::RecipeInstance (Database& d, const Database::Result<RecipeInstan
   : dirtyFields(false), isNew(false), db(d)
 {
   id = res.Get<RecipeInstanceResult::id> ();
-  tracker = d.TrackHandle ("recepie", id);
+  /* Must match the "recipe" literal used by both create constructors, else a
+     created and a DB-loaded handle to the same row hash to different
+     UniqueHandles keys and the duplicate-live-handle guard never fires. */
+  tracker = d.TrackHandle ("recipe", id);
   owner = res.Get<RecipeInstanceResult::owner> ();
 
   data = res.GetProto<RecipeInstanceResult::proto> ();

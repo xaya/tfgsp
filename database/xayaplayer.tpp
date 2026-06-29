@@ -35,11 +35,23 @@ template <typename T>
   if (res.template IsNull<typename T::role> ())
     return PlayerRole::INVALID;
 
+  /* Whitelist the exact PlayerRole enum values (symmetric with
+     BindPlayerRoleParameter).  A range check like `val <= 6` both rejected the
+     valid high roles EXCHANGEADMIN(8)/ADMINISTRATOR(15) -- crashing every node
+     that reloaded such a row -- and wrongly admitted the non-existent 5/6. */
   const auto val = res.template Get<typename T::role> ();
-  CHECK (val >= 1 && val <= 6)
-      << "Invalid role value from database: " << val;
-
-  return static_cast<PlayerRole> (val);
+  switch (val)
+    {
+    case 1:  return PlayerRole::PLAYER;
+    case 2:  return PlayerRole::ROLEADMIN;
+    case 3:  return PlayerRole::CONENTADMIN;
+    case 4:  return PlayerRole::CONFIGADMIN;
+    case 8:  return PlayerRole::EXCHANGEADMIN;
+    case 15: return PlayerRole::ADMINISTRATOR;
+    default:
+      LOG (FATAL) << "Invalid role value from database: " << val;
+    }
+  return PlayerRole::INVALID; // unreachable; silences -Wreturn-type
 }
 
 template <typename T>
