@@ -42,41 +42,6 @@ XayaPlayer::XayaPlayer (Database& d, const std::string& n, const RoConfig& cfg, 
       role = PlayerRole::ADMINISTRATOR;
   }
   
-  if(name == "xayatf1")
-  {
-      MutableProto().set_address("CSkszVUahNNaj9ENPzAepSuCme4PEZXzgp");
-  }
-  
-  if(name == "xayatf2")
-  {
-      MutableProto().set_address("CPHa1fMuAowhBhNGtcyERPntC6aN89q5Wb");
-  }
-
-  if(name == "xayatf3")
-  {
-      MutableProto().set_address("CHjEjjeZJEJLoJLxtsRL54m6RMB8vFRngf");
-  }
-
-  if(name == "xayatf4")
-  {
-      MutableProto().set_address("CKMSbLJwLHKAY8aT2BnVZ7fVSTdD81v9rm");
-  }
-
-  if(name == "xayatf5")
-  {
-      MutableProto().set_address("CZsJo8YykDhoeVmYMTXp9v3EzbN7i3KhU5");
-  }
-
-  if(name == "xayatf6")
-  {
-      MutableProto().set_address("CX7VSMEoGqyKKxL4qfCLyDNsqgCPZiP6eD");
-  }
-
-  if(name == "xayatf7")
-  {
-      MutableProto().set_address("Cd9LyMvE3MkrWysTujDhEmBiUU16rkmHnU");
-  }  
-  
   /*Load configuration values*/ 
   recipe_slots = cfg->params().max_recipe_inventory_amount();
   roster_slots = cfg->params().max_fighter_inventory_amount();

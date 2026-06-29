@@ -98,10 +98,6 @@ public:
   static void SetFreeTransfiguringFighters(Database& db, const Context& ctx);  
   
   /**
-   * Scans all tournaments to either start them or finilize; public for unit test access purposes
-   */  
-  
-  /**
    * Scans all fighters, finds ones on the exchange, tests if expired, delists
    */    
   static void CheckFightersForSale(Database& db, const Context& ctx);
