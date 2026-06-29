@@ -6,8 +6,9 @@ See `quality-audit-2026-06-29.md` for plan + baseline. Status: TODO / DONE / DEF
 
 | # | Pass | File:Lines | Cat | Sev | Golden | Title | Status |
 |---|------|-----------|-----|-----|--------|-------|--------|
-| FN1 | A2 | src/logic.cpp:263-289 (also 324-348, 383-407, 555-581, 1275-1301) | money-correctness | medium | regen | Weighted reward roll uses `<=` -> first reward over-weighted, last reward can be unreachable | DEFERRED(user: reward balance) |
-| FN2 | A2 | src/logic.cpp:549-573, 1269-1293 | overengineering | low | neutral | fpm::fixed_24_8 used for integer reward weights (ResolveExpedition, ProcessTournaments) | DEFERRED(user: reward balance) |
+| FN1 | A2 | src/logic.cpp:278,339,398,569,1266 | money-correctness | medium | golden-neutral | Weighted reward roll used `<=` -> first reward over-weighted by 1 draw, last starved by 1 (unreachable when weight==1). Fixed to strict `<`. Weights kept as authored (user sign-off); max drop-rate change 1.54%, un-strands 1 Rare-armor recipe. Golden byte-identical. | DONE (bf5271b) |
+| FN2 | A2 | src/logic.cpp:546-577, 1243-1276 | overengineering | low | neutral | fpm::fixed_24_8 used for integer reward weights (ResolveExpedition, ProcessTournaments) -> plain int. | DONE (bf5271b) |
+| FN72 | A2 | proto/roconfig.cpp:115-124 | correctness | medium | golden-neutral | Config loader merged regtest/testnet overlay via `pb.MergeFrom(pb.regtest_merge())` -- source aliases destination (undefined in protobuf), silently dropping merged scalar Weights. Invisible while every overlay value was 0; exposed by FN1's fixture weight. Copy sub-message out before merge. No-op on mainnet/Polygon. | DONE (bf5271b) |
 | FN3 | B | src/logic.cpp:1103-1122 vs 1146-1165 | dry-duplication | low | neutral | Team-collection loop duplicated between Running and Listed branches in ProcessTournaments | DONE |
 | FN4 | B | src/logic.hpp:173 | dead-code | low | neutral | EloGetNewRatings() declared but never defined or called | DONE |
 | FN5 | B | src/logic.cpp:187-189 | taurion-baggage | low | neutral | Dead fork-gate param: isFork/fork threaded into RecipeInstance::Generate but never used | DONE |

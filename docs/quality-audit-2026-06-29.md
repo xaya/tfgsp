@@ -60,14 +60,16 @@ worth a config balance glance. Flagged to user.
 | DEF7 | Per-entity table boilerplate copy-pasted across 6 DB classes | Large cross-cutting templatization; high churn |
 | FN50 | QuantityProduct (GMP bignum) dead outside tests; drops whole GMP dep | Build-dependency change — verify GMP isn't needed elsewhere before removing |
 
-## RESUME STATE (2026-06-29, after Pass B; before FN1/C/D/F/B2)
+## RESUME STATE (2026-06-29, after FN1/FN2/FN72; before Pass C/D/F/B2)
 
 **Done + committed** (branch `polygon-rewrite`, on top of `e2f4183`): Pass A1 `0c02348`, A2 `f6ffde4`,
-B `1947cd0` (+ doc commits). 46 findings fixed; suite green (98 unit + golden + 4 reorg + 2 reorg-game);
-net −202 LOC. Per-finding status in `quality-audit-findings.md`.
+B `1947cd0`, **FN1+FN2+FN72 `bf5271b`** (+ doc commits). 49 findings fixed; full suite green (98 unit +
+golden byte-identical + 4 reorg + 2 reorg-game + 4 roconfig + 32 database). Per-finding status in
+`quality-audit-findings.md`. **NEXT = Pass C** (dead proto/config fields, regen).
+**Heed the BUILD GOTCHA in the progress log before any proto/proto2/*.pb.text edit.**
 
 **User decisions (this session):**
-1. **FN1 reward-roll** = *"Fix + you re-tune for me"* — apply strict `<` at all 5 roll sites + FN2
+1. **[DONE `bf5271b`] FN1 reward-roll** = *"Fix + you re-tune for me"* — apply strict `<` at all 5 roll sites + FN2
    (fpm→int), then **adjust the weight tables in `proto/roconfig/activityrewardstable.pb.text` so
    observed drop rates stay ~the same as today**, and **get user sign-off on the target rates** before
    committing. Then regen golden + recalibrate the 4 RNG `ValidateStateTests`
@@ -116,14 +118,27 @@ detail of every finding is in the workflow output `wgm9hkdph` (scratchpad `audit
 - 2026-06-29: **Pass A2 DONE** (`f6ffde4`): FN14/25/26 — transfigure fuel per-rarity cost, armor reward
   by-value→reference, demand-queue double-append. Golden byte-identical (golden scenario doesn't
   traverse these paths), 98 unit + 4 reorg + 2 reorg-game green.
-  **FN1+FN2 DEFERRED — needs a user balance decision.** The weighted reward roll uses `<=` (should be
-  `<`): the first bucket is over-weighted by 1 and the last bucket is unreachable when its weight==1.
-  The fix is correct, but it shifts reward distribution across expeditions/sweeteners/tournaments and
-  the configured weight tables in `proto/roconfig/*.pb.text` may have been authored against the current
-  (biased) behavior. It also requires recalibrating 4 RNG `ValidateStateTests` (one structurally — the
-  corrected roll no longer yields a generated recipe for the test's fixed seed). **Decision needed:** fix
-  the roll + re-tune the weight tables to preserve intended drop rates, or leave as-is. Until then, the
-  `<=` behavior is unchanged.
+  **FN1+FN2 DEFERRED — needs a user balance decision.** [resolved below]
+- 2026-06-29: **FN1+FN2 DONE** (`bf5271b`), user signed off on *config-as-authored* (no weight re-tune).
+  Strict `<` at all 5 roll sites + fpm->int at the 2 expedition/tournament sites. Measured impact: the
+  fix only moves the first (-1/total) and last (+1/total) bucket of each table; **max change to any
+  reward is 1.54%**, and it un-strands exactly one Rare-armor recipe (0% -> 0.93%). **Golden stayed
+  byte-identical** (the replay scenario's rolls land on the same buckets), so FN1 was golden-NEUTRAL, not
+  regen. Re-pinned `SweetenerRandomRewardConsistency` 2063 -> 2046.
+  - **Surfaced a 2nd real bug, FN72 (config-loader self-merge).** The all-zero `UnitTest_Reward` regtest
+    fixture relied on the old `<=` to select bucket 0; giving it `Weight: 1` should have fixed the 3
+    expedition tests but the weight kept reading 0 at runtime. Root cause: `RoConfig` merged the overlay
+    with `pb.MergeFrom(pb.regtest_merge())` — **source aliasing destination**, undefined in protobuf,
+    silently dropping merged scalar Weights. Invisible for years only because every overlay value was 0.
+    Fixed by copying the sub-message out first. No-op on mainnet/Polygon (no overlay merged there).
+  - **BUILD GOTCHA (cost ~30 min — READ BEFORE TOUCHING proto/ or proto2/):** `src/libtf.la` *bundles*
+    proto2's `roconfig.o` (libtool convenience-lib), and the dependency is **not tracked** — editing
+    `proto/roconfig.cpp` or a `*.pb.text` and running incremental `make` (even `make clean` in `src` or
+    `proto2` alone, even `rm libtf.la`) keeps linking a **stale `roconfig.o`** into `tests`. Symptom:
+    runtime config != the freshly-built `roconfig.pb`/blob. The ONLY reliable fix is a full clean rebuild
+    in dependency order: `make clean` (top) -> `make -C proto` -> `make -C proto2` -> `make -C database &&
+    make -C database libdbtest.la` -> `make -C src <targets>`. Verify with
+    `strings src/tests | grep -c <a-unique-string-from-your-edit>`.
 
 <!-- STATUS: per-finding status tracked in the table at docs/quality-audit-findings.md -->
 
