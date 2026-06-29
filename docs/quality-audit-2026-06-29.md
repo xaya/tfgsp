@@ -60,19 +60,27 @@ worth a config balance glance. Flagged to user.
 | DEF7 | Per-entity table boilerplate copy-pasted across 6 DB classes | Large cross-cutting templatization; high churn |
 | FN50 | QuantityProduct (GMP bignum) dead outside tests; drops whole GMP dep | Build-dependency change — verify GMP isn't needed elsewhere before removing |
 
-## RESUME STATE (2026-06-29, after Pass C; before Pass D/F/B2)
+## RESUME STATE (2026-06-29, after Pass D DEF8/DEF9; decision pending on DEF12-14)
 
 **Done + committed** (branch `polygon-rewrite`, on top of `e2f4183`): Pass A1 `0c02348`, A2 `f6ffde4`,
-B `1947cd0`, **FN1+FN2+FN72 `bf5271b`**, **Pass C** = `183f13a` (FN62/64/67/68 neutral) + `419dd57`
-(FN65/66) + `84c56f1` (FN34/63 activities teardown). **ALL 71 fix-now findings + FN72 DONE** (0 TODO).
-Full suite green (98 unit + golden + 4 reorg + 2 reorg-game + 4 roconfig + 32 database). Per-finding
-status in `quality-audit-findings.md`.
+B `1947cd0`, **FN1+FN2+FN72 `bf5271b`**, **Pass C** = `183f13a` + `419dd57` + `84c56f1`,
+**Pass D DEF8/DEF9** = `<pending-commit>` (FighterName/FighterType/MoveProbability `Probability`
+float→uint32 + recipe.cpp `(int32_t)` casts; golden byte-identical, full suite green, independently
+verified value-exact by sweep `wqfneq70y`). Per-finding status in `quality-audit-findings.md`.
 
-**NEXT = Pass D** (determinism: DEF8/DEF9 float->int proto probabilities in recipe.cpp + fighter.cpp;
-verify says golden-neutral since config values are exact integers), then **Pass F** (split the
-4157-line moveprocessor.cpp + logic.cpp into cohesive TUs, each golden byte-identical), then **Pass B2**
-(FN11 rename, FN33 dead Params class, FN50 drop GMP dep, FN61 merge recipe ctors, pending.hpp dead
-member, repo-wide Taurion copyright headers x7).
+**Pass D surfaced 4 NEW float-in-consensus findings (DEF10-14) the 80-finding audit missed** (same class
+as DEF8/DEF9):
+- **DEF10** `deconstruction_return_percent` (value 50, integer) → float→uint32: FIX NOW, golden-neutral.
+- **DEF11** `prestige_tournament_performance_mod` (0.5, DEAD/no reader) → remove field: FIX NOW, golden-neutral.
+- **DEF12/13/14** `alms` 0.15 (Elo) / `exchange_sale_percentage` 0.96 (**money**) / `ReductionPercent`
+  0.8/0.65/0.5 (op duration) — fractional floats → fpm. **NEEDS USER DECISION**: store fpm raw 1/256
+  integer + `from_raw` (golden-neutral, removes float, opaque config) vs leave as float (deterministic
+  in practice, readable). Basis-points is NOT golden-neutral (245≠246). Asked user.
+
+**NEXT once DEF12-14 decided:** apply DEF10/11 (+ chosen DEF12-14 path) in ONE proto rebuild + commit,
+then **Pass F** (split the 4157-line moveprocessor.cpp + logic.cpp into cohesive TUs, each golden
+byte-identical), then **Pass B2** (FN11 rename, FN33 dead Params class, FN50 drop GMP dep, FN61 merge
+recipe ctors, pending.hpp dead member, repo-wide Taurion copyright headers x7).
 **Heed the BUILD GOTCHA in the progress log before any proto/proto2/*.pb.text edit. Pass C's activities
 teardown needed autoreconf -i + ./config.status (Makefile.am changes) -- D/F may too.**
 
@@ -155,6 +163,23 @@ detail of every finding is in the workflow output `wgm9hkdph` (scratchpad `audit
     in dependency order: `make clean` (top) -> `make -C proto` -> `make -C proto2` -> `make -C database &&
     make -C database libdbtest.la` -> `make -C src <targets>`. Verify with
     `strings src/tests | grep -c <a-unique-string-from-your-edit>`.
+
+- 2026-06-29: **Pass D DEF8/DEF9 DONE** (`<pending-commit>`): `FighterName.Probability` (field 5),
+  `FighterType.Probability` (field 3), `FighterTypeMoveProbability.Probability` (field 2) changed
+  `float`→`uint32`; `fightertype.pb.text` `Probability: N.0`→`N`; recipe.cpp's six `*1000` sites given
+  explicit `(int32_t)` casts (pure signed-int math). All config probability values are exact integers
+  (FighterName 1..1000, FighterType 20, moves 15/20/30), so every `NextInt` bound/comparison is identical
+  → **golden byte-identical**, 98 unit + 4 reorg + 2 reorg-game + roconfig + database all green. Required
+  the full clean rebuild (proto change; heed BUILD GOTCHA). No `set_probability` writer exists anywhere
+  (config-read-only), and roconfig_tests only check `has_probability()` → uint32-safe.
+  - **Ran a 4-lens read-only determinism completeness sweep** (workflow `wqfneq70y`) alongside: it
+    independently re-verified DEF8/DEF9 value-exactness AND found **4 more float-in-consensus proto fields
+    the audit missed** — DEF10 `deconstruction_return_percent` (int 50, fix-now), DEF11
+    `prestige_tournament_performance_mod` (dead, remove), DEF12 `alms` 0.15, DEF13
+    `exchange_sale_percentage` 0.96 (money), DEF14 `ReductionPercent` 0.8/0.65/0.5. The fractional three
+    are deterministic in practice (power-of-2 fpm scaling) but flagged for a representation decision — see
+    findings doc "Pass-D determinism sweep". DEF10/11 are golden-neutral; will batch with the DEF12-14
+    decision into one rebuild.
 
 <!-- STATUS: per-finding status tracked in the table at docs/quality-audit-findings.md -->
 

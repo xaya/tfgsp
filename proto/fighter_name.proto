@@ -36,5 +36,5 @@ message FighterName
   optional uint32 Quality = 4; 
 
   /*p*/
-  optional float Probability = 5;
+  optional uint32 Probability = 5;
 }

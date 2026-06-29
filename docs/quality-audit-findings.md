@@ -90,8 +90,33 @@ See `quality-audit-2026-06-29.md` for plan + baseline. Status: TODO / DONE / DEF
 | DEF5 | src/pending.cpp:763-931 | dry-duplication | Move-key dispatch table duplicated between pending and Try*Action |
 | DEF6 | src/gamestatejson.cpp:187-237 | overengineering | Convert<FighterInstance> runs per-fighter OngoingsTable and RewardsTable scans (N+1) |
 | DEF7 | database/activity.cpp:26-155 | dry-duplication | Per-entity table boilerplate is copy-pasted across activity/reward/recipe/fighter/tournament/ongoings |
-| DEF8 | database/recipe.cpp:261,289,329-331,340,438-440,452 | determinism | Raw float proto probabilities used directly in consensus RNG-candidate selection math |
-| DEF9 | database/fighter.cpp:301,328 | determinism | Raw float FighterName.Probability truncated to int in consensus reroll RNG selection |
+| DEF8 | database/recipe.cpp:261,289,329-331,340,438-440,452 | determinism | Raw float proto probabilities used directly in consensus RNG-candidate selection math | **DONE (Pass D)** — FighterName/FighterType/FighterTypeMoveProbability `Probability` float→uint32 (all config values exact integers ≤1000); recipe.cpp `*1000` sites given explicit `(int32_t)` casts. Golden byte-identical; independently verified value-exact. |
+| DEF9 | database/fighter.cpp:301,328 | determinism | Raw float FighterName.Probability truncated to int in consensus reroll RNG selection | **DONE (Pass D)** — resolved by the same FighterName.Probability float→uint32 change (readers already int32-typed). Golden byte-identical. |
+
+## Pass-D determinism sweep — newly discovered float-in-consensus (4)
+
+A read-only completeness sweep (4-lens workflow `wqfneq70y`) run alongside DEF8/DEF9 found 4 more
+float/double proto fields feeding hashed state or the RNG stream that the original 80-finding audit missed
+— the **same class** as DEF8/DEF9. All are deterministic *in practice* (config-sourced float, scaled by a
+power of two then `std::round`/truncated → identical on every IEEE-754/SSE node), so not active bugs, but
+real determinism-discipline risks on money/duration paths.
+
+| # | Field (proto) | Value | Reader | Reaches | Disposition |
+|---|---------------|-------|--------|---------|-------------|
+| DEF10 | `config.proto:89 deconstruction_return_percent` | **50** (integer) | logic.cpp:415 `uint32_t = float` | NextInt bound + reward qty (hashed) | **FIX NOW** float→uint32 — value is an exact integer, golden-neutral (DEF8/DEF9 class) |
+| DEF11 | `config.proto:109 prestige_tournament_performance_mod` | 0.5 | **none (dead)** | nothing | **FIX NOW** remove dead float field (reserve 34) — FN62 class, golden-neutral |
+| DEF12 | `config.proto:53 alms` | **0.15** (fractional) | logic.cpp:868 `fpm(alms)` | Elo `set_rating` (hashed) | **NEEDS DECISION** — fractional; see below |
+| DEF13 | `config.proto:61 exchange_sale_percentage` | **0.96** (fractional) | moveprocessor.cpp:3622 `fpm(pct).raw_value()` | exchange payout `AddBalance` (**money**) | **NEEDS DECISION** — fractional; see below |
+| DEF14 | `goody.proto:45 ReductionPercent` | **0.8/0.65/0.5** (fractional) | moveprocessor.cpp:129 `fpm(reductionpercent())` | ongoing-op duration (hashed) | **NEEDS DECISION** — fractional; see below |
+
+**Decision for DEF12-14 (fractional float money/duration params):** these can be made float-free
+*golden-neutrally* by storing the field as its fpm `fixed_24_8` raw value (1/256 units) and constructing via
+`fpm::fixed_24_8::from_raw(...)` (or, for DEF13 which only takes `.raw_value()`, an int64 field read
+directly). The current float constructor already quantizes 0.96→raw 246, 0.15→raw 38, 0.8→205, 0.65→166,
+0.5→128, so `from_raw` of those integers is byte-identical AND removes float from the consensus path. Cost:
+config values become opaque 1/256 integers (comment-documented) instead of human-readable percentages.
+Alternative (basis-points + fpm division) is NOT golden-neutral (truncation vs round; e.g. 0.96 → 245 ≠ 246)
+and would change money output. Pending user choice (representation tradeoff on money paths — FN1 precedent).
 
 ## Rejected (2) — refuted in-code
 

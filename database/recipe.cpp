@@ -327,9 +327,9 @@ uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xa
      
     for (const auto& fighter : sortedfighterTypesmap)
     {
-        if(probabilityTreshholdMaximum <  fighter.second.probability() * 1000)
+        if(probabilityTreshholdMaximum <  (int32_t) fighter.second.probability() * 1000)
         {
-            probabilityTreshholdMaximum = fighter.second.probability() * 1000;
+            probabilityTreshholdMaximum = (int32_t) fighter.second.probability() * 1000;
         }
     }
         
@@ -338,7 +338,7 @@ uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xa
     {
       for (const auto& fighter : sortedfighterTypesmap)
       {
-        int32_t probabilityTreshhold = fighter.second.probability() * 1000;
+        int32_t probabilityTreshhold = (int32_t) fighter.second.probability() * 1000;
         int32_t rolCurNum = rnd.NextInt(probabilityTreshholdMaximum * 2);
 
         if(rolCurNum < probabilityTreshhold)
@@ -436,9 +436,9 @@ uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xa
      
     for(auto& probableMove: fighterType.moveprobabilities())
     {
-        if(probabilityTreshholdMaximum <  probableMove.probability() * 1000)
+        if(probabilityTreshholdMaximum <  (int32_t) probableMove.probability() * 1000)
         {
-            probabilityTreshholdMaximum = probableMove.probability() * 1000;
+            probabilityTreshholdMaximum = (int32_t) probableMove.probability() * 1000;
         }
     }    
     
@@ -450,7 +450,7 @@ uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xa
             
             for(auto& probableMove: fighterType.moveprobabilities())
             {
-                int32_t probabilityTreshhold = probableMove.probability() * 1000;
+                int32_t probabilityTreshhold = (int32_t) probableMove.probability() * 1000;
                 
                 int32_t rolCurNum = rnd.NextInt(probabilityTreshholdMaximum * 2);  
                 if(rolCurNum < probabilityTreshhold)
