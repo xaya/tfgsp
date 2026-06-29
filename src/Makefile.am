@@ -22,6 +22,9 @@ libtf_la_SOURCES = \
   gamestatejson.cpp \
   jsonutils.cpp \
   logic.cpp \
+  logic_resolve.cpp \
+  logic_combat.cpp \
+  logic_tournament.cpp \
   moveprocessor.cpp \
   pending.cpp
 libtfheaders = \
