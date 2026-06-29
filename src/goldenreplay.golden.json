@@ -40,7 +40,6 @@
         "highestappliedsweetener" : 1,
         "id" : 3,
         "isaccountbound" : true,
-        "lasttournamenttime" : 0,
         "moves" : 
         [
           {
@@ -59,8 +58,7 @@
         "secondnamerarity" : 1000,
         "status" : 0,
         "sweetness" : 1,
-        "tournamentinstanceid" : 0,
-        "tournamentpoints" : 0
+        "tournamentinstanceid" : 0
       },
       {
         "animationid" : "05633498-ace9-de14-c939-9435a6343d0f",
@@ -89,7 +87,6 @@
         "highestappliedsweetener" : 1,
         "id" : 4,
         "isaccountbound" : false,
-        "lasttournamenttime" : 0,
         "moves" : 
         [
           {
@@ -108,8 +105,7 @@
         "secondnamerarity" : 1000,
         "status" : 3,
         "sweetness" : 1,
-        "tournamentinstanceid" : 0,
-        "tournamentpoints" : 0
+        "tournamentinstanceid" : 0
       },
       {
         "animationid" : "917e27ec-19ff-3d04-69f6-c596456816e6",
@@ -138,7 +134,6 @@
         "highestappliedsweetener" : 1,
         "id" : 8,
         "isaccountbound" : true,
-        "lasttournamenttime" : 0,
         "moves" : 
         [
           {
@@ -157,8 +152,7 @@
         "secondnamerarity" : 1000,
         "status" : 0,
         "sweetness" : 1,
-        "tournamentinstanceid" : 0,
-        "tournamentpoints" : 0
+        "tournamentinstanceid" : 0
       },
       {
         "animationid" : "27448f34-ca08-99b4-1b63-fd4b227e6af4",
@@ -187,7 +181,6 @@
         "highestappliedsweetener" : 1,
         "id" : 9,
         "isaccountbound" : true,
-        "lasttournamenttime" : 0,
         "moves" : 
         [
           {
@@ -206,8 +199,7 @@
         "secondnamerarity" : 1000,
         "status" : 0,
         "sweetness" : 1,
-        "tournamentinstanceid" : 0,
-        "tournamentpoints" : 0
+        "tournamentinstanceid" : 0
       },
       {
         "animationid" : "97c2c3da-93c7-a0d4-1967-eeba13396cce",
@@ -236,7 +228,6 @@
         "highestappliedsweetener" : 1,
         "id" : 13,
         "isaccountbound" : true,
-        "lasttournamenttime" : 0,
         "moves" : 
         [
           {
@@ -255,8 +246,7 @@
         "secondnamerarity" : 1000,
         "status" : 0,
         "sweetness" : 1,
-        "tournamentinstanceid" : 0,
-        "tournamentpoints" : 0
+        "tournamentinstanceid" : 0
       },
       {
         "animationid" : "a170f9f3-f97b-8eb4-49c0-c99a916e55d7",
@@ -285,7 +275,6 @@
         "highestappliedsweetener" : 1,
         "id" : 14,
         "isaccountbound" : true,
-        "lasttournamenttime" : 0,
         "moves" : 
         [
           {
@@ -304,8 +293,7 @@
         "secondnamerarity" : 1000,
         "status" : 0,
         "sweetness" : 1,
-        "tournamentinstanceid" : 0,
-        "tournamentpoints" : 0
+        "tournamentinstanceid" : 0
       },
       {
         "animationid" : "64732638-e355-d5c4-aa2d-e28c3db4aa72",
@@ -334,7 +322,6 @@
         "highestappliedsweetener" : 1,
         "id" : 18,
         "isaccountbound" : true,
-        "lasttournamenttime" : 0,
         "moves" : 
         [
           {
@@ -353,8 +340,7 @@
         "secondnamerarity" : 1000,
         "status" : 0,
         "sweetness" : 1,
-        "tournamentinstanceid" : 0,
-        "tournamentpoints" : 0
+        "tournamentinstanceid" : 0
       },
       {
         "animationid" : "64732638-e355-d5c4-aa2d-e28c3db4aa72",
@@ -383,7 +369,6 @@
         "highestappliedsweetener" : 1,
         "id" : 19,
         "isaccountbound" : true,
-        "lasttournamenttime" : 0,
         "moves" : 
         [
           {
@@ -402,8 +387,7 @@
         "secondnamerarity" : 1000,
         "status" : 0,
         "sweetness" : 1,
-        "tournamentinstanceid" : 0,
-        "tournamentpoints" : 0
+        "tournamentinstanceid" : 0
       },
       {
         "animationid" : "27448f34-ca08-99b4-1b63-fd4b227e6af4",
@@ -432,7 +416,6 @@
         "highestappliedsweetener" : 1,
         "id" : 23,
         "isaccountbound" : true,
-        "lasttournamenttime" : 0,
         "moves" : 
         [
           {
@@ -451,8 +434,7 @@
         "secondnamerarity" : 1000,
         "status" : 0,
         "sweetness" : 1,
-        "tournamentinstanceid" : 0,
-        "tournamentpoints" : 0
+        "tournamentinstanceid" : 0
       },
       {
         "animationid" : "a170f9f3-f97b-8eb4-49c0-c99a916e55d7",
@@ -481,7 +463,6 @@
         "highestappliedsweetener" : 1,
         "id" : 24,
         "isaccountbound" : true,
-        "lasttournamenttime" : 0,
         "moves" : 
         [
           {
@@ -500,8 +481,7 @@
         "secondnamerarity" : 1000,
         "status" : 0,
         "sweetness" : 1,
-        "tournamentinstanceid" : 0,
-        "tournamentpoints" : 0
+        "tournamentinstanceid" : 0
       },
       {
         "animationid" : "27448f34-ca08-99b4-1b63-fd4b227e6af4",
@@ -530,7 +510,6 @@
         "highestappliedsweetener" : 1,
         "id" : 26,
         "isaccountbound" : true,
-        "lasttournamenttime" : 0,
         "moves" : 
         [
           {
@@ -549,8 +528,7 @@
         "secondnamerarity" : 1000,
         "status" : 0,
         "sweetness" : 1,
-        "tournamentinstanceid" : 0,
-        "tournamentpoints" : 0
+        "tournamentinstanceid" : 0
       },
       {
         "animationid" : "27448f34-ca08-99b4-1b63-fd4b227e6af4",
@@ -579,7 +557,6 @@
         "highestappliedsweetener" : 1,
         "id" : 27,
         "isaccountbound" : true,
-        "lasttournamenttime" : 0,
         "moves" : 
         [
           {
@@ -598,8 +575,7 @@
         "secondnamerarity" : 1000,
         "status" : 5,
         "sweetness" : 1,
-        "tournamentinstanceid" : 0,
-        "tournamentpoints" : 0
+        "tournamentinstanceid" : 0
       },
       {
         "animationid" : "5fce85e9-51f9-d7b4-db81-ef141439db00",
@@ -628,7 +604,6 @@
         "highestappliedsweetener" : 1,
         "id" : 28,
         "isaccountbound" : true,
-        "lasttournamenttime" : 0,
         "moves" : 
         [
           {
@@ -647,8 +622,7 @@
         "secondnamerarity" : 1000,
         "status" : 4,
         "sweetness" : 2,
-        "tournamentinstanceid" : 0,
-        "tournamentpoints" : 0
+        "tournamentinstanceid" : 0
       },
       {
         "animationid" : "27448f34-ca08-99b4-1b63-fd4b227e6af4",
@@ -677,7 +651,6 @@
         "highestappliedsweetener" : 1,
         "id" : 29,
         "isaccountbound" : true,
-        "lasttournamenttime" : 0,
         "moves" : 
         [
           {
@@ -696,8 +669,7 @@
         "secondnamerarity" : 1000,
         "status" : 1,
         "sweetness" : 1,
-        "tournamentinstanceid" : 0,
-        "tournamentpoints" : 0
+        "tournamentinstanceid" : 0
       },
       {
         "animationid" : "917e27ec-19ff-3d04-69f6-c596456816e6",
@@ -726,7 +698,6 @@
         "highestappliedsweetener" : 1,
         "id" : 56,
         "isaccountbound" : true,
-        "lasttournamenttime" : 0,
         "moves" : 
         [
           {
@@ -745,8 +716,7 @@
         "secondnamerarity" : 1000,
         "status" : 7,
         "sweetness" : 1,
-        "tournamentinstanceid" : 0,
-        "tournamentpoints" : 0
+        "tournamentinstanceid" : 0
       }
     ],
     "multiplier" : 1000,

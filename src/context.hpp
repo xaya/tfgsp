@@ -118,6 +118,17 @@ public:
   unsigned Height () const;
 
   /**
+   * Whether a real block height is available (i.e. NO_HEIGHT was not passed).
+   * Read-only JSON paths that derive "blocks left" from the current height use
+   * this to stay safe on the height-less full-state dump (getcurrentstate).
+   */
+  bool
+  HasHeight () const
+  {
+    return height != NO_HEIGHT;
+  }
+
+  /**
    * Returns the context's block timestamp.  This must not be called for
    * processing pending moves (where we do not have a timestamp).
    */

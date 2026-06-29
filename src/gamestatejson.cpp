@@ -144,10 +144,7 @@ template <>
   res["rating"] = IntToJson (pb.rating());
   res["sweetness"] = IntToJson (pb.sweetness());
   res["highestappliedsweetener"] = IntToJson (pb.highestappliedsweetener());
-  
-  res["tournamentpoints"] = IntToJson (pb.tournamentpoints());
-  res["lasttournamenttime"] = IntToJson (pb.lasttournamenttime());
-  
+
   res["firstnamerarity"] = IntToJson (pb.firstnamerarity());
   res["secondnamerarity"] = IntToJson (pb.secondnamerarity());
   
@@ -195,7 +192,11 @@ template <>
       auto op = ongoings.GetFromResult (ores);
       if(op->GetProto().fighterdatabaseid() == fighter.GetId())
       {
-        res["blocksleft"] = IntToJson ((int) op->GetHeight () - (int) ctx.Height ());
+        /* The height-less full-state dump (getcurrentstate) has no current
+           height to subtract; emit 0 there rather than tripping the NO_HEIGHT
+           guard.  Every height-bearing path reports the real remaining blocks. */
+        res["blocksleft"] = IntToJson (ctx.HasHeight ()
+            ? (int) op->GetHeight () - (int) ctx.Height () : 0);
       }
     }
   }
@@ -404,7 +405,8 @@ template <>
       const auto& ongoing = ong.second;
       Json::Value ongOB(Json::objectValue);
       ongOB["type"] = ongoing.type();
-      ongOB["blocksleft"] = IntToJson((int) ong.first - (int) ctx.Height ());
+      ongOB["blocksleft"] = IntToJson (ctx.HasHeight ()
+          ? (int) ong.first - (int) ctx.Height () : 0);
 
       if((pxd::OngoingType)(int)ongoing.type() == pxd::OngoingType::COOK_RECIPE)
       {

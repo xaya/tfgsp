@@ -51,19 +51,9 @@ public:
   void operator= (const GlobalData&) = delete;
 
   /**
-   * Returns the timestamp of the last tournament data held
-   */
-  int64_t GetLastTournamentTime();
-  
-  /**
-   * Sets the timestamp of the last tournament data held
-   */
-  void SetLastTournamentTime(int64_t newTime);  
-  
-  /**
    * Returns Crystal prices in CHI multiplier
    */
-  int64_t GetChiMultiplier();  
+  int64_t GetChiMultiplier();
   
   /**
    * Sets Crystal prices in CHI multiplier

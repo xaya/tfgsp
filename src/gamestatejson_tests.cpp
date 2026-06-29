@@ -19,6 +19,7 @@
 #include "gamestatejson.hpp"
 #include "database/dbtest.hpp"
 #include "database/fighter.hpp"
+#include "database/ongoings.hpp"
 #include "database/recipe.hpp"
 #include "database/reward.hpp"
 #include "testutils.hpp"
@@ -476,7 +477,6 @@ TEST_F (XayaPlayersJsonTests, ExpeditionInstance)
                         "highestappliedsweetener" : 1,
                         "id" : 3,
                         "isaccountbound" : true,
-                        "lasttournamenttime" : 0,
                         "moves" :
                         [
                                 {
@@ -494,8 +494,7 @@ TEST_F (XayaPlayersJsonTests, ExpeditionInstance)
                         "saleshistory" : [],
                         "status" : 0,
                         "sweetness" : 1,
-                        "tournamentinstanceid" : 0,
-                        "tournamentpoints" : 0
+                        "tournamentinstanceid" : 0
                 },
                 {
                         "animationid" : "05633498-ace9-de14-c939-9435a6343d0f",
@@ -523,7 +522,6 @@ TEST_F (XayaPlayersJsonTests, ExpeditionInstance)
                         "highestappliedsweetener" : 1,
                         "id" : 4,
                         "isaccountbound" : true,
-                        "lasttournamenttime" : 0,
                         "moves" :
                         [
                                 {
@@ -541,8 +539,7 @@ TEST_F (XayaPlayersJsonTests, ExpeditionInstance)
                         "saleshistory" : [],
                         "status" : 0,
                         "sweetness" : 1,
-                        "tournamentinstanceid" : 0,
-                        "tournamentpoints" : 0
+                        "tournamentinstanceid" : 0
                 }
         ],
         "multiplier" : 1000,
@@ -619,8 +616,62 @@ TEST_F (XayaPlayersJsonTests, ExpeditionInstance)
                         "valueuncommon" : 0
                 }
         ]
-})", "foo");			
-  
+})", "foo");
+
+}
+
+TEST_F (XayaPlayersJsonTests, BlocksLeftSurvivesHeightlessDump)
+{
+  /* Regression: the height-less custom-state RPC dump (getuser /
+     getxayaplayers / getexchange / gettournaments, and the getcurrentstate /
+     anti-fork full dump) must NOT abort in Context::Height() while any ongoing
+     operation is active.  gamestatejson derives a fighter's / ongoing's
+     "blocksleft" from the current height, and the RPC path used NO_HEIGHT --
+     so the live GSP crashed as soon as anybody had an expedition / cook /
+     deconstruction in progress and any state RPC was served. */
+  auto a = tbl.CreateNew ("foo", ctx.RoConfig (), rnd);
+  a->SetRole (PlayerRole::PLAYER);
+  a.reset ();
+
+  auto r0 = tbl3.CreateNew ("foo", "5864a19b-c8c0-2d34-eaef-9455af0baf2c", *cfg);
+  const auto rid = r0->GetId ();
+  r0.reset ();
+  auto f1 = tbl2.CreateNew ("foo", rid, *cfg, rnd);
+  const int fid = f1->GetId ();
+  f1.reset ();
+
+  /* An active expedition resolving at height 150, attached to foo's fighter. */
+  OngoingsTable ongoings (db);
+  auto op = ongoings.CreateNew (100);
+  op->SetOwner ("foo");
+  op->SetHeight (150);
+  op->MutableProto ().set_type (static_cast<uint32_t> (pxd::OngoingType::EXPEDITION));
+  op->MutableProto ().set_fighterdatabaseid (fid);
+  op.reset ();
+
+  /* Height-less dump must not crash; blocksleft falls back to 0.  Before the
+     fix, FullState()/User() aborted here via CHECK_NE in Context::Height(). */
+  ctx.SetHeight (Context::NO_HEIGHT);
+  converter.FullState ();
+  {
+    const Json::Value u = converter.User ("foo");
+    bool seen = false;
+    for (const auto& f : u["fighters"])
+      if (f["id"].asInt () == fid)
+        { EXPECT_EQ (f["blocksleft"].asInt (), 0); seen = true; }
+    EXPECT_TRUE (seen);
+  }
+
+  /* With a real height the remaining blocks are reported exactly. */
+  ctx.SetHeight (120);
+  {
+    const Json::Value u = converter.User ("foo");
+    bool seen = false;
+    for (const auto& f : u["fighters"])
+      if (f["id"].asInt () == fid)
+        { EXPECT_EQ (f["blocksleft"].asInt (), 30); seen = true; }
+    EXPECT_TRUE (seen);
+  }
 }
 
 TEST_F (XayaPlayersJsonTests, TournamentInstance)

@@ -95,15 +95,10 @@ message Fighter
   optional bool IsAccountBound = 18;
 
   /* Tags 19, 20 were SpecialTournamentInstanceID / SpecialTournamentStatus;
-     retired with the special-tournament feature at the Polygon relaunch. */
-  reserved 19, 20;
+     21 was TournamentPoints and 22 was LastTournamentTime — both write-dead
+     stubs (no move ever set them).  All retired at the Polygon relaunch. */
+  reserved 19, 20, 21, 22;
 
-  /*Tournament points*/
-  optional uint32 TournamentPoints = 21;
-  
-  /*Last tournament timestamp, to make sure player can participate only once per mathday*/
-  optional uint64 LastTournamentTime = 22;     
-  
   /*Information on sale time, price and owner changes*/
   repeated FighterSaleEntry salehistory = 23;  
   

@@ -893,7 +893,7 @@ fpm::fixed_24_8& expectedB, fpm::fixed_24_8& newRatingA, fpm::fixed_24_8& newRat
 
 
 
-void PXLogic::ProcessFighterPair(int64_t fighter1, int64_t fighter2, bool isSpecial, std::map<uint32_t, proto::TournamentResult*>& fighterResults, std::map<std::string, fpm::fixed_24_8>& participatingPlayerTotalScore, FighterTable& fighters, const Context& ctx, xaya::Random& rnd)
+void PXLogic::ProcessFighterPair(int64_t fighter1, int64_t fighter2, std::map<uint32_t, proto::TournamentResult*>& fighterResults, std::map<std::string, fpm::fixed_24_8>& participatingPlayerTotalScore, FighterTable& fighters, const Context& ctx, xaya::Random& rnd)
 {
    
    
@@ -1000,12 +1000,9 @@ void PXLogic::ProcessFighterPair(int64_t fighter1, int64_t fighter2, bool isSpec
           rwin = pxd::MatchResultType::Lose;
           participatingPlayerTotalScore[lhs->GetOwner()] += 1;
           scoreA = fpm::fixed_24_8(1);
-          
-          if(isSpecial == false)
-          {
-            fighterResults[fighter1]->set_losses(fighterResults[fighter1]->losses() + 1);
-            fighterResults[fighter2]->set_wins(fighterResults[fighter2]->wins() + 1);
-          }
+
+          fighterResults[fighter1]->set_losses(fighterResults[fighter1]->losses() + 1);
+          fighterResults[fighter2]->set_wins(fighterResults[fighter2]->wins() + 1);
 
           break;
       case 1:
@@ -1015,13 +1012,10 @@ void PXLogic::ProcessFighterPair(int64_t fighter1, int64_t fighter2, bool isSpec
           scoreB = fpm::fixed_24_8(0.5);
           participatingPlayerTotalScore[lhs->GetOwner()] += fpm::fixed_24_8(0.5);
           participatingPlayerTotalScore[rhs->GetOwner()] += fpm::fixed_24_8(0.5);
-          
-          if(isSpecial == false)
-          {           
-            fighterResults[fighter1]->set_draws(fighterResults[fighter1]->draws() + 1);
-            fighterResults[fighter2]->set_draws(fighterResults[fighter2]->draws() + 1);  
-          }
-   
+
+          fighterResults[fighter1]->set_draws(fighterResults[fighter1]->draws() + 1);
+          fighterResults[fighter2]->set_draws(fighterResults[fighter2]->draws() + 1);
+
           break;
       case 2:
           lwin = pxd::MatchResultType::Lose;
@@ -1030,12 +1024,9 @@ void PXLogic::ProcessFighterPair(int64_t fighter1, int64_t fighter2, bool isSpec
 		  
 		  participatingPlayerTotalScore[rhs->GetOwner()] += fpm::fixed_24_8(1);
 		          
-          if(isSpecial == false)
-          {
-            fighterResults[fighter2]->set_losses(fighterResults[fighter2]->losses() + 1);
-            fighterResults[fighter1]->set_wins(fighterResults[fighter1]->wins() + 1);
-          }   
-    
+          fighterResults[fighter2]->set_losses(fighterResults[fighter2]->losses() + 1);
+          fighterResults[fighter1]->set_wins(fighterResults[fighter1]->wins() + 1);
+
           break;
    }                 
 
@@ -1052,40 +1043,36 @@ void PXLogic::ProcessFighterPair(int64_t fighter1, int64_t fighter2, bool isSpec
    uint32_t newRatingForLhs = (uint32_t)std::max(0, (int32_t)newRatingA);
    uint32_t newRatingForRhs = (uint32_t)std::max(0, (int32_t)newRatingB);
    
-   if(isSpecial == false)
+   lhs->MutableProto().set_rating(newRatingForLhs);
+   rhs->MutableProto().set_rating(newRatingForRhs);
+
+   lRatingDelta = lhs->GetProto().rating() - lRatingDelta;
+   rRatingDelta = rhs->GetProto().rating() - rRatingDelta;
+
+   lhs->MutableProto().set_totalmatches(lhs->GetProto().totalmatches() + 1);
+   rhs->MutableProto().set_totalmatches(rhs->GetProto().totalmatches() + 1);
+
+   if(lwin == pxd::MatchResultType::Win)
    {
-     lhs->MutableProto().set_rating(newRatingForLhs);
-     rhs->MutableProto().set_rating(newRatingForRhs);
-     
-     lRatingDelta = lhs->GetProto().rating() - lRatingDelta;
-     rRatingDelta = rhs->GetProto().rating() - rRatingDelta;
-     
-     lhs->MutableProto().set_totalmatches(lhs->GetProto().totalmatches() + 1);
-     rhs->MutableProto().set_totalmatches(rhs->GetProto().totalmatches() + 1);
-     
-     if(lwin == pxd::MatchResultType::Win)
-     {
-       lhs->MutableProto().set_matcheswon(lhs->GetProto().matcheswon() + 1);  
-     }
-     if(lwin == pxd::MatchResultType::Lose)
-     {
-       lhs->MutableProto().set_matcheslost(lhs->GetProto().matcheslost() + 1);  
-     }                 
-     
-     if(rwin == pxd::MatchResultType::Win)
-     {
-       rhs->MutableProto().set_matcheswon(rhs->GetProto().matcheswon() + 1);  
-     }
-     if(rwin == pxd::MatchResultType::Lose)
-     {
-       rhs->MutableProto().set_matcheslost(rhs->GetProto().matcheslost() + 1);  
-     }             
-
-      fighterResults[fighter2]->set_ratingdelta(fighterResults[fighter2]->ratingdelta() + (int32_t)lRatingDelta);
-      fighterResults[fighter1]->set_ratingdelta(fighterResults[fighter1]->ratingdelta() + (int32_t)rRatingDelta);  
-
+     lhs->MutableProto().set_matcheswon(lhs->GetProto().matcheswon() + 1);
    }
-        
+   if(lwin == pxd::MatchResultType::Lose)
+   {
+     lhs->MutableProto().set_matcheslost(lhs->GetProto().matcheslost() + 1);
+   }
+
+   if(rwin == pxd::MatchResultType::Win)
+   {
+     rhs->MutableProto().set_matcheswon(rhs->GetProto().matcheswon() + 1);
+   }
+   if(rwin == pxd::MatchResultType::Lose)
+   {
+     rhs->MutableProto().set_matcheslost(rhs->GetProto().matcheslost() + 1);
+   }
+
+   fighterResults[fighter2]->set_ratingdelta(fighterResults[fighter2]->ratingdelta() + (int32_t)lRatingDelta);
+   fighterResults[fighter1]->set_ratingdelta(fighterResults[fighter1]->ratingdelta() + (int32_t)rRatingDelta);
+
    rhs.reset();
    lhs.reset();    
 }
@@ -1213,7 +1200,7 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
               
               for(auto fPair: fighterPairs)
               {
-                 ProcessFighterPair(fPair.first, fPair.second, false, fighterResults, participatingPlayerTotalScore, fighters, ctx, rnd);
+                 ProcessFighterPair(fPair.first, fPair.second, fighterResults, participatingPlayerTotalScore, fighters, ctx, rnd);
               }
               
               std::string winnerName = "";
@@ -1699,8 +1686,12 @@ PXLogic::GetCustomStateData (xaya::Game& game,
   return GetCustomStateData (game,
     [this, &cb] (Database& db, const xaya::uint256& hash, const unsigned height)
         {
-          const Context ctx(GetChain (),
-                            Context::NO_HEIGHT, Context::NO_TIMESTAMP);
+          /* The block height of the state being queried is supplied by the
+             callback -- use it so height-derived JSON (a fighter's / ongoing's
+             "blocks left") is correct and Context::Height() never trips its
+             NO_HEIGHT guard on getuser/getxayaplayers/getexchange/gettournaments
+             while any ongoing operation is active. */
+          const Context ctx(GetChain (), height, Context::NO_TIMESTAMP);
           GameStateJson gsj(db, ctx);
           return cb (gsj, hash, height);
         });

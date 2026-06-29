@@ -28,46 +28,14 @@ namespace
 
 struct GlobalDataResult : public Database::ResultType
 {
-  RESULT_COLUMN (int64_t, id, 1);    
-  RESULT_COLUMN (int64_t, lasttournamenttime, 2);
-  RESULT_COLUMN (int64_t, chimultiplier,3);
-  RESULT_COLUMN (std::string, version,4);
-  RESULT_COLUMN (std::string, url,5);
-  RESULT_COLUMN (std::string, queuedata,6);
+  RESULT_COLUMN (int64_t, id, 1);
+  RESULT_COLUMN (int64_t, chimultiplier,2);
+  RESULT_COLUMN (std::string, version,3);
+  RESULT_COLUMN (std::string, url,4);
+  RESULT_COLUMN (std::string, queuedata,5);
 };
 
 } // anonymous namespace
-
-int64_t
-GlobalData::GetLastTournamentTime ()
-{
-  auto stmt = db.Prepare (R"(
-    SELECT *
-      FROM `globaldata`
-      WHERE `id` = 0
-  )");
-
-
-  auto res = stmt.Query<GlobalDataResult> ();
-  CHECK (res.Step ());
-
-  const int64_t lasttournamenttime = res.Get<GlobalDataResult::lasttournamenttime> ();
-  CHECK (!res.Step ());
-
-  return lasttournamenttime;
-}
-
-void GlobalData::SetLastTournamentTime(int64_t newTime)
-{
-  auto stmt = db.Prepare (R"(
-    UPDATE `globaldata` SET
-      (`lasttournamenttime`) = (?1) WHERE id=0
-  )");
-
-  stmt.Reset ();
-  stmt.Bind (1, newTime);
-  stmt.Execute ();
-}
 
 int64_t
 GlobalData::GetChiMultiplier ()
@@ -194,20 +162,19 @@ GlobalData::InitialiseDatabase ()
 {
   auto stmt = db.Prepare (R"(
     INSERT INTO `globaldata`
-      (`id`, `lasttournamenttime`, `chimultiplier`, `version`, `url`, `queuedata`) VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+      (`id`, `chimultiplier`, `version`, `url`, `queuedata`) VALUES (?1, ?2, ?3, ?4, ?5)
   )");
 
   std::string vd = "1.1.5";
   std::string ud = "xaya.io";
   std::string none = "";
-  
+
   stmt.Reset ();
   stmt.Bind (1, 0);
-  stmt.Bind (2, 0);
-  stmt.Bind (3, 1000);
-  stmt.Bind (4, vd);
-  stmt.Bind (5, ud);
-  stmt.Bind (6, none);
+  stmt.Bind (2, 1000);
+  stmt.Bind (3, vd);
+  stmt.Bind (4, ud);
+  stmt.Bind (5, none);
   stmt.Execute ();
     
 }
