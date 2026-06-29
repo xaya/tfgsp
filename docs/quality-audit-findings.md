@@ -6,8 +6,8 @@ See `quality-audit-2026-06-29.md` for plan + baseline. Status: TODO / DONE / DEF
 
 | # | Pass | File:Lines | Cat | Sev | Golden | Title | Status |
 |---|------|-----------|-----|-----|--------|-------|--------|
-| FN1 | A2 | src/logic.cpp:263-289 (also 324-348, 383-407, 555-581, 1275-1301) | money-correctness | medium | regen | Weighted reward roll uses `<=` -> first reward over-weighted, last reward can be unreachable | TODO |
-| FN2 | A2 | src/logic.cpp:549-573, 1269-1293 | overengineering | low | neutral | fpm::fixed_24_8 used for integer reward weights (ResolveExpedition, ProcessTournaments) | TODO |
+| FN1 | A2 | src/logic.cpp:263-289 (also 324-348, 383-407, 555-581, 1275-1301) | money-correctness | medium | regen | Weighted reward roll uses `<=` -> first reward over-weighted, last reward can be unreachable | DEFERRED(user: reward balance) |
+| FN2 | A2 | src/logic.cpp:549-573, 1269-1293 | overengineering | low | neutral | fpm::fixed_24_8 used for integer reward weights (ResolveExpedition, ProcessTournaments) | DEFERRED(user: reward balance) |
 | FN3 | B | src/logic.cpp:1103-1122 vs 1146-1165 | dry-duplication | low | neutral | Team-collection loop duplicated between Running and Listed branches in ProcessTournaments | TODO |
 | FN4 | B | src/logic.hpp:173 | dead-code | low | neutral | EloGetNewRatings() declared but never defined or called | TODO |
 | FN5 | B | src/logic.cpp:187-189 | taurion-baggage | low | neutral | Dead fork-gate param: isFork/fork threaded into RecipeInstance::Generate but never used | TODO |
@@ -19,7 +19,7 @@ See `quality-audit-2026-06-29.md` for plan + baseline. Status: TODO / DONE / DEF
 | FN11 | B | src/logic.cpp:742-765 | taurion-baggage | low | neutral | Confusing lmt/rmt swap with leftover scratch comment in ExecuteOneMoveAgainstAnother | TODO |
 | FN12 | B | src/logic.cpp:1625-1637 | clarity | low | neutral | `sortedFighterNames` is never sorted; per-100-block full GetStateAsJson only feeds an RPC display hash | TODO |
 | FN13 | A1 | src/moveprocessor.cpp:351 | determinism | medium | neutral | Floating-point literal in consensus reroll-price math (0.14 * COIN) | DONE |
-| FN14 | A2 | src/moveprocessor.cpp:1869-1871 | money-correctness | high | regen | Duplicate root.append(resEntry) writes the tournament demand-queue entry twice | TODO |
+| FN14 | A2 | src/moveprocessor.cpp:1869-1871 | money-correctness | high | regen | Duplicate root.append(resEntry) writes the tournament demand-queue entry twice | DONE |
 | FN15 | B | src/moveprocessor.cpp:456-460 | dead-code | low | neutral | Unreachable `if (cmd.isObject())` after `if (!cmd.isString()) return;` (3 copies) | TODO |
 | FN16 | B | src/moveprocessor.cpp:1569-1590 | dead-code | medium | neutral | playerHasAtLeastOneEpicTreat computed via O(fighters) scan but never enforced | TODO |
 | FN17 | B | src/moveprocessor.cpp:1403-1413 | dead-code | low | neutral | Duplicated identical fighter["o"].isInt() validation block in ParseTransfigureData | TODO |
@@ -30,10 +30,10 @@ See `quality-audit-2026-06-29.md` for plan + baseline. Status: TODO / DONE / DEF
 | FN22 | B | src/moveprocessor.cpp:376-402 | dry-duplication | low | neutral | ParseCrystalPurchase loops over crystalbundles twice | TODO |
 | FN23 | B | src/moveprocessor.cpp:839-844 | taurion-baggage | low | neutral | Vestigial vCHI / coin-transfer comment in ProcessOne | TODO |
 | FN24 | B | src/moveprocessor.cpp:249 | clarity | low | neutral | Copy-paste 'Could not solve sweetener entry' log strings in goody parsers | TODO |
-| FN25 | A2 | src/moveprocessor.cpp:3474-3477 | money-correctness | high | regen | Transfigure fuel data uses uncommon cook cost for ALL four rarities | TODO |
-| FN26 | A2 | src/moveprocessor.cpp:2800-2809 | money-correctness | high | regen | Armor reward update applied to a by-value copy and silently discarded | TODO |
+| FN25 | A2 | src/moveprocessor.cpp:3474-3477 | money-correctness | high | regen | Transfigure fuel data uses uncommon cook cost for ALL four rarities | DONE |
+| FN26 | A2 | src/moveprocessor.cpp:2800-2809 | money-correctness | high | regen | Armor reward update applied to a by-value copy and silently discarded | DONE |
 | FN27 | B | src/moveprocessor.cpp:2760-2776 | dead-code | medium | neutral | Unreachable duplicate GeneratedRecipe reward branch | TODO |
-| FN28 | A2 | src/moveprocessor.cpp:1869-1871 | dry-duplication | medium | regen | Tournament demand-queue entry appended twice (copy-paste) | TODO |
+| FN28 | A2 | src/moveprocessor.cpp:1869-1871 | dry-duplication | medium | regen | Tournament demand-queue entry appended twice (copy-paste) | DONE |
 | FN29 | B | src/pending.cpp:75-112 | dead-code | low | neutral | onChainPlayerFighterData built (incorrectly) but never read | TODO |
 | FN30 | B | src/moveprocessor.cpp:2154-2177 | dry-duplication | medium | neutral | Copy-map-to-vector-and-sort + goody-find scaffolding duplicated 5x | TODO |
 | FN31 | B | src/moveprocessor.cpp:3292-3299 | dead-code | low | neutral | Candy rarity lookup is dead generality (hard-coded 0.1) | TODO |

@@ -1868,8 +1868,6 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
 			  resEntry["playername"] = a.GetName();
 			  resEntry["tournamentauth"] = tournamentData->GetProto().authoredid();		  
 			  root.append(resEntry);	
-
-              root.append(resEntry);	
               Json::StyledWriter writer;
               std::string json_str = writer.write(root);	
 
@@ -2798,8 +2796,11 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
               auto fighter = fighters.GetById(rewardData->GetProto().fighterid(), ctx.RoConfig());
               
               bool armorTypeWasPresent = false;
-              for(auto armorPiece: fighter->MutableProto().armorpieces())
+              for(int i = 0; i < fighter->MutableProto().armorpieces_size(); ++i)
               {
+                  /* Mutable reference, not a by-value copy: the set_* below must
+                     persist to the fighter proto when the slot already exists. */
+                  auto& armorPiece = *fighter->MutableProto().mutable_armorpieces(i);
                   if(armorPiece.armortype() == rewardTableDb.rewards(rewardData->GetProto().positionintable()).armortype())
                   {
                       armorTypeWasPresent = true;
@@ -3472,10 +3473,13 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 		candyList.append(cand);
 	}
 	
-	wholeFightersData["crcc"] = ctx.RoConfig()->params().uncommon_recipe_cook_cost();
+	/* CalculateFuelPower reads these by the sacrificed fighter's quality
+	   (crcc=common q1, urcc=uncommon q2, rrcc=rare q3, ercc=epic q4); they must
+	   use the matching per-rarity cost, not all-uncommon. */
+	wholeFightersData["crcc"] = ctx.RoConfig()->params().common_recipe_cook_cost();
 	wholeFightersData["urcc"] = ctx.RoConfig()->params().uncommon_recipe_cook_cost();
-	wholeFightersData["rrcc"] = ctx.RoConfig()->params().uncommon_recipe_cook_cost();
-	wholeFightersData["ercc"] = ctx.RoConfig()->params().uncommon_recipe_cook_cost();
+	wholeFightersData["rrcc"] = ctx.RoConfig()->params().rare_recipe_cook_cost();
+	wholeFightersData["ercc"] = ctx.RoConfig()->params().epic_recipe_cook_cost();
 	
 	fpm::fixed_24_8 fuelPower = CalculateFuelPower(fighter, wholeFightersData, wholeRecipeData, candyList, false);
 
