@@ -15,7 +15,7 @@
     golden byte-identical; blob verified to carry the six int64 sat varints, old float32 patterns gone).
   - Swept the rest of `src/`+`database/`: remaining FP is `fpm` fixed-point (deterministic),
     gamestatejson display-only, and `std::round` over int64 quotients (deterministic). Clean.
-- **A2c — DONE (newly discovered).** Stripped the remaining Taurion *height*-fork gates that A2b
+- **A2c — DONE (newly discovered).** Stripped the remaining legacy *height*-fork gates that A2b
   (isFork2 blocks) didn't cover. 6 golden-safe strips + 3 orphaned `chain` decls (`36bf135`) and
   R1 the special-tournament tier de-gate/unify on `fpm::round` (`7f44da5`). All golden byte-identical
   + 98/98. Detail: each gate was dead on both REGTEST(h~46) and Polygon(genesis 89.2M), OR always-true,
@@ -23,7 +23,7 @@
   (a) ~9 remaining `chain==/!=REGTEST` gates are REGTEST test-harness accommodations (payout splits,
   fixed dev addresses) — a separate, delicate pass, NOT touched. (b) the two now-identical
   `RecalculatePlayerTiers` bodies could be DRYed into one free function. (c) `xaya_player.proto`/protos
-  may still hold magic Taurion heights elsewhere.
+  may still hold magic legacy heights elsewhere.
 - **H5 — DONE** (`c48e46d`). Per-player cap on UNCLAIMED rewards: new RoConfig param
   `Params.max_unclaimed_reward_amount` (field 35) = 100, enforced at the passive-reward creation site
   (`GenerateActivityReward`); at the cap the reward + its generated recipe are not created (reject-new).

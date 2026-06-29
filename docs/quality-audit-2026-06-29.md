@@ -39,7 +39,7 @@ Neutral and regen changes are kept in separate commits so the neutral ones can a
 |------|------|--------|----------|
 | **A1** | Real correctness bugs that DON'T change replay | neutral (byte-identical) | FN2, FN10, FN13/69, FN40, FN46, FN54, FN55, FN56, FN70, FN71 |
 | **A2** | Real correctness bugs that DO change game outcomes | **regen** | FN1, FN14/28, FN25, FN26 |
-| **B**  | Dead-code / Taurion-baggage removal + safe DRY | neutral | FN3–9, FN11–12, FN15–24, FN27, FN29–33, FN35–39, FN41–53, FN57–61 |
+| **B**  | Dead-code / fork-baggage removal + safe DRY | neutral | FN3–9, FN11–12, FN15–24, FN27, FN29–33, FN35–39, FN41–53, FN57–61 |
 | **C**  | Dead proto / config fields | **regen** | FN34, FN62, FN63, FN64, FN65, FN66, FN67 |
 | **D**  | Determinism discipline: raw float → int in consensus RNG | neutral | DEF8, DEF9 |
 
@@ -86,7 +86,7 @@ database).**
 **NEXT = Pass F** (split the 4157-line moveprocessor.cpp + logic.cpp into cohesive TUs by domain
 [cooking / expedition / tournament / exchange / transfigure / crystal], each split verified golden
 byte-identical), then **Pass B2** (FN11 rename, FN33 dead Params class, FN50 drop GMP dep, FN61 merge
-recipe ctors, pending.hpp dead member, repo-wide Taurion copyright headers x7).
+recipe ctors, pending.hpp dead member, repo-wide legacy copyright headers x7).
 **Heed the BUILD GOTCHA in the progress log before any proto/proto2/*.pb.text edit. Pass C's activities
 teardown needed autoreconf -i + ./config.status (Makefile.am changes) -- D/F may too.**
 
@@ -107,7 +107,7 @@ teardown needed autoreconf -i + ./config.status (Makefile.am changes) -- D/F may
    DEF8/DEF9 float→int proto probabilities), **Pass F** (split the 4157-line moveprocessor.cpp +
    logic.cpp into cohesive TUs, each golden byte-identical), **Pass B2** (FN11 rename, FN33 delete dead
    Params class [context.* + Makefile + autoreconf], FN50 drop QuantityProduct/GMP dep, FN61 merge
-   recipe ctors, pending.hpp dead member, repo-wide Taurion copyright headers ×7).
+   recipe ctors, pending.hpp dead member, repo-wide legacy copyright headers ×7).
 
 **Build/test loop (resume):** `tfdev` container holds the source at `/usr/src/tfgsp` (plain copy). Edit
 host → `docker cp src/F tfdev:/usr/src/tfgsp/src/F` → `docker exec tfdev touch …` → `make -C database`
@@ -124,7 +124,7 @@ detail of every finding is in the workflow output `wgm9hkdph` (scratchpad `audit
      died mid-run (API overload) leaving 2 incomplete cross-file edits (CalculateFuelPower header decl;
      pending.cpp Parse* callers for the dropped name param) — both completed by hand; build+golden gate
      caught and validated everything. B2 deferred: FN11, FN33, FN50, FN61 + pending.hpp dead member +
-     repo-wide Taurion copyright headers (7 files). -->
+     repo-wide legacy copyright headers (7 files). -->
 
 
 - 2026-06-29: audit run; tracking doc created; baseline captured; `gametest/` stale `__pycache__`
@@ -154,7 +154,7 @@ detail of every finding is in the workflow output `wgm9hkdph` (scratchpad `audit
     silently dropping merged scalar Weights. Invisible for years only because every overlay value was 0.
     Fixed by copying the sub-message out first. No-op on mainnet/Polygon (no overlay merged there).
 - 2026-06-29: **Pass C DONE** — `183f13a` (FN62 dead Params.prestige_total_treats_mod, FN64 dead
-  OngoingOperation.ItemDatabaseID, FN67 widen FighterSaleEntry.Price uint32->uint64, FN68 Taurion
+  OngoingOperation.ItemDatabaseID, FN67 widen FighterSaleEntry.Price uint32->uint64, FN68 legacy
   comments; all golden byte-identical), `419dd57` (FN65 MaxRewardQuality removed from both blueprint
   protos + tournament.cpp + 43 config entries + roconfig validation, FN66 Deconstruction.DeconstructionId;
   golden byte-identical -- the JSON dump never surfaced these), `84c56f1` (FN34+FN63 full removal of the

@@ -1,12 +1,12 @@
-# Phase 2 — State storage & Taurion-cleanup audit + Stage 2b plan
+# Phase 2 — State storage & fork-cleanup audit + Stage 2b plan
 
-**Status:** living document. Storage audit ✅. Taurion-cleanup audit ✅. Implementation IN PROGRESS.
+**Status:** living document. Storage audit ✅. fork-cleanup audit ✅. Implementation IN PROGRESS.
 
 ### Execution log (each commit golden-byte-identical + full unit suite green in the `tfdev` container)
 - ✅ **`6c44e4e` Commit 1** — Charon, Fork subsystem (Context::forks/Forks(), gflag, dead
   GameStartTests), orphan files (jsonrpclib, proto/roconfig_blob.s dup, data/ certs, fpm/ios.hpp),
   build cruft (untrack config.h/status/log, .gitignore). 92/92 (was 93: forks_tests.cpp removed).
-- ✅ **`993454e` Commit 1b** — dead `IsDirtyCombatData()` ×4 + Taurion RPC error codes.
+- ✅ **`993454e` Commit 1b** — dead `IsDirtyCombatData()` ×4 + legacy RPC error codes.
 - ✅ **`7a1cae8` Commit 2** — dropped the dead `blocks` config (CHI-era manual block-hash table):
   source −21 MB / −1.38M lines, **runtime roconfig blob 16 MB → 2.6 MB**. Removed the unreachable
   reseed branch (sole `blocks()` reader) + de-elsed the live `>5155298` branch + removed the dead
@@ -84,7 +84,7 @@ chain). Plus a dedicated Explore pass that produced the exact Stage 2b edit list
 - **Storage audit** (`wutybm3a0`, 39 agents): 7 surfaces — player proto, fighter proto,
   rewards/activities, tournaments, recipes, undo/write-amp, globaldata/inventory/money — each finder
   then per-claim verifiers.
-- **Taurion-cleanup audit** (`w34zjavuf`): fork gates, dead Taurion concepts, dead code, DRY
+- **fork-cleanup audit** (`w34zjavuf`): fork gates, dead legacy concepts, dead code, DRY
   violations, dead files/build-cruft, dead protos/config. *(results in §6 when complete)*
 
 Every change below is gated by the golden-replay harness (`src/goldenreplay_tests.cpp` +
@@ -193,9 +193,9 @@ assert state byte-identical), and set `--enable_pruning=1000`.
 
 ---
 
-## 6. Taurion-cleanup audit results ✅ (audit `w34zjavuf`, 54 agents)
+## 6. fork-cleanup audit results ✅ (audit `w34zjavuf`, 54 agents)
 
-The heavy Taurion world-sim (regions, movement, hex-grid, combat, vehicles) was already stripped in
+The heavy legacy world-sim (regions, movement, hex-grid, combat, vehicles) was already stripped in
 earlier phases. What remains is **CHI-fork/version baggage + orphan files + stale vocabulary** — not
 deep rot. On the Polygon genesis (height 89,246,000) every `>=5097362` gate is permanently true and
 every `<5097362` permanently false, so collapsing them is byte-identical (golden stays green). Total
@@ -213,10 +213,10 @@ excluded from the "delete now" set.)
   `proto2/` one); `data/letsencrypt.pem` + `data/Makefile.am` (+ drop `data` from SUBDIRS & configure);
   `src/fpm/ios.hpp` (+ `Makefile.am:32`); committed autotools/log cruft (`config.h`, `config.status`,
   `config.log`, `config.h.in~`, `configure~`, `help.log`, `whelp.log`) + `.gitignore` them.
-- **Dead code:** `IsDirtyCombatData()` ×4 (`fighter/recipe/reward/tournament.hpp`); Taurion RPC error
+- **Dead code:** `IsDirtyCombatData()` ×4 (`fighter/recipe/reward/tournament.hpp`); legacy RPC error
   codes (`pxrpcserver.hpp:41,47-55`); one-shot fork-migration trigger (`logic.cpp:2116-2121`); dead
   `injection==true` branches (`logic.cpp:1420,1447-1460`).
-- **License/comment rewording:** 20 files (incl. 6 `gametest/*.py`); `faction`→`role` prose; Taurion
+- **License/comment rewording:** 20 files (incl. 6 `gametest/*.py`); `faction`→`role` prose; legacy
   world terms in doc comments. **Prose only** — `PlayerRoleToString` codes / enum ints / SQL `role`
   column are golden-locked.
 
@@ -289,7 +289,7 @@ Ordering principle: **safest + biggest wins first** (pure deletions, golden byte
 consensus-touching efficiency work (Stage 2b), then gate collapses, then DRY, then the decision-gated
 redesigns. Recommended order:
 
-**Commit 1 — Taurion/Charon dead-file & dead-proto purge** *(§6a + §6b except blocks; zero consensus
+**Commit 1 — legacy/Charon dead-file & dead-proto purge** *(§6a + §6b except blocks; zero consensus
 surface, golden byte-identical).* Charon, ForkHandler, orphan files, autotools cruft, dead stubs/RPC
 codes/injection branches, dead proto fields (`notused`/`role`/`cook_duration`/`fungible_items`/imports),
 comment+license rewording. ~1,000–1,300 LOC removed.

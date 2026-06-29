@@ -1,5 +1,5 @@
 /*
-    GSP for the Taurion blockchain game
+    GSP for the tf blockchain game
     Copyright (C) 2020  Autonomous Worlds Ltd
 
     This program is free software: you can redistribute it and/or modify

@@ -885,7 +885,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     e.g. choose one's faction and create characters in a single move.  */
     TryXayaPlayerUpdate (name, mrl["a"]);
 	
-	 /* Launch-date gate dropped (Taurion baggage): Polygon genesis is post-launch; REGTEST never gated. */
+	 /* Launch-date gate dropped (legacy fork baggage): Polygon genesis is post-launch; REGTEST never gated. */
 	
     /* Handle crystal purchace now */
     TryCrystalPurchase (name, mrl, paidToDev);

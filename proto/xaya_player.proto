@@ -29,7 +29,7 @@ package pxd.proto;
 message XayaPlayer
 {
   /* Fields 1 (notused), 2 (role), 5 (xayaname), 6 (ftuestate) were dead
-     Taurion/CHI-era player fields, never read; dropped at the Polygon fresh
+     legacy pre-Polygon player fields, never read; dropped at the Polygon fresh
      relaunch.  Reserved so the wire tags are never reused. */
   reserved 1, 2, 5, 6;
 
