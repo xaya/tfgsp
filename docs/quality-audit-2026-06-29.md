@@ -69,7 +69,7 @@ float→uint32 + recipe.cpp `(int32_t)` casts; golden byte-identical, full suite
 verified value-exact by sweep `wqfneq70y`). Per-finding status in `quality-audit-findings.md`.
 
 **Pass D surfaced + fixed 4 NEW float-in-consensus findings (DEF10-14) the 80-finding audit missed** (same
-class as DEF8/DEF9), committed `<pending-commit-2>`. User directive: *"whatever we need to make it
+class as DEF8/DEF9), committed `e2b6e3a`. User directive: *"whatever we need to make it
 deterministic and suitable, like fixed point math."*
 - **DEF10** `deconstruction_return_percent` (50, integer) → `uint32` (no code change; reader already uint32).
 - **DEF11** `prestige_tournament_performance_mod` (0.5, DEAD) → removed (`reserved 34`).
@@ -186,7 +186,7 @@ detail of every finding is in the workflow output `wgm9hkdph` (scratchpad `audit
     are deterministic in practice (power-of-2 fpm scaling) but flagged for a representation decision — see
     findings doc "Pass-D determinism sweep". DEF10/11 are golden-neutral; will batch with the DEF12-14
     decision into one rebuild.
-- 2026-06-29: **Pass D DEF10-14 DONE** (`<pending-commit-2>`): user said *"whatever we need to make it
+- 2026-06-29: **Pass D DEF10-14 DONE** (`e2b6e3a`): user said *"whatever we need to make it
   deterministic and suitable, like fixed point math."* → removed ALL remaining float/double from the
   consensus path. `deconstruction_return_percent` float→`uint32` (50, exact); dead
   `prestige_tournament_performance_mod` removed (`reserved 34`); `alms`/`exchange_sale_percentage`/goody
