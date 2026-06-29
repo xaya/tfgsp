@@ -42,5 +42,5 @@ message Goody
   optional uint32 Uses = 6; 
 
   /*r*/
-  optional double ReductionPercent = 7;    
+  optional int32 ReductionPercent = 7; // fixed_24_8 raw (value/256); cook/expedition speedup
 }

@@ -60,7 +60,7 @@ worth a config balance glance. Flagged to user.
 | DEF7 | Per-entity table boilerplate copy-pasted across 6 DB classes | Large cross-cutting templatization; high churn |
 | FN50 | QuantityProduct (GMP bignum) dead outside tests; drops whole GMP dep | Build-dependency change — verify GMP isn't needed elsewhere before removing |
 
-## RESUME STATE (2026-06-29, after Pass D DEF8/DEF9; decision pending on DEF12-14)
+## RESUME STATE (2026-06-29, after Pass D COMPLETE — DEF8/DEF9 + DEF10-14; next = Pass F)
 
 **Done + committed** (branch `polygon-rewrite`, on top of `e2f4183`): Pass A1 `0c02348`, A2 `f6ffde4`,
 B `1947cd0`, **FN1+FN2+FN72 `bf5271b`**, **Pass C** = `183f13a` + `419dd57` + `84c56f1`,
@@ -68,17 +68,23 @@ B `1947cd0`, **FN1+FN2+FN72 `bf5271b`**, **Pass C** = `183f13a` + `419dd57` + `8
 float→uint32 + recipe.cpp `(int32_t)` casts; golden byte-identical, full suite green, independently
 verified value-exact by sweep `wqfneq70y`). Per-finding status in `quality-audit-findings.md`.
 
-**Pass D surfaced 4 NEW float-in-consensus findings (DEF10-14) the 80-finding audit missed** (same class
-as DEF8/DEF9):
-- **DEF10** `deconstruction_return_percent` (value 50, integer) → float→uint32: FIX NOW, golden-neutral.
-- **DEF11** `prestige_tournament_performance_mod` (0.5, DEAD/no reader) → remove field: FIX NOW, golden-neutral.
-- **DEF12/13/14** `alms` 0.15 (Elo) / `exchange_sale_percentage` 0.96 (**money**) / `ReductionPercent`
-  0.8/0.65/0.5 (op duration) — fractional floats → fpm. **NEEDS USER DECISION**: store fpm raw 1/256
-  integer + `from_raw` (golden-neutral, removes float, opaque config) vs leave as float (deterministic
-  in practice, readable). Basis-points is NOT golden-neutral (245≠246). Asked user.
+**Pass D surfaced + fixed 4 NEW float-in-consensus findings (DEF10-14) the 80-finding audit missed** (same
+class as DEF8/DEF9), committed `<pending-commit-2>`. User directive: *"whatever we need to make it
+deterministic and suitable, like fixed point math."*
+- **DEF10** `deconstruction_return_percent` (50, integer) → `uint32` (no code change; reader already uint32).
+- **DEF11** `prestige_tournament_performance_mod` (0.5, DEAD) → removed (`reserved 34`).
+- **DEF12/13/14** `alms` 0.15 / `exchange_sale_percentage` 0.96 (**money**) / `ReductionPercent` 0.8/0.65/0.5
+  → proto field changed to `int32` storing the fpm `fixed_24_8` **raw** value (38 / 246 / 205,166,128 —
+  computed empirically in-container), read via `fpm::from_raw_value()` (or directly as int64 for the
+  exchange `.raw_value()` consumer). **Zero float in the consensus path; golden byte-identical** (the old
+  float ctor already quantized to these exact raws). Config carries `# raw/256 = <decimal>` comments.
+  Basis-points alternative rejected (96/100 ≠ 246/256 → would shift money).
 
-**NEXT once DEF12-14 decided:** apply DEF10/11 (+ chosen DEF12-14 path) in ONE proto rebuild + commit,
-then **Pass F** (split the 4157-line moveprocessor.cpp + logic.cpp into cohesive TUs, each golden
+**ALL of Pass D done. Suite green (golden byte-identical + 98 unit + 4 reorg + 2 reorg-game + roconfig +
+database).**
+
+**NEXT = Pass F** (split the 4157-line moveprocessor.cpp + logic.cpp into cohesive TUs by domain
+[cooking / expedition / tournament / exchange / transfigure / crystal], each split verified golden
 byte-identical), then **Pass B2** (FN11 rename, FN33 dead Params class, FN50 drop GMP dep, FN61 merge
 recipe ctors, pending.hpp dead member, repo-wide Taurion copyright headers x7).
 **Heed the BUILD GOTCHA in the progress log before any proto/proto2/*.pb.text edit. Pass C's activities
@@ -180,6 +186,16 @@ detail of every finding is in the workflow output `wgm9hkdph` (scratchpad `audit
     are deterministic in practice (power-of-2 fpm scaling) but flagged for a representation decision — see
     findings doc "Pass-D determinism sweep". DEF10/11 are golden-neutral; will batch with the DEF12-14
     decision into one rebuild.
+- 2026-06-29: **Pass D DEF10-14 DONE** (`<pending-commit-2>`): user said *"whatever we need to make it
+  deterministic and suitable, like fixed point math."* → removed ALL remaining float/double from the
+  consensus path. `deconstruction_return_percent` float→`uint32` (50, exact); dead
+  `prestige_tournament_performance_mod` removed (`reserved 34`); `alms`/`exchange_sale_percentage`/goody
+  `ReductionPercent` float/double→`int32` storing the fpm `fixed_24_8` **raw** value, rebuilt via
+  `fpm::from_raw_value()` (exchange reads the raw int64 directly, since its consumer already took
+  `.raw_value()`). Raw integers (38, 246, 205/166/128) computed empirically in-container with the actual
+  fpm header — the old float ctor already quantized to exactly these, so **golden byte-identical** and
+  every payout/rating/duration is unchanged. Full clean rebuild (proto change); inline `# raw/256 =`
+  comments in the config parse fine. No other readers/writers/overlays touch these fields. Suite green.
 
 <!-- STATUS: per-finding status tracked in the table at docs/quality-audit-findings.md -->
 

@@ -50,7 +50,7 @@ message Params
   
   optional uint32 elok_factor = 4;
   
-  optional float alms = 5;
+  optional int32 alms = 5; // fixed_24_8 raw (value/256); see CreateEloRating
   
   optional uint32 starting_crystals = 6;
   
@@ -58,7 +58,7 @@ message Params
   
   optional uint32 exchange_listing_fee = 8;
   
-  optional float exchange_sale_percentage = 9;
+  optional int32 exchange_sale_percentage = 9; // fixed_24_8 raw (value/256); seller payout fraction
   
   optional uint32 common_recipe_cook_cost = 10;
   
@@ -86,7 +86,7 @@ message Params
   
   optional uint32 deconstruction_blocks = 24;
   
-  optional float deconstruction_return_percent = 25;
+  optional uint32 deconstruction_return_percent = 25;
 
   /* Field 26 (fungible_items) was never populated or read; live inventory is
      Inventory.fungible.  Reserved at the Polygon fresh relaunch. */
@@ -106,7 +106,7 @@ message Params
 
   optional uint32 prestige_avg_rating_mod = 33;
   
-  optional float prestige_tournament_performance_mod = 34;
+  reserved 34; // was prestige_tournament_performance_mod (dead float, never read by any C++ code)
 
   /* Max UNCLAIMED activity rewards (expedition/tournament) a player may hold.
      Bounds passive reward-row accumulation (the H5 DB-bloat vector); at the cap

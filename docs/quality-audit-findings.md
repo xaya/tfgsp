@@ -93,30 +93,30 @@ See `quality-audit-2026-06-29.md` for plan + baseline. Status: TODO / DONE / DEF
 | DEF8 | database/recipe.cpp:261,289,329-331,340,438-440,452 | determinism | Raw float proto probabilities used directly in consensus RNG-candidate selection math | **DONE (Pass D)** — FighterName/FighterType/FighterTypeMoveProbability `Probability` float→uint32 (all config values exact integers ≤1000); recipe.cpp `*1000` sites given explicit `(int32_t)` casts. Golden byte-identical; independently verified value-exact. |
 | DEF9 | database/fighter.cpp:301,328 | determinism | Raw float FighterName.Probability truncated to int in consensus reroll RNG selection | **DONE (Pass D)** — resolved by the same FighterName.Probability float→uint32 change (readers already int32-typed). Golden byte-identical. |
 
-## Pass-D determinism sweep — newly discovered float-in-consensus (4)
+## Pass-D determinism sweep — newly discovered float-in-consensus (4) — **ALL DONE**
 
 A read-only completeness sweep (4-lens workflow `wqfneq70y`) run alongside DEF8/DEF9 found 4 more
 float/double proto fields feeding hashed state or the RNG stream that the original 80-finding audit missed
 — the **same class** as DEF8/DEF9. All are deterministic *in practice* (config-sourced float, scaled by a
 power of two then `std::round`/truncated → identical on every IEEE-754/SSE node), so not active bugs, but
-real determinism-discipline risks on money/duration paths.
+real determinism-discipline risks on money/duration paths. User directive: *"whatever we need to make it
+deterministic and suitable, like fixed point math."* → all converted to integer-stored fixed-point.
 
 | # | Field (proto) | Value | Reader | Reaches | Disposition |
 |---|---------------|-------|--------|---------|-------------|
-| DEF10 | `config.proto:89 deconstruction_return_percent` | **50** (integer) | logic.cpp:415 `uint32_t = float` | NextInt bound + reward qty (hashed) | **FIX NOW** float→uint32 — value is an exact integer, golden-neutral (DEF8/DEF9 class) |
-| DEF11 | `config.proto:109 prestige_tournament_performance_mod` | 0.5 | **none (dead)** | nothing | **FIX NOW** remove dead float field (reserve 34) — FN62 class, golden-neutral |
-| DEF12 | `config.proto:53 alms` | **0.15** (fractional) | logic.cpp:868 `fpm(alms)` | Elo `set_rating` (hashed) | **NEEDS DECISION** — fractional; see below |
-| DEF13 | `config.proto:61 exchange_sale_percentage` | **0.96** (fractional) | moveprocessor.cpp:3622 `fpm(pct).raw_value()` | exchange payout `AddBalance` (**money**) | **NEEDS DECISION** — fractional; see below |
-| DEF14 | `goody.proto:45 ReductionPercent` | **0.8/0.65/0.5** (fractional) | moveprocessor.cpp:129 `fpm(reductionpercent())` | ongoing-op duration (hashed) | **NEEDS DECISION** — fractional; see below |
+| DEF10 | `config.proto:89 deconstruction_return_percent` | **50** (integer) | logic.cpp:415 `uint32_t = field` | NextInt bound + reward qty (hashed) | **DONE** float→uint32 (exact integer); no code change (reader already uint32). Golden byte-identical. |
+| DEF11 | `config.proto:109 prestige_tournament_performance_mod` | 0.5 | **none (dead)** | nothing | **DONE** removed dead float field (`reserved 34`) + dropped params line — FN62 class. Golden byte-identical. |
+| DEF12 | `config.proto:53 alms` | 0.15 → **raw 38** | logic.cpp:868 | Elo `set_rating` (hashed) | **DONE** float→`int32` storing fixed_24_8 raw; `fpm::from_raw_value(alms())`. Byte-identical. |
+| DEF13 | `config.proto:61 exchange_sale_percentage` | 0.96 → **raw 246** | moveprocessor.cpp:3621 | exchange payout `AddBalance` (**money**) | **DONE** float→`int32` raw; read directly as int64 `pctRaw` (code already used `.raw_value()`); `finalPrice = price*246/256` unchanged. Byte-identical. |
+| DEF14 | `goody.proto:45 ReductionPercent` | 0.8/0.65/0.5 → **205/166/128** | moveprocessor.cpp:129 | ongoing-op duration (hashed) | **DONE** double→`int32` raw; `fpm::from_raw_value(reductionpercent())`. Byte-identical. |
 
-**Decision for DEF12-14 (fractional float money/duration params):** these can be made float-free
-*golden-neutrally* by storing the field as its fpm `fixed_24_8` raw value (1/256 units) and constructing via
-`fpm::fixed_24_8::from_raw(...)` (or, for DEF13 which only takes `.raw_value()`, an int64 field read
-directly). The current float constructor already quantizes 0.96→raw 246, 0.15→raw 38, 0.8→205, 0.65→166,
-0.5→128, so `from_raw` of those integers is byte-identical AND removes float from the consensus path. Cost:
-config values become opaque 1/256 integers (comment-documented) instead of human-readable percentages.
-Alternative (basis-points + fpm division) is NOT golden-neutral (truncation vs round; e.g. 0.96 → 245 ≠ 246)
-and would change money output. Pending user choice (representation tradeoff on money paths — FN1 precedent).
+**How DEF12-14 stay byte-identical:** the old float constructor `fpm::fixed_24_8(v)` already quantized each
+value onto the 1/256 grid (`round(v*256)`), computed empirically in-container: 0.96→246, 0.15→38, 0.8→205,
+0.65→166, 0.5→128. Storing those raw integers and rebuilding via `from_raw_value` (or reading the raw int
+directly for the `.raw_value()` consumer) reproduces the exact same fixed-point value with **zero floating
+point** in the consensus path. Verified golden byte-identical + 98 unit + 4 reorg + 2 reorg-game + roconfig +
+database all green. Config values now carry a `# raw/256 = <decimal>` comment for readability. (Rejected the
+basis-points alternative: 96/100 ≠ 246/256 would have shifted money output.)
 
 ## Rejected (2) — refuted in-code
 

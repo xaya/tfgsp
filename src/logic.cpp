@@ -865,7 +865,7 @@ void PXLogic::CreateEloRating(const Context& ctx, fpm::fixed_24_8& ratingA, fpm:
 fpm::fixed_24_8& expectedB, fpm::fixed_24_8& newRatingA, fpm::fixed_24_8& newRatingB)
 {    
   int32_t KFACTOR = ctx.RoConfig()->params().elok_factor();
-  fpm::fixed_24_8 ALMS = fpm::fixed_24_8(ctx.RoConfig()->params().alms());
+  fpm::fixed_24_8 ALMS = fpm::fixed_24_8::from_raw_value(ctx.RoConfig()->params().alms());
   
   fpm::fixed_24_8 val1 = fpm::fixed_24_8(( ratingB - ratingA) / 400);
   fpm::fixed_24_8 val2 = fpm::fixed_24_8(( ratingA - ratingB) / 400);

@@ -8,7 +8,7 @@ params:
   
     elok_factor: 50
   
-    alms: 0.15
+    alms: 38  # fixed_24_8 raw: 38/256 = 0.1484375 (~0.15)
   
     starting_crystals: 0
   
@@ -16,7 +16,7 @@ params:
   
     exchange_listing_fee: 10
   
-    exchange_sale_percentage: 0.96
+    exchange_sale_percentage: 246  # fixed_24_8 raw: 246/256 = 0.9609375 (~96% seller payout)
   
     common_recipe_cook_cost: 15
   
@@ -55,6 +55,4 @@ params:
     prestige_common_mod: 1000
 
     prestige_avg_rating_mod: 1
-  
-    prestige_tournament_performance_mod: 0.5   
 }

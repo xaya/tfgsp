@@ -126,7 +126,7 @@ FindApplicableGoody (const Inventory& inventory, const pxd::GoodyType goodyType,
       if (goodie.second.goodytype () == (int8_t) goodyType)
       {
         weHaveApplibeGoodyName = goodie.first;
-        reductionPercent = fpm::fixed_24_8 (goodie.second.reductionpercent ());
+        reductionPercent = fpm::fixed_24_8::from_raw_value (goodie.second.reductionpercent ());
         break;
       }
     }
@@ -3614,13 +3614,10 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
        (the raw value is price*256).  That produced a negative payout which trips
        AddBalance's CHECK_GE(balance, 0) and aborts EVERY node deterministically
        at the same block -> permanent chain halt.  Compute the payout in 64-bit
-       integer math instead.  pctRaw reuses the exact same fixed-point
-       construction of the configured percentage (e.g. 0.96 -> raw 246, i.e.
-       246/256), so for every price that did NOT overflow the result is
-       byte-identical to the old code (price 500 -> 480, etc.). */
-    const int64_t pctRaw
-        = fpm::fixed_24_8 (ctx.RoConfig ()->params ().exchange_sale_percentage ())
-            .raw_value ();
+       integer math instead.  exchange_sale_percentage is stored directly as the
+       fixed_24_8 raw value of the seller fraction (e.g. 246 == 246/256 ==
+       0.9609375), so finalPrice = price*246/256 (price 500 -> 480, etc.). */
+    const int64_t pctRaw = ctx.RoConfig ()->params ().exchange_sale_percentage ();
     /* Value-conservation invariant: the seller must never receive more than the
        buyer paid.  raw 256 == 1.0; a misconfigured percentage > 1.0 would mint
        crystals on every trade.  Halt deterministically (identical on all nodes,

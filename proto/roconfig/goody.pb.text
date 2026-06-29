@@ -9,7 +9,7 @@ goodies:
     Price: 100
     GoodyType: 1
     Uses: 3
-    ReductionPercent: 0.8
+    ReductionPercent: 205  # fixed_24_8 raw: 205/256 = 0.8007812 (~0.8)
   }
 }
 goodies:
@@ -23,7 +23,7 @@ goodies:
     Price: 175
     GoodyType: 1
     Uses: 6
-    ReductionPercent: 0.65
+    ReductionPercent: 166  # fixed_24_8 raw: 166/256 = 0.6484375 (~0.65)
   }
 }
 goodies:
@@ -37,7 +37,7 @@ goodies:
     Price: 100
     GoodyType: 2
     Uses: 3
-    ReductionPercent: 0.8
+    ReductionPercent: 205  # fixed_24_8 raw: 205/256 = 0.8007812 (~0.8)
   }
 }
 goodies:
@@ -51,7 +51,7 @@ goodies:
     Price: 175
     GoodyType: 2
     Uses: 6
-    ReductionPercent: 0.65
+    ReductionPercent: 166  # fixed_24_8 raw: 166/256 = 0.6484375 (~0.65)
   }
 }
 goodies:
@@ -65,7 +65,7 @@ goodies:
     Price: 300
     GoodyType: 2
     Uses: 12
-    ReductionPercent: 0.5
+    ReductionPercent: 128  # fixed_24_8 raw: 128/256 = 0.5
   }
 }
 goodies:
@@ -79,6 +79,6 @@ goodies:
     Price: 300
     GoodyType: 1
     Uses: 12
-    ReductionPercent: 0.5
+    ReductionPercent: 128  # fixed_24_8 raw: 128/256 = 0.5
   }
 }
