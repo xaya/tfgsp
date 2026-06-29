@@ -72,6 +72,17 @@ worth a config balance glance. Flagged to user.
   monoliths `moveprocessor.cpp` (4274 LOC) and `logic.cpp` (1717 LOC) into cohesive translation units
   by domain (cooking / expedition / tournament / exchange / transfigure / crystal), each split verified
   golden byte-identical. Done last because consensus-file splits are the highest-churn change.
+- 2026-06-29: **Pass A2 DONE** (`f6ffde4`): FN14/25/26 — transfigure fuel per-rarity cost, armor reward
+  by-value→reference, demand-queue double-append. Golden byte-identical (golden scenario doesn't
+  traverse these paths), 98 unit + 4 reorg + 2 reorg-game green.
+  **FN1+FN2 DEFERRED — needs a user balance decision.** The weighted reward roll uses `<=` (should be
+  `<`): the first bucket is over-weighted by 1 and the last bucket is unreachable when its weight==1.
+  The fix is correct, but it shifts reward distribution across expeditions/sweeteners/tournaments and
+  the configured weight tables in `proto/roconfig/*.pb.text` may have been authored against the current
+  (biased) behavior. It also requires recalibrating 4 RNG `ValidateStateTests` (one structurally — the
+  corrected roll no longer yields a generated recipe for the test's fixed seed). **Decision needed:** fix
+  the roll + re-tune the weight tables to preserve intended drop rates, or leave as-is. Until then, the
+  `<=` behavior is unchanged.
 
 <!-- STATUS: per-finding status tracked in the table at docs/quality-audit-findings.md -->
 
