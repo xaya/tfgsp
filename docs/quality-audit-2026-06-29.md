@@ -90,7 +90,7 @@ repo-wide (8 copyright headers → "tf", 2 comments reworded, audit-doc "Taurion
 **Pass B2 DONE** — `f0940de` (FN11 combat lmt/rmt honest rename + drop "0____0" comment; FN33 delete dead
 `Params` class incl. context member/accessor + Makefile + autoreconf; FN50 drop `QuantityProduct` and the
 whole GMP dependency — configure.ac + database/Makefile.am; dead `pending.hpp` onChainPlayerFighterData
-member) and `<pending-fn61>` (FN61 merge the two RecipeInstance create-ctors via a `PopulateRecipeCommon`
+member) and `52181f0` (FN61 merge the two RecipeInstance create-ctors via a `PopulateRecipeCommon`
 helper — both sources are `CraftedRecipe`). All golden byte-identical, full suite green.
 
 **NEXT = Pass F (the only remaining pass)** — split the 4154-line moveprocessor.cpp + 1682-line logic.cpp
