@@ -44,7 +44,6 @@
 #include "gamestatejson.hpp"
 #include "jsonutils.hpp"
 #include "moveprocessor.hpp"
-#include "params.hpp"
 #include "testutils.hpp"
 
 #include "database/dbtest.hpp"

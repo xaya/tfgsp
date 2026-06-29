@@ -166,9 +166,6 @@ public:
     /** Fungibles in the original player inventory*/
     std::map<std::string, uint64_t> onChainFungibleSet;
 	
-    /** FighterData in the original player inventory*/
-    std::vector<Json::Value> onChainPlayerFighterData;	
-
     /** List of currently pending ongoing operations, which are going
     to take more then 1 block to finish*/
     

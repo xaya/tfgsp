@@ -21,7 +21,6 @@
 
 #include "context.hpp"
 #include "gamestatejson.hpp"
-#include "params.hpp"
 
 #include "database/database.hpp"
 #include "database/xayaplayer.hpp"

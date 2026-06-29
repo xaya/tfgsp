@@ -39,7 +39,6 @@ Context::Context (const xaya::Chain c,
 void
 Context::RefreshInstances ()
 {
-  params = std::make_unique<pxd::Params> (chain);
   cfg = std::make_unique<pxd::RoConfig> (chain);
 }
 

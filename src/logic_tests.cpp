@@ -21,7 +21,6 @@
 #include "moveprocessor.hpp"
 
 #include "jsonutils.hpp"
-#include "params.hpp"
 #include "testutils.hpp"
 
 #include "database/dbtest.hpp"

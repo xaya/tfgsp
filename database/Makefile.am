@@ -6,11 +6,11 @@ CLEANFILES = schema.cpp
 libdatabase_la_CXXFLAGS = \
   -I$(top_srcdir) \
   $(XAYAGAME_CFLAGS) \
-  $(GLOG_CFLAGS) $(SQLITE3_CFLAGS) $(GMP_CFLAGS) $(PROTOBUF_CFLAGS)
+  $(GLOG_CFLAGS) $(SQLITE3_CFLAGS) $(PROTOBUF_CFLAGS)
 libdatabase_la_LIBADD = \
   $(top_builddir)/proto2/libpxproto.la \
   $(XAYAGAME_LIBS) \
-  $(GLOG_LIBS) $(SQLITE3_LIBS) $(GMP_LIBS) $(PROTOBUF_LIBS) $(GFLAGS_LIBS)
+  $(GLOG_LIBS) $(SQLITE3_LIBS) $(PROTOBUF_LIBS) $(GFLAGS_LIBS)
 libdatabase_la_SOURCES = \
   database.cpp \
   schema.cpp \

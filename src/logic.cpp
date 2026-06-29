@@ -743,14 +743,17 @@ fpm::fixed_24_8 PXLogic::ExecuteOneMoveAgainstAnother(const Context& ctx, std::s
 {
     const auto& moveList = ctx.RoConfig()->fightermoveblueprints();
     
-    fpm::fixed_24_8 lmt = fpm::fixed_24_8(0);
-    fpm::fixed_24_8 rmt = fpm::fixed_24_8(0);
-    
+    /* leftMoveType = the left move's (lmv) type; rightMoveType = the right
+       move's (rmv) type.  The outcome table below is keyed by the right move
+       (outer switch) then the left move (inner) and returns lmv's score. */
+    fpm::fixed_24_8 rightMoveType = fpm::fixed_24_8(0);
+    fpm::fixed_24_8 leftMoveType = fpm::fixed_24_8(0);
+
     for(auto& moveCandidate: moveList)
     {
         if(moveCandidate.second.authoredid() == lmv)
         {
-            rmt = fpm::fixed_24_8(moveCandidate.second.movetype()); //in original code its vice versa, so... 0____0 rmt assigns lmv here
+            leftMoveType = fpm::fixed_24_8(moveCandidate.second.movetype());
             break;
         }
     }
@@ -759,22 +762,22 @@ fpm::fixed_24_8 PXLogic::ExecuteOneMoveAgainstAnother(const Context& ctx, std::s
     {
         if(moveCandidate.second.authoredid() == rmv)
         {
-            lmt = fpm::fixed_24_8(moveCandidate.second.movetype());
+            rightMoveType = fpm::fixed_24_8(moveCandidate.second.movetype());
             break;
         }
     }  
     
-    if(lmt == rmt)
+    if(rightMoveType == leftMoveType)
     {
         return fpm::fixed_24_8(0.5);
     }
     
-    pxd::MoveType lmtM = (pxd::MoveType)(int32_t)lmt;
-    pxd::MoveType rmtM = (pxd::MoveType)(int32_t)rmt;
+    pxd::MoveType rightMoveTypeM = (pxd::MoveType)(int32_t)rightMoveType;
+    pxd::MoveType leftMoveTypeM = (pxd::MoveType)(int32_t)leftMoveType;
     
-    switch (lmtM)  {
+    switch (rightMoveTypeM)  {
         case pxd::MoveType::Heavy:
-             switch (rmtM)
+             switch (leftMoveTypeM)
              {
                 case pxd::MoveType::Speedy:
                     return fpm::fixed_24_8(0);
@@ -789,7 +792,7 @@ fpm::fixed_24_8 PXLogic::ExecuteOneMoveAgainstAnother(const Context& ctx, std::s
              }
              return fpm::fixed_24_8(0);
         case pxd::MoveType::Speedy:
-             switch (rmtM)
+             switch (leftMoveTypeM)
              {
                 case pxd::MoveType::Heavy:
                     return fpm::fixed_24_8(1);
@@ -804,7 +807,7 @@ fpm::fixed_24_8 PXLogic::ExecuteOneMoveAgainstAnother(const Context& ctx, std::s
              }
              return fpm::fixed_24_8(0);
         case pxd::MoveType::Tricky:
-             switch (rmtM)
+             switch (leftMoveTypeM)
              {
                 case pxd::MoveType::Heavy:
                     return fpm::fixed_24_8(0);
@@ -819,7 +822,7 @@ fpm::fixed_24_8 PXLogic::ExecuteOneMoveAgainstAnother(const Context& ctx, std::s
              }
              return fpm::fixed_24_8(0);   
         case pxd::MoveType::Distance:
-             switch (rmtM)
+             switch (leftMoveTypeM)
              {
                 case pxd::MoveType::Heavy:
                     return fpm::fixed_24_8(0);
@@ -834,7 +837,7 @@ fpm::fixed_24_8 PXLogic::ExecuteOneMoveAgainstAnother(const Context& ctx, std::s
              }
              return fpm::fixed_24_8(0);   
         case pxd::MoveType::Blocking:
-             switch (rmtM)
+             switch (leftMoveTypeM)
              {
                 case pxd::MoveType::Heavy:
                     return fpm::fixed_24_8(1);

@@ -19,8 +19,6 @@
 #ifndef PXD_CONTEXT_HPP
 #define PXD_CONTEXT_HPP
 
-#include "params.hpp"
-
 #include "proto/roconfig.hpp"
 
 #include <xayagame/gamelogic.hpp>
@@ -41,12 +39,6 @@ class Context
 private:
   /** The chain we are on.  */
   xaya::Chain chain;
-
-  /**
-   * Basic parameters dependant on the chain.  This is a pointer so that we
-   * can recreate it with modified chain in tests.
-   */
-  std::unique_ptr<pxd::Params> params;
 
   /** RoConfig instance dependant on the chain.  */
   std::unique_ptr<pxd::RoConfig> cfg;
@@ -97,12 +89,6 @@ public:
   Chain () const
   {
     return chain;
-  }
-
-  const pxd::Params&
-  Params () const
-  {
-    return *params;
   }
 
   const pxd::RoConfig&

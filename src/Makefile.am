@@ -23,7 +23,6 @@ libtf_la_SOURCES = \
   jsonutils.cpp \
   logic.cpp \
   moveprocessor.cpp \
-  params.cpp \
   pending.cpp
 libtfheaders = \
   fpm/fixed.hpp \
@@ -33,7 +32,6 @@ libtfheaders = \
   jsonutils.hpp \
   logic.hpp \
   moveprocessor.hpp \
-  params.hpp \
   pending.hpp
 
 tfd_CXXFLAGS = \
