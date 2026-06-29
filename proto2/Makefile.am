@@ -8,7 +8,6 @@ BUILT_SOURCES = \
 
 PROTOS = \
   $(builddir)/../proto/config.proto \
-  $(builddir)/../proto/activity.proto \
   $(builddir)/../proto/armor_piece.proto \
   $(builddir)/../proto/inventory.proto \
   $(builddir)/../proto/activity_rewards.proto \

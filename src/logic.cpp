@@ -1588,7 +1588,6 @@ PXLogic::UpdateState (xaya::SQLiteDatabase& db, const Json::Value& blockData)
       
       uint64_t stateNumericValue = 0;
       stateNumericValue += fState["xayaplayers"].size();
-      stateNumericValue += fState["activities"].size();
       stateNumericValue += fState["crystalbundles"].size();
       stateNumericValue += fState["fighters"].size();
       stateNumericValue += fState["rewards"].size();

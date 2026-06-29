@@ -15,7 +15,6 @@ libdatabase_la_SOURCES = \
   database.cpp \
   schema.cpp \
   reward.cpp \
-  activity.cpp \
   globaldata.cpp \
   xayaplayer.cpp \
   tournament.cpp \
@@ -30,7 +29,6 @@ noinst_HEADERS = \
   schema.hpp \
   reward.hpp \
   amount.hpp \
-  activity.hpp \
   tournament.hpp \
   recipe.hpp \
   ongoings.hpp \

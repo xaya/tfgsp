@@ -67,13 +67,8 @@ public:
   /**
    * Returns the JSON data representing all accounts in the game state.
    */
-  Json::Value XayaPlayers();  
-  
-  /**
-   * Returns the JSON data representing all activities in the game state.
-   */
-  Json::Value Activities();   
-  
+  Json::Value XayaPlayers();
+
   /**
    * Returns the JSON data representing all crystal bundle keys available for the game in the game proto
    */  

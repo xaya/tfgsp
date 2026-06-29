@@ -24,7 +24,6 @@
 #include "database/globaldata.hpp"
 #include "database/reward.hpp"
 #include "database/ongoings.hpp"
-#include "database/activity.hpp"
 
 #include "jsonutils.hpp"
 
@@ -293,25 +292,6 @@ template <>
  
 template <>
   Json::Value
-  GameStateJson::Convert<ActivityInstance>(const ActivityInstance& activity) const
-{
-  const auto& pb = activity.GetProto ();
-  Json::Value res(Json::objectValue);
-  
-  res["state"] = IntToJson (pb.state());
-  res["start_block"] = IntToJson (pb.startblock());
-  res["duration"] = IntToJson (pb.duration());
-  res["name"] = pb.name();
-  res["owner"] = pb.owner();
-  res["related_item_GUID"] = pb.relateditemguid();
-  res["related_item_or_class_id"] = pb.relateditemorclassid();
-  
-  return res;
-}  
- 
- 
-template <>
-  Json::Value
   GameStateJson::Convert<TournamentInstance>(const TournamentInstance& tournament) const
 {
   const auto& pb = tournament.GetProto ();
@@ -468,15 +448,6 @@ GameStateJson::XayaPlayers()
 {
   XayaPlayersTable tbl(db);
   Json::Value res = ResultsAsArray (tbl, tbl.QueryAll ());
-  return res;
-}
-
-Json::Value
-GameStateJson::Activities()
-{
-  ActivityTable tbl(db);
-  Json::Value res = ResultsAsArray (tbl, tbl.QueryAll ());
-
   return res;
 }
 
@@ -873,7 +844,6 @@ GameStateJson::FullState()
   Json::Value res(Json::objectValue);
 
   res["xayaplayers"] = XayaPlayers();
-  res["activities"] = Activities();
   res["crystalbundles"] = CrystalBundles();
   res["fighters"] = Fighters();
   res["rewards"] = Rewards();

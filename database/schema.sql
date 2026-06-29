@@ -16,19 +16,6 @@
 
 -- =============================================================================
 
--- Data for the activity instances in the game.
-CREATE TABLE IF NOT EXISTS `activities` (
-
-  -- The activity ID, which is assigned based on libxayagame's AutoIds.
-  `id` INTEGER PRIMARY KEY,
-  
- -- The Xaya name that owns this activity (can be empty).
-  `owner` TEXT NOT NULL,  
-
-  -- Additional data encoded as a Activity protocol buffer, some entries are optional and cab be emptry string/zero/null
-  `proto` BLOB NOT NULL
-);
-
 -- Data for the tournaments instances in the game.
 CREATE TABLE IF NOT EXISTS `tournaments` (
 
