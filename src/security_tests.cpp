@@ -87,24 +87,16 @@ protected:
   }
 
   /**
-   * Like Process, but attaches the crown-holder "out" payments summing to the
-   * given amount (the seven tiers 1..7 plus the dev address) to every move.
+   * Like Process, but attaches an "out" entry paying the given amount to the
+   * configured dev address on every move.
    */
   void
   ProcessWithDevPayment (const std::string& str, const Amount amount)
   {
     Json::Value val = ParseJson (str);
+    const std::string devAddr = ctx.RoConfig ()->params ().dev_address ();
     for (auto& entry : val)
-    {
-      entry["out"]["CSkszVUahNNaj9ENPzAepSuCme4PEZXzgp"] = xaya::ChiAmountToJson ((amount / 35) * 1);
-      entry["out"]["CPHa1fMuAowhBhNGtcyERPntC6aN89q5Wb"] = xaya::ChiAmountToJson ((amount / 35) * 2);
-      entry["out"]["CHjEjjeZJEJLoJLxtsRL54m6RMB8vFRngf"] = xaya::ChiAmountToJson ((amount / 35) * 3);
-      entry["out"]["CKMSbLJwLHKAY8aT2BnVZ7fVSTdD81v9rm"] = xaya::ChiAmountToJson ((amount / 35) * 4);
-      entry["out"]["CZsJo8YykDhoeVmYMTXp9v3EzbN7i3KhU5"] = xaya::ChiAmountToJson ((amount / 35) * 5);
-      entry["out"]["CX7VSMEoGqyKKxL4qfCLyDNsqgCPZiP6eD"] = xaya::ChiAmountToJson ((amount / 35) * 6);
-      entry["out"]["Cd9LyMvE3MkrWysTujDhEmBiUU16rkmHnU"] = xaya::ChiAmountToJson ((amount / 35) * 7);
-      entry["out"]["CcHSR3Ss39Ag8pwJ6nsVmEjcdXMhPfoMp3"] = xaya::ChiAmountToJson ((amount / 35) * 7);
-    }
+      entry["out"][devAddr] = xaya::ChiAmountToJson (amount);
 
     MoveProcessor mvProc(db, rnd, ctx);
     mvProc.ProcessAll (val);
@@ -224,8 +216,7 @@ TEST_F (SecurityTests, CrystalBundleArrayReplayMintsOnce)
     {"name": "domob", "move": {"a": {"x": 42, "init": {"address": "CGUpAcjsb6MDktSYg8yRDxDutr7FhWtdWC"}}}}
   ])");
 
-  /* Seed the special-tournament crown holders (xayatf1..7, which receive the
-     seven payment addresses) so the dev payment is recognised.  */
+  /* Advance one block before the paid moves. */
   UpdateState ("[]");
 
   auto before = xayaplayers.GetByName ("domob", ctx.RoConfig ());

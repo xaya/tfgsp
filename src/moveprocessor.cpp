@@ -52,6 +52,22 @@ constexpr const char* CALLBACK_DURATION_UNIT = "us";
 constexpr unsigned MAX_MOVE_ARRAY = 1000;
 constexpr unsigned MAX_SUBMOVES = 100;
 
+/**
+ * Lower-cases an ASCII string deterministically.  Used to compare the
+ * payment-receiver keys of a move's "out" map (which XayaX reports as
+ * EIP-55 checksummed addresses) against the configured dev address
+ * case-insensitively, since Ethereum addresses are case-insensitive.
+ */
+std::string
+AsciiToLower (const std::string& s)
+{
+  std::string res;
+  res.reserve (s.size ());
+  for (const char c : s)
+    res.push_back ((c >= 'A' && c <= 'Z') ? (c - 'A' + 'a') : c);
+  return res;
+}
+
 } // anonymous namespace
 
 
@@ -70,14 +86,14 @@ BaseMoveProcessor::BaseMoveProcessor (Database& d,
 bool
 BaseMoveProcessor::ExtractMoveBasics (const Json::Value& moveObj,
                                       std::string& name, Json::Value& mv,
-                                      std::map<std::string, Amount>& paidToCrownHolders)
+                                      Amount& paidToDev)
 {
   VLOG (1) << "Processing move:\n" << moveObj;
   CHECK (moveObj.isObject ());
 
   CHECK (moveObj.isMember ("move"));
   mv = moveObj["move"];
-  
+
   if (!mv.isObject () && !mv.isArray ())
   {
     LOG (WARNING) << "Move is not an object and not array: " << mv;
@@ -88,208 +104,30 @@ BaseMoveProcessor::ExtractMoveBasics (const Json::Value& moveObj,
   CHECK (nameVal.isString ());
   name = nameVal.asString ();
 
+  /* Sum the WCHI paid to the foundation/dev address.  A paid move arrives
+     with moveObj["out"] mapping each on-chain payment receiver to its amount;
+     XayaX keys those by the EIP-55 checksummed receiver address.  We credit
+     only what was paid to the configured dev_address (matched
+     case-insensitively, since Ethereum addresses are), and the per-purchase
+     handlers reject the move unless that total covers the price. */
+  paidToDev = 0;
+
+  const std::string devAddr
+      = AsciiToLower (ctx.RoConfig ()->params ().dev_address ());
   const auto& outVal = moveObj["out"];
-  
-  std::map<std::string, int32_t> holderTier;
-  std::string tier1holderName = "";
-  
-  //Lets get names of current crown holders
-  auto res = specialTournamentsTbl.QueryAll();
-  bool tryAndStep = res.Step();
-  
-  std::string xAddressRegtest = "";
-  bool haveMissingAddress = false;
-  std::string missingPlayerName = "";
-  
-  while (tryAndStep)
-  {
-    auto spctrm = specialTournamentsTbl.GetFromResult (res, ctx.RoConfig ());
-    std::string xName = spctrm->GetProto().crownholder();
-    
-    auto player = xayaplayers.GetByName (xName, ctx.RoConfig());
-    if(player == nullptr)
-    {
-      LOG (WARNING) << "Failed to get player with name " << xName;
-      return false;
-    }
-    
-    std::string xAddress = player->GetProto().address();
-	xAddressRegtest = xAddress;
-    
-    if(xAddress == "")
-    {
-      LOG (WARNING) << "Failed to get valid address for player " << xName;
-	  xAddress = "missing";      
-	  haveMissingAddress = true;
-	  missingPlayerName = xName;
-    }
-    
-    xaya::Chain chain = ctx.Chain();
-	if(xName == name)
-	{
-		if(xAddress != "CcHSR3Ss39Ag8pwJ6nsVmEjcdXMhPfoMp3" && chain != xaya::Chain::REGTEST)
-		{
-            xAddress = "CU1DM3eBtBH1qbUup33LSP2LNkZnbtkAxA"; //burn bogus address    			
-		}
-	}	
-	
-    player.reset();
-    
-	if(xAddress != "missing")
-	{
-		paidToCrownHolders.insert(std::pair<std::string, Amount>(xAddress,0));
-		holderTier.insert(std::pair<std::string, int32_t>(xAddress,(int32_t)spctrm->GetProto().tier()));
-	}
-	
-    if((int32_t)spctrm->GetProto().tier() == 1)
-    {
-        tier1holderName = xAddress;
-    }
-        
-    spctrm.reset();
-    tryAndStep = res.Step ();
-  }
-  
-  if(haveMissingAddress)
-  {
-	  // we must issue temporarily address here, before player updates to properly one
-	  std::vector<std::string> candidates;
-	  candidates.push_back("CSkszVUahNNaj9ENPzAepSuCme4PEZXzgp");
-	  candidates.push_back("CPHa1fMuAowhBhNGtcyERPntC6aN89q5Wb");
-	  candidates.push_back("CHjEjjeZJEJLoJLxtsRL54m6RMB8vFRngf");
-	  candidates.push_back("CKMSbLJwLHKAY8aT2BnVZ7fVSTdD81v9rm");
-	  candidates.push_back("CZsJo8YykDhoeVmYMTXp9v3EzbN7i3KhU5");
-	  candidates.push_back("CX7VSMEoGqyKKxL4qfCLyDNsqgCPZiP6eD");
-	  candidates.push_back("Cd9LyMvE3MkrWysTujDhEmBiUU16rkmHnU");
-    	 
-	  auto player = xayaplayers.GetByName (missingPlayerName, ctx.RoConfig());
-	  if(player == nullptr)
-	  {
-		  LOG (WARNING) << "Failed to get player with name " << missingPlayerName;
-		  return false;
-	  }     
-	  
-	  for(auto& newAddressCandidate: candidates)
-	  {
-		   if (holderTier.count(newAddressCandidate) == 0) 
-		   {
-				if(!readOnly) player->MutableProto().set_address(newAddressCandidate);
-				break;
-		   }
-	  }
-
-      player.reset();
-      return false;	  
-  }
-  
-  
-
-  xaya::Chain chain = ctx.Chain();
-  if(chain == xaya::Chain::REGTEST)
-  {
-    paidToCrownHolders.insert(std::pair<std::string, Amount>(xAddressRegtest,0));
-    holderTier.insert(std::pair<std::string, int32_t>(xAddressRegtest,8)); 
-  }
-  else
-  {
-    paidToCrownHolders.insert(std::pair<std::string, Amount>("CcHSR3Ss39Ag8pwJ6nsVmEjcdXMhPfoMp3",0));
-    holderTier.insert(std::pair<std::string, int32_t>("CcHSR3Ss39Ag8pwJ6nsVmEjcdXMhPfoMp3",8)); 
-  }
-
-  if(paidToCrownHolders.size() == 7 && chain == xaya::Chain::REGTEST)
-  {
-    paidToCrownHolders.insert(std::pair<std::string, Amount>("CcHSR3Ss39Ag8pwJ6nsVmEjcdXMhPfoMp3",0));
-    holderTier.insert(std::pair<std::string, int32_t>("CcHSR3Ss39Ag8pwJ6nsVmEjcdXMhPfoMp3",8)); 	  
-  }
-  
-  //Every out here must much the address of crownholder and its tier;
-  Amount smallestPayFraction = 0;
-  
-  if(outVal.isObject())
-  {
-    for(auto& outValue: paidToCrownHolders)
-    {
-      if(outValue.first == tier1holderName)
+  if (!devAddr.empty () && outVal.isObject ())
+    for (const auto& key : outVal.getMemberNames ())
       {
-        Amount amnt;
-		
-		if(!outVal[outValue.first].isDouble ()) continue;
-		
-        if(xaya::ChiAmountFromJson(outVal[outValue.first], amnt) == false)
-        {
-          continue;        
-        }
-        
-        smallestPayFraction = amnt;
-	  } 
-    }
-  }
-
-  if(smallestPayFraction != 0)
-  {
-      //Lets filter small additional fee, which we have to get rid of electrum bug
-      smallestPayFraction = smallestPayFraction / 1000;
-      smallestPayFraction = smallestPayFraction * 1000;
-
-      Amount totalAmountPaid = 0;
-      
-      for(auto& outValue: outVal)
-      {
-          Amount amnt;
-		  
-		  if(!outValue.isDouble ()) return false;
-		  
-          if(xaya::ChiAmountFromJson(outValue, amnt) == false)
-          {
-            LOG (WARNING) << "Failed to extract amount from " << outValue;
-            return false;                    
-          }          
-          totalAmountPaid += amnt;
+        if (AsciiToLower (key) != devAddr)
+          continue;
+        const auto& amountVal = outVal[key];
+        if (!amountVal.isDouble ())
+          continue;
+        Amount amount;
+        if (!xaya::ChiAmountFromJson (amountVal, amount))
+          continue;
+        paidToDev += amount;
       }
-      
-    if(outVal.isObject())
-    {
-        for(auto& outValue: paidToCrownHolders)
-        {
-            int32_t myTier = holderTier[outValue.first];
-			
-			if(myTier > 7) myTier = 7;
-            
-            Amount amnt;
-            if(xaya::ChiAmountFromJson(outVal[outValue.first], amnt) == false)
-            {			  
-			  if(chain == xaya::Chain::REGTEST && outValue.first == "CcHSR3Ss39Ag8pwJ6nsVmEjcdXMhPfoMp3")
-			  {
-				  xaya::ChiAmountFromJson(outVal[xAddressRegtest], amnt);
-			  }
-			  else
-			  {
-              LOG (WARNING) << "Failed to extract amount from " << outVal[outValue.first] << "for key" << outValue.first;
-              return false;              
-			  }			  
-            }
-            
-            Amount needToPay = myTier * smallestPayFraction;
- 
-			if(amnt != needToPay)
-			{
-				if(myTier == 7 && amnt >= needToPay)
-				{
-				}
-				else
-				{
-				  if(amnt < needToPay)
-				  {
-				  LOG (WARNING) << "Invalid fraction paid for " << outValue.first << " he/she has tier " << myTier << " but payments was" << amnt << " where needed to pay " << needToPay << " as fracton was " << smallestPayFraction;
-				  return false;
-				  }
-				}
-			}      
-
-            paidToCrownHolders[outValue.first] = amnt;
-        }
-    }
-  }
 
   return true;
 }
@@ -698,234 +536,52 @@ BaseMoveProcessor::TryGoodyBundlePurchase (const std::string& name, const Json::
 }
 
 void
-BaseMoveProcessor::TryNameRerollPurchase (const std::string& name, const Json::Value& mv, std::map<std::string, Amount>& paidToCrownHolders, const RoConfig& cfg, xaya::Random& rnd)
+BaseMoveProcessor::TryNameRerollPurchase (const std::string& name, const Json::Value& mv, Amount& paidToDev, const RoConfig& cfg, xaya::Random& rnd)
 {
   const auto& cmd = mv["nr"];
   if (!cmd.isInt()) return;
 
   VLOG (1) << "Attempting to reroll name through move: " << cmd;
 
-  Amount paidToDev = 0;
   Amount cost = 0;
   int64_t treatId = 0;
-  Amount fraction = paidToDev / 35;
-  
-  for(auto& payFraction: paidToCrownHolders)
-  {
-      paidToDev += payFraction.second;
-  }
-  
-  if(!ParseNameRerollPurchase(mv, treatId, cost, name, paidToDev)) 
-  {
-      return;
-  }
+
+  if (!ParseNameRerollPurchase (mv, treatId, cost, name, paidToDev))
+    return;
 
   auto fighterDb = fighters.GetById (treatId, ctx.RoConfig ());
-  fighterDb->RerollName(cost, cfg, rnd, pxd::Quality::Common);
-  fighterDb.reset();
+  fighterDb->RerollName (cost, cfg, rnd, pxd::Quality::Common);
+  fighterDb.reset ();
 
-  /* C8 (twin): consume the crown-holder payment budget so the same payment
-     cannot be replayed by a repeated nr/pc command in an array move. */
-  for(auto& budgetEntry: paidToCrownHolders) budgetEntry.second = 0;
-
-  std::map<std::string, int32_t> holderTier;
-  
-  auto res = specialTournamentsTbl.QueryAll();
-  bool tryAndStep = res.Step();
-  
-  std::string xAddressRegtest = "";
-  
-  while (tryAndStep)
-  {
-    auto spctrm = specialTournamentsTbl.GetFromResult (res, ctx.RoConfig ());
-    std::string xName = spctrm->GetProto().crownholder();
-    
-    auto pPlayer = xayaplayers.GetByName (xName, ctx.RoConfig());
-    if(pPlayer == nullptr)
-    {
-      LOG (ERROR) << "Failed to get player with name " << xName;
-      return;
-    }
-    
-    std::string xAddress = pPlayer->GetProto().address();
-    xAddressRegtest = xAddress;
-    // Its important to test that address is valid, else we must provide working substitute,
-    // or someone might use this just to hard other crown holders
-    
-    //todo
-    
-    if(xAddress == "")
-    {
-      LOG (ERROR) << "Failed to get valid address for player, we must inject XAYA default to keep this consitant for other players " << xName;
-      xAddress = "CcHSR3Ss39Ag8pwJ6nsVmEjcdXMhPfoMp3";
-      //player.reset();   
-      //return;        
-    }
-    
-    pPlayer.reset();    
-    
-    holderTier.insert(std::pair<std::string, int32_t>(xAddress,(int32_t)spctrm->GetProto().tier()));
-    spctrm.reset();
-    tryAndStep = res.Step ();
-  }
-
-  // This needs to be either developers foundation address or just burned, to make sure 
-  // system abuse is prevented by accumulating infinite amount of crystals and overtaking
-  // the game with multiple accounts
-  
-  xaya::Chain chain = ctx.Chain();
-  if(chain == xaya::Chain::REGTEST)
-  {
-    holderTier.insert(std::pair<std::string, int32_t>(xAddressRegtest,8)); 	  
-  }
-  else
-  {
-	holderTier.insert(std::pair<std::string, int32_t>("CcHSR3Ss39Ag8pwJ6nsVmEjcdXMhPfoMp3",8));  
-  }
-  
-  if(paidToCrownHolders.size() == 7 && chain == xaya::Chain::REGTEST)
-  {
-    holderTier.insert(std::pair<std::string, int32_t>("CcHSR3Ss39Ag8pwJ6nsVmEjcdXMhPfoMp3",8)); 	  
-  } 
-  
-  for(auto& entry: paidToCrownHolders)
-  {
-      if(holderTier[entry.first] == 7)
-      {
-        Amount fraction = cost / 35;
-        Amount leftover = cost - fraction * 35;
-        paidToCrownHolders[entry.first] -= leftover;
-      }
-      
-	  int32_t multiplier = holderTier[entry.first];
-	  if(multiplier > 7) multiplier = 7;
-	  
-      paidToCrownHolders[entry.first] -= fraction * multiplier;
-  }
-  
-  paidToDev -= cost;   
+  /* C8 (twin): consume the dev payment so the same on-chain payment cannot be
+     replayed by a repeated nr/pc command in an array move. */
+  paidToDev = 0;
 }
 
 void
-BaseMoveProcessor::TryCrystalPurchase (const std::string& name, const Json::Value& mv, std::map<std::string, Amount>& paidToCrownHolders)
+BaseMoveProcessor::TryCrystalPurchase (const std::string& name, const Json::Value& mv, Amount& paidToDev)
 {
   const auto& cmd = mv["pc"];
   if (!cmd.isString ()) return;
 
   VLOG (1) << "Attempting to purchase crystal bundle through move: " << cmd;
 
-  auto player = xayaplayers.GetByName (name, ctx.RoConfig());
+  auto player = xayaplayers.GetByName (name, ctx.RoConfig ());
   CHECK (player != nullptr);
 
-  if (cmd.isObject ())
-  {
-      LOG (WARNING)
-          << "Purchase crystal bundle is object: " << cmd;
-      return;
-  }
-  
   Amount cost = 0;
-  Amount crystalAmount  = 0;
+  Amount crystalAmount = 0;
   std::string bundleKeyCode = "";
-  
-  Amount paidToDev = 0;
-  Amount fraction = paidToDev / 35;
-  
-  for(auto& payFraction: paidToCrownHolders)
-  {
-      paidToDev += payFraction.second;
-  }
-  
-  if(!ParseCrystalPurchase(mv, bundleKeyCode, cost, crystalAmount, name, paidToDev)) 
-  {
-      return;
-  }
+
+  if (!ParseCrystalPurchase (mv, bundleKeyCode, cost, crystalAmount, name, paidToDev))
+    return;
 
   player->AddBalance (crystalAmount);
-  player.reset();
+  player.reset ();
 
-  /* C8: consume the crown-holder payment budget so a repeated pc/nr command
-     in the same (array) move cannot re-mint against the same on-chain
-     payment.  paidToCrownHolders is non-persisted bookkeeping, so zeroing it
-     here changes no DB state for a single legitimate purchase. */
-  for(auto& budgetEntry: paidToCrownHolders) budgetEntry.second = 0;
-  
-  std::map<std::string, int32_t> holderTier;
-  
-  auto res = specialTournamentsTbl.QueryAll();
-  bool tryAndStep = res.Step();
-  
-  std::string xAddressRegtest = "";
-  
-  while (tryAndStep)
-  {
-    auto spctrm = specialTournamentsTbl.GetFromResult (res, ctx.RoConfig ());
-    std::string xName = spctrm->GetProto().crownholder();
-    
-    auto pPlayer = xayaplayers.GetByName (xName, ctx.RoConfig());
-    if(pPlayer == nullptr)
-    {
-      LOG (ERROR) << "Failed to get player with name " << xName;
-      return;
-    }
-    
-    std::string xAddress = pPlayer->GetProto().address();
-    xAddressRegtest = xAddress;
-    // Its important to test that address is valid, else we must provide working substitute,
-    // or someone might use this just to hard other crown holders
-    
-    //todo
-    
-    if(xAddress == "")
-    {
-      LOG (ERROR) << "Failed to get valid address for player, we must inject XAYA default to keep this consitant for other players " << xName;
-      xAddress = "CcHSR3Ss39Ag8pwJ6nsVmEjcdXMhPfoMp3";
-      //player.reset();   
-      //return;        
-    }
-    
-    pPlayer.reset();    
-    
-    holderTier.insert(std::pair<std::string, int32_t>(xAddress,(int32_t)spctrm->GetProto().tier()));
-    spctrm.reset();
-    tryAndStep = res.Step ();
-  }
-
-  // This needs to be either developers foundation address or just burned, to make sure 
-  // system abuse is prevented by accumulating infinite amount of crystals and overtaking
-  // the game with multiple accounts
-  
-  xaya::Chain chain = ctx.Chain();
-  if(chain == xaya::Chain::REGTEST)
-  {
-    holderTier.insert(std::pair<std::string, int32_t>(xAddressRegtest,8)); 	  
-  }
-  else
-  {
-	holderTier.insert(std::pair<std::string, int32_t>("CcHSR3Ss39Ag8pwJ6nsVmEjcdXMhPfoMp3",8));  
-  }
-  
-  if(paidToCrownHolders.size() == 7 && chain == xaya::Chain::REGTEST)
-  {
-    holderTier.insert(std::pair<std::string, int32_t>("CcHSR3Ss39Ag8pwJ6nsVmEjcdXMhPfoMp3",8)); 	  
-  }  
-  
-  for(auto& entry: paidToCrownHolders)
-  {
-      if(holderTier[entry.first] == 7)
-      {
-        Amount fraction = cost / 35;
-        Amount leftover = cost - fraction * 35;
-        paidToCrownHolders[entry.first] -= leftover;
-      }
-      
-	  int32_t multiplier = holderTier[entry.first];
-	  if(multiplier > 7) multiplier = 7;
-	  
-      paidToCrownHolders[entry.first] -= fraction * multiplier;
-  }
-  
-  paidToDev -= cost;   
+  /* C8: consume the dev payment so a repeated pc/nr command in the same
+     (array) move cannot re-mint against the same on-chain payment. */
+  paidToDev = 0;
 }
 
   pxd::RecipeInstanceTable::Handle BaseMoveProcessor::GetRecepieObjectFromID(const uint32_t& ID, const Context& ctx)
@@ -1147,9 +803,9 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
 {
   std::string name;
   Json::Value mv;
-  std::map<std::string, Amount> paidToCrownHolders;
+  Amount paidToDev = 0;
 
-  if (!ExtractMoveBasics (moveObj, name, mv, paidToCrownHolders))
+  if (!ExtractMoveBasics (moveObj, name, mv, paidToDev))
   {
     return;
   }
@@ -1206,10 +862,10 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
 	 /* Launch-date gate dropped (Taurion baggage): Polygon genesis is post-launch; REGTEST never gated. */
 	
     /* Handle crystal purchace now */
-    TryCrystalPurchase (name, mrl, paidToCrownHolders);
+    TryCrystalPurchase (name, mrl, paidToDev);
 	
     /* Handle name reroll purchase*/
-    TryNameRerollPurchase (name, mrl, paidToCrownHolders, ctx.RoConfig (), rnd);	
+    TryNameRerollPurchase (name, mrl, paidToDev, ctx.RoConfig (), rnd);
     
     /* Handle sweetener purchace now */
     TrySweetenerPurchase (name, mrl);  
@@ -1243,18 +899,11 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     }
   }
 
-  Amount totalPaidLeft = 0;
-
-  for(auto& entry: paidToCrownHolders)
-  {
-    totalPaidLeft += entry.second;
-  }
-
-  /* If any paid-to-dev coins are left, it means probably something has gone
-     wrong and the user overpaid due to a frontend bug.  */
-  LOG_IF (WARNING, totalPaidLeft > 0)
+  /* If any dev payment is left unconsumed, the user probably overpaid due to
+     a frontend bug (every purchase handler consumes the whole payment).  */
+  LOG_IF (WARNING, paidToDev > 0)
       << "At the end of the move, " << name
-      << " has " << totalPaidLeft << " paid-to-dev CHI satoshi left";
+      << " has " << paidToDev << " unconsumed paid-to-dev WCHI satoshi left";
 }
 
   bool BaseMoveProcessor::ParseTournamentRewardData(const XayaPlayer& a, const std::string& name, const Json::Value& tournament, std::vector<uint32_t>& rewardDatabaseIds, uint32_t& tournamentID)

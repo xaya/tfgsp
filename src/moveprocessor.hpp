@@ -108,19 +108,19 @@ protected:
    */
   bool ExtractMoveBasics (const Json::Value& moveObj,
                           std::string& name, Json::Value& mv,
-                          std::map<std::string, Amount>& paidToCrownHolders);
+                          Amount& paidToDev);
                           
                        
                           
   /**
    * Tries to handle a move that purchases crystals
    */                       
-  void TryCrystalPurchase (const std::string& name, const Json::Value& mv, std::map<std::string, Amount>& paidToCrownHolders); 
-  
+  void TryCrystalPurchase (const std::string& name, const Json::Value& mv, Amount& paidToDev);
+
   /**
    * Tries to purchase a name reroll for the treat
-   */                       
-  void TryNameRerollPurchase (const std::string& name, const Json::Value& mv, std::map<std::string, Amount>& paidToCrownHolders, const RoConfig& cfg, xaya::Random& rnd);   
+   */
+  void TryNameRerollPurchase (const std::string& name, const Json::Value& mv, Amount& paidToDev, const RoConfig& cfg, xaya::Random& rnd);
 
   /**
    * Tries to handle a move that purchases goody

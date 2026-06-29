@@ -139,17 +139,9 @@ protected:
   ProcessWithDevPayment (const std::string& str, const Amount amount)
   {
     Json::Value val = ParseJson (str);
+    const std::string devAddr = ctx.RoConfig ()->params ().dev_address ();
     for (auto& entry : val)
-    {      
-      entry["out"]["CSkszVUahNNaj9ENPzAepSuCme4PEZXzgp"] = xaya::ChiAmountToJson ((amount / 35) * 1);
-      entry["out"]["CPHa1fMuAowhBhNGtcyERPntC6aN89q5Wb"] = xaya::ChiAmountToJson ((amount / 35) * 2);
-      entry["out"]["CHjEjjeZJEJLoJLxtsRL54m6RMB8vFRngf"] = xaya::ChiAmountToJson ((amount / 35) * 3);
-      entry["out"]["CKMSbLJwLHKAY8aT2BnVZ7fVSTdD81v9rm"] = xaya::ChiAmountToJson ((amount / 35) * 4);
-      entry["out"]["CZsJo8YykDhoeVmYMTXp9v3EzbN7i3KhU5"] = xaya::ChiAmountToJson ((amount / 35) * 5);
-      entry["out"]["CX7VSMEoGqyKKxL4qfCLyDNsqgCPZiP6eD"] = xaya::ChiAmountToJson ((amount / 35) * 6);
-      entry["out"]["Cd9LyMvE3MkrWysTujDhEmBiUU16rkmHnU"] = xaya::ChiAmountToJson ((amount / 35) * 7);
-	  entry["out"]["CcHSR3Ss39Ag8pwJ6nsVmEjcdXMhPfoMp3"] = xaya::ChiAmountToJson ((amount / 35) * 7);
-    }
+      entry["out"][devAddr] = xaya::ChiAmountToJson (amount);
 
     MoveProcessor mvProc(db, rnd, ctx);
     mvProc.ProcessAll (val);
@@ -1022,8 +1014,8 @@ TEST_F (CoinOperationTests, CostMultiplierSetterRejectsOutOfRange)
 
 /* NR-1 / C8 double-spend guard: a single move containing BOTH a crystal purchase
    (pc) and a name reroll (nr) must consume the on-chain payment only ONCE.  The
-   crystal handler runs first and zeroes the shared crown-holder budget, so the
-   reroll cannot also draw on the same payment -- even when the amount paid would
+   crystal handler runs first and zeroes the shared dev payment (paidToDev), so
+   the reroll cannot also draw on the same payment -- even when the amount paid would
    have covered both.  This is the conservative, money-safe behaviour: it is
    intentionally impossible to do both with a single payment (no double-spend). */
 TEST_F (CoinOperationTests, CrystalAndRerollCannotShareOnePayment)
@@ -1057,6 +1049,45 @@ TEST_F (CoinOperationTests, CrystalAndRerollCannotShareOnePayment)
   EXPECT_EQ (originalName, ft->GetProto().name());     // reroll did NOT happen
   ft.reset();
   ExpectBalances ({{"domob", before + 100}});          // crystals minted once
+}
+
+/* The dev-address payment check must be case-insensitive.  XayaX keys the move's
+   "out" map with the EIP-55 checksummed receiver address, whose casing differs
+   from however dev_address happens to be stored in the config.  A crystal bundle
+   paid to the dev address in ANY casing must mint; one paid to a different
+   address must mint nothing (paidToDev stays 0). */
+TEST_F (CoinOperationTests, DevPaymentAddressIsCaseInsensitive)
+{
+  Process (R"([
+    {"name": "domob", "move": {"a": {"x": 42, "init": {"address": "CGUpAcjsb6MDktSYg8yRDxDutr7FhWtdWC"}}}}
+  ])");
+  UpdateState ("[]");
+
+  /* Lower-case the configured dev address so the "out" key casing differs. */
+  std::string lowerDev = ctx.RoConfig ()->params ().dev_address ();
+  for (char& c : lowerDev)
+    if (c >= 'A' && c <= 'Z') c = c - 'A' + 'a';
+
+  const auto buyTo = [this] (const std::string& payAddr)
+  {
+    Json::Value mv(Json::objectValue);
+    mv["name"] = "domob";
+    mv["move"] = ParseJson (R"({"pc": "T1"})");
+    mv["out"][payAddr] = xaya::ChiAmountToJson (0.14 * COIN);
+    Json::Value arr(Json::arrayValue);
+    arr.append (mv);
+    MoveProcessor p(db, rnd, ctx);
+    p.ProcessAll (arr);
+  };
+
+  Amount before;
+  { auto a = xayaplayers.GetByName ("domob", ctx.RoConfig ()); before = a->GetBalance (); }
+
+  buyTo (lowerDev);                                    // differently-cased dev addr
+  ExpectBalances ({{"domob", before + 100}});          // accepted -> bundle minted
+
+  buyTo ("0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"); // not the dev address
+  ExpectBalances ({{"domob", before + 100}});          // unchanged -> nothing minted
 }
 
 TEST_F (CoinOperationTests, PurchaseStuff)

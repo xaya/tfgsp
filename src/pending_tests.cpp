@@ -140,15 +140,8 @@ protected:
     moveObj["move"] = ParseJson (mvStr);
 
     if (paidToDev != 0)
-    {
-      moveObj["out"]["CSkszVUahNNaj9ENPzAepSuCme4PEZXzgp"] = xaya::ChiAmountToJson ((paidToDev / 28) * 1);
-      moveObj["out"]["CPHa1fMuAowhBhNGtcyERPntC6aN89q5Wb"] = xaya::ChiAmountToJson ((paidToDev / 28) * 2);
-      moveObj["out"]["CHjEjjeZJEJLoJLxtsRL54m6RMB8vFRngf"] = xaya::ChiAmountToJson ((paidToDev / 28) * 3);
-      moveObj["out"]["CKMSbLJwLHKAY8aT2BnVZ7fVSTdD81v9rm"] = xaya::ChiAmountToJson ((paidToDev / 28) * 4);
-      moveObj["out"]["CZsJo8YykDhoeVmYMTXp9v3EzbN7i3KhU5"] = xaya::ChiAmountToJson ((paidToDev / 28) * 5);
-      moveObj["out"]["CX7VSMEoGqyKKxL4qfCLyDNsqgCPZiP6eD"] = xaya::ChiAmountToJson ((paidToDev / 28) * 6);
-      moveObj["out"]["Cd9LyMvE3MkrWysTujDhEmBiUU16rkmHnU"] = xaya::ChiAmountToJson ((paidToDev / 28) * 7);
-    }
+      moveObj["out"][ctx.RoConfig ()->params ().dev_address ()]
+          = xaya::ChiAmountToJson (paidToDev);
 
     PendingStateUpdater updater(db, state, ctx);
     updater.ProcessMove (moveObj);
@@ -167,15 +160,8 @@ protected:
     moveObj["move"] = ParseJson ("["+mvStr+"]");
 
     if (paidToDev != 0)
-    {
-      moveObj["out"]["CSkszVUahNNaj9ENPzAepSuCme4PEZXzgp"] = xaya::ChiAmountToJson ((paidToDev / 28) * 1);
-      moveObj["out"]["CPHa1fMuAowhBhNGtcyERPntC6aN89q5Wb"] = xaya::ChiAmountToJson ((paidToDev / 28) * 2);
-      moveObj["out"]["CHjEjjeZJEJLoJLxtsRL54m6RMB8vFRngf"] = xaya::ChiAmountToJson ((paidToDev / 28) * 3);
-      moveObj["out"]["CKMSbLJwLHKAY8aT2BnVZ7fVSTdD81v9rm"] = xaya::ChiAmountToJson ((paidToDev / 28) * 4);
-      moveObj["out"]["CZsJo8YykDhoeVmYMTXp9v3EzbN7i3KhU5"] = xaya::ChiAmountToJson ((paidToDev / 28) * 5);
-      moveObj["out"]["CX7VSMEoGqyKKxL4qfCLyDNsqgCPZiP6eD"] = xaya::ChiAmountToJson ((paidToDev / 28) * 6);
-      moveObj["out"]["Cd9LyMvE3MkrWysTujDhEmBiUU16rkmHnU"] = xaya::ChiAmountToJson ((paidToDev / 28) * 7);
-    }
+      moveObj["out"][ctx.RoConfig ()->params ().dev_address ()]
+          = xaya::ChiAmountToJson (paidToDev);
 
     PendingStateUpdater updater(db, state, ctx);
     updater.ProcessMove (moveObj);

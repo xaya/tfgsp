@@ -128,6 +128,12 @@ message Params
      rewards are exempt (1:1 with the 48-fighter cap, and rejecting them would
      strand a destroyed fighter). */
   optional uint32 max_unclaimed_reward_amount = 35;
+
+  /* Foundation/dev address that WCHI-paid moves (crystal bundles, name
+     rerolls) must pay to.  On Polygon this is the EIP-55 checksummed ETH
+     address XayaX reports as a key in the move's "out" map; the payment
+     check matches it case-insensitively. */
+  optional string dev_address = 36;
 }
 
 /* ************************************************************************** */

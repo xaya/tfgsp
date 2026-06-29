@@ -808,9 +808,9 @@ PendingStateUpdater::ProcessMove (const Json::Value& moveObj)
 {
   std::string name, bundleKeyCode;
   Json::Value mv;
-  std::map<std::string, Amount> paidToCrownHolders;
+  Amount paidToDev = 0;
 
-  if (!ExtractMoveBasics (moveObj, name, mv, paidToCrownHolders))
+  if (!ExtractMoveBasics (moveObj, name, mv, paidToDev))
     return;
 
   std::vector<Json::Value> moves;
@@ -1005,12 +1005,16 @@ PendingStateUpdater::ProcessMove (const Json::Value& moveObj)
       Amount crystalAmount  = 0;
       std::string fungibleName = "";
       uint64_t uses = 0;
-      Amount paidToDev;
-      
+
+      /* paidToDev (the WCHI paid to the dev address, summed in ExtractMoveBasics)
+         is the function-scope value; reuse it so the pending crystal purchase is
+         shown only when the on-chain payment actually covers the cost.  Consume
+         it on success to mirror the consensus C8 single-purchase-per-payment. */
       if(ParseCrystalPurchase(mrl, bundleKeyCode, cost, crystalAmount, name, paidToDev))
       {
           state.AddCrystalPurchase(*a, bundleKeyCode, crystalAmount, fighters, ctx.RoConfig ());
-      }  
+          paidToDev = 0;
+      }
       
       auto& aState = state.GetXayaPlayerState (*a, fighters, ctx.RoConfig ());
       if(ParseGoodyPurchase(mrl, cost, name, fungibleName, aState.balance, uses))

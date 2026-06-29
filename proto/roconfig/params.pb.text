@@ -7,6 +7,8 @@ params:
     burnsale_stages: { amount_sold: 10000000000 price_sat: 50000 }
     burnsale_stages: { amount_sold: 20000000000 price_sat: 100000 }
     
+    dev_address: "0x59F5f46dC284e3414F67EDa31eE90126bC48BF95"
+
     starting_recipes: "1bbc7d99-7fce-24a4-c9a3-dfaf4b744efa"
   
     elok_factor: 50
