@@ -784,6 +784,80 @@ TEST_F (ReorgTests, MultiBlockReorgUnwindsExactly)
     }
 }
 
+/**
+ * EXCH-10: a completed fighter-exchange TRADE (real coins moving between two
+ * players plus a fighter ownership transfer) must revert EXACTLY when the block
+ * that contains it is reorged out.  This is the money-on-the-marketplace
+ * equivalent of the building/undo test above: it drives a real list+buy through
+ * the production move processor, captures the block's changeset, then inverts it
+ * and asserts the whole database returns byte-for-byte to the pre-trade state --
+ * ownership back to the seller, both balances restored, sale history gone.
+ */
+TEST_F (ReorgTests, TradeReorgRestoresStateExactly)
+{
+  /* Seller + buyer, both pre-existing so the trade block creates no new
+     accounts (which would perturb the in-memory id counter).  */
+  xayaplayers.CreateNew ("seller", ctx.RoConfig (), rnd)->AddBalance (1000);
+  xayaplayers.CreateNew ("buyer",  ctx.RoConfig (), rnd)->AddBalance (5000);
+
+  /* A fighter owned by the seller, made tradeable (CreateNew defaults the status
+     to Available; clear the account-bound flag so it may be listed).  */
+  const auto fid = tbl3.CreateNew ("seller", 1, ctx.RoConfig (), rnd)->GetId ();
+  {
+    auto ft = tbl3.GetById (fid, ctx.RoConfig ());
+    ft->MutableProto ().set_isaccountbound (false);
+    ft->SetStatus (pxd::FighterStatus::Available);
+  }
+
+  Process (R"([
+    {"name":"seller","move":{"a":{"init":{"address":"CGUpAcjsb6MDktSYg8yRDxDutr7FhWtdWC"}}}},
+    {"name":"buyer", "move":{"a":{"init":{"address":"CGUpAcjsb6MDktSYg8yRDxDutr7FhWtdWC"}}}}
+  ])");
+
+  SeedPlayers (ScaleN ());
+  AdvanceBlocks (3);
+
+  const auto b0 = WholeDbHashes ();
+  const IdT idAtB0 = PeekNextId ();
+
+  /* One block: seller lists the fighter, buyer buys it (same block -- the buy
+     move processes after the sell move in array order).  */
+  std::ostringstream blk;
+  blk << "["
+      << R"({"name":"seller","move":{"f":{"s":{"fid":)" << fid << R"(,"d":3,"p":500}}}},)"
+      << R"({"name":"buyer","move":{"f":{"b":{"fid":)" << fid << R"(}}}})"
+      << "]";
+  const auto cs = RunBlockCapture (blk.str ());
+
+  /* The trade really happened: ownership transferred and coins moved both ways
+     (buyer debited the price, seller credited the reduced payout).  */
+  {
+    auto ft = tbl3.GetById (fid, ctx.RoConfig ());
+    ASSERT_NE (ft, nullptr);
+    EXPECT_EQ (ft->GetOwner (), "buyer") << "buy did not transfer ownership";
+  }
+  EXPECT_LT (xayaplayers.GetByName ("buyer", ctx.RoConfig ())->GetBalance (), 5000)
+      << "buyer was not charged";
+  EXPECT_GT (xayaplayers.GetByName ("seller", ctx.RoConfig ())->GetBalance (), 1000 - 100)
+      << "seller was not paid";
+
+  /* Reorg the trade out: every table must return exactly to its pre-trade
+     content.  */
+  ApplyInverse (cs);
+  RestoreNextId (idAtB0);
+  ExpectStateEq (WholeDbHashes (), b0, "undo fighter trade -> pre-trade state");
+
+  {
+    auto ft = tbl3.GetById (fid, ctx.RoConfig ());
+    ASSERT_NE (ft, nullptr);
+    EXPECT_EQ (ft->GetOwner (), "seller") << "ownership not reverted by undo";
+  }
+  EXPECT_EQ (xayaplayers.GetByName ("buyer",  ctx.RoConfig ())->GetBalance (), 5000)
+      << "buyer balance not reverted by undo";
+  EXPECT_EQ (xayaplayers.GetByName ("seller", ctx.RoConfig ())->GetBalance (), 1000)
+      << "seller balance not reverted by undo";
+}
+
 /* ************************************************************************** */
 
 } // anonymous namespace
