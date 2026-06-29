@@ -578,8 +578,13 @@ BaseMoveProcessor::ParseCrystalPurchase(const Json::Value& mv, std::string& bund
 
   int64_t multiplier = globalData.GetChiMultiplier();
 
-
-  cost = chiPRICE_sats * (multiplier / 1000);
+  /* CRYS-1 fix: the cost used to be chiPRICE_sats * (multiplier / 1000), whose
+     inner integer division truncates to 0 for any multiplier in 1..999, making
+     'cost' 0 so a zero-payment move minted the bundle for FREE.  Multiply first,
+     then divide, so the 1000ths granularity actually applies and the cost only
+     reaches 0 for a genuinely free bundle.  At the default multiplier (1000)
+     this is identical to the old result (cost == chiPRICE_sats). */
+  cost = chiPRICE_sats * multiplier / 1000;
   VLOG (1) << "Trying to purchace bundle, amount paid left: " << paidToDev << "with multiplier as " << multiplier << " and totcal cost being as " << cost;
   
   if (paidToDev < cost)
@@ -1190,6 +1195,19 @@ MoveProcessor::MaybeSetNewCostMultiplier (const Json::Value& cmd)
     return;
 
   int64_t mt = cmd.asInt();
+
+  /* CRYS-6 hardening: the multiplier feeds 'chiPRICE_sats * multiplier / 1000'.
+     A non-positive value would make crystal cost zero/negative (free or inverted
+     mint) and an absurdly large value could overflow that product.  Reject
+     out-of-range values rather than persist them.  (This setter is god-mode only
+     and unreachable on POLYGON, but the guard keeps it safe under REGTEST/admin
+     use and is a one-fat-finger-from-free-crystals foot-gun otherwise.)  */
+  constexpr int64_t MAX_CHI_MULTIPLIER = 100'000'000;  // up to 100000x, overflow-safe
+  if (mt <= 0 || mt > MAX_CHI_MULTIPLIER)
+    {
+      LOG (WARNING) << "Ignoring out-of-range chi cost multiplier: " << mt;
+      return;
+    }
 
   globalData.SetChiMultiplier(mt);
 }
@@ -4429,16 +4447,24 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
     a->AddBalance (-exchangeprice);
 
     
-    fpm::fixed_24_8 reductionPercent = fpm::fixed_24_8(ctx.RoConfig()->params().exchange_sale_percentage());
-    fpm::fixed_24_8 priceToPay = fpm::fixed_24_8(exchangeprice);
-    fpm::fixed_24_8 finalPrice = priceToPay * reductionPercent; 
+    /* EXCH-1 fix: the seller payout used to be computed with fpm::fixed_24_8,
+       whose int32 backing store overflows for any exchangeprice >= 8'388'608
+       (the raw value is price*256).  That produced a negative payout which trips
+       AddBalance's CHECK_GE(balance, 0) and aborts EVERY node deterministically
+       at the same block -> permanent chain halt.  Compute the payout in 64-bit
+       integer math instead.  pctRaw reuses the exact same fixed-point
+       construction of the configured percentage (e.g. 0.96 -> raw 246, i.e.
+       246/256), so for every price that did NOT overflow the result is
+       byte-identical to the old code (price 500 -> 480, etc.). */
+    const int64_t pctRaw
+        = fpm::fixed_24_8 (ctx.RoConfig ()->params ().exchange_sale_percentage ())
+            .raw_value ();
+    Amount finalPrice = (exchangeprice * pctRaw) / 256;
 
-    if(finalPrice == priceToPay)
-	{
-		finalPrice = priceToPay - 1;
-	}
-	
-    a2->AddBalance((int32_t)finalPrice);
+    if (finalPrice == exchangeprice)
+      finalPrice = exchangeprice - 1;
+
+    a2->AddBalance (finalPrice);
 	
     proto::FighterSaleEntry* newSale = fighterDb->MutableProto().add_salehistory();    
     newSale->set_selltime(ctx.Timestamp());

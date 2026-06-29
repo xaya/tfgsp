@@ -23,6 +23,7 @@
 #include "testutils.hpp"
 
 #include "database/dbtest.hpp"
+#include "database/globaldata.hpp"
 #include "database/recipe.hpp"
 
 #include <xayautil/jsonutils.hpp>
@@ -777,6 +778,228 @@ TEST_F (CoinOperationTests, PutFighterForSaleCrazyPrices)
   ft.reset();  
   
   ExpectBalances ({{"domob", 250 + cfg.params().starting_crystals()}});
+}
+
+/* ====================================================================== *
+ *  Money-path regression tests (added after the adversarial money audit).
+ *  Each pins a confirmed bug fix or a previously-untested value-moving path.
+ * ====================================================================== */
+
+/* EXCH-1 (CRITICAL) regression: a high-priced fighter sale must NOT overflow the
+   seller-payout math and halt the chain.  The payout used to be computed with
+   fpm::fixed_24_8, whose int32 backing store overflows at exchangeprice
+   8'388'608 (raw == price*256 == INT_MIN), yielding a NEGATIVE payout that trips
+   AddBalance's CHECK_GE(balance,0) and aborts every node deterministically.
+   8'388'608 is the exact first-overflow value, so this pins the regression. */
+TEST_F (CoinOperationTests, HighPriceFighterSaleDoesNotOverflowOrHalt)
+{
+  proto::ConfigData& cfg = const_cast <proto::ConfigData&>(*ctx.RoConfig());
+  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (250 + cfg.params().starting_crystals());
+
+  Process (R"([
+    {"name": "domob", "move": {"a": {"x": 42, "init": {"address": "CGUpAcjsb6MDktSYg8yRDxDutr7FhWtdWC"}}}}
+  ])");
+  ctx.SetTimestamp(1000);
+  UpdateState ("[]");
+
+  auto ft = tbl3.GetById(4, ctx.RoConfig());
+  ASSERT_TRUE (ft != nullptr);
+  ft->MutableProto().set_isaccountbound(false);
+  ft.reset();
+
+  const Amount price = 8388608;  // 2^23 -> price*256 == INT_MIN under fixed_24_8
+  Process (R"([
+    {"name": "domob", "move": {"f": {"s": {"fid": 4, "d": 3, "p": 8388608}}}}
+  ])");
+
+  ft = tbl3.GetById(4, ctx.RoConfig());
+  ASSERT_TRUE (ft != nullptr);
+  ASSERT_EQ (ft->GetStatus(), pxd::FighterStatus::Exchange);
+  ASSERT_EQ (ft->GetProto().exchangeprice(), price);
+  ft.reset();
+
+  Amount sellerBefore;
+  { auto a = xayaplayers.GetByName ("domob", ctx.RoConfig()); sellerBefore = a->GetBalance (); }
+
+  Process (R"([
+    {"name": "andy", "move": {"a": {"x": 42, "init": {"address": "psss"}}}}
+  ])");
+  Amount buyerBefore;
+  {
+    auto a = xayaplayers.GetByName ("andy", ctx.RoConfig());
+    a->AddBalance (price);
+    buyerBefore = a->GetBalance ();
+  }
+
+  /* The buy must complete without aborting the process. */
+  Process (R"([
+    {"name": "andy", "move": {"f": {"b": {"fid": 4}}}}
+  ])");
+
+  ft = tbl3.GetById(4, ctx.RoConfig());
+  ASSERT_TRUE (ft != nullptr);
+  EXPECT_EQ (ft->GetOwner(), "andy");
+  EXPECT_EQ (ft->GetStatus(), pxd::FighterStatus::Available);
+  ft.reset();
+
+  /* Buyer paid the full price; seller received floor(price * 246 / 256), where
+     246 == round(0.96 * 256).  For 2^23 this is exactly 246 * 2^15 = 8'060'928. */
+  const Amount expectedPayout = 8060928;
+  {
+    auto a = xayaplayers.GetByName ("andy", ctx.RoConfig());
+    EXPECT_EQ (a->GetBalance (), buyerBefore - price);
+  }
+  {
+    auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+    EXPECT_EQ (a->GetBalance (), sellerBefore + expectedPayout);
+  }
+}
+
+/* EXCH-5: replaying a buy of the same listing within a single move must charge
+   and transfer only ONCE.  After the first buy the fighter leaves Exchange
+   status and changes owner, so the second buy in the same move is rejected. */
+TEST_F (CoinOperationTests, DoubleBuyOfSameListingChargesOnce)
+{
+  proto::ConfigData& cfg = const_cast <proto::ConfigData&>(*ctx.RoConfig());
+  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (250 + cfg.params().starting_crystals());
+
+  Process (R"([
+    {"name": "domob", "move": {"a": {"x": 42, "init": {"address": "CGUpAcjsb6MDktSYg8yRDxDutr7FhWtdWC"}}}}
+  ])");
+  ctx.SetTimestamp(1000);
+  UpdateState ("[]");
+
+  auto ft = tbl3.GetById(4, ctx.RoConfig());
+  ASSERT_TRUE (ft != nullptr);
+  ft->MutableProto().set_isaccountbound(false);
+  ft.reset();
+
+  Process (R"([
+    {"name": "domob", "move": {"f": {"s": {"fid": 4, "d": 3, "p": 500}}}}
+  ])");
+
+  Process (R"([
+    {"name": "andy", "move": {"a": {"x": 42, "init": {"address": "psss"}}}}
+  ])");
+  Amount buyerBefore;
+  {
+    auto a = xayaplayers.GetByName ("andy", ctx.RoConfig());
+    a->AddBalance (2000);   // enough for TWO buys, were the guard to fail
+    buyerBefore = a->GetBalance ();
+  }
+
+  /* A single move carrying the buy command twice. */
+  Process (R"([
+    {"name": "andy", "move": [{"f": {"b": {"fid": 4}}}, {"f": {"b": {"fid": 4}}}]}
+  ])");
+
+  ft = tbl3.GetById(4, ctx.RoConfig());
+  ASSERT_TRUE (ft != nullptr);
+  EXPECT_EQ (ft->GetOwner(), "andy");
+  EXPECT_EQ (ft->GetStatus(), pxd::FighterStatus::Available);
+  ft.reset();
+
+  /* Charged exactly once. */
+  {
+    auto a = xayaplayers.GetByName ("andy", ctx.RoConfig());
+    EXPECT_EQ (a->GetBalance (), buyerBefore - 500);
+  }
+}
+
+/* CRYS-1 regression: a sub-1000 cost multiplier must NOT make crystal bundles
+   free.  The cost used to be chiPRICE_sats * (multiplier/1000) whose inner
+   integer division truncated to 0 for any multiplier in 1..999, so a
+   zero-payment move minted the bundle for free.  After the fix the cost is
+   chiPRICE_sats * multiplier / 1000, so 0.5x halves the price and zero payment
+   is rejected.  (god-mode/admin only, unreachable on POLYGON, but a one-fat-
+   finger-from-free-crystals foot-gun.) */
+TEST_F (CoinOperationTests, SubUnitCostMultiplierDoesNotMintFreeCrystals)
+{
+  proto::ConfigData& cfg = const_cast <proto::ConfigData&>(*ctx.RoConfig());
+  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (250 + cfg.params().starting_crystals());
+
+  Process (R"([
+    {"name": "domob", "move": {"a": {"x": 42, "init": {"address": "CGUpAcjsb6MDktSYg8yRDxDutr7FhWtdWC"}}}}
+  ])");
+  UpdateState ("[]");
+
+  /* Admin (god-mode) halves the cost multiplier. */
+  ProcessAdmin (R"([{"cmd": {"god": {"cost": 500}}}])");
+  EXPECT_EQ (GlobalData (db).GetChiMultiplier (), 500);
+
+  Amount before;
+  { auto a = xayaplayers.GetByName ("domob", ctx.RoConfig()); before = a->GetBalance (); }
+
+  /* Zero-payment purchase of T1 must mint NOTHING (was free under the bug). */
+  ProcessWithDevPayment (R"([{"name": "domob", "move": {"pc": "T1"}}])", 0);
+  ExpectBalances ({{"domob", before}});
+
+  /* T1 costs 0.14 COIN at multiplier 1000; at 500 it costs 0.07 COIN.  Paying
+     0.06 COIN is insufficient; 0.07 COIN mints the bundle (+100 crystals). */
+  ProcessWithDevPayment (R"([{"name": "domob", "move": {"pc": "T1"}}])", 0.06 * COIN);
+  ExpectBalances ({{"domob", before}});
+
+  ProcessWithDevPayment (R"([{"name": "domob", "move": {"pc": "T1"}}])", 0.07 * COIN);
+  ExpectBalances ({{"domob", before + 100}});
+}
+
+/* CRYS-6 regression: MaybeSetNewCostMultiplier must reject non-positive and
+   overflow-prone multipliers rather than persist them. */
+TEST_F (CoinOperationTests, CostMultiplierSetterRejectsOutOfRange)
+{
+  ProcessAdmin (R"([{"cmd": {"god": {"cost": 2000}}}])");
+  EXPECT_EQ (GlobalData (db).GetChiMultiplier (), 2000);
+
+  ProcessAdmin (R"([{"cmd": {"god": {"cost": 0}}}])");
+  EXPECT_EQ (GlobalData (db).GetChiMultiplier (), 2000);        // unchanged
+
+  ProcessAdmin (R"([{"cmd": {"god": {"cost": -5}}}])");
+  EXPECT_EQ (GlobalData (db).GetChiMultiplier (), 2000);        // unchanged
+
+  ProcessAdmin (R"([{"cmd": {"god": {"cost": 100000001}}}])");
+  EXPECT_EQ (GlobalData (db).GetChiMultiplier (), 2000);        // over cap -> unchanged
+
+  ProcessAdmin (R"([{"cmd": {"god": {"cost": 100000000}}}])");
+  EXPECT_EQ (GlobalData (db).GetChiMultiplier (), 100000000);   // at cap -> accepted
+}
+
+/* NR-1 / C8 double-spend guard: a single move containing BOTH a crystal purchase
+   (pc) and a name reroll (nr) must consume the on-chain payment only ONCE.  The
+   crystal handler runs first and zeroes the shared crown-holder budget, so the
+   reroll cannot also draw on the same payment -- even when the amount paid would
+   have covered both.  This is the conservative, money-safe behaviour: it is
+   intentionally impossible to do both with a single payment (no double-spend). */
+TEST_F (CoinOperationTests, CrystalAndRerollCannotShareOnePayment)
+{
+  Process (R"([
+    {"name": "domob", "move": {"a": {"x": 42, "init": {"address": "CGUpAcjsb6MDktSYg8yRDxDutr7FhWtdWC"}}}}
+  ])");
+  ctx.SetTimestamp(1000);
+  UpdateState ("[]");
+
+  auto ft = tbl3.GetById(4, ctx.RoConfig());
+  ASSERT_TRUE (ft != nullptr);
+  ft->MutableProto().set_isaccountbound(false);
+  const std::string originalName = ft->GetProto().name();
+  ft.reset();
+
+  Amount before;
+  { auto a = xayaplayers.GetByName ("domob", ctx.RoConfig()); before = a->GetBalance (); }
+
+  /* Pay 0.49 COIN -- enough for a T1 bundle (0.14) AND a reroll (>=0.14) -- in a
+     single move carrying both commands. */
+  ProcessWithDevPayment (R"([{
+    "name": "domob",
+    "move": { "pc": "T1", "nr": 4 }
+  }])", 0.49 * COIN);
+
+  /* Exactly ONE of the two happened: crystals were minted (pc dispatches before
+     nr) and the name was NOT rerolled -- only one payment was spent. */
+  ft = tbl3.GetById(4, ctx.RoConfig());
+  ASSERT_TRUE (ft != nullptr);
+  EXPECT_EQ (originalName, ft->GetProto().name());     // reroll did NOT happen
+  ft.reset();
+  ExpectBalances ({{"domob", before + 100}});          // crystals minted once
 }
 
 TEST_F (CoinOperationTests, PurchaseStuff)
