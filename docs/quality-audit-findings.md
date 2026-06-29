@@ -40,7 +40,7 @@ See `quality-audit-2026-06-29.md` for plan + baseline. Status: TODO / DONE / DEF
 | FN31 | B | src/moveprocessor.cpp:3292-3299 | dead-code | low | neutral | Candy rarity lookup is dead generality (hard-coded 0.1) | DONE |
 | FN32 | B | src/moveprocessor.cpp:3513-3520 | clarity | low | neutral | 296-element name-price lookup table inlined and rebuilt every call | DONE |
 | FN33 | B | src/params.hpp:36-56 | dead-code | medium | neutral | Entire Params class is dead (no methods, never read) | DEFERRED(B2) |
-| FN34 | C | src/gamestatejson.cpp:260-276 | taurion-baggage | medium | regen | Dead 'activities' JSON emitter for an unpopulated table | TODO |
+| FN34 | C | src/gamestatejson.cpp:260-276 | taurion-baggage | medium | regen | Dead 'activities' JSON emitter for an unpopulated table | DONE (84c56f1) |
 | FN35 | B | src/jsonutils.cpp:45-53 | dead-code | medium | neutral | CoinAmountFromJson declared/defined but never called | DONE |
 | FN36 | B | src/jsonutils.cpp:33-40 | taurion-baggage | low | neutral | Stale vCHI comment on coin/id constants | DONE |
 | FN37 | B | src/rest.cpp:22-54 | overengineering | medium | neutral | REST API is dead scaffolding: Process() always 404s, dead flag, dead stop machinery | DONE |
@@ -68,13 +68,13 @@ See `quality-audit-2026-06-29.md` for plan + baseline. Status: TODO / DONE / DEF
 | FN59 | B | database/inventory.hpp:1-3 | taurion-baggage | low | neutral | Stale 'Taurion blockchain game' copyright headers and vestigial 'after fork' prestige comments | DONE |
 | FN60 | B | database/fighter.cpp:110-131 | overengineering | low | neutral | Animations are re-collected and re-sorted inside the per-move loop in FighterInstance constructor | DONE |
 | FN61 | B | database/recipe.cpp:87-138 | dry-duplication | low | neutral | RecipeInstance proto constructor takes CraftedRecipe by value and duplicates the field-copy of the string-GUID constructor | DEFERRED(B2) |
-| FN62 | C | proto/config.proto:104-105 | dead-code | low | neutral | Params.prestige_total_treats_mod is never read by any C++ code | TODO |
-| FN63 | C | proto/activity.proto:24-48 | taurion-baggage | medium | regen | Activity message / activities table is a fully dead feature (never populated) | TODO |
-| FN64 | C | proto/ongoing.proto:44-45 | dead-code | low | neutral | OngoinOperation.ItemDatabaseID (field 7) is completely unused | TODO |
-| FN65 | C | proto/tournament_blueprint.proto:47-48 | dead-code | medium | regen | MaxRewardQuality is never applied as a reward cap (dead in both blueprint protos + data tables) | TODO |
-| FN66 | C | proto/activity_reward_instance.proto:26 | dead-code | low | regen | Deconstruction.DeconstructionId (field 1) is write-only | TODO |
-| FN67 | C | proto/fighter.proto:37-38 | money-correctness | low | neutral | FighterSaleEntry.Price is uint32 while ExchangePrice is uint64 (silent narrowing of sale price) | TODO |
-| FN68 | C | proto/config.proto:129-180 | taurion-baggage | low | neutral | Vestigial Taurion comments in ConfigData (vehicles / safe zones / prizes) | TODO |
+| FN62 | C | proto/config.proto:104-105 | dead-code | low | neutral | Params.prestige_total_treats_mod is never read by any C++ code | DONE (183f13a) |
+| FN63 | C | proto/activity.proto:24-48 | taurion-baggage | medium | regen | Activity message / activities table is a fully dead feature (never populated) | DONE (84c56f1) |
+| FN64 | C | proto/ongoing.proto:44-45 | dead-code | low | neutral | OngoinOperation.ItemDatabaseID (field 7) is completely unused | DONE (183f13a) |
+| FN65 | C | proto/tournament_blueprint.proto:47-48 | dead-code | medium | regen | MaxRewardQuality is never applied as a reward cap (dead in both blueprint protos + data tables) | DONE (419dd57) |
+| FN66 | C | proto/activity_reward_instance.proto:26 | dead-code | low | regen | Deconstruction.DeconstructionId (field 1) is write-only | DONE (419dd57) |
+| FN67 | C | proto/fighter.proto:37-38 | money-correctness | low | neutral | FighterSaleEntry.Price is uint32 while ExchangePrice is uint64 (silent narrowing of sale price) | DONE (183f13a) |
+| FN68 | C | proto/config.proto:129-180 | taurion-baggage | low | neutral | Vestigial Taurion comments in ConfigData (vehicles / safe zones / prizes) | DONE (183f13a) |
 | FN69 | A1 | src/moveprocessor.cpp:351 | money-correctness | low | neutral | Floating-point money threshold 0.14 * COIN in a consensus path | DONE |
 | FN70 | A1 | src/moveprocessor.cpp:3743-3751 | money-correctness | low | neutral | Exchange payout lacks a value-conservation guard (sale_percentage > 1.0 would mint) | DONE |
 | FN71 | A1 | src/moveprocessor.cpp:3729-3751 | money-correctness | low | neutral | Seller handle dereferenced without null-check in exchange payout | DONE |

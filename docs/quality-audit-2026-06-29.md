@@ -60,13 +60,21 @@ worth a config balance glance. Flagged to user.
 | DEF7 | Per-entity table boilerplate copy-pasted across 6 DB classes | Large cross-cutting templatization; high churn |
 | FN50 | QuantityProduct (GMP bignum) dead outside tests; drops whole GMP dep | Build-dependency change — verify GMP isn't needed elsewhere before removing |
 
-## RESUME STATE (2026-06-29, after FN1/FN2/FN72; before Pass C/D/F/B2)
+## RESUME STATE (2026-06-29, after Pass C; before Pass D/F/B2)
 
 **Done + committed** (branch `polygon-rewrite`, on top of `e2f4183`): Pass A1 `0c02348`, A2 `f6ffde4`,
-B `1947cd0`, **FN1+FN2+FN72 `bf5271b`** (+ doc commits). 49 findings fixed; full suite green (98 unit +
-golden byte-identical + 4 reorg + 2 reorg-game + 4 roconfig + 32 database). Per-finding status in
-`quality-audit-findings.md`. **NEXT = Pass C** (dead proto/config fields, regen).
-**Heed the BUILD GOTCHA in the progress log before any proto/proto2/*.pb.text edit.**
+B `1947cd0`, **FN1+FN2+FN72 `bf5271b`**, **Pass C** = `183f13a` (FN62/64/67/68 neutral) + `419dd57`
+(FN65/66) + `84c56f1` (FN34/63 activities teardown). **ALL 71 fix-now findings + FN72 DONE** (0 TODO).
+Full suite green (98 unit + golden + 4 reorg + 2 reorg-game + 4 roconfig + 32 database). Per-finding
+status in `quality-audit-findings.md`.
+
+**NEXT = Pass D** (determinism: DEF8/DEF9 float->int proto probabilities in recipe.cpp + fighter.cpp;
+verify says golden-neutral since config values are exact integers), then **Pass F** (split the
+4157-line moveprocessor.cpp + logic.cpp into cohesive TUs, each golden byte-identical), then **Pass B2**
+(FN11 rename, FN33 dead Params class, FN50 drop GMP dep, FN61 merge recipe ctors, pending.hpp dead
+member, repo-wide Taurion copyright headers x7).
+**Heed the BUILD GOTCHA in the progress log before any proto/proto2/*.pb.text edit. Pass C's activities
+teardown needed autoreconf -i + ./config.status (Makefile.am changes) -- D/F may too.**
 
 **User decisions (this session):**
 1. **[DONE `bf5271b`] FN1 reward-roll** = *"Fix + you re-tune for me"* — apply strict `<` at all 5 roll sites + FN2
@@ -131,6 +139,14 @@ detail of every finding is in the workflow output `wgm9hkdph` (scratchpad `audit
     with `pb.MergeFrom(pb.regtest_merge())` — **source aliasing destination**, undefined in protobuf,
     silently dropping merged scalar Weights. Invisible for years only because every overlay value was 0.
     Fixed by copying the sub-message out first. No-op on mainnet/Polygon (no overlay merged there).
+- 2026-06-29: **Pass C DONE** — `183f13a` (FN62 dead Params.prestige_total_treats_mod, FN64 dead
+  OngoingOperation.ItemDatabaseID, FN67 widen FighterSaleEntry.Price uint32->uint64, FN68 Taurion
+  comments; all golden byte-identical), `419dd57` (FN65 MaxRewardQuality removed from both blueprint
+  protos + tournament.cpp + 43 config entries + roconfig validation, FN66 Deconstruction.DeconstructionId;
+  golden byte-identical -- the JSON dump never surfaced these), `84c56f1` (FN34+FN63 full removal of the
+  dead `activities` table/proto/ActivityTable/gamestatejson emitter; needed autoreconf for 3 Makefile.am
+  edits + schema regen; golden regenerated, diff is exactly one line `- "activities" : []`, deterministic).
+  **All 71 fix-now findings + FN72 now DONE.**
   - **BUILD GOTCHA (cost ~30 min — READ BEFORE TOUCHING proto/ or proto2/):** `src/libtf.la` *bundles*
     proto2's `roconfig.o` (libtool convenience-lib), and the dependency is **not tracked** — editing
     `proto/roconfig.cpp` or a `*.pb.text` and running incremental `make` (even `make clean` in `src` or
