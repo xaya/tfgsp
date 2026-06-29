@@ -194,7 +194,7 @@ RecipeInstance::BindFieldValues (Database::Statement& stmt) const
   stmt.Bind (2, owner);
 }
 
-uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xaya::Random& rnd, Database& db, std::string owner, bool fork)
+uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xaya::Random& rnd, Database& db, std::string owner)
 {
     std::vector<pxd::proto::FighterName> potentialNames;
     const auto& fighterNames = cfg->fighternames();
@@ -254,9 +254,8 @@ uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xa
 	std::vector<std::string> candidates1collected;
 	
     std::vector<int32_t> candidates0collectedR;
-	std::vector<int32_t> candidates1collectedR;	
+	std::vector<int32_t> candidates1collectedR;
 
-	int32_t biggetRollSoFar = 0;
 	while(candidates0collected.size() == 0)
 	{
 		for(int32_t e =0; e < (int32_t)position0names.size(); e++)
@@ -284,7 +283,6 @@ uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xa
 		}	
 	}
 	
-	biggetRollSoFar = 0;
 	while(candidates1collected.size() == 0)
 	{
 		for(int32_t e =0; e < (int32_t)position1names.size(); e++)

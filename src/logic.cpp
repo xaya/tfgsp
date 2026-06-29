@@ -184,9 +184,7 @@ std::vector<uint32_t> PXLogic::GenerateActivityReward(const uint32_t fighterID, 
       
       if((RewardType)(int32_t)rw.type() == RewardType::GeneratedRecipe)
       {
-		  bool isFork = false;
-		  
-          newReward->MutableProto().set_generatedrecipeid(pxd::RecipeInstance::Generate((pxd::Quality)(int32_t)rw.generatedrecipequality(), ctx.RoConfig(), rnd, db, "", isFork));                      
+          newReward->MutableProto().set_generatedrecipeid(pxd::RecipeInstance::Generate((pxd::Quality)(int32_t)rw.generatedrecipequality(), ctx.RoConfig(), rnd, db, ""));
           iDS.push_back(newReward->GetId());
           
           LOG (INFO) << "GeneratedRecipe reward generated";
@@ -544,7 +542,6 @@ void PXLogic::ResolveExpedition(std::unique_ptr<XayaPlayer>& a, const std::strin
     }
    
     fighter->SetStatus(FighterStatus::Available);
-	int32_t rating =  fighter->GetProto().rating();
 
     fpm::fixed_24_8 totalWeight = fpm::fixed_24_8(0);
     for(auto& rw: rewardTableDb.rewards())
@@ -1101,33 +1098,39 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
       std::map<std::string, fpm::fixed_24_8> participatingPlayerTotalScore;
 
       std::map<uint32_t, proto::TournamentResult*> fighterResults;
-      //Lets collect teams
-      
-      if((pxd::TournamentState)(int32_t)tnm->GetInstance().state() == pxd::TournamentState::Running)
+
+      // Group the tournament's fighters into per-owner teams (shared verbatim by
+      // the Running and Listed branches below).
+      auto collectTeams = [&] ()
       {
         for(auto participantFighter : tnm->GetInstance().fighters())
         {
             auto fighter = fighters.GetById (participantFighter, ctx.RoConfig ());
             if (fighter == nullptr) continue;
             std::string owner = fighter->GetOwner();
-            
+
             if (teams.find(owner) == teams.end())
             {
               std::vector<uint32_t> newTeam;
               newTeam.push_back(participantFighter);
-              
-              teams.insert(std::pair<std::string, std::vector<uint32_t>>(owner, newTeam));  
+
+              teams.insert(std::pair<std::string, std::vector<uint32_t>>(owner, newTeam));
             }
             else
             {
               teams[owner].push_back(participantFighter);
             }
-            
+
             fighter.reset();
         }
-        
+
         tnm->MutableInstance().set_teamsjoined(teams.size());
-        
+      };
+
+      if((pxd::TournamentState)(int32_t)tnm->GetInstance().state() == pxd::TournamentState::Running)
+      {
+        collectTeams();
+
         //Lets populate pairs now
         
         for(auto element1 = teams.begin() ; element1 != teams.end() ; ++element1) 
@@ -1147,38 +1150,13 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
       }
 
       if((pxd::TournamentState)(int32_t)tnm->GetInstance().state() == pxd::TournamentState::Listed)
-      {          
-        for(auto participantFighter : tnm->GetInstance().fighters())
-        {
-            auto fighter = fighters.GetById (participantFighter, ctx.RoConfig ());
-            if (fighter == nullptr) continue;
-            std::string owner = fighter->GetOwner();
-            
-            if (teams.find(owner) == teams.end())
-            {
-              std::vector<uint32_t> newTeam;
-              newTeam.push_back(participantFighter);
-              
-              teams.insert(std::pair<std::string, std::vector<uint32_t>>(owner, newTeam));  
-            }
-            else
-            {
-              teams[owner].push_back(participantFighter);
-            }
-            
-            fighter.reset();
-        }
-        
-        tnm->MutableInstance().set_teamsjoined(teams.size());          
-          
+      {
+        collectTeams();
+
         if((int32_t)tnm->GetProto().teamcount() * (int32_t)tnm->GetProto().teamsize() == tnm->GetInstance().fighters_size())
         {
           tnm->MutableInstance().set_state((int32_t)pxd::TournamentState::Running);
           tnm->MutableInstance().set_blocksleft(tnm->GetProto().duration());
-        }
-        else
-        {
-
         }
       }
       else if((pxd::TournamentState)(int32_t)tnm->GetInstance().state() == pxd::TournamentState::Running)
@@ -1224,19 +1202,9 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
               
               //Rewards creation goes now
               XayaPlayersTable xayaplayers(db);
-			  
-			  std::map<std::string, uint32_t> playersAwarded;
-              
-			  
+
               for(const auto& participant: participatingPlayerTotalScore)
               {
-				  if (playersAwarded.find(participant.first) == playersAwarded.end())
-				  {
-					  playersAwarded.insert(std::pair<std::string, int32_t>(participant.first, 0));
-				  }
-
-				  playersAwarded[participant.first] += 1;	
-
                   std::string rewardTableId = tnm->GetProto().baserewardstableid();
                   uint32_t rollCount = tnm->GetProto().baserollcount();
                   
@@ -1246,8 +1214,6 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
                      rollCount = tnm->GetProto().winnerrollcount();
                   }
 
-                  if(playersAwarded[participant.first] > tnm->GetProto().teamsize() * rollCount) continue;				  
-				  			  
                   auto a = xayaplayers.GetByName(participant.first, ctx.RoConfig());
                   pxd::proto::ActivityReward rewardTableDb;
                       
@@ -1266,9 +1232,13 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
 
                   if(rewardsSolved == false)
                   {
-                      LOG (WARNING) << "Could not resolve expedition rewards in logic  with authID: " << rewardTableId;
-                      tnm.reset();
-                      return;             
+                      /* Skip only this participant's reward on a misconfigured
+                         reward-table id; do NOT abandon every remaining tournament
+                         + the demand-queue creation by returning from the whole
+                         function (which also left this tournament Running forever,
+                         re-awarding every block). */
+                      LOG (WARNING) << "Could not resolve tournament rewards with authID: " << rewardTableId;
+                      continue;
                   }
                                         									
                   fpm::fixed_24_8 totalWeight = fpm::fixed_24_8(0);
@@ -1627,18 +1597,12 @@ PXLogic::UpdateState (xaya::SQLiteDatabase& db, const Json::Value& blockData)
       stateNumericValue += fState["rewards"].size();
       stateNumericValue += fState["recepies"].size();
 
-      std::vector<std::string> sortedFighterNames;
       std::string finalStringForHasing = "";
       finalStringForHasing +=std::to_string(stateNumericValue);
-      
+
       for(auto& ft: fState["fighters"])
       {
-          sortedFighterNames.push_back(ft["name"].asString());
-      }
-      
-      for(auto& name: sortedFighterNames)
-      {
-          finalStringForHasing += name;
+          finalStringForHasing += ft["name"].asString();
       }
       
       std::ostringstream ss;

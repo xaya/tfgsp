@@ -54,13 +54,4 @@ template <typename T>
   return PlayerRole::INVALID; // unreachable; silences -Wreturn-type
 }
 
-template <typename T>
-  PlayerRole
-  GetPlayerRoleFromColumn (const Database::Result<T>& res)
-{
-  const PlayerRole f = GetNullablePlayerRoleFromColumn (res);
-  CHECK (f != PlayerRole::INVALID) << "Unexpected NULL role";
-  return f;
-}
-
 } // namespace pxd

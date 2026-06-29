@@ -35,10 +35,12 @@ struct GlobalDataResult : public Database::ResultType
   RESULT_COLUMN (std::string, queuedata,5);
 };
 
-} // anonymous namespace
-
-int64_t
-GlobalData::GetChiMultiplier ()
+/**
+ * Fetches the single globaldata row (id=0) and steps onto it.  The caller
+ * reads the column(s) it needs and then asserts there is no further row.
+ */
+Database::Result<GlobalDataResult>
+FetchGlobalDataRow (Database& db)
 {
   auto stmt = db.Prepare (R"(
     SELECT *
@@ -48,6 +50,31 @@ GlobalData::GetChiMultiplier ()
 
   auto res = stmt.Query<GlobalDataResult> ();
   CHECK (res.Step ());
+
+  return res;
+}
+
+/**
+ * Updates a single column of the globaldata row (id=0) to the given value.
+ */
+template <typename T>
+  void
+  SetGlobalDataColumn (Database& db, const std::string& column, const T& value)
+{
+  auto stmt = db.Prepare (
+      "UPDATE `globaldata` SET (`" + column + "`) = (?1) WHERE id=0");
+
+  stmt.Reset ();
+  stmt.Bind (1, value);
+  stmt.Execute ();
+}
+
+} // anonymous namespace
+
+int64_t
+GlobalData::GetChiMultiplier ()
+{
+  auto res = FetchGlobalDataRow (db);
 
   const int64_t chimultiplier = res.Get<GlobalDataResult::chimultiplier> ();
   CHECK (!res.Step ());
@@ -57,27 +84,13 @@ GlobalData::GetChiMultiplier ()
 
 void GlobalData::SetChiMultiplier(int64_t newMultiplier)
 {
-  auto stmt = db.Prepare (R"(
-    UPDATE `globaldata` SET
-      (`chimultiplier`) = (?1) WHERE id=0
-  )");
-
-  stmt.Reset ();
-  stmt.Bind (1, newMultiplier);
-  stmt.Execute ();
+  SetGlobalDataColumn (db, "chimultiplier", newMultiplier);
 }
 
 std::string
 GlobalData::GetVersion ()
 {
-  auto stmt = db.Prepare (R"(
-    SELECT *
-      FROM `globaldata`
-      WHERE `id` = 0
-  )");
-
-  auto res = stmt.Query<GlobalDataResult> ();
-  CHECK (res.Step ());
+  auto res = FetchGlobalDataRow (db);
 
   const std::string version = res.Get<GlobalDataResult::version> ();
   CHECK (!res.Step ());
@@ -87,27 +100,13 @@ GlobalData::GetVersion ()
 
 void GlobalData::SetVersion(std::string version)
 {
-  auto stmt = db.Prepare (R"(
-    UPDATE `globaldata` SET
-      (`version`) = (?1) WHERE id=0
-  )");
-
-  stmt.Reset ();
-  stmt.Bind (1, version);
-  stmt.Execute ();
+  SetGlobalDataColumn (db, "version", version);
 }
 
 std::string
 GlobalData::GetUrl ()
 {
-  auto stmt = db.Prepare (R"(
-    SELECT *
-      FROM `globaldata`
-      WHERE `id` = 0
-  )");
-
-  auto res = stmt.Query<GlobalDataResult> ();
-  CHECK (res.Step ());
+  auto res = FetchGlobalDataRow (db);
 
   const std::string url = res.Get<GlobalDataResult::url> ();
   CHECK (!res.Step ());
@@ -117,27 +116,13 @@ GlobalData::GetUrl ()
 
 void GlobalData::SetUrl(std::string url)
 {
-  auto stmt = db.Prepare (R"(
-    UPDATE `globaldata` SET
-      (`url`) = (?1) WHERE id=0
-  )");
-
-  stmt.Reset ();
-  stmt.Bind (1, url);
-  stmt.Execute ();
+  SetGlobalDataColumn (db, "url", url);
 }
 
 std::string
 GlobalData::GetQueueData ()
 {
-  auto stmt = db.Prepare (R"(
-    SELECT *
-      FROM `globaldata`
-      WHERE `id` = 0
-  )");
-
-  auto res = stmt.Query<GlobalDataResult> ();
-  CHECK (res.Step ());
+  auto res = FetchGlobalDataRow (db);
 
   const std::string queuedata = res.Get<GlobalDataResult::queuedata> ();
   CHECK (!res.Step ());
@@ -147,14 +132,7 @@ GlobalData::GetQueueData ()
 
 void GlobalData::SetQueueData(std::string queuedata)
 {
-  auto stmt = db.Prepare (R"(
-    UPDATE `globaldata` SET
-      (`queuedata`) = (?1) WHERE id=0
-  )");
-
-  stmt.Reset ();
-  stmt.Bind (1, queuedata);
-  stmt.Execute ();
+  SetGlobalDataColumn (db, "queuedata", queuedata);
 }
 
 void

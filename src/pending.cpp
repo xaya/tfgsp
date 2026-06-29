@@ -71,45 +71,6 @@ PendingState::GetXayaPlayerState (const XayaPlayer& a, FighterTable& fighters, c
       std::map<std::string, uint64_t> fungiblesCopy(currentFungibleSetCC);
       ins.first->second.onChainFungibleSet = fungiblesCopy;     
       CHECK (ins.second);
-	  
-	  // Prepare data for transifugre proper checks
-	 Json::Value wholeFightersData(Json::objectValue);  
-
-	 auto res3 = fighters.QueryForOwner (name);
-	 bool tryAndStep3 = res3.Step();
-		
-	 while (tryAndStep3)
-	 {
-			auto fighterDb = fighters.GetFromResult (res3, config); 
-			
-			std::stringstream keySS;
-			keySS << fighterDb->GetId();
-			std::string keySSStr = keySS.str();
-			
-			wholeFightersData[keySSStr]["name"] = fighterDb->GetProto().name();
-			
-			Json::Value armorPieces(Json::arrayValue);
-			for(auto& ap : fighterDb->GetProto().armorpieces())
-			{
-				Json::Value piece(Json::objectValue);
-				piece["candy"] = ap.candy();
-				piece["armortype"] = ap.armortype();
-				armorPieces.append(piece);
-			}	
-			wholeFightersData[keySSStr]["armorpieces"] = armorPieces;			
-			
-			Json::Value moves(Json::arrayValue);
-			for(auto& mv : fighterDb->GetProto().moves())
-			{
-				moves.append(mv);
-			}	
-			wholeFightersData[keySSStr]["moves"] = moves;
-			
-			fighterDb.reset();
-			tryAndStep3 = res3.Step();     
-
-            ins.first->second.onChainPlayerFighterData.push_back(wholeFightersData);			
-	 }
 
      VLOG (1) << "Account " << name << " was not yet pending, adding pending entry";
      return ins.first->second;
@@ -819,14 +780,14 @@ PendingStateUpdater::ProcessMove (const Json::Value& moveObj)
         pxd::proto::ExpeditionBlueprint expeditionBlueprint;
         std::vector<int> fighter; 
 
-        if(ParseExpeditionData(*a, name, upd2["f"], expeditionBlueprint, fighter, duration, weHaveApplibeGoodyName))
+        if(ParseExpeditionData(*a, upd2["f"], expeditionBlueprint, fighter, duration, weHaveApplibeGoodyName))
         {
           state.AddExpeditionInstance(*a, duration, expeditionBlueprint.authoredid(), fighter, fighters, ctx.RoConfig ());
         }  
 
         std::vector<std::string> expeditionIDArray;
         
-        if(ParseRewardData(*a, name, upd2["c"], rewardDatabaseIds, expeditionIDArray))
+        if(ParseRewardData(*a, upd2["c"], rewardDatabaseIds, expeditionIDArray))
         {
           state.AddRewardIDs(*a, expeditionIDArray, rewardDatabaseIds, fighters, ctx.RoConfig ());
         }  
@@ -841,7 +802,7 @@ PendingStateUpdater::ProcessMove (const Json::Value& moveObj)
         std::vector<uint32_t> fighterIDS;   
         std::vector<uint32_t> fighterIDSL; 
         
-        if(ParseTournamentEntryData(*a, name, upd3["e"], tournamentID, fighterIDS))
+        if(ParseTournamentEntryData(*a, upd3["e"], tournamentID, fighterIDS))
         {
            state.AddTournamentEntries(*a, tournamentID, fighterIDS, fighters, ctx.RoConfig ());  
         }
@@ -851,7 +812,7 @@ PendingStateUpdater::ProcessMove (const Json::Value& moveObj)
            state.AddTournamentLeaves(*a, tournamentID, fighterIDSL, fighters, ctx.RoConfig ());  
         }    
         
-        if(ParseTournamentRewardData(*a, name, upd3["c"], rewardDatabaseIds, tournamentID))
+        if(ParseTournamentRewardData(*a, upd3["c"], rewardDatabaseIds, tournamentID))
         {
            state.AddTournamentRewardIDs(*a, tournamentID, rewardDatabaseIds, fighters, ctx.RoConfig ()); 
         }    
@@ -863,33 +824,33 @@ PendingStateUpdater::ProcessMove (const Json::Value& moveObj)
       
       if(upd4.isObject())
       {  
-        if(ParseDeconstructData(*a, name, upd4["d"], fighterID))
+        if(ParseDeconstructData(*a, upd4["d"], fighterID))
         {
           state.AddDeconstructionData(*a, fighterID, fighters, ctx.RoConfig ());  
         }
         
-        if(ParseDeconstructRewardData(*a, name, upd4["c"], fighterID)) 
+        if(ParseDeconstructRewardData(*a, upd4["c"], fighterID))
         {
           state.AddDeconstructionRewardData(*a, fighterID, fighters, ctx.RoConfig ());  
         }    
         
         uint32_t durationI = -1;
-        if(ParseFighterForSaleData(*a, name, upd4["s"], fighterID, durationI, price, listingfee))
+        if(ParseFighterForSaleData(*a, upd4["s"], fighterID, durationI, price, listingfee))
         {
           state.AddFighterForSaleData(*a, fighterID, listingfee, fighters, ctx.RoConfig ());  
         }   
 
-        if(ParseBuyData(*a, name, upd4["b"], fighterID, exchangeprice)) 
+        if(ParseBuyData(*a, upd4["b"], fighterID, exchangeprice))
         {
           state.AddFighterForBuyData(*a, fighterID, exchangeprice, fighters, ctx.RoConfig ());  
         }        
         
-        if(ParseRemoveBuyData(*a, name, upd4["r"], fighterID))
+        if(ParseRemoveBuyData(*a, upd4["r"], fighterID))
         {
           state.RemoveFromSaleData(*a, fighterID, fighters, ctx.RoConfig ());  
         }
 		
-        if(ParseTransfigureData(*a, name, upd4["t"]))
+        if(ParseTransfigureData(*a, upd4["t"]))
         {
           state.AddTransfigureData(*a, upd4["t"], fighters, ctx.RoConfig ());  
         }		

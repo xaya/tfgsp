@@ -491,7 +491,7 @@ TEST_F (CoinOperationTests, TransfigureWrongValues)
   // Generate recipes and candies and fighters to feed out needs
   for (unsigned i = 0; i < 10; ++i)
   {
-    auto rcpID = pxd::RecipeInstance::Generate(pxd::Quality::Common, ctx.RoConfig(), rnd, db, "", true);
+    auto rcpID = pxd::RecipeInstance::Generate(pxd::Quality::Common, ctx.RoConfig(), rnd, db, "");
     auto r = tbl2.GetById(rcpID);
 	r->SetOwner("domob");
 	r.reset();  
@@ -510,7 +510,7 @@ TEST_F (CoinOperationTests, TransfigureWrongValues)
   
   for (unsigned i = 0; i < 10; ++i)
   {
-    auto rcpID = pxd::RecipeInstance::Generate(pxd::Quality::Uncommon, ctx.RoConfig(), rnd, db, "", true);
+    auto rcpID = pxd::RecipeInstance::Generate(pxd::Quality::Uncommon, ctx.RoConfig(), rnd, db, "");
     auto r = tbl2.GetById(rcpID);
 	r->SetOwner("domob");
 	r.reset();  
@@ -529,7 +529,7 @@ TEST_F (CoinOperationTests, TransfigureWrongValues)
   
   for (unsigned i = 0; i < 10; ++i)
   {
-    auto rcpID = pxd::RecipeInstance::Generate(pxd::Quality::Rare, ctx.RoConfig(), rnd, db, "", true);
+    auto rcpID = pxd::RecipeInstance::Generate(pxd::Quality::Rare, ctx.RoConfig(), rnd, db, "");
     auto r = tbl2.GetById(rcpID);
 	r->SetOwner("domob");
 	r.reset();  
@@ -548,7 +548,7 @@ TEST_F (CoinOperationTests, TransfigureWrongValues)
   
   for (unsigned i = 0; i < 10; ++i)
   {
-    auto rcpID = pxd::RecipeInstance::Generate(pxd::Quality::Epic, ctx.RoConfig(), rnd, db, "", true);
+    auto rcpID = pxd::RecipeInstance::Generate(pxd::Quality::Epic, ctx.RoConfig(), rnd, db, "");
     auto r = tbl2.GetById(rcpID);
 	r->SetOwner("domob");
 	r.reset();  

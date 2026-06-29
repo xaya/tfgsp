@@ -160,7 +160,7 @@ protected:
    * Tries to parse a move that puts fighter on the auction
    */       
     
-  bool ParseFighterForSaleData(const XayaPlayer& a, const std::string& name, const Json::Value& fighter, uint32_t& fighterID, 
+  bool ParseFighterForSaleData(const XayaPlayer& a, const Json::Value& fighter, uint32_t& fighterID, 
   uint32_t& duration, Amount& price, Amount& listingfee);
       
   /**
@@ -192,7 +192,7 @@ protected:
    * Tries to parse a move that transfiures fighter
    */       
    
-  bool ParseTransfigureData(const XayaPlayer& a, const std::string& name, const Json::Value& fighter);
+  bool ParseTransfigureData(const XayaPlayer& a, const Json::Value& fighter);
     
   /**
    * Tries to parse a move that collects cooked fighter
@@ -204,13 +204,13 @@ protected:
    * Tries to parse a move that send fighter on the expedition
    */    
  
-  bool ParseExpeditionData(const XayaPlayer& a, const std::string& name, const Json::Value& expedition, pxd::proto::ExpeditionBlueprint& expeditionBlueprint, std::vector<int32_t>& fightersIds, int32_t& duration, std::string& weHaveApplibeGoodyName);
+  bool ParseExpeditionData(const XayaPlayer& a, const Json::Value& expedition, pxd::proto::ExpeditionBlueprint& expeditionBlueprint, std::vector<int32_t>& fightersIds, int32_t& duration, std::string& weHaveApplibeGoodyName);
  
    /**
    * Tries to parse a move that send fighters on the tournament
    */ 
  
-  bool ParseTournamentEntryData(const XayaPlayer& a, const std::string& name, const Json::Value& tournament, uint32_t& tournamentID, std::vector<uint32_t>& fighterIDS);
+  bool ParseTournamentEntryData(const XayaPlayer& a, const Json::Value& tournament, uint32_t& tournamentID, std::vector<uint32_t>& fighterIDS);
  
   
  
@@ -218,7 +218,7 @@ protected:
    * Tries to parse a move that deconstructs fighter
    */ 
  
-  bool ParseDeconstructData(const XayaPlayer& a, const std::string& name, const Json::Value& fighter, uint32_t& fighterID);
+  bool ParseDeconstructData(const XayaPlayer& a, const Json::Value& fighter, uint32_t& fighterID);
   
   /**
    * Tries to parse a move sweetener fungible that upgrades fighter
@@ -232,19 +232,19 @@ protected:
    * Tries to parse a move that buys fighter from the exchange 
    */ 
  
-  bool ParseBuyData(const XayaPlayer& a, const std::string& name, const Json::Value& fighter, uint32_t& fighterID, Amount& exchangeprice);
+  bool ParseBuyData(const XayaPlayer& a, const Json::Value& fighter, uint32_t& fighterID, Amount& exchangeprice);
 
   /**
    * Tries to parse a move that removes fighter from the exchange 
    */ 
  
-  bool ParseRemoveBuyData(const XayaPlayer& a, const std::string& name, const Json::Value& fighter, uint32_t& fighterID);    
+  bool ParseRemoveBuyData(const XayaPlayer& a, const Json::Value& fighter, uint32_t& fighterID);    
   
   /**
    * Tries to parse a move that claims deconstruction rewards
    */ 
  
-  bool ParseDeconstructRewardData(const XayaPlayer& a, const std::string& name, const Json::Value& fighter, uint32_t& fighterID);  
+  bool ParseDeconstructRewardData(const XayaPlayer& a, const Json::Value& fighter, uint32_t& fighterID);  
     
    /**
    * Tries to parse a move that withdraws fighters from the tournament
@@ -257,13 +257,13 @@ protected:
    * Tries to parse a move that collects reward data
    */    
    
-  bool ParseRewardData(const XayaPlayer& a, const std::string& name, const Json::Value& expedition, std::vector<uint32_t>& rewardDatabaseIds, std::vector<std::string>& expeditionIDArray);
+  bool ParseRewardData(const XayaPlayer& a, const Json::Value& expedition, std::vector<uint32_t>& rewardDatabaseIds, std::vector<std::string>& expeditionIDArray);
   
    /**
    * Tries to parse a move that collects tournament reward data
    */    
    
-  bool ParseTournamentRewardData(const XayaPlayer& a, const std::string& name, const Json::Value& tournament, std::vector<uint32_t>& rewardDatabaseIds, uint32_t& tournamentID);  
+  bool ParseTournamentRewardData(const XayaPlayer& a, const Json::Value& tournament, std::vector<uint32_t>& rewardDatabaseIds, uint32_t& tournamentID);  
   
   /**
    * Function checks if fungible item is inside players inventory
@@ -279,7 +279,7 @@ public:
    *  Ultimately, we need to get rid of authID, as its seems redundant at
    *  this point, but need to keep for now to be more consistant with the
    *  original source */     
-  pxd::RecipeInstanceTable::Handle GetRecepieObjectFromID(const uint32_t& ID, const Context& ctx);
+  pxd::RecipeInstanceTable::Handle GetRecepieObjectFromID(const uint32_t& ID);
   static std::string GetCandyKeyNameFromID(const std::string& authID, const Context& ctx); 
   static Json::Value EvaluateFuelList(const Json::Value& fightersSubmited, const Json::Value& recipesSubmited, const Json::Value& candiesSubmited, const Json::Value& fightersNew, const Json::Value& recipesNew, const Json::Value& candiesNew, const Json::Value wholeFightersData,  const Json::Value wholeRecipeData, const Json::Value& candylist);
 
@@ -462,7 +462,7 @@ public:
    * Evaluates all submited resources and computes
    * final fuel power out of them
    */		
-  static fpm::fixed_24_8 CalculateFuelPower(const Json::Value& fighter, const Json::Value& wholeFighterData, const Json::Value& wholeRecipeData, const Json::Value& candylist, bool outputDebug);	
+  static fpm::fixed_24_8 CalculateFuelPower(const Json::Value& fighter, const Json::Value& wholeFighterData, const Json::Value& wholeRecipeData, bool outputDebug);
 
   explicit MoveProcessor (Database& d, xaya::Random& r,
                           const Context& c)

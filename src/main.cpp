@@ -37,8 +37,6 @@
 #include <iostream>
 #include <memory>
 
-#include <locale>
-#include <codecvt>
 #include <string>
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32) || defined(__MINGW32__) || defined(__MINGW64__)
@@ -53,7 +51,8 @@ namespace
 {
 
 DEFINE_string (xaya_rpc_url, "",
-               "URL at which Xaya Core's JSON-RPC interface is available");
+               "URL at which the Xaya X (Polygon) JSON-RPC interface is"
+               " available");
 DEFINE_int32 (xaya_rpc_protocol, 1,
               "JSON-RPC version for connecting to Xaya (use 2 for XayaX)");
 DEFINE_int32 (game_rpc_port, 0,
@@ -163,8 +162,7 @@ main (int argc, char** argv)
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   LOG (INFO)
-      << "Running tf version " << PACKAGE_VERSION
-      << " (" << "GIT_VERSION" << ")";
+      << "Running tf version " << PACKAGE_VERSION;
       
   gflags::SetUsageMessage ("Run tf game daemon");
   gflags::SetVersionString (PACKAGE_VERSION);
@@ -201,8 +199,7 @@ main (int argc, char** argv)
   config.EnablePruning = FLAGS_enable_pruning;
   config.DataDirectory = FLAGS_datadir;
   
-  bool nonAnsiDetected = false;
-  for (auto& c: config.DataDirectory ) 
+  for (auto& c: config.DataDirectory )
   {
     if (static_cast<unsigned char>(c) > 127) 
     {

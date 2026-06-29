@@ -170,8 +170,6 @@ private:
   static void CreateEloRating(const Context& ctx, fpm::fixed_24_8& ratingA, fpm::fixed_24_8& ratingB, fpm::fixed_24_8& scoreA, fpm::fixed_24_8& scoreB, fpm::fixed_24_8& expectedA, 
   fpm::fixed_24_8& expectedB, fpm::fixed_24_8& newRatingA, fpm::fixed_24_8& newRatingB);
 
-  static void EloGetNewRatings();
-
 
   /**
    * Updates the state with a custom FameUpdater.  This is used for mocking

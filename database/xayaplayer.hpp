@@ -74,17 +74,6 @@ struct ResultWithRole : public Database::ResultType
 
 
 /**
- * Retrieves a faction from a database column.  This function verifies that
- * the database value represents a valid faction.  Otherwise it crashes the
- * process (data corruption).
- *
- * This is templated, so that it can accept different database result types.
- * They should all be derived from ResultWithFaction, though.
- */
-template <typename T>
-  PlayerRole GetPlayerRoleFromColumn (const Database::Result<T>& res);
-
-/**
  * Retrieves a faction from a database column, which can also be NULL.
  * In the case of NULL, Faction::INVALID is returned.  Any other
  * value (i.e. non-matching integer values) will CHECK-fail.
@@ -200,21 +189,6 @@ public:
     return role;
   }
 
-  const bool
-  GetIsMine ();
-
-  std::string
-  SendCHI (std::string address, Amount amount);
-  
-  const bool
-  HasRole (PlayerRole role); 
-  
-  const bool
-  GrantRole (PlayerRole role);  
-
-  const bool
-  RevokeRole (PlayerRole role);   
-
   const proto::XayaPlayer&
   GetProto () const
   {
@@ -272,12 +246,6 @@ private:
    
   /*Helper utility function used in perstige calculations*/
   fpm::fixed_24_8 GetFighterPercentageFromQuality(uint32_t quality, std::vector<FighterTable::Handle>& fighters);
-  
-  /*We are not writing those in the database, so we need to create them on each 
-  time we load account or create fresh*/
-    
-  uint32_t recipe_slots;
-  uint32_t roster_slots;
 };
 
 /**

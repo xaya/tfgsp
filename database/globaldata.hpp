@@ -19,18 +19,18 @@
 #ifndef DATABASE_GLOBALDATA_HPP
 #define DATABASE_GLOBALDATA_HPP
 
-#include "amount.hpp"
 #include "database.hpp"
 
-#include <set>
+#include <cstdint>
 #include <string>
 
 namespace pxd
 {
 
 /**
- * Wrapper class around the database table holding data about
- * the money supply.
+ * Wrapper class around the single-row globaldata config table, holding the
+ * crystal/CHI price multiplier, the recommended client version and url, and
+ * the persisted tournament demand-queue data.
  */
 class GlobalData
 {

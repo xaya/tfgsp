@@ -80,8 +80,28 @@ FighterInstance::FighterInstance (Database& d, const std::string& o, uint32_t r,
   {
       return a.first < b.first;
   } 
-  );   
-    
+  );
+
+  std::vector<std::string> animationsToChoiceFrom;
+
+  std::vector<std::pair<std::string, pxd::proto::Animation>> sortedAnimations;
+  for (auto itr = animations.begin(); itr != animations.end(); ++itr)
+      sortedAnimations.push_back(*itr);
+
+  sort(sortedAnimations.begin(), sortedAnimations.end(), [=](std::pair<std::string, pxd::proto::Animation>& a, std::pair<std::string, pxd::proto::Animation>& b)
+  {
+      return a.first < b.first;
+  }
+  );
+
+  for(auto& animation: sortedAnimations)
+  {
+      if(animation.second.quality() == recepie->GetProto().quality())
+      {
+          animationsToChoiceFrom.push_back(animation.second.authoredid());
+      }
+  }
+
   for(auto& move: recepie->GetProto().moves())
   {
        std::string* newmove = MutableProto().add_moves();
@@ -104,26 +124,6 @@ FighterInstance::FighterInstance (Database& d, const std::string& o, uint32_t r,
                 newArmorPiece->set_rewardsource(0);
                 newArmorPiece->set_rewardsourceid("");
              }
-           }
-       }
-       
-       std::vector<std::string> animationsToChoiceFrom;
-       
-        std::vector<std::pair<std::string, pxd::proto::Animation>> sortedAnimations;
-        for (auto itr = animations.begin(); itr != animations.end(); ++itr)
-            sortedAnimations.push_back(*itr);
-
-        sort(sortedAnimations.begin(), sortedAnimations.end(), [=](std::pair<std::string, pxd::proto::Animation>& a, std::pair<std::string, pxd::proto::Animation>& b)
-        {
-            return a.first < b.first;
-        } 
-        );        
-       
-       for(auto& animation: sortedAnimations)
-       {
-           if(animation.second.quality() == recepie->GetProto().quality())
-           {
-               animationsToChoiceFrom.push_back(animation.second.authoredid());
            }
        }
        

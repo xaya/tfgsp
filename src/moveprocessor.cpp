@@ -74,6 +74,67 @@ AsciiToLower (const std::string& s)
 namespace pxd
 {
 
+namespace
+{
+
+/* Dedups a vector in place (the same algorithm the move parsers used inline)
+   and reports whether any duplicate was removed, so duplicate-id moves are
+   rejected identically across every call site.  */
+template <typename T>
+bool
+HasDuplicates (std::vector<T>& vec)
+{
+  const int32_t sizeBefore = vec.size ();
+  auto end = vec.end ();
+  for (auto it = vec.begin (); it != end; ++it)
+    end = std::remove (it + 1, end, *it);
+  vec.erase (end, vec.end ());
+  const int32_t sizeAfter = vec.size ();
+  return sizeBefore != sizeAfter;
+}
+
+/* Copies a protobuf map<string, T> into a vector<pair> sorted by key, so the
+   deterministic key ordering the consensus paths rely on is built one way.  */
+template <typename MapT>
+std::vector<std::pair<std::string, typename MapT::mapped_type>>
+SortPairsByKey (const MapT& m)
+{
+  std::vector<std::pair<std::string, typename MapT::mapped_type>> sorted;
+  for (auto itr = m.begin (); itr != m.end (); ++itr)
+    sorted.push_back (*itr);
+  std::sort (sorted.begin (), sorted.end (),
+             [] (const std::pair<std::string, typename MapT::mapped_type>& a,
+                 const std::pair<std::string, typename MapT::mapped_type>& b)
+             {
+               return a.first < b.first;
+             });
+  return sorted;
+}
+
+/* Finds the first owned goody of the given type in key-sorted order and, when
+   present, records its inventory key name and reduction percent.  */
+void
+FindApplicableGoody (const Inventory& inventory, const pxd::GoodyType goodyType,
+                     const std::vector<std::pair<std::string, pxd::proto::Goody>>& sortedGoodies,
+                     std::string& weHaveApplibeGoodyName,
+                     fpm::fixed_24_8& reductionPercent)
+{
+  for (const auto& goodie : sortedGoodies)
+  {
+    if (inventory.GetFungibleCount (goodie.first) > 0)
+    {
+      if (goodie.second.goodytype () == (int8_t) goodyType)
+      {
+        weHaveApplibeGoodyName = goodie.first;
+        reductionPercent = fpm::fixed_24_8 (goodie.second.reductionpercent ());
+        break;
+      }
+    }
+  }
+}
+
+} // anonymous namespace
+
 
 /*************************************************************************** */
 
@@ -243,10 +304,10 @@ BaseMoveProcessor::ParseGoodyBundlePurchase(const Json::Value& mv, Amount& cost,
       break;
     }
   }
-  
+
   if(exists == false)
   {
-      LOG (WARNING) << "Could not solve sweetener entry for: " << cmd;
+      LOG (WARNING) << "Could not solve goody bundle entry for: " << cmd;
       return false;      
   }
   
@@ -285,10 +346,10 @@ BaseMoveProcessor::ParseGoodyPurchase(const Json::Value& mv, Amount& cost, const
           break;
       }
   }
-  
+
   if(exists == false)
   {
-      LOG (WARNING) << "Could not solve sweetener entry for: " << cmd;
+      LOG (WARNING) << "Could not solve goody entry for: " << cmd;
       return false;      
   }
   
@@ -374,21 +435,6 @@ BaseMoveProcessor::ParseCrystalPurchase(const Json::Value& mv, std::string& bund
   bundleKeyCode = cmd.asString ();
   auto bundle_key_name = "CrystalsPurchase_" + bundleKeyCode;
   
-  bool bundleNameSolved = false;
-  
-  for(auto& bundle: ctx.RoConfig ()->crystalbundles())
-  {
-    if(bundle.first == bundle_key_name)
-    {
-      bundleNameSolved = true;
-    }
-  }     
-     
-  if(bundleNameSolved == false)
-  {
-      return false;
-  }      
-     
   int64_t chiPRICE_sats = -1;
 
   for(auto& bundle: ctx.RoConfig ()->crystalbundles())
@@ -454,12 +500,6 @@ BaseMoveProcessor::TrySweetenerPurchase (const std::string& name, const Json::Va
   auto player = xayaplayers.GetByName (name, ctx.RoConfig());
   CHECK (player != nullptr);
 
-  if (cmd.isObject ())
-  {
-      LOG (WARNING) << "Purchase sweetener is object: " << cmd;
-      return;
-  } 
-  
   Amount cost = 0;
   Amount total = 1;
   std::string fungibleName = "";
@@ -485,12 +525,6 @@ BaseMoveProcessor::TryGoodyPurchase (const std::string& name, const Json::Value&
   const auto player = xayaplayers.GetByName (name, ctx.RoConfig());
   CHECK (player != nullptr);
 
-  if (cmd.isObject ())
-  {
-      LOG (WARNING) << "Purchase goody is object: " << cmd;
-      return;
-  } 
-  
   Amount cost = 0;
   std::string fungibleName = "";
   uint64_t uses = 0;
@@ -515,12 +549,6 @@ BaseMoveProcessor::TryGoodyBundlePurchase (const std::string& name, const Json::
   const auto player = xayaplayers.GetByName (name, ctx.RoConfig());
   CHECK (player != nullptr);
 
-  if (cmd.isObject ())
-  {
-      LOG (WARNING) << "Purchase goody bundle is object: " << cmd;
-      return;
-  } 
-  
   Amount cost = 0;
   std::map<std::string, uint64_t> fungibles;
   if(!ParseGoodyBundlePurchase(mv, cost, name, fungibles, player->GetBalance()))
@@ -585,7 +613,7 @@ BaseMoveProcessor::TryCrystalPurchase (const std::string& name, const Json::Valu
   paidToDev = 0;
 }
 
-  pxd::RecipeInstanceTable::Handle BaseMoveProcessor::GetRecepieObjectFromID(const uint32_t& ID, const Context& ctx)
+  pxd::RecipeInstanceTable::Handle BaseMoveProcessor::GetRecepieObjectFromID(const uint32_t& ID)
   {
     return recipeTbl.GetById(ID);
   }
@@ -600,7 +628,6 @@ BaseMoveProcessor::TryCrystalPurchase (const std::string& name, const Json::Valu
         if(candy.second.authoredid() == authID)
         {
             return candy.first;
-            break;
         }
     }      
       
@@ -636,7 +663,7 @@ BaseMoveProcessor::TryCrystalPurchase (const std::string& name, const Json::Valu
 	 fighter["ic"] = aic;
 	 fighter["ir"] = air;
 
-	 fpm::fixed_24_8 fuelPowerOriginal = MoveProcessor::CalculateFuelPower(fighter, wholeFightersData, wholeRecipeData, candylist, false);
+	 fpm::fixed_24_8 fuelPowerOriginal = MoveProcessor::CalculateFuelPower(fighter, wholeFightersData, wholeRecipeData, false);
 	 
 	 Json::Value outputNewValues(Json::objectValue);	 
 	 Json::Value aif2(Json::arrayValue);
@@ -647,7 +674,7 @@ BaseMoveProcessor::TryCrystalPurchase (const std::string& name, const Json::Valu
 	 {
 		 Json::Value newEstimation = fighter;
 		 newEstimation["if"].append(ft);
-		 fpm::fixed_24_8 fuelPowerNewValue = MoveProcessor::CalculateFuelPower(newEstimation, wholeFightersData, wholeRecipeData, candylist, false);
+		 fpm::fixed_24_8 fuelPowerNewValue = MoveProcessor::CalculateFuelPower(newEstimation, wholeFightersData, wholeRecipeData, false);
 		 fpm::fixed_24_8 diff = (fuelPowerNewValue - fuelPowerOriginal);
 		 
 		 Json::Value result(Json::objectValue);
@@ -661,7 +688,7 @@ BaseMoveProcessor::TryCrystalPurchase (const std::string& name, const Json::Valu
 	 {
 		 Json::Value newEstimation = fighter;
 		 newEstimation["ir"].append(rc);
-		 fpm::fixed_24_8 fuelPowerNewValue = MoveProcessor::CalculateFuelPower(newEstimation, wholeFightersData, wholeRecipeData, candylist, false);
+		 fpm::fixed_24_8 fuelPowerNewValue = MoveProcessor::CalculateFuelPower(newEstimation, wholeFightersData, wholeRecipeData, false);
 		 fpm::fixed_24_8 diff = (fuelPowerNewValue - fuelPowerOriginal);
 		 
 		 Json::Value result(Json::objectValue);
@@ -680,7 +707,7 @@ BaseMoveProcessor::TryCrystalPurchase (const std::string& name, const Json::Valu
 		 cData["a"] = 10;
 		 newEstimation["ic"].append(cData);		 
 
-		 fpm::fixed_24_8 fuelPowerNewValue = MoveProcessor::CalculateFuelPower(newEstimation, wholeFightersData, wholeRecipeData, candylist, false);
+		 fpm::fixed_24_8 fuelPowerNewValue = MoveProcessor::CalculateFuelPower(newEstimation, wholeFightersData, wholeRecipeData, false);
 		 fpm::fixed_24_8 diff = (fuelPowerNewValue - fuelPowerOriginal);
 		 
 		 Json::Value result(Json::objectValue);
@@ -837,12 +864,10 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     xayaplayers.CreateNew (name, ctx.RoConfig (), rnd);
   }
 
-  /* Handle coin transfers before other game operations.  They are even
-     valid without a properly initialised account (so that vCHI works as
-     a real cryptocurrency, not necessarily tied to the game).
-     This also ensures that if funds run out, then the explicit transfers
-     are done with priority over the other operations that may require coins
-     implicitly.  */
+  /* Run the sub-move handlers in a fixed order.  The account is auto-created
+     above if needed, so handlers are valid even for a freshly seen name.  The
+     ordering also ensures that if funds run out, earlier handlers take priority
+     over later operations that may require coins implicitly.  */
      
   for(auto& mrl: moves)
   {
@@ -904,7 +929,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
       << " has " << paidToDev << " unconsumed paid-to-dev WCHI satoshi left";
 }
 
-  bool BaseMoveProcessor::ParseTournamentRewardData(const XayaPlayer& a, const std::string& name, const Json::Value& tournament, std::vector<uint32_t>& rewardDatabaseIds, uint32_t& tournamentID)
+  bool BaseMoveProcessor::ParseTournamentRewardData(const XayaPlayer& a, const Json::Value& tournament, std::vector<uint32_t>& rewardDatabaseIds, uint32_t& tournamentID)
   {
     if (!tournament.isObject ())
     return false;
@@ -949,7 +974,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     return true;
   }        
   
-  bool BaseMoveProcessor::ParseRewardData(const XayaPlayer& a, const std::string& name, const Json::Value& expedition, std::vector<uint32_t>& rewardDatabaseIds, std::vector<std::string>& expeditionIDArray)
+  bool BaseMoveProcessor::ParseRewardData(const XayaPlayer& a, const Json::Value& expedition, std::vector<uint32_t>& rewardDatabaseIds, std::vector<std::string>& expeditionIDArray)
   {
     if (!expedition.isObject ())
     return false;
@@ -1114,7 +1139,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     return true;
   }  
   
-  bool BaseMoveProcessor::ParseFighterForSaleData(const XayaPlayer& a, const std::string& name, const Json::Value& fighter, uint32_t& fighterID, uint32_t& duration, Amount& price, Amount& listingfee)
+  bool BaseMoveProcessor::ParseFighterForSaleData(const XayaPlayer& a, const Json::Value& fighter, uint32_t& fighterID, uint32_t& duration, Amount& price, Amount& listingfee)
   {
     if (!fighter.isObject ())
     {
@@ -1200,7 +1225,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     return true;    
   }    
   
-  bool BaseMoveProcessor::ParseRemoveBuyData(const XayaPlayer& a, const std::string& name, const Json::Value& fighter, uint32_t& fighterID)
+  bool BaseMoveProcessor::ParseRemoveBuyData(const XayaPlayer& a, const Json::Value& fighter, uint32_t& fighterID)
   {
     if (!fighter.isObject ())
     {
@@ -1242,7 +1267,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     return true;    
   }        
   
-  bool BaseMoveProcessor::ParseBuyData(const XayaPlayer& a, const std::string& name, const Json::Value& fighter, uint32_t& fighterID, Amount& exchangeprice)
+  bool BaseMoveProcessor::ParseBuyData(const XayaPlayer& a, const Json::Value& fighter, uint32_t& fighterID, Amount& exchangeprice)
   {
     if (!fighter.isObject ())
     {
@@ -1323,7 +1348,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     return true;    
   }      
 
-  bool BaseMoveProcessor::ParseDeconstructRewardData(const XayaPlayer& a, const std::string& name, const Json::Value& fighter, uint32_t& fighterID)
+  bool BaseMoveProcessor::ParseDeconstructRewardData(const XayaPlayer& a, const Json::Value& fighter, uint32_t& fighterID)
   {
     if (!fighter.isObject ())
     {
@@ -1387,7 +1412,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     return true;    
   }    
 
-  bool BaseMoveProcessor::ParseTransfigureData(const XayaPlayer& a, const std::string& name, const Json::Value& fighter)
+  bool BaseMoveProcessor::ParseTransfigureData(const XayaPlayer& a, const Json::Value& fighter)
   {
     if (!fighter.isObject ())
     {
@@ -1403,15 +1428,9 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
 
     if(!fighter["o"].isInt())
     {
-      LOG (WARNING) << "fid is not an int";
+      LOG (WARNING) << "o is not an int";
       return false;
-    }	
-	
-    if(!fighter["o"].isInt())
-    {
-      LOG (WARNING) << "fid is not an int";
-      return false;
-    }	
+    }
 	
     if(!fighter["if"].isArray())
     {
@@ -1464,14 +1483,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
       fighterIDS.push_back(ft.asInt());
     }	
 	
-	int32_t sizeBefore = fighterIDS.size();
-	auto end = fighterIDS.end();
-	for (auto it = fighterIDS.begin(); it != end; ++it) {
-		end = std::remove(it + 1, end, *it);
-	}
-	fighterIDS.erase(end, fighterIDS.end());
-	int32_t sizeAfter = fighterIDS.size();      
-	if(sizeBefore != sizeAfter)
+	if(HasDuplicates(fighterIDS))
 	{
 	  LOG (WARNING) << "Entry contained fighter duplicate ids";
 	  return false;             
@@ -1488,14 +1500,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
       itemRecipeIDS.push_back(rc.asInt());
     }	
 	
-	sizeBefore = itemRecipeIDS.size();
-	auto end2 = itemRecipeIDS.end();
-	for (auto it = itemRecipeIDS.begin(); it != end2; ++it) {
-		end2 = std::remove(it + 1, end2, *it);
-	}
-	itemRecipeIDS.erase(end2, itemRecipeIDS.end());
-	sizeAfter = itemRecipeIDS.size();      
-	if(sizeBefore != sizeAfter)
+	if(HasDuplicates(itemRecipeIDS))
 	{
 	  LOG (WARNING) << "Entry contained fighter duplicate ids";
 	  return false;             
@@ -1525,14 +1530,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
       itemCandyIDS.push_back(cd["n"].asString());
     }	
 	
-	sizeBefore = itemCandyIDS.size();
-	auto end3 = itemCandyIDS.end();
-	for (auto it = itemCandyIDS.begin(); it != end3; ++it) {
-		end3 = std::remove(it + 1, end3, *it);
-	}
-	itemCandyIDS.erase(end3, itemCandyIDS.end());
-	sizeAfter = itemCandyIDS.size();      
-	if(sizeBefore != sizeAfter)
+	if(HasDuplicates(itemCandyIDS))
 	{
 	  LOG (WARNING) << "Entry contained fighter duplicate ids";
 	  return false;             
@@ -1565,29 +1563,6 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
 	{
       LOG (WARNING) << "Option ID is out of range" << optionID;
       return false;   		
-	}
-	
-	bool playerHasAtLeastOneEpicTreat = false;
-	
-    auto res3 = fighters.QueryForOwner (a.GetName());
-    bool tryAndStep3 = res3.Step();
-    
-    while (tryAndStep3)
-    {
-        auto fghtr = fighters.GetFromResult (res3, ctx.RoConfig ()); 
-        
-        if(fghtr->GetProto().quality() == 4)
-        {
-            playerHasAtLeastOneEpicTreat = true;
-        }
-        
-        fghtr.reset();
-        tryAndStep3 = res3.Step();        
-    }  	
-	
-	if(playerHasAtLeastOneEpicTreat == false)
-	{
-		LOG (WARNING) << "Player has no epic treats" << optionID;		
 	}
 	
 	for(auto& ft : itemFighter)
@@ -1660,7 +1635,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
 		  return false;
 		}	
 		
-		auto itemInventoryRecipe = GetRecepieObjectFromID(recepieID.asInt(), ctx);
+		auto itemInventoryRecipe = GetRecepieObjectFromID(recepieID.asInt());
 
 		if(itemInventoryRecipe == nullptr)
 		{
@@ -1723,7 +1698,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
 	  return pieceList;  
   }  
 
-  bool BaseMoveProcessor::ParseDeconstructData(const XayaPlayer& a, const std::string& name, const Json::Value& fighter, uint32_t& fighterID)
+  bool BaseMoveProcessor::ParseDeconstructData(const XayaPlayer& a, const Json::Value& fighter, uint32_t& fighterID)
   {
     if (!fighter.isObject ())
     {
@@ -1775,7 +1750,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
   }    
   
   
-  bool BaseMoveProcessor::ParseTournamentEntryData(const XayaPlayer& a, const std::string& name, const Json::Value& tournament, uint32_t& tournamentID, std::vector<uint32_t>& fighterIDS)
+  bool BaseMoveProcessor::ParseTournamentEntryData(const XayaPlayer& a, const Json::Value& tournament, uint32_t& tournamentID, std::vector<uint32_t>& fighterIDS)
   {
     if (!tournament.isObject ())
     {
@@ -1881,18 +1856,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
       return false;        
     }    	
     
-    int32_t sizeBefore = fighterIDS.size();
-    
-    auto end = fighterIDS.end();
-    for (auto it = fighterIDS.begin(); it != end; ++it) {
-        end = std::remove(it + 1, end, *it);
-    }
- 
-    fighterIDS.erase(end, fighterIDS.end());    
-
-    int32_t sizeAfter = fighterIDS.size();      
-
-    if(sizeBefore != sizeAfter)
+    if(HasDuplicates(fighterIDS))
     {
       LOG (WARNING) << "Roster entries must be unique values";
       tournamentData.reset();
@@ -1994,7 +1958,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     return true;
   }
   
-  bool BaseMoveProcessor::ParseExpeditionData(const XayaPlayer& a, const std::string& name, const Json::Value& expedition, pxd::proto::ExpeditionBlueprint& expeditionBlueprint, std::vector<int32_t>& fightersIds, int32_t& duration, std::string& weHaveApplibeGoodyName)
+  bool BaseMoveProcessor::ParseExpeditionData(const XayaPlayer& a, const Json::Value& expedition, pxd::proto::ExpeditionBlueprint& expeditionBlueprint, std::vector<int32_t>& fightersIds, int32_t& duration, std::string& weHaveApplibeGoodyName)
   {
     if (!expedition.isObject ())
     return false;
@@ -2032,18 +1996,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
         
         //Filter dupes if any
         
-        int32_t sizeBefore = fightersIds.size();
-        
-        auto end = fightersIds.end();
-        for (auto it = fightersIds.begin(); it != end; ++it) {
-            end = std::remove(it + 1, end, *it);
-        }
-     
-        fightersIds.erase(end, fightersIds.end());    
-
-        int32_t sizeAfter = fightersIds.size();      
-
-        if(sizeBefore != sizeAfter)
+        if(HasDuplicates(fightersIds))
         {
           LOG (WARNING) << "Entry contained fighter duplicate ids for " << expedition;
           return false;             
@@ -2149,31 +2102,11 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
 	}	
 	
     const auto& goodiesList = ctx.RoConfig()->goodies();
-    
-     std::vector<std::pair<std::string, pxd::proto::Goody>> sortedGoodyTypesmap;
-        for (auto itr = goodiesList.begin(); itr != goodiesList.end(); ++itr)
-            sortedGoodyTypesmap.push_back(*itr);
+    auto sortedGoodyTypesmap = SortPairsByKey(goodiesList);
 
-    sort(sortedGoodyTypesmap.begin(), sortedGoodyTypesmap.end(), [=](std::pair<std::string, pxd::proto::Goody>& a, std::pair<std::string, pxd::proto::Goody>& b)
-    {
-        return a.first < b.first;
-    } 
-    );        
-    
     fpm::fixed_24_8 reductionPercent = fpm::fixed_24_8(1);
-    
-    for(const auto& goodie: sortedGoodyTypesmap)
-    {
-        if(a.GetInventory().GetFungibleCount(goodie.first) > 0)
-        {
-            if(goodie.second.goodytype() == (int8_t)pxd::GoodyType::Espresso)
-            {
-                weHaveApplibeGoodyName = goodie.first;
-                reductionPercent = fpm::fixed_24_8(goodie.second.reductionpercent());
-                break;
-            }
-        }
-    }
+    FindApplicableGoody(a.GetInventory(), pxd::GoodyType::Espresso, sortedGoodyTypesmap, weHaveApplibeGoodyName, reductionPercent);
+
     fpm::fixed_24_8 effective_duration = fpm::fixed_24_8(expeditionBlueprint.duration());
     if(weHaveApplibeGoodyName != "")
     {
@@ -2486,7 +2419,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     
     auto& playerInventory = a.GetInventory();
     
-    auto itemInventoryRecipe = GetRecepieObjectFromID(recepieID, ctx);
+    auto itemInventoryRecipe = GetRecepieObjectFromID(recepieID);
 
     if(itemInventoryRecipe == nullptr)
     {
@@ -2603,29 +2536,9 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     
     fpm::fixed_24_8 reductionPercent = fpm::fixed_24_8(1);
     const auto& goodiesList = ctx.RoConfig()->goodies();
-    
-     std::vector<std::pair<std::string, pxd::proto::Goody>> sortedGoodyTypesmap;
-        for (auto itr = goodiesList.begin(); itr != goodiesList.end(); ++itr)
-            sortedGoodyTypesmap.push_back(*itr);
+    auto sortedGoodyTypesmap = SortPairsByKey(goodiesList);
 
-    sort(sortedGoodyTypesmap.begin(), sortedGoodyTypesmap.end(), [=](std::pair<std::string, pxd::proto::Goody>& a, std::pair<std::string, pxd::proto::Goody>& b)
-    {
-        return a.first < b.first;
-    } 
-    );     
-    
-    for(const auto& goodie: sortedGoodyTypesmap)
-    {
-        if(playerInventory.GetFungibleCount(goodie.first) > 0)
-        {
-            if(goodie.second.goodytype() == (int8_t)pxd::GoodyType::PressureCooker)
-            {
-                weHaveApplibeGoodyName = goodie.first;
-                reductionPercent = fpm::fixed_24_8(goodie.second.reductionpercent());
-                break;
-            }
-        }
-    }
+    FindApplicableGoody(playerInventory, pxd::GoodyType::PressureCooker, sortedGoodyTypesmap, weHaveApplibeGoodyName, reductionPercent);
     
     fpm::fixed_24_8 effective_duration = fpm::fixed_24_8(itemInventoryRecipe->GetProto().duration());
     if(weHaveApplibeGoodyName != "")
@@ -2654,7 +2567,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
       if (!ft.isInt ()) return false;
       recepieIDS.push_back(ft.asInt());
 
-      auto itemInventoryRecipe = GetRecepieObjectFromID(ft.asInt(), ctx);
+      auto itemInventoryRecipe = GetRecepieObjectFromID(ft.asInt());
 
       if(itemInventoryRecipe == nullptr)
       {
@@ -2679,7 +2592,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
       
       auto a = xayaplayers.GetByName (name, ctx.RoConfig ());
       
-      if(!ParseTournamentRewardData(*a, name, tournament, rewardDatabaseIds, tournamentID))
+      if(!ParseTournamentRewardData(*a, tournament, rewardDatabaseIds, tournamentID))
       {
           a.reset();
           return;
@@ -2754,24 +2667,6 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
               a->GetInventory().AddFungibleCount(candyName, rewardTableDb.rewards(rewardData->GetProto().positionintable()).quantity());
               
               LOG (INFO) << "Granted " << rewardTableDb.rewards(rewardData->GetProto().positionintable()).quantity() << " candy " << candyName << " reward";
-          }          
-          
-          else if((pxd::RewardType)(int32_t)rewardTableDb.rewards(rewardData->GetProto().positionintable()).type() == pxd::RewardType::GeneratedRecipe)
-          {
-              if(curRecipeSlots >= maxRecipeSlots)
-              {
-                  LOG (INFO) << "Can not grant recipe, maxomus lots reached  of" << curRecipeSlots << " where max is " << maxRecipeSlots;
-                  markedToRemove.push_back(rw);
-                  rewardData.reset();
-                  continue;
-              }
-              
-              auto ourRec = recipeTbl.GetById(rewardData->GetProto().generatedrecipeid());
-              ourRec->SetOwner(a->GetName());  
-
-              LOG (INFO) << "Granted " << " recipe " << rewardData->GetProto().generatedrecipeid() << " as reward";  
-              curRecipeSlots++;
-              ourRec.reset();              
           }          
           
           else if((pxd::RewardType)(int32_t)rewardTableDb.rewards(rewardData->GetProto().positionintable()).type() == pxd::RewardType::Move)
@@ -2853,7 +2748,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
       std::vector<std::string> expeditionIDArray;
       
       auto a = xayaplayers.GetByName (name, ctx.RoConfig ());
-      if(!ParseRewardData(*a, name, expedition, rewardDatabaseIds, expeditionIDArray))      
+      if(!ParseRewardData(*a, expedition, rewardDatabaseIds, expeditionIDArray))      
       {
           a.reset();
           return;
@@ -2930,7 +2825,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     }
     
     uint32_t fighterID = 0;
-    if(!ParseDeconstructRewardData(*a, name, fighter, fighterID))      
+    if(!ParseDeconstructRewardData(*a, fighter, fighterID))      
     {
       a.reset();
       return;
@@ -2999,7 +2894,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
     Amount price = 0;
     Amount listingfee = 0;
     
-    if(!ParseFighterForSaleData(*a, name, fighter, fighterID, duration, price, listingfee))      
+    if(!ParseFighterForSaleData(*a, fighter, fighterID, duration, price, listingfee))      
     {
       a.reset();
       return;
@@ -3044,7 +2939,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 	}		
  }
 
- fpm::fixed_24_8 MoveProcessor::CalculateFuelPower(const Json::Value& fighter, const Json::Value& wholeFighterData, const Json::Value& wholeRecipeData, const Json::Value& candylist, bool outputDebug)
+ fpm::fixed_24_8 MoveProcessor::CalculateFuelPower(const Json::Value& fighter, const Json::Value& wholeFighterData, const Json::Value& wholeRecipeData, bool outputDebug)
  {
     // Now that recipe formula is validated, lets calculates all the raw valies first
 	
@@ -3288,17 +3183,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 
     for(auto& candy : itemCandy)
 	{
-		std::string candyAuth = candy["n"].asString();
-		fpm::fixed_24_8 cRarity = fpm::fixed_24_8(0);
-		
-        for(const auto& candyR: candylist)
-        {
-          if(candyR["i"].asString() == candyAuth)
-          {	
-	         cRarity = fpm::fixed_24_8(0.1); //fpm::fixed_24_8(candyR["r"].asInt());
-	         break;
-		  }
-		}
+		fpm::fixed_24_8 cRarity = fpm::fixed_24_8(0.1);
 		
         fpm::fixed_24_8 ca = fpm::fixed_24_8(candy["a"].asInt());		
 		fpm::fixed_24_8 candySets = ca / fpm::fixed_24_8(10);
@@ -3412,7 +3297,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 	// int transfigurationPower = final_fuel_value / 100; [100 is based crystal cost, which needs to be balanced empirically]
 	// if transfigurationPower == 1 then COMMON, e.t.c.
 	
-    if(!ParseTransfigureData(*a, name, fighter))      
+    if(!ParseTransfigureData(*a, fighter))      
     {
       a.reset();
       return;
@@ -3421,8 +3306,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 	
 	Json::Value wholeFightersData(Json::objectValue);
 	Json::Value wholeRecipeData(Json::objectValue);
-	Json::Value candyList(Json::arrayValue);
-	
+
 	const auto& itemFighter = fighter["if"];
 	const auto& itemRecipe = fighter["ir"];		
 	
@@ -3463,16 +3347,6 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 		recp.reset();
 	}	
 	
-	const auto& ccds = ctx.RoConfig()->candies();
-    for(auto& ic : ccds)
-	{
-		Json::Value cand(Json::objectValue);
-		cand["i"] = ic.second.authoredid();
-		cand["r"] = 10;	
-		
-		candyList.append(cand);
-	}
-	
 	/* CalculateFuelPower reads these by the sacrificed fighter's quality
 	   (crcc=common q1, urcc=uncommon q2, rrcc=rare q3, ercc=epic q4); they must
 	   use the matching per-rarity cost, not all-uncommon. */
@@ -3481,7 +3355,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 	wholeFightersData["rrcc"] = ctx.RoConfig()->params().rare_recipe_cook_cost();
 	wholeFightersData["ercc"] = ctx.RoConfig()->params().epic_recipe_cook_cost();
 	
-	fpm::fixed_24_8 fuelPower = CalculateFuelPower(fighter, wholeFightersData, wholeRecipeData, candyList, false);
+	fpm::fixed_24_8 fuelPower = CalculateFuelPower(fighter, wholeFightersData, wholeRecipeData, false);
 
 	// Now that we have our value, we can finally try and transifure the input_iterator
     fpm::fixed_24_8 fuelPowerUnit = fpm::floor(fuelPower / 25000);
@@ -3515,7 +3389,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 			else if(fuelPowerUnit >= fpm::fixed_24_8(4))
 			{
 				nQL = pxd::Quality::Epic;		
-				std::vector<Amount> lookUpPrices =  {84000000,252000000,672000000,924000000,1344000000,1764000000,2268000000,2772000000,3276000000,3948000000,4620000000,5376000000,5796000000,6216000000,6720000000,7140000000,7644000000,8148000000,8736000000,9324000000,9912000000,10500000000,10836000000,11172000000,11508000000,11844000000,12180000000,12516000000,12852000000,13188000000,13608000000,13944000000,14364000000,14784000000,15120000000,15540000000,15960000000,16380000000,16800000000,17220000000,17724000000,18144000000,18480000000,18900000000,19236000000,19656000000,19992000000,20412000000,20832000000,21168000000,21588000000,22008000000,22428000000,22848000000,23268000000,23688000000,24108000000,24612000000,25032000000,25452000000,25956000000,26376000000,26880000000,27384000000,27804000000,28308000000,28812000000,29064000000,29316000000,29568000000,29820000000,30072000000,30324000000,30576000000,30828000000,31080000000,31332000000,31584000000,31920000000,32172000000,32424000000,32676000000,32928000000,33180000000,33516000000,33768000000,34020000000,34356000000,34608000000,34860000000,35196000000,35448000000,35700000000,36036000000,36288000000,36624000000,36876000000,37128000000,37464000000,37716000000,38052000000,38388000000,38640000000,38976000000,39228000000,39564000000,39900000000,40152000000,40488000000,40824000000,41076000000,41412000000,41748000000,42084000000,42336000000,42672000000,43008000000,43176000000,43344000000,43512000000,43680000000,43848000000,44016000000,44184000000,44352000000,44436000000,44604000000,44772000000,44940000000,45108000000,45276000000,45444000000,45612000000,45780000000,45948000000,46116000000,46284000000,46452000000,46620000000,46788000000,46956000000,47208000000,47376000000,47544000000,47712000000,47880000000,48048000000,48216000000,48384000000,48552000000,48720000000,48888000000,49056000000,49224000000,49392000000,49644000000,49812000000,49980000000,50148000000,50316000000,50484000000,50652000000,50820000000,51072000000,51240000000,51408000000,51576000000,51744000000,51912000000,52164000000,52332000000,52500000000,52668000000,52836000000,53088000000,53256000000,53424000000,53592000000,53844000000,54012000000,54180000000,54348000000,54516000000,54768000000,54936000000,55104000000,55356000000,55524000000,55692000000,55860000000,56112000000,56280000000,56448000000,56700000000,56868000000,57036000000,57204000000,57456000000,57624000000,57792000000,58044000000,58212000000,58464000000,58632000000,58800000000,59052000000,59220000000,59388000000,59640000000,59808000000,60060000000,60228000000,60396000000,60648000000,60816000000,61068000000,61236000000,61404000000,61656000000,61824000000,62076000000,62244000000,62496000000,62664000000,62916000000,63084000000,63336000000,63504000000,63756000000,63924000000,64176000000,64344000000,64596000000,64764000000,65016000000,65184000000,65436000000,65604000000,65856000000,66024000000,66276000000,66444000000,66696000000,66948000000,67116000000,67368000000,67536000000,67788000000,68040000000,68208000000,68460000000,68628000000,68880000000,69132000000,69300000000,69552000000,69804000000,69972000000,70224000000,70476000000,70644000000,70896000000,71148000000,71316000000,71568000000,71820000000,71988000000,72240000000,72492000000,72744000000,72912000000,73164000000,73416000000,73584000000,73836000000,74088000000,74340000000,74592000000,74760000000,75012000000,75264000000,75516000000,75684000000,75936000000,76188000000,76440000000,76692000000,76860000000,77112000000,77364000000,77616000000,77868000000,78120000000,78372000000,78540000000,78792000000,79044000000,79296000000,79548000000,79800000000,80052000000,80304000000,80556000000,80808000000,80976000000,81228000000,81480000000,81732000000,81984000000,82236000000,82488000000,82740000000,82992000000,83244000000,83496000000,83748000000};
+				static const std::vector<Amount> lookUpPrices =  {84000000,252000000,672000000,924000000,1344000000,1764000000,2268000000,2772000000,3276000000,3948000000,4620000000,5376000000,5796000000,6216000000,6720000000,7140000000,7644000000,8148000000,8736000000,9324000000,9912000000,10500000000,10836000000,11172000000,11508000000,11844000000,12180000000,12516000000,12852000000,13188000000,13608000000,13944000000,14364000000,14784000000,15120000000,15540000000,15960000000,16380000000,16800000000,17220000000,17724000000,18144000000,18480000000,18900000000,19236000000,19656000000,19992000000,20412000000,20832000000,21168000000,21588000000,22008000000,22428000000,22848000000,23268000000,23688000000,24108000000,24612000000,25032000000,25452000000,25956000000,26376000000,26880000000,27384000000,27804000000,28308000000,28812000000,29064000000,29316000000,29568000000,29820000000,30072000000,30324000000,30576000000,30828000000,31080000000,31332000000,31584000000,31920000000,32172000000,32424000000,32676000000,32928000000,33180000000,33516000000,33768000000,34020000000,34356000000,34608000000,34860000000,35196000000,35448000000,35700000000,36036000000,36288000000,36624000000,36876000000,37128000000,37464000000,37716000000,38052000000,38388000000,38640000000,38976000000,39228000000,39564000000,39900000000,40152000000,40488000000,40824000000,41076000000,41412000000,41748000000,42084000000,42336000000,42672000000,43008000000,43176000000,43344000000,43512000000,43680000000,43848000000,44016000000,44184000000,44352000000,44436000000,44604000000,44772000000,44940000000,45108000000,45276000000,45444000000,45612000000,45780000000,45948000000,46116000000,46284000000,46452000000,46620000000,46788000000,46956000000,47208000000,47376000000,47544000000,47712000000,47880000000,48048000000,48216000000,48384000000,48552000000,48720000000,48888000000,49056000000,49224000000,49392000000,49644000000,49812000000,49980000000,50148000000,50316000000,50484000000,50652000000,50820000000,51072000000,51240000000,51408000000,51576000000,51744000000,51912000000,52164000000,52332000000,52500000000,52668000000,52836000000,53088000000,53256000000,53424000000,53592000000,53844000000,54012000000,54180000000,54348000000,54516000000,54768000000,54936000000,55104000000,55356000000,55524000000,55692000000,55860000000,56112000000,56280000000,56448000000,56700000000,56868000000,57036000000,57204000000,57456000000,57624000000,57792000000,58044000000,58212000000,58464000000,58632000000,58800000000,59052000000,59220000000,59388000000,59640000000,59808000000,60060000000,60228000000,60396000000,60648000000,60816000000,61068000000,61236000000,61404000000,61656000000,61824000000,62076000000,62244000000,62496000000,62664000000,62916000000,63084000000,63336000000,63504000000,63756000000,63924000000,64176000000,64344000000,64596000000,64764000000,65016000000,65184000000,65436000000,65604000000,65856000000,66024000000,66276000000,66444000000,66696000000,66948000000,67116000000,67368000000,67536000000,67788000000,68040000000,68208000000,68460000000,68628000000,68880000000,69132000000,69300000000,69552000000,69804000000,69972000000,70224000000,70476000000,70644000000,70896000000,71148000000,71316000000,71568000000,71820000000,71988000000,72240000000,72492000000,72744000000,72912000000,73164000000,73416000000,73584000000,73836000000,74088000000,74340000000,74592000000,74760000000,75012000000,75264000000,75516000000,75684000000,75936000000,76188000000,76440000000,76692000000,76860000000,77112000000,77364000000,77616000000,77868000000,78120000000,78372000000,78540000000,78792000000,79044000000,79296000000,79548000000,79800000000,80052000000,80304000000,80556000000,80808000000,80976000000,81228000000,81480000000,81732000000,81984000000,82236000000,82488000000,82740000000,82992000000,83244000000,83496000000,83748000000};
 				
 				if(fuelPowerUnit - fpm::fixed_24_8(4) >= fpm::fixed_24_8(lookUpPrices.size()))
 				{
@@ -3548,15 +3422,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 					slotsUsed.insert(std::pair<pxd::ArmorType, std::string>((pxd::ArmorType)armorPiece.armortype(), armorPiece.candy()));		
 				}
 
-				std::vector<std::pair<std::string, pxd::proto::FighterMoveBlueprint>> sortedMoveBlueprintTypesmap;
-				for (auto itr = fighterMoveBlueprintList.begin(); itr != fighterMoveBlueprintList.end(); ++itr)
-					  sortedMoveBlueprintTypesmap.push_back(*itr);
-
-				sort(sortedMoveBlueprintTypesmap.begin(), sortedMoveBlueprintTypesmap.end(), [=](std::pair<std::string, pxd::proto::FighterMoveBlueprint>& a, std::pair<std::string, pxd::proto::FighterMoveBlueprint>& b)
-				{
-					  return a.first < b.first;
-				} 
-				);  
+				auto sortedMoveBlueprintTypesmap = SortPairsByKey(fighterMoveBlueprintList);
 
 				int32_t totalMoveSize = sortedMoveBlueprintTypesmap.size();
 				auto moveBlueprint = sortedMoveBlueprintTypesmap[rnd.NextInt(totalMoveSize)];
@@ -3603,15 +3469,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
 			const auto& moveBlueprints = ctx.RoConfig()->fightermoveblueprints();
 			std::vector<pxd::proto::FighterMoveBlueprint> generatedMoveblueprints;
 			
-			std::vector<std::pair<std::string, pxd::proto::FighterMoveBlueprint>> sortedMoveBlueprintTypesmap;
-			for (auto itr = moveBlueprints.begin(); itr != moveBlueprints.end(); ++itr)
-				sortedMoveBlueprintTypesmap.push_back(*itr);
-
-			sort(sortedMoveBlueprintTypesmap.begin(), sortedMoveBlueprintTypesmap.end(), [=](std::pair<std::string, pxd::proto::FighterMoveBlueprint>& a, std::pair<std::string, pxd::proto::FighterMoveBlueprint>& b)
-			{
-				return a.first < b.first;
-			} 
-			);     			
+			auto sortedMoveBlueprintTypesmap = SortPairsByKey(moveBlueprints);
 			
             if(fuelPowerUnit >= fpm::fixed_24_8(fighterDb->GetProto().quality()))
 			{			
@@ -3666,7 +3524,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
     }
     
     uint32_t fighterID = 0;
-    if(!ParseDeconstructData(*a, name, fighter, fighterID))      
+    if(!ParseDeconstructData(*a, fighter, fighterID))      
     {
       a.reset();
       return;
@@ -3700,7 +3558,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
     }
     
     uint32_t fighterID = 0;
-    if(!ParseRemoveBuyData(*a, name, fighter, fighterID))      
+    if(!ParseRemoveBuyData(*a, fighter, fighterID))      
     {
       a.reset();
       return;
@@ -3723,7 +3581,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
     
     uint32_t fighterID = 0;
     Amount exchangeprice = 0;
-    if(!ParseBuyData(*a, name, fighter, fighterID, exchangeprice))      
+    if(!ParseBuyData(*a, fighter, fighterID, exchangeprice))      
     {
       a.reset();
       return;
@@ -3809,7 +3667,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
     uint32_t tournamentID = 0;
     std::vector<uint32_t> fighterIDS;   
     
-    if(!ParseTournamentEntryData(*a, name, tournament, tournamentID, fighterIDS))       
+    if(!ParseTournamentEntryData(*a, tournament, tournamentID, fighterIDS))       
     {
       a.reset();
       return;
@@ -3853,7 +3711,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
     pxd::proto::ExpeditionBlueprint expeditionBlueprint;
     std::vector<int32_t> fighter;
     
-    if(!ParseExpeditionData(*a, name, expedition, expeditionBlueprint, fighter, duration, weHaveApplibeGoodyName)) return;
+    if(!ParseExpeditionData(*a, expedition, expeditionBlueprint, fighter, duration, weHaveApplibeGoodyName)) return;
     
     for(auto& ft: fighter)
     {
@@ -4084,7 +3942,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
     newOp->MutableProto().set_type((uint32_t)pxd::OngoingType::COOK_RECIPE);
     newOp->MutableProto().set_recipeid(recepie["rid"].asInt());
 
-    auto itemInventoryRecipe = GetRecepieObjectFromID((uint32_t)recepie["rid"].asInt(), ctx);
+    auto itemInventoryRecipe = GetRecepieObjectFromID((uint32_t)recepie["rid"].asInt());
     itemInventoryRecipe->SetOwner("");
     itemInventoryRecipe.reset();
 

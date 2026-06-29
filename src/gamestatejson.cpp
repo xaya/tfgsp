@@ -33,6 +33,40 @@
 
 namespace pxd
 {
+
+namespace
+{
+
+/* Returns the OngoinOperation proto from either a bare proto or a
+   (height, proto) pair, so AppendInProgressCookRecipeIds can be shared by the
+   two ongoing-collection shapes used in this file. */
+inline const proto::OngoinOperation&
+OngoingProtoOf (const proto::OngoinOperation& op)
+{
+  return op;
+}
+inline const proto::OngoinOperation&
+OngoingProtoOf (const std::pair<unsigned, proto::OngoinOperation>& op)
+{
+  return op.second;
+}
+
+/* Appends the in-progress cook recipe ids of the given ongoing operations to
+   arr: first every COOK_RECIPE id, then every COOK_SWEETENER id, preserving
+   the source order the front-end roster relies on. */
+template <typename Ongoings>
+  void
+  AppendInProgressCookRecipeIds (Json::Value& arr, const Ongoings& ongoings)
+{
+  for (const auto& ong : ongoings)
+    if ((pxd::OngoingType) OngoingProtoOf (ong).type () == pxd::OngoingType::COOK_RECIPE)
+      arr.append (OngoingProtoOf (ong).recipeid ());
+  for (const auto& ong : ongoings)
+    if ((pxd::OngoingType) OngoingProtoOf (ong).type () == pxd::OngoingType::COOK_SWEETENER)
+      arr.append (OngoingProtoOf (ong).recipeid ());
+}
+
+} // anonymous namespace
 template <typename T, typename R>
   Json::Value
   GameStateJson::ResultsAsArray(T& tbl, Database::Result<R> res) const
@@ -380,21 +414,7 @@ template <>
     }
   }
 
-  for(const auto& ong: playerOngoings)
-  {
-    if((pxd::OngoingType)ong.second.type() == pxd::OngoingType::COOK_RECIPE)
-    {
-       recJsonObj.append (ong.second.recipeid());
-    }
-  }
-
-  for(const auto& ong: playerOngoings)
-  {
-    if((pxd::OngoingType)ong.second.type() == pxd::OngoingType::COOK_SWEETENER)
-    {
-       recJsonObj.append (ong.second.recipeid());
-    }
-  }
+  AppendInProgressCookRecipeIds (recJsonObj, playerOngoings);
 
   res["recepies"] = recJsonObj;
 
@@ -580,16 +600,7 @@ GameStateJson::User(const std::string& userName)
 	    {
 	      ops.push_back (ongoingsTbl.GetFromResult (ores)->GetProto ());
 	    }
-	    for(const auto& ongoing: ops)
-	    {
-	      if((pxd::OngoingType)ongoing.type() == pxd::OngoingType::COOK_RECIPE)
-	         recJsonObj.append (ongoing.recipeid());
-	    }
-	    for(const auto& ongoing: ops)
-	    {
-	      if((pxd::OngoingType)ongoing.type() == pxd::OngoingType::COOK_SWEETENER)
-	         recJsonObj.append (ongoing.recipeid());
-	    }
+	    AppendInProgressCookRecipeIds (recJsonObj, ops);
 	  }
 
 	  a.reset();
@@ -687,6 +698,39 @@ GameStateJson::UserTournaments(const std::string& userName)
   
   std::vector<int32_t> collectedFightersIds;
   
+  /* Collects a tournament's non-owned (foreign) fighters into fghtrarr,
+     de-duplicating by id against collectedFightersIds; the querying user's
+     own fighters are skipped (they come from User()).  Shared verbatim by
+     all three tournament-state branches below. */
+  const auto appendForeignFighters = [&] (const auto& ftrs)
+  {
+      for(const auto ft: ftrs)
+      { 
+          auto resDD = ftbl.GetById (ft, ctx.RoConfig ());
+          if(resDD != nullptr) // was destroyed at some point of the game?
+          {
+              // We ignore user fighters as we get those from User() anyway, also
+              // lets make sure we are filtering for duplictaes, we there is possibility
+              // of duplicating, and we really don't want this to happen at all costs
+              int32_t fID = resDD->GetId();
+              if(resDD->GetOwner() != userName)
+              {
+                if (std::find(collectedFightersIds.begin(), collectedFightersIds.end(), fID) != collectedFightersIds.end()) 
+                {
+                    // ignore duplicate
+                }
+                else
+                {
+                 fghtrarr.append (Convert<FighterInstance> (*resDD));  
+                 collectedFightersIds.push_back(fID);
+                }
+              }
+              
+              resDD.reset();
+          }
+      }
+  };
+
   auto res2 = tbl.QueryAll ();
   
   while (res2.Step ())
@@ -700,31 +744,7 @@ GameStateJson::UserTournaments(const std::string& userName)
 		  // Additionally, we want to supply all the relevant fighters
 		  const auto ftrs = h->GetInstance().fighters();
 		  h.reset();
-          for(const auto ft: ftrs)
-          { 
-              auto resDD = ftbl.GetById (ft, ctx.RoConfig ());
-              if(resDD != nullptr) // was destroyed at some point of the game?
-			  {
-				  // We ignore user fighters as we get those from User() anyway, also
-				  // lets make sure we are filtering for duplictaes, we there is possibility
-				  // of duplicating, and we really don't want this to happen at all costs
-				  int32_t fID = resDD->GetId();
-				  if(resDD->GetOwner() != userName)
-				  {
-					if (std::find(collectedFightersIds.begin(), collectedFightersIds.end(), fID) != collectedFightersIds.end()) 
-					{
-						// ignore duplicate
-					}					
-					else
-					{
-					 fghtrarr.append (Convert<FighterInstance> (*resDD));  
-					 collectedFightersIds.push_back(fID);
-					}
-				  }	
-				  
-				  resDD.reset();
-			  }
-		  }			  
+          appendForeignFighters (ftrs);
 	  }
 	  else if(h->GetInstance().state() == 1 || h->GetInstance().state() == 2)
 	  {
@@ -752,31 +772,7 @@ GameStateJson::UserTournaments(const std::string& userName)
 			  // Additionally, we want to supply all the relevant fighters
 			  const auto ftrs = h->GetInstance().fighters();
 			  h.reset();
-			  for(const auto ft: ftrs)
-			  { 
-				  auto resDD = ftbl.GetById (ft, ctx.RoConfig ());
-                  if(resDD != nullptr) // was destroyed at some point of the game?
-			      {
-					  // We ignore user fighters as we get those from User() anyway, also
-					  // lets make sure we are filtering for duplictaes, we there is possibility
-					  // of duplicating, and we really don't want this to happen at all costs
-					  int32_t fID = resDD->GetId();
-					  if(resDD->GetOwner() != userName)
-					  {
-						if (std::find(collectedFightersIds.begin(), collectedFightersIds.end(), fID) != collectedFightersIds.end()) 
-						{
-							// ignore duplicate
-						}					
-						else
-						{
-						 fghtrarr.append (Convert<FighterInstance> (*resDD));  
-						 collectedFightersIds.push_back(fID);
-						}
-					  }	
-					  
-					  resDD.reset();
-				  }
-			  }			 
+			  appendForeignFighters (ftrs);
 		  }
 		  else
 		  {
@@ -832,31 +828,7 @@ GameStateJson::UserTournaments(const std::string& userName)
 		  {
               arr.append (converted);		
 			  // Additionally, we want to supply all the relevant fighters
-			  for(const auto ft: ftrs)
-			  { 
-				  auto resDD = ftbl.GetById (ft, ctx.RoConfig ());
-                  if(resDD != nullptr) // was destroyed at some point of the game?
-			      {
-					  // We ignore user fighters as we get those from User() anyway, also
-					  // lets make sure we are filtering for duplictaes, we there is possibility
-					  // of duplicating, and we really don't want this to happen at all costs
-					  int32_t fID = resDD->GetId();
-					  if(resDD->GetOwner() != userName)
-					  {
-						if (std::find(collectedFightersIds.begin(), collectedFightersIds.end(), fID) != collectedFightersIds.end()) 
-						{
-							// ignore duplicate
-						}					
-						else
-						{
-						 fghtrarr.append (Convert<FighterInstance> (*resDD));  
-						 collectedFightersIds.push_back(fID);
-						}
-					  }	
-					  
-					  resDD.reset();
-				  }
-		      }			 
+			  appendForeignFighters (ftrs);
 		  }		  
 	  }	
   };  

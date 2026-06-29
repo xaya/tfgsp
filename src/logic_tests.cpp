@@ -285,7 +285,7 @@ TEST_F (ValidateStateTests, DebugRecipeNamesTest)
 	xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (100);	
 	for (unsigned i = 0; i < 1000; ++i)
     {
-		auto rcpID = pxd::RecipeInstance::Generate(pxd::Quality::Rare, ctx.RoConfig(), rnd, db, "", true);
+		auto rcpID = pxd::RecipeInstance::Generate(pxd::Quality::Rare, ctx.RoConfig(), rnd, db, "");
 		auto r = tbl2.GetById(rcpID);
 		
 		if (std::find(namesColleced.begin(), namesColleced.end(), r->GetProto().name()) == namesColleced.end()) 
@@ -303,7 +303,7 @@ TEST_F (ValidateStateTests, RecepieInstanceGeneratedFullCycleTest)
 {
   xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (100);
   
-  auto rcpID = pxd::RecipeInstance::Generate(pxd::Quality::Common, ctx.RoConfig(), rnd, db, "", true);
+  auto rcpID = pxd::RecipeInstance::Generate(pxd::Quality::Common, ctx.RoConfig(), rnd, db, "");
   auto r = tbl2.GetById(rcpID);
   
   
@@ -362,10 +362,10 @@ TEST_F (ValidateStateTests, RecepieInstanceGeneratedDifferentNamesTest)
 {
   xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (100);
   
-  auto rcpID = pxd::RecipeInstance::Generate(pxd::Quality::Common, ctx.RoConfig(), rnd, db, "", true);
+  auto rcpID = pxd::RecipeInstance::Generate(pxd::Quality::Common, ctx.RoConfig(), rnd, db, "");
   auto r = tbl2.GetById(rcpID);
   
-  auto rcpID2 = pxd::RecipeInstance::Generate(pxd::Quality::Common, ctx.RoConfig(), rnd, db, "", true);
+  auto rcpID2 = pxd::RecipeInstance::Generate(pxd::Quality::Common, ctx.RoConfig(), rnd, db, "");
   auto r2 = tbl2.GetById(rcpID2);
   
   EXPECT_NE(r->GetProto().name(), r2->GetProto().name());

@@ -42,9 +42,7 @@ XayaPlayer::XayaPlayer (Database& d, const std::string& n, const RoConfig& cfg, 
       role = PlayerRole::ADMINISTRATOR;
   }
   
-  /*Load configuration values*/ 
-  recipe_slots = cfg->params().max_recipe_inventory_amount();
-  roster_slots = cfg->params().max_fighter_inventory_amount();
+  /*Load configuration values*/
   prestige = cfg->params().base_prestige();
   
   /*For the new account, we are supplying initial set of items*/    
@@ -102,11 +100,7 @@ XayaPlayer::XayaPlayer (Database& d, const Database::Result<XayaPlayerResult>& r
   data = res.GetProto<XayaPlayerResult::proto> ();
 
   inv = res.GetProto<XayaPlayerResult::inventory> ();
-  
-  /*Load configuration values*/ 
-  recipe_slots = cfg->params().max_recipe_inventory_amount();
-  roster_slots = cfg->params().max_fighter_inventory_amount();
-  
+
   prestige = res.Get<XayaPlayerResult::prestige> ();
 }
 
@@ -138,17 +132,6 @@ XayaPlayer::~XayaPlayer ()
   stmt.BindProto (4, inv.GetProtoForBinding ());
 
   stmt.Execute ();
-}
-
-const bool XayaPlayer::GetIsMine ()
-{
-    bool alwaystrue = true;
-    return alwaystrue;
-}
-
-std::string XayaPlayer::SendCHI (std::string address, Amount amount)
-{
-    return "";
 }
 
 std::vector<FighterTable::Handle> XayaPlayer::CollectInventoryFighters(const RoConfig& cfg)
@@ -384,21 +367,6 @@ PlayerRoleFromString (const std::string& str)
   LOG (WARNING) << "String is not a valid faction: " << str;
   return PlayerRole::INVALID;
 }
- 
-const bool XayaPlayer::HasRole (PlayerRole role)
-{
-    return true;
-} 
- 
-const bool XayaPlayer::GrantRole (PlayerRole role)
-{
-  return true;
-}
-    
-const bool XayaPlayer::RevokeRole (PlayerRole role)
-{
-  return true;
-}    
 
 void
 XayaPlayer::AddBalance (const Amount val)

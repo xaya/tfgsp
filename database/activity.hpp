@@ -115,12 +115,6 @@ protected:
 
   void Validate () const;
 
-  bool
-  IsDirtyActivityData () const
-  {
-    return data.IsDirty ();
-  }
-
 public:
 
   /**

@@ -35,12 +35,6 @@ namespace pxd
  */
 template <typename T>
   Json::Value IntToJson (T val);
-  
-/**
- * Parses a Cubit amount from JSON, and verifies that it is roughly in
- * range, i.e. within [0, MAX_COIN_AMOUNT].
- */
-bool CoinAmountFromJson (const Json::Value& val, Amount& amount);  
 
 } // namespace pxd
 

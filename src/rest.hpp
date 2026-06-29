@@ -10,10 +10,7 @@
 #include <xayagame/game.hpp>
 #include <xayagame/rest.hpp>
 
-#include <condition_variable>
 #include <memory>
-#include <mutex>
-#include <thread>
 
 namespace pxd
 {
@@ -32,18 +29,6 @@ private:
   /** The game logic implementation.  */
   PXLogic& logic;
 
-  /** Lock for the bootstrap data cache.  */
-  std::mutex mutBootstrap;
-
-  /** Set to true if we should stop.  */
-  bool shouldStop;
-
-  /** Condition variable that is signaled if shouldStop is set.  */
-  std::condition_variable cvStop;
-
-  /** Mutex for the stop flag and condition variable.  */
-  std::mutex mutStop;
-
 protected:
 
   SuccessResult Process (const std::string& url) override;
@@ -53,21 +38,6 @@ public:
   explicit RestApi (xaya::Game& g, PXLogic& l, const int p)
     : xaya::RestApi(p), game(g), logic(l)
   {}
-
-  void Start () override;
-  void Stop () override;
-
-};
-
-/**
- * REST client for the tf API.
- */
-class RestClient : public xaya::RestClient
-{
-
-public:
-
-  using xaya::RestClient::RestClient;
 
 };
 
