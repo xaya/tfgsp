@@ -25,7 +25,6 @@ PROTOS = \
   $(builddir)/../proto/goody.proto \
   $(builddir)/../proto/goody_bundle.proto \
   $(builddir)/../proto/sweetener_blueprint.proto \
-  $(builddir)/../proto/specialtournament_blueprint.proto \  
   $(builddir)/../proto/tournament_blueprint.proto \
   $(builddir)/../proto/xaya_player.proto \
   $(builddir)/../proto/crafted_recipe.proto \

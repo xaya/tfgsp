@@ -102,17 +102,12 @@ public:
   Json::Value Tournaments();   
 
   /**
-   * Returns the JSON data about special tournaments.
-   */
-  Json::Value SpecialTournaments();  
-  
-  /**
    * All user relevant data, excluding tournaments
    */
   Json::Value User(const std::string& userName);
   
   /**
-   * Tournaments and special tournaments data exluding user data treats and irrelevant treats
+   * Tournaments data excluding user data treats and irrelevant treats
    */
   Json::Value UserTournaments(const std::string& userName);  
   

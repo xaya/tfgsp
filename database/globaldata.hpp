@@ -51,12 +51,12 @@ public:
   void operator= (const GlobalData&) = delete;
 
   /**
-   * Returns the timestamp of the last special tournament data held
+   * Returns the timestamp of the last tournament data held
    */
   int64_t GetLastTournamentTime();
   
   /**
-   * Sets the timestamp of the last special tournament data held
+   * Sets the timestamp of the last tournament data held
    */
   void SetLastTournamentTime(int64_t newTime);  
   

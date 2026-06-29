@@ -17,7 +17,6 @@
 */
 
 #include "xayaplayer.hpp"
-#include "specialtournament.hpp"
 #include "ongoings.hpp"
 
 #include <xayautil/random.hpp>
@@ -34,7 +33,6 @@ XayaPlayer::XayaPlayer (Database& d, const std::string& n, const RoConfig& cfg, 
   VLOG (1) << "Created instance for newly initialised account " << name;
   data.SetToDefault ();
   
-  MutableProto().set_specialtournamentprestigetier(1);
 
   /*Probably not needed and is just leftover from original source,
   but lets transfer administrator name role just in case*/
@@ -202,40 +200,6 @@ std::vector<FighterTable::Handle> XayaPlayer::CollectInventoryFighters(const RoC
   return fighters;
 }
 
-std::vector<FighterTable::Handle> XayaPlayer::CollectInventoryFightersFromSpecialTournament(const RoConfig& cfg, uint32_t specialTournamentTier)
-{
-  std::vector<FighterTable::Handle> fighters;
-  SpecialTournamentTable sptable(db);
-  
-  FighterTable fightersTable(db);
-  auto res = fightersTable.QueryForOwner (GetName());
-  while (res.Step ())
-  {
-      auto c = fightersTable.GetFromResult (res, cfg);
-      
-      if((int32_t)c->GetStatus() == (int32_t)pxd::FighterStatus::SpecialTournament)
-      {
-          int64_t tID = c->GetProto().specialtournamentinstanceid();
-          auto tm = sptable.GetById(tID, cfg);
-          
-          if(tm != nullptr)
-          {
-              if(tm->GetProto().tier() == specialTournamentTier)
-              {
-                fighters.push_back(std::move(c));
-              }
-          }
-          else
-          {
-              LOG (FATAL) << "Wrong special tournament instance id";   
-              return fighters;
-          }
-          
-          tm.reset();
-      }
-  }
-  return fighters;
-}
 
 std::vector<TournamentTable::Handle> XayaPlayer::CollectTournaments(const RoConfig& cfg)
 {

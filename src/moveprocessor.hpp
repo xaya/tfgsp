@@ -29,7 +29,6 @@
 #include "database/xayaplayer.hpp"
 #include "database/fighter.hpp"
 #include "database/tournament.hpp"
-#include "database/specialtournament.hpp"
 #include "database/recipe.hpp"
 #include "database/reward.hpp"
 #include "database/ongoings.hpp"
@@ -92,9 +91,6 @@ protected:
   /** Access handle tournaments database instances*/
   TournamentTable tournamentsTbl;     
   
-  /** Access handle special tournaments database instances*/
-  SpecialTournamentTable specialTournamentsTbl;     
-
   /** Access handle for global data*/
   GlobalData globalData;       
   
@@ -216,11 +212,6 @@ protected:
  
   bool ParseTournamentEntryData(const XayaPlayer& a, const std::string& name, const Json::Value& tournament, uint32_t& tournamentID, std::vector<uint32_t>& fighterIDS);
  
-   /**
-   * Tries to parse a move that send fighter on the special tournament
-   */ 
- 
-  bool ParseSpecialTournamentEntryData(const XayaPlayer& a, const std::string& name, const Json::Value& tournament, uint32_t& tournamentID, std::vector<uint32_t>& fighterIDS);
   
  
   /**
@@ -261,11 +252,6 @@ protected:
  
   bool ParseTournamentLeaveData(const XayaPlayer& a, const std::string& name, const Json::Value& tournament, uint32_t& tournamentID, std::vector<uint32_t>& fighterIDS);
      
-   /**
-   * Tries to parse a move that withdraws fighters from the special tournament
-   */ 
- 
-  bool ParseSpecialTournamentLeaveData(const XayaPlayer& a, const std::string& name, const Json::Value& tournament, uint32_t& tournamentID, std::vector<uint32_t>& fighterIDS);
           
    /**
    * Tries to parse a move that collects reward data
@@ -339,7 +325,6 @@ private:
   
   /* Copy from logic.cpp, to make sure we recalc after user buys from exchange */
   
-  void RecalculatePlayerTiers(Database& db, const Context& ctx);
   
    /**
    * Tries to handle an account initialisation (choosing faction) from
@@ -436,16 +421,6 @@ private:
   */    
   void MaybeLeaveTournament (const std::string& name, const Json::Value& tournament);    
   
-  /**
-  * Tries to send the fighters for the special tournament
-  */    
-  void MaybeEnterSpecialTournament (const std::string& name, const Json::Value& tournament);  
-  
-  /**
-  * Tries to withdraw the fighters from the special tournament
-  */    
-  void MaybeLeaveSpecialTournament (const std::string& name, const Json::Value& tournament);    
-  
    /**
    * Tries to update tutorial state even further on.
    */
@@ -471,11 +446,6 @@ private:
    */  
   void TryTournamentAction (const std::string& name, const Json::Value& upd);
 
-  /**
-   * Tries to process all kind of actions related to special tournaments
-   */  
-  void TrySpecialTournamentAction (const std::string& name, const Json::Value& upd, const Context& ctx);    
-  
   /**
    * Tries to process all kind of actions related to fighters
    */  

@@ -92,16 +92,14 @@ message Fighter
   optional uint64 ExchangePrice = 17;  
   
   /*Only relevant for the starting treats*/
-  optional bool IsAccountBound = 18;  
+  optional bool IsAccountBound = 18;
 
-  /*Reference to the Special Tournament auto incremented table unique ID this fighter currently takes place in*/
-  optional uint32 SpecialTournamentInstanceID = 19;
+  /* Tags 19, 20 were SpecialTournamentInstanceID / SpecialTournamentStatus;
+     retired with the special-tournament feature at the Polygon relaunch. */
+  reserved 19, 20;
 
-  /*The status of the special tournament event*/
-  optional uint32 SpecialTournamentStatus = 20; 
-
-  /*The status of the special tournament event*/
-  optional uint32 TournamentPoints = 21;   
+  /*Tournament points*/
+  optional uint32 TournamentPoints = 21;
   
   /*Last tournament timestamp, to make sure player can participate only once per mathday*/
   optional uint64 LastTournamentTime = 22;     

@@ -25,7 +25,6 @@
 #include "database/dbtest.hpp"
 #include "database/globaldata.hpp"
 #include "database/recipe.hpp"
-#include "database/specialtournament.hpp"
 
 #include <xayautil/jsonutils.hpp>
 
@@ -57,9 +56,8 @@ protected:
   RecipeInstanceTable tbl2;
   FighterTable tbl3;
   TournamentTable tbl5;
-  SpecialTournamentTable tbl6;
 
-  PendingStateTests () : xayaplayers(db), tbl2(db), tbl3(db), tbl5(db), tbl6(db)
+  PendingStateTests () : xayaplayers(db), tbl2(db), tbl3(db), tbl5(db)
   {}
   
   /**
@@ -514,109 +512,6 @@ TEST_F (PendingStateUpdaterTests, PendingTournamentEntryDoesNotWriteQueueData)
   EXPECT_EQ (globalData.GetQueueData(), "");
 }
 
-TEST_F (PendingStateUpdaterTests, SubmitSpecialTournamentEntry)
-{
-  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
-  xp->AddBalance(100);
-  xp.reset();
-  
-  ctx.SetTimestamp(100);
-  
-  PXLogic::ProcessSpecialTournaments (db, ctx, rnd);
-
-  auto ft1 = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
-  int32_t ft1ID = ft1->GetId();
-  EXPECT_EQ (ft1->GetStatus(), FighterStatus::Available);
-  ft1.reset();   
-  
-  auto ft2 = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
-  int32_t ft2ID = ft2->GetId();
-  EXPECT_EQ (ft2->GetStatus(), FighterStatus::Available);
-  ft2.reset(); 
-
-  auto ft3 = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
-  int32_t ft3ID = ft3->GetId();
-  EXPECT_EQ (ft3->GetStatus(), FighterStatus::Available);
-  ft3.reset(); 
-
-  auto ft4 = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
-  int32_t ft4ID = ft4->GetId();
-  EXPECT_EQ (ft4->GetStatus(), FighterStatus::Available);
-  ft4.reset(); 
-
-  auto ft5 = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
-  int32_t ft5ID = ft5->GetId();
-  EXPECT_EQ (ft5->GetStatus(), FighterStatus::Available);
-  ft5.reset(); 
-
-  auto ft6 = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
-  int32_t ft6ID = ft6->GetId();
-  EXPECT_EQ (ft6->GetStatus(), FighterStatus::Available);
-  ft6.reset();   
-  
-  auto specialTournamentTier1 = tbl6.GetByTier(1, ctx.RoConfig());
-  ASSERT_TRUE (specialTournamentTier1 != nullptr);
-  uint32_t TID = specialTournamentTier1->GetId();
-  specialTournamentTier1->MutableProto().set_state((int)pxd::SpecialTournamentState::Listed); 
-  specialTournamentTier1.reset();    
-  
-  std::ostringstream s;
-  s << TID;
-  std::string converted(s.str());  
-  
-  std::ostringstream s1x;
-  s1x << ft1ID;
-  std::string converted1x(s1x.str()); 
-
-  std::ostringstream s2x;
-  s2x << ft2ID;
-  std::string converted2x(s2x.str());  
-  
-  std::ostringstream s3x;
-  s3x << ft3ID;
-  std::string converted3x(s3x.str()); 
-
-  std::ostringstream s4x;
-  s4x << ft4ID;
-  std::string converted4x(s4x.str()); 
-
-  std::ostringstream s5x;
-  s5x << ft5ID;
-  std::string converted5x(s5x.str()); 
-
-  std::ostringstream s6x;
-  s6x << ft6ID;
-  std::string converted6x(s6x.str());     
-
-  Process ("domob", R"({"tms": {"e": {"tid": )" + converted + R"(, "fc": [)"+converted1x+R"(,)"+converted2x + R"(,)" + converted3x + R"(,)" + converted4x + R"(,)" + converted5x + R"(,)" + converted6x + R"(]}}})"); 
-  
-  ExpectStateJson (R"(
-    {
-        "xayaplayers" :
-        [
-                {
-                        "name" : "domob",
-                        "specialtournamententries" :
-                        [
-                                {
-                                        "fids" :
-                                        [
-                                                )"+converted1x+R"(,
-                                                )"+converted2x+R"(,
-                                                )"+converted3x+R"(,
-                                                )"+converted4x+R"(,
-                                                )"+converted5x+R"(,
-                                                )"+converted6x+R"(
-                                        ],
-                                        "id" : )"+converted+R"(
-                                }
-                        ]
-                }
-        ]
-
-    }
-  )");
-}
 
 TEST_F (PendingStateUpdaterTests, ExpeditionGetRewards)
 {

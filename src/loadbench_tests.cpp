@@ -163,12 +163,9 @@ protected:
   LoadBenchTests ()
     : xayaplayers(db)
   {
-    /* Measure the PRODUCTION chain (POLYGON), NOT REGTEST.  REGTEST takes a
-       test-only branch in ProcessSpecialTournaments (logic.cpp:986) that calls
-       RecalculatePlayerTiers -- an O(players) full rewrite -- EVERY block, which
-       never runs in production and would make this benchmark measure a test
-       artifact rather than the real per-block cost.  We start just past the
-       POLYGON genesis height so the production reseed/fork branches apply.  */
+    /* Measure the PRODUCTION chain (POLYGON), NOT REGTEST, and start just past
+       the POLYGON genesis height so the production reseed/fork branches apply
+       and the benchmark reflects the real per-block cost.  */
     ctx.SetChain (xaya::Chain::POLYGON);
     SetHeight (89246050);
   }

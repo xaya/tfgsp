@@ -100,7 +100,6 @@ public:
   /**
    * Scans all tournaments to either start them or finilize; public for unit test access purposes
    */  
-  static void ProcessSpecialTournaments(Database& db, const Context& ctx, xaya::Random& rnd);   
   
   /**
    * Scans all fighters, finds ones on the exchange, tests if expired, delists
@@ -146,11 +145,6 @@ private:
   static void ResolveDeconstruction(std::unique_ptr<XayaPlayer>& a, const uint32_t fighterID, Database& db, const Context& ctx, xaya::Random& rnd);
 
   /**
-   * Resolve one instance of special tournament match 
-   * */   
-  static void ResolveSpecialTournamentFight(std::string attackerName, std::vector<int64_t> attackerTeam, std::string defenderName, std::vector<int64_t> defenderTeam, int64_t ID, FighterTable& fighters, const Context& ctx, xaya::Random& rnd, int64_t& scoreAttacker, int64_t& scoreDefender);
-
-  /**
    * For every ongoing operation we reduce its block count by 1
    * and if it reaches 0, we are sending it for the resolution, and erase from array
    */     
@@ -161,11 +155,6 @@ private:
    */  
   static void ProcessTournaments(Database& db, const Context& ctx, xaya::Random& rnd); 
   
-  /**
-   * For the special tournament, we need to precalculate, which tier player can participate in
-   */  
-  static void RecalculatePlayerTiers(Database& db, const Context& ctx);   
-
   /**
    * Inner helper function, to resolve 1:1 clash points between 2 fighters
    */    

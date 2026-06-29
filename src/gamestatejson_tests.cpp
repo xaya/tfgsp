@@ -492,8 +492,6 @@ TEST_F (XayaPlayersJsonTests, ExpeditionInstance)
                         "rating" : 1000,
                         "recipeid" : 1,
                         "saleshistory" : [],
-                        "specialtournamentinstanceid" : 0,
-                        "specialtournamentstatus" : 0,
                         "status" : 0,
                         "sweetness" : 1,
                         "tournamentinstanceid" : 0,
@@ -541,8 +539,6 @@ TEST_F (XayaPlayersJsonTests, ExpeditionInstance)
                         "rating" : 1000,
                         "recipeid" : 2,
                         "saleshistory" : [],
-                        "specialtournamentinstanceid" : 0,
-                        "specialtournamentstatus" : 0,
                         "status" : 0,
                         "sweetness" : 1,
                         "tournamentinstanceid" : 0,
@@ -616,7 +612,6 @@ TEST_F (XayaPlayersJsonTests, ExpeditionInstance)
                                 5
                         ],
                         "role" : "p",
-                        "specialtournamentprestigetier" : 1,
                         "tournamentperformance" : 1,
                         "valuecommon" : 476,
                         "valueepic" : 0,
@@ -651,7 +646,6 @@ TEST_F (XayaPlayersJsonTests, TournamentInstance)
 	
   ExpectStateTournamentsOnlyJson (R"({
 	"fighters" : [],
-	"specialtournaments" : [],
 	"tournaments" : 
 	[
 		{

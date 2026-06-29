@@ -61,16 +61,6 @@ enum class Sweetness : int8_t
 /**
  * Current status of the fighter
  */
-enum class SpecialTournamentStatus : int8_t
-{
-  Listed = 0,
-  Lost = 1,
-  Won = 2
-};
-
-/**
- * Current status of the fighter
- */
 enum class FighterStatus : int8_t
 {
   Available = 0,
@@ -79,7 +69,7 @@ enum class FighterStatus : int8_t
   Exchange = 3,
   Cooking = 4,
   Deconstructing = 5,
-  SpecialTournament = 6,
+  // 6 retired (special-tournament feature removed)
   Cooked = 7,
   Transfiguring = 8
 };

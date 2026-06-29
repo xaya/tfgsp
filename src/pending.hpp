@@ -107,20 +107,10 @@ public:
   void AddTournamentEntries (const XayaPlayer& a, uint32_t tournamentID, std::vector<uint32_t> fighterIDS, FighterTable& fighters, const pxd::RoConfig& config);
   
    /**
-   * Updates the state for a new pending special tournament entries
-   */      
-  void AddSpecialTournamentEntries (const XayaPlayer& a, uint32_t tournamentID, std::vector<uint32_t> fighterIDS, FighterTable& fighters, const pxd::RoConfig& config);  
-  
-   /**
    * Updates the state for a new pending tournament leaves
    */      
   void AddTournamentLeaves (const XayaPlayer& a, uint32_t tournamentID, std::vector<uint32_t> fighterIDS, FighterTable& fighters, const pxd::RoConfig& config);
 
-   /**
-   * Updates the state for a new pending special tournament leaves
-   */      
-  void AddSpecialTournamentLeaves (const XayaPlayer& a, uint32_t tournamentID, std::vector<uint32_t> fighterIDS, FighterTable& fighters, const pxd::RoConfig& config);    
-  
     /**
    * Updates the state for a new pending purchases of fungible items
    */      
@@ -200,20 +190,10 @@ public:
     */
     std::map<uint32_t, std::vector<uint32_t>> tournamentEntries;
     
-    /** List of the special tournament entries which are pending for the
-        not yet started tournaments to enter
-    */
-    std::map<uint32_t, std::vector<uint32_t>> specialTournamentEntries;    
-    
     /** Pending ids of tournaments player currently is trying
         to leave out
     */    
     std::map<uint32_t, std::vector<uint32_t>> tournamentLeaves;
-    
-    /** Pending ids of special tournaments player currently is trying
-        to leave out
-    */    
-    std::map<uint32_t, std::vector<uint32_t>> specialTournamentLeaves;    
     
     /** Pending ids of fighters player currently  being deconstructed
     */    

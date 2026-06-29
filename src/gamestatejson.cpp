@@ -22,7 +22,6 @@
 #include "database/fighter.hpp"
 #include "database/recipe.hpp"
 #include "database/globaldata.hpp"
-#include "database/specialtournament.hpp"
 #include "database/reward.hpp"
 #include "database/ongoings.hpp"
 #include "database/activity.hpp"
@@ -146,8 +145,6 @@ template <>
   res["sweetness"] = IntToJson (pb.sweetness());
   res["highestappliedsweetener"] = IntToJson (pb.highestappliedsweetener());
   
-  res["specialtournamentinstanceid"] = IntToJson (pb.specialtournamentinstanceid());
-  res["specialtournamentstatus"] = IntToJson (pb.specialtournamentstatus());
   res["tournamentpoints"] = IntToJson (pb.tournamentpoints());
   res["lasttournamenttime"] = IntToJson (pb.lasttournamenttime());
   
@@ -277,61 +274,6 @@ template <>
   return res;
 }  
  
-template <>
-  Json::Value
-  GameStateJson::Convert<SpecialTournamentInstance>(const SpecialTournamentInstance& tournament) const
-{
-  const auto& pb = tournament.GetProto ();
-  Json::Value res(Json::objectValue);
-  
-  res["id"] = tournament.GetId();
-  res["tier"] = IntToJson (pb.tier());
-  res["crownholder"] = pb.crownholder();
-  res["state"] = IntToJson (pb.state());
-  
-  Json::Value matchresults(Json::arrayValue);
-  
-  for(const auto& lastdaymatch: pb.lastdaymatchresults())
-  {
-     Json::Value rslt(Json::objectValue);
-     
-     rslt["attacker"] = lastdaymatch.attacker();
-     rslt["defender"] = lastdaymatch.defender();
-     rslt["attackerpoints"] = IntToJson (lastdaymatch.attackerpoints());
-     rslt["defenderpoints"] = IntToJson (lastdaymatch.defenderpoints());
-     
-     matchresults.append(rslt); 
-  }
-  
-  Json::Value defendersarray(Json::arrayValue);
- 
-  FighterTable ftbl(db);  
-  auto resDD = ftbl.QueryAll();
-  while (resDD.Step ())
-  {
-      auto c = ftbl.GetFromResult (resDD, ctx.RoConfig ());
-      
-      if(c->GetProto().specialtournamentinstanceid() == tournament.GetId() && c->GetOwner() == pb.crownholder())
-      {
-         defendersarray.append(c->GetId());  
-      }
-	  
-	  c.reset();
-  } 
-  
-  res["ldresults"] = matchresults;
-  res["defenders"] = defendersarray;
-  
-  GlobalData gd(db);
-    
-  //int64_t currentTime = ctx.Timestamp();
-  int64_t lastTournamentTime = gd.GetLastTournamentTime();
-  //int64_t timeDiff = currentTime - lastTournamentTime;  
-    
-  res["lasttournamenttile"] = IntToJson (lastTournamentTime);
-  
-  return res;
-}   
  
 template <>
   Json::Value
@@ -492,7 +434,6 @@ template <>
   res["valuecommon"] = IntToJson (pb.valuecommon ());
   res["fighteraverage"] = IntToJson (pb.fighteraverage ());
   res["tournamentperformance"] = IntToJson (pb.tournamentperformance ());
-  res["specialtournamentprestigetier"] = IntToJson (pb.specialtournamentprestigetier ());
   res["address"] = pb.address ();
   
 
@@ -553,14 +494,6 @@ GameStateJson::Tournaments()
   return res;
 }
 
-Json::Value
-GameStateJson::SpecialTournaments()
-{
-  SpecialTournamentTable tbl(db);
-  Json::Value res = ResultsAsArray (tbl, tbl.QueryAll ());
-
-  return res;
-}
 
 Json::Value
 GameStateJson::CrystalBundles()
@@ -738,7 +671,6 @@ GameStateJson::UserTournaments(const std::string& userName)
 {
   Json::Value res(Json::objectValue);
   
-  res["specialtournaments"] = SpecialTournaments();
   
   // We do not want all the tournaments here
   // We want only open tournaments, then tournaments which are running
@@ -926,30 +858,6 @@ GameStateJson::UserTournaments(const std::string& userName)
 	  }	
   };  
   
-  // Additionally, lets feed all the special tournament defenders
-  
-  auto resDDFT = ftbl.QueryAll();
-  while (resDDFT.Step ())
-  {
-      auto c = ftbl.GetFromResult (resDDFT, ctx.RoConfig ());
-      int32_t fIDD = c->GetId();
-	  
-      if(c->GetProto().specialtournamentinstanceid() > 0)
-      {
-        if (std::find(collectedFightersIds.begin(), collectedFightersIds.end(), fIDD) != collectedFightersIds.end()) 
-		{
-			// ignore duplicate
-		}					
-		else
-		{		  
-         fghtrarr.append(Convert<FighterInstance> (*c));  
-		 collectedFightersIds.push_back(fIDD);
-		}
-      }
-	  
-	  c.reset();
-  } 
-      
   res["tournaments"] = arr;
   res["fighters"] = fghtrarr;
 
@@ -996,7 +904,6 @@ GameStateJson::FullState()
   res["rewards"] = Rewards();
   res["recepies"] = Recepies();
   res["tournaments"] = Tournaments();
-  res["specialtournaments"] = SpecialTournaments();
   
   res["statehex"] = latestKnownStateHash; 
   res["stateblock"] = latestKnownStateBlock;

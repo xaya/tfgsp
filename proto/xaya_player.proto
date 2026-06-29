@@ -70,13 +70,13 @@ message XayaPlayer
   optional uint32 FighterAverage = 14; 
   optional uint32 TournamentPerformance = 15;
   
+  /* Tag 16 was SpecialTournamentPrestigeTier; retired with the
+     special-tournament feature at the Polygon relaunch. */
+  reserved 16;
+
   /**
-   * Each time special tournament passed, for each player we re-calculate the tier he applicaple to join to
-   */  
-  optional uint32 SpecialTournamentPrestigeTier = 16;  
-  
-  /**
-   * Associated CHI address to send rewards into for special tournaments
-   */    
-  optional string address = 17; 
+   * The player's wallet address (set via the `init` move); the payment
+   * receiver for on-chain rewards.
+   */
+  optional string address = 17;
 }

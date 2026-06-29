@@ -19,7 +19,6 @@ libdatabase_la_SOURCES = \
   globaldata.cpp \
   xayaplayer.cpp \
   tournament.cpp \
-  specialtournament.cpp \
   recipe.cpp \
   ongoings.cpp \
   fighter.cpp \
@@ -33,7 +32,6 @@ noinst_HEADERS = \
   amount.hpp \
   activity.hpp \
   tournament.hpp \
-  specialtournament.hpp \
   recipe.hpp \
   ongoings.hpp \
   fighter.hpp fighter.tpp\

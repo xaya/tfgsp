@@ -52,7 +52,6 @@
 #include "database/globaldata.hpp"
 #include "database/recipe.hpp"
 #include "database/reward.hpp"
-#include "database/specialtournament.hpp"
 #include "database/tournament.hpp"
 #include "database/xayaplayer.hpp"
 
@@ -97,13 +96,12 @@ protected:
   FighterTable tbl3;
   RewardsTable tbl4;
   TournamentTable tbl5;
-  SpecialTournamentTable tbl6;
 
   GameStateJson converter;
   GlobalData gd;
 
   GoldenReplayTests ()
-    : xayaplayers(db), tbl2(db), tbl3(db), tbl4(db), tbl5(db), tbl6(db),
+    : xayaplayers(db), tbl2(db), tbl3(db), tbl4(db), tbl5(db),
       converter(db, ctx), gd(db)
   {
     SetHeight (42);

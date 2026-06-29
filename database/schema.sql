@@ -67,19 +67,6 @@ CREATE TABLE IF NOT EXISTS `globaldata` (
   `queuedata` TEXT NOT NULL
 );
 
--- Data for the special tournaments instances in the game.
-CREATE TABLE IF NOT EXISTS `specialtournaments` (
-
-  -- The recipe ID, which is assigned based on libxayagame's AutoIds.
-  `id` INTEGER PRIMARY KEY,
-  
-  -- Special Tournament tier, used for easy unit-tests query
-  `tier` INTEGER NOT NULL,  
-  
-  -- Additional data encoded as a TournamentBlueprint protocol buffer.
-  `proto` BLOB NOT NULL 
-);
-
 -- Data for the recipe instances in the game.
 CREATE TABLE IF NOT EXISTS `recepies` (
 
