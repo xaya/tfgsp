@@ -121,6 +121,41 @@ tournaments + reward generation for ~62 completions/block + the per-block full `
 `CheckFightersForSale`/`SetFreeTransfiguringFighters` (flat ~4,850 fighters here, but O(total fighters)
 in production). DEF2 should get the same filtered-query + index treatment next.
 
+### 3. Sync feasibility — the per-block floor over ~50M blocks  (why DEF2 + ReopenMissing are now TOP priority)
+
+Sync time ≈ (average per-block processing time) × (number of blocks). Three years of Polygon at
+~1.5–2 s/block ≈ **~50 million blocks**, so a from-genesis sync is only practical if the AVERAGE per-block
+time is a tiny fraction of the block interval. The worst block doesn't matter — the average over all ~50M does.
+
+The catch: the per-block MAINTENANCE — the fighter scans (DEF2: `CheckFightersForSale` /
+`SetFreeTransfiguringFighters`) and `ReopenMissingTournaments` — runs on **every block, even empty ones**, and
+its cost **grows with the size of the game**. Measured idle/empty-block cost (P-E1 bench, no moves; the floor
+under every block):
+
+| Game size (fighters) | idle/empty block | sync 3yr (~50M blocks) |
+|---|---|---|
+| 20k | ~24 ms | ~2 weeks |
+| 200k | ~240 ms | ~5 months |
+| 500k | ~600 ms | **~1 year** |
+
+So at a mature, busy game a from-genesis sync with the CURRENT per-block scans takes months to ~a year — not
+acceptable. This violates the standing **event-driven-GSP hard requirement** (an idle block must do ~0 work;
+P-E1/H3 achieved it for cooking/ongoings, but the fighter scans + tournament reopen are the remaining violations).
+
+**Fixes (TOP PRIORITY — same indexed/event-driven pattern as DEF3):**
+- **DEF2** — index fighters by status so the per-block scan touches only the Exchange/Transfiguring fighters,
+  not all → idle-block cost flat (~1 ms) regardless of total fighter count.
+- **`ReopenMissingTournaments` → O(blueprints)** — indexed lookup by (authoredid, state) instead of
+  O(blueprints × concurrent) (its own `// TODO` admits this).
+- After both: idle/empty blocks ~1 ms at any game size → sync 3 years in **~½–1 day**, and the floor never climbs.
+
+(DEF3 — already fixed — was the worst case: it grew UNBOUNDED, so a deep sync would never have finished at all.)
+
+**Complementary mitigation:** node operators normally start from a published state **snapshot/checkpoint** at a
+recent height rather than syncing from genesis (standard for libxayagame GSPs) — set this up too. But the
+per-block floor still must be low (for the snapshot-builder, staying live, and anyone who full-syncs), so
+DEF2 + ReopenMissing remain essential, not optional.
+
 ---
 
 ## Issues found & fixed in the rewrite (consensus / correctness / scalability)
