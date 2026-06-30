@@ -121,40 +121,59 @@ tournaments + reward generation for ~62 completions/block + the per-block full `
 `CheckFightersForSale`/`SetFreeTransfiguringFighters` (flat ~4,850 fighters here, but O(total fighters)
 in production). DEF2 should get the same filtered-query + index treatment next.
 
-### 3. Sync feasibility — the per-block floor over ~50M blocks  (why DEF2 + ReopenMissing are now TOP priority)
+### 3. Sync feasibility — the per-block floor over ~50M blocks  (DEF2 + ReopenMissing — FIXED, `6179a4a`)
 
 Sync time ≈ (average per-block processing time) × (number of blocks). Three years of Polygon at
 ~1.5–2 s/block ≈ **~50 million blocks**, so a from-genesis sync is only practical if the AVERAGE per-block
 time is a tiny fraction of the block interval. The worst block doesn't matter — the average over all ~50M does.
 
-The catch: the per-block MAINTENANCE — the fighter scans (DEF2: `CheckFightersForSale` /
-`SetFreeTransfiguringFighters`) and `ReopenMissingTournaments` — runs on **every block, even empty ones**, and
-its cost **grows with the size of the game**. Measured idle/empty-block cost (P-E1 bench, no moves; the floor
-under every block):
+The catch (now fixed): the per-block MAINTENANCE — the fighter scans (DEF2: `CheckFightersForSale` /
+`SetFreeTransfiguringFighters`) and `ReopenMissingTournaments` — ran on **every block, even empty ones**, and
+its cost **grew with the size of the game**. Measured idle/empty-block floor (loadbench `TickCost`, no moves,
+20 blocks), BEFORE vs AFTER the fix:
 
-| Game size (fighters) | idle/empty block | sync 3yr (~50M blocks) |
-|---|---|---|
-| 20k | ~24 ms | ~2 weeks |
-| 200k | ~240 ms | ~5 months |
-| 500k | ~600 ms | **~1 year** |
+| idle block, players | BEFORE ms | AFTER ms | speedup |
+|---|---|---|---|
+| 1,000  | 3.24   | 0.33 | ~10× |
+| 10,000 | 25.09  | 0.33 | 75× |
+| 50,000 | 135.84 | 0.33 | **412×** |
 
-So at a mature, busy game a from-genesis sync with the CURRENT per-block scans takes months to ~a year — not
-acceptable. This violates the standing **event-driven-GSP hard requirement** (an idle block must do ~0 work;
-P-E1/H3 achieved it for cooking/ongoings, but the fighter scans + tournament reopen are the remaining violations).
+The floor is now **FLAT at ~0.33 ms across 0–50k players** (was linear/superlinear in fighter count) —
+**independent of game size**. From-genesis sync of a mature game drops from months/~1 year to well under a day;
+the floor no longer climbs.
 
-**Fixes (TOP PRIORITY — same indexed/event-driven pattern as DEF3):**
-- **DEF2** — index fighters by status so the per-block scan touches only the Exchange/Transfiguring fighters,
-  not all → idle-block cost flat (~1 ms) regardless of total fighter count.
-- **`ReopenMissingTournaments` → O(blueprints)** — indexed lookup by (authoredid, state) instead of
-  O(blueprints × concurrent) (its own `// TODO` admits this).
-- After both: idle/empty blocks ~1 ms at any game size → sync 3 years in **~½–1 day**, and the floor never climbs.
+**Fix — DONE (`6179a4a`), same indexed pattern as DEF3, golden BYTE-IDENTICAL:**
+- **DEF2** — `fighters_by_status` index + `FighterTable::QueryForStatus()`; the two per-block fighter scans now
+  touch only Exchange/Transfiguring rows. Collect-then-mutate (ids first, flip after) so the status write never
+  disturbs the status-keyed cursor mid-scan (the one real hazard).
+- **`ReopenMissingTournaments`** — `tournaments_by_name_state` index + `QueryActiveForBlueprint()`; seeks one
+  blueprint's active rows (the `name` column already holds the authoredid) instead of rescanning every active
+  tournament once per blueprint.
+- No schema column / proto change. Verified: golden byte-identical; 98 unit + 4 reorg + 2 reorg-game + 28 db green.
+
+**Under FULL load it stays flat too** (scale bench, 20k players all entering tournaments + cooking + trading):
+per-block time is identical at block 30 and block 60 (11,472 → 11,471 ms — those seconds are pure saturation,
+~3,300 tournament resolutions/block, nothing like a gas-limited Polygon block) → **no ratchet** as state grows.
+[Full curve + growth-factor + disk plateau + 0-rejected: filled in when the run completes.]
 
 (DEF3 — already fixed — was the worst case: it grew UNBOUNDED, so a deep sync would never have finished at all.)
 
+**Remaining periodic scan (flagged, not yet fixed): the every-100-block anti-fork hash** (`logic.cpp:239`,
+`if (height % 100 == 0) { GetStateAsJson() … }`) rebuilds the ENTIRE game state as JSON (QueryAll on every
+table) inline in `UpdateState`, every 100 blocks — the largest remaining O(game-size) scan in the sync path
+(100× rarer than a per-block scan; transient memory, not disk). libxayagame already provides the right tool:
+`xaya::SQLiteHasher` (a `SQLiteProcessor`) — registered via `AddProcessor` + `SetInterval(N)`, it SHA256-hashes
+the DB **async on a read-only snapshot off the block thread**, persists `(blockhash, statehash)` into
+`xayagame_statehashes` (so it is reorg-rolled-back — fixing audit finding **F4**), and the cadence is a real
+arg. Soccerverse (`smcd`) and the xayaships example both wire it to a `--statehash_interval` gflags flag
+(default 0 = off). Treatfighter is the outlier with a hardcoded inline `% 100` + a weak hash (row counts +
+fighter names only) stored in non-rolled-back statics. **Recommendation:** replace the inline block with the
+framework `SQLiteHasher` + a `--statehash_interval` flag (Soccerverse pattern). The hash is diagnostic/RPC-only
+(`statehex`), not consensus, and not in golden — so this is consensus-safe. Deferred pending owner sign-off.
+
 **Complementary mitigation:** node operators normally start from a published state **snapshot/checkpoint** at a
-recent height rather than syncing from genesis (standard for libxayagame GSPs) — set this up too. But the
-per-block floor still must be low (for the snapshot-builder, staying live, and anyone who full-syncs), so
-DEF2 + ReopenMissing remain essential, not optional.
+recent height rather than syncing from genesis (standard for libxayagame GSPs) — worth setting up too. With the
+per-block floor now flat ~0.33 ms, from-genesis sync is also feasible.
 
 ---
 
@@ -166,6 +185,8 @@ DEF2 + ReopenMissing remain essential, not optional.
 | OVF-01 | transfigure | candy amount fed unbounded into int32 `fpm::fixed_24_8` → signed-overflow UB at 2²³ | launch-blocker (consensus UB) | DONE (`f72ed26`) |
 | Sentinel UB | transfigure | `fpm::fixed_24_8(9999999)` rating sentinels overflow int32 at construction | UB (deterministic) | DONE (`f72ed26`) |
 | DEF3 | tournaments | completed rows never GC'd + re-scanned every block → unbounded per-block time | launch-blocker (scalability) | DONE — `QueryActive` filter + indexed `state` column + windowed retention GC (golden byte-identical; steady-state curve flattened, §2) |
+| DEF2 | fighters / tournaments | `CheckFightersForSale` + `SetFreeTransfiguringFighters` full-scanned ALL fighters every block; `ReopenMissingTournaments` rescanned all active tournaments per blueprint → per-block floor grew with game size | launch-blocker (sync feasibility) | DONE (`6179a4a`) — `fighters_by_status` + `tournaments_by_name_state` indexes + filtered queries (collect-then-mutate); idle floor 135.8→0.33 ms @50k, now FLAT; golden byte-identical (§3) |
+| F4 / statehash | anti-fork hash | inline `% 100` full-state JSON scan in `UpdateState`; weak hash (counts + fighter names) in non-rolled-back process statics | scalability + reorg-correctness (diagnostic, non-consensus) | OPEN — recommend libxayagame `xaya::SQLiteHasher` + `--statehash_interval` flag (§3, Soccerverse pattern) |
 | rewards-idx | rewards | `CountForOwner`/`QueryForOwner` full-scanned the unbounded `rewards` table every reward roll/claim (no owner index) | scalability (found by the scale bench) | DONE — added `rewards_by_owner` index (golden-neutral) |
 | DEF8–14 | determinism | raw float/double in consensus (probabilities, alms, exchange %, sweetness, prestige) | fork-risk discipline | DONE (Pass D) — now integer/fpm fixed-point; CI lint + `-ffp-contract=off` guardrails (`f72ed26`) |
 | Quality audit | repo-wide | 80 findings: dead code, DRY, money-path correctness (reward-roll `<=`, transfigure fuel cost, armor-reward by-value, demand-queue double-append, role-load HALT, …) | mixed | DONE (quality-audit-findings.md) |
@@ -178,5 +199,5 @@ DEF2 + ReopenMissing remain essential, not optional.
 - Crystal economy: WCHI-gated, sink-heavy, not inflationary.
 
 ### Still open (non-blocking, deterministic)
-- DEF2 — per-block full FighterTable scans (`CheckFightersForSale` / `SetFreeTransfiguringFighters`): scalability, fix with the same filtered-query pattern as DEF3.
+- **Anti-fork state hash** (`logic.cpp:239` `% 100` inline FullState scan): replace with libxayagame's `xaya::SQLiteHasher` + a `--statehash_interval` flag (Soccerverse pattern) — async on a snapshot off the block thread, configurable cadence, reorg-safe (fixes audit **F4**), stronger SHA256-over-tables hash. Diagnostic/non-consensus, golden-safe. Deferred pending owner sign-off. See §3.
 - Launch prep (non-code): confirm the real `dev_address` (still TEMP `0x59F5…`), a live Polygon + XayaX end-to-end test, a CI roconfig-blob hash assertion.
