@@ -1,0 +1,114 @@
+# Original Treatfighter vs. the Polygon rewrite — performance & issues comparison
+
+Living comparison of the **original** Treatfighter GSP (Xaya/CHI-era, the "writes every
+block / clogs the DB" version) against the **rewrite** (`polygon-rewrite` branch, on
+Polygon via the XayaX eth bridge). It tracks measured performance differences and every
+consensus / correctness / scalability issue found and fixed, so the two can be compared
+directly and nothing is lost.
+
+Detailed source docs (this page is the index + the head-to-head numbers):
+- `docs/p-e1-loadbench.md` — the P-E1 "writes every block" benchmark (original vs new).
+- `docs/security-audit.md` — the move-reachability security/DoS audit (§11 = launch re-verify).
+- `docs/quality-audit-findings.md` / `docs/quality-audit-2026-06-29.md` — the 80-finding clean/DRY/determinism sweep.
+- `docs/reorg-and-scale-testing-plan.md` — the reorg + scale (20k) test harness design.
+
+## Benchmark tooling (all repeatable; on the POLYGON chain at production height)
+
+| Tool | File | What it measures | How to run (in `tfdev`) |
+|---|---|---|---|
+| P-E1 load sweep | `src/loadbench_tests.cpp` (`LoadBenchTests`) | per-block undo-bytes / ms / main-db KiB / per-table writes vs player count, IDLE blocks | `TF_LOADBENCH=1 ./loadbench_tests` |
+| **Scale / block-growth** | `src/loadbench_tests.cpp` (`ScaleBenchTests.BlockGrowthUnderFullActivity`) | per-block UpdateState ms + DB size + table row counts over a sustained run of REAL mixed activity (tournaments + cooking + market) — the growth CURVE over time | `TF_SCALE=1 TF_SCALE_N=20000 TF_SCALE_M=200 ./loadbench_tests --gtest_filter=*BlockGrowth*` |
+| Reorg / scale | `src/reorg_tests.cpp`, `src/reorg_game_tests.cpp` | exact undo round-trip + idle-block cost at scale | `TF_REORG_N=20000 ./reorg_tests` |
+
+Both `loadbench_tests` and the scale bench are `check_PROGRAMS` (compiled by `make check`,
+never auto-run) and env-gated, so they don't slow the normal test gate but never bit-rot.
+
+---
+
+## Performance comparison
+
+### 1. P-E1 — per-block write/scan cost on IDLE blocks  (the original "clogs the DB" complaint)
+
+| Metric | Original TF | Rewrite | Why |
+|---|---|---|---|
+| per-block row-writes (idle) | O(all players) | O(players with ongoings) ≈ 0 | Stage 1 skip-when-empty guard (`28a841d`) |
+| per-block scan time (idle, 50k) | ~643 ms | ~261 ms → ~0 after H3 | H3 event-driven ongoings (`aa60798`) moved ongoings out of the per-player proto into a height-keyed table |
+| undo-log growth (1k active builds) | ~3.5 GB/day | ~0 + pruning | active build no longer re-writes its whole proto every block |
+
+Full detail + raw numbers: `docs/p-e1-loadbench.md`. **Verdict: the original's idle-block
+bloat is fixed** — an idle block now touches ~0 rows.
+
+### 2. DEF3 — per-block cost grows with accumulated TOURNAMENTS  (found by the new scale bench)
+
+The scale bench drove ~20k players through sustained real tournament play and exposed a
+second, distinct unbounded cost the rewrite still inherited from the original: **completed
+tournament rows are never deleted, and `ProcessTournaments` + `ReopenMissingTournaments`
+re-scan the whole `tournaments` table (~25× per block, with proto deserialisation) every
+block.** Per-block `UpdateState` time grows LINEARLY in the accumulated tournament-row
+count — a permanent ratchet (every tournament ever played adds cost to every future block,
+forever).
+
+**BEFORE the fix (current/original behavior) — measured, non-vacuous (0 rejected moves, real completions):**
+
+N=2,000 players, 120 blocks:
+| % of run | block | tournament rows | UpdateState ms |
+|---|---|---|---|
+| 0% | 0 | 83 | 19 |
+| 25% | 30 | 1,958 | 550 |
+| 50% | 60 | 3,834 | 915 |
+| 75% | 90 | 5,710 | 1,105 |
+| 100% | 119 | 7,524 | 1,421 |
+
+- mean ms/block: first-10% **32 ms** → last-10% **1,345 ms** = **41× growth** over 120 blocks.
+- fit: **ms/block ≈ 280 + 0.151 × tournament_rows** (fighters table flat = control).
+
+N=20,000 players (production scale):
+| block | tournament rows | UpdateState ms |
+|---|---|---|
+| 20 | 12,520 | 13,788 |
+| 40 | 25,020 | 30,012 |
+| 60 | 37,520 | 44,627 |
+| 80 | 50,020 | 59,895 |
+
+- fit: **ms/block ≈ 1.22 × tournament_rows** — ~8× steeper per row than at 2k (the 100 MB+
+  in-memory DB spills out of CPU cache, so DEF3 gets **worse** at scale). At block 80 a
+  single block already costs **~60 s** of pure `UpdateState`.
+- **Operational impact:** at ~2 s Polygon blocks, the GSP would fall behind under real
+  tournament load and never recover. Deterministic (not a fork), but an operational
+  showstopper at scale, and unbounded. No crashes/CHECK failures across 50k tournaments.
+
+**AFTER the fix (filter active tournaments per-block + bounded retention of completed rows):**
+> _PENDING — to be filled from the post-fix re-run of the same bench. Expected: per-block ms
+> ~FLAT (growth factor ≈ 1×) because per-block scans become O(active tournaments) and the
+> completed backlog is capped; all completed-tournament results preserved within the
+> retention window for the frontend (`UserTournaments` RPC)._
+
+Fix design: add a `state` column + index to `tournaments`; `ProcessTournaments` /
+`ReopenMissingTournaments` query only Listed/Running instances (golden byte-identical — the
+completed rows did zero work); keep a retention window of recent completed tournaments for
+display + GC older ones (bounds disk); decouple reward-claims from the tournament row so
+late claims survive pruning.
+
+---
+
+## Issues found & fixed in the rewrite (consensus / correctness / scalability)
+
+| # | Area | Issue | Severity | Status |
+|---|---|---|---|---|
+| Security C1–C9 | move pipeline | 6 move-reachable chain-halt crashes + 2 economic exploits (crystal-mint replay, test-content faucet) | chain/economy-fatal | DONE (security-audit.md) |
+| OVF-01 | transfigure | candy amount fed unbounded into int32 `fpm::fixed_24_8` → signed-overflow UB at 2²³ | launch-blocker (consensus UB) | DONE (`f72ed26`) |
+| Sentinel UB | transfigure | `fpm::fixed_24_8(9999999)` rating sentinels overflow int32 at construction | UB (deterministic) | DONE (`f72ed26`) |
+| DEF3 | tournaments | completed rows never GC'd + re-scanned every block → unbounded per-block time | launch-blocker (scalability) | **IN PROGRESS** (this doc, §2) |
+| DEF8–14 | determinism | raw float/double in consensus (probabilities, alms, exchange %, sweetness, prestige) | fork-risk discipline | DONE (Pass D) — now integer/fpm fixed-point; CI lint + `-ffp-contract=off` guardrails (`f72ed26`) |
+| Quality audit | repo-wide | 80 findings: dead code, DRY, money-path correctness (reward-roll `<=`, transfigure fuel cost, armor-reward by-value, demand-queue double-append, role-load HALT, …) | mixed | DONE (quality-audit-findings.md) |
+| F1/REORG-01 | pending | pending processing must not write the confirmed DB | reorg-safety | DONE (read-only flag + regression test) |
+| P-E1 | ongoings | per-block O(players) write/scan (the "clogs the DB" root cause) | scalability | DONE (Stage 1 + H3) |
+
+### Economy / product decisions (chain-safe, see `tf-economy-decisions` memory)
+- SB-06 starter giveaway: **kept** (verified not exploitable — starter fighters account-bound, no item transfer, crystals WCHI-gated).
+- Tournament JoinCost: **not added** (bots can't extract value or crowd out players; the real threat was DEF3 bloat, now fixed).
+- Crystal economy: WCHI-gated, sink-heavy, not inflationary.
+
+### Still open (non-blocking, deterministic)
+- DEF2 — per-block full FighterTable scans (`CheckFightersForSale` / `SetFreeTransfiguringFighters`): scalability, fix with the same filtered-query pattern as DEF3.
+- Launch prep (non-code): confirm the real `dev_address` (still TEMP `0x59F5…`), a live Polygon + XayaX end-to-end test, a CI roconfig-blob hash assertion.
