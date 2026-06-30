@@ -577,8 +577,6 @@ TEST_F (XayaPlayersJsonTests, ExpeditionInstance)
                         "tournamentid" : 0
                 }
         ],
-        "stateblock" : 0,
-        "statehex" : "",
         "vanillaurl" : "xaya.io",
         "version" : "1.1.5",
         "xayaplayers" :

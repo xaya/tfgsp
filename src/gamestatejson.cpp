@@ -620,10 +620,7 @@ GameStateJson::User(const std::string& userName)
   RewardsTable tbl4(db);
   Json::Value res4 = ResultsAsArray (tbl4, tbl4.QueryForOwner (userName));  
   res["rewards"] = res4;
-  
-  res["statehex"] = latestKnownStateHash; 
-  res["stateblock"] = latestKnownStateBlock;  
-  
+
   // Additionally, we want to attach all the player ratings
   
   auto res2x = xayaplayers.QueryAll ();
@@ -849,10 +846,7 @@ GameStateJson::FullState()
   res["rewards"] = Rewards();
   res["recepies"] = Recepies();
   res["tournaments"] = Tournaments();
-  
-  res["statehex"] = latestKnownStateHash; 
-  res["stateblock"] = latestKnownStateBlock;
-  
+
   GlobalData gd(db);
   res["version"] = gd.GetVersion();
   res["vanillaurl"] = gd.GetUrl();

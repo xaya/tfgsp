@@ -62,5 +62,15 @@
     "name": "getxayaplayers",
     "params": {},
     "returns": {}
+  },
+  {
+    "name": "hashcurrentstate",
+    "params": {},
+    "returns": {}
+  },
+  {
+    "name": "getstatehash",
+    "params": ["block hash"],
+    "returns": {}
   }
 ]

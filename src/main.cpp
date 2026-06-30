@@ -25,6 +25,7 @@
 
 #include <xayagame/defaultmain.hpp>
 #include <xayagame/game.hpp>
+#include <xayagame/sqliteproc.hpp>
 
 #include <gflags/gflags.h>
 #include <glog/logging.h>
@@ -68,6 +69,11 @@ DEFINE_int32 (enable_pruning, -1,
               "if non-negative (including zero), old undo data will be pruned"
               " and only as many blocks as specified will be kept");
 
+DEFINE_int32 (statehash_interval, 0,
+              "if set to a positive number N, hash the game state every N"
+              " blocks (best-effort fork-detection via libxayagame SQLiteHasher;"
+              " 0 = disabled)");
+
 DEFINE_string (datadir, "",
                "base data directory for game data (will be extended by game ID"
                " and the chain)");
@@ -95,11 +101,23 @@ private:
   /** The REST API port.  */
   int restPort = 0;
 
+  /** The game-state hasher, instantiated only if --statehash_interval > 0.  */
+  std::unique_ptr<xaya::SQLiteHasher> hasher;
+
 public:
 
   explicit PXInstanceFactory (pxd::PXLogic& r)
     : rules(r)
-  {}
+  {
+    if (FLAGS_statehash_interval > 0)
+      {
+        hasher = std::make_unique<xaya::SQLiteHasher> ();
+        hasher->SetInterval (FLAGS_statehash_interval);
+        rules.AddProcessor (*hasher);
+        LOG (INFO) << "Enabled state hashing every "
+                   << FLAGS_statehash_interval << " block(s)";
+      }
+  }
 
   void
   EnableRest (const int p)
@@ -112,7 +130,8 @@ public:
                   jsonrpc::AbstractServerConnector& conn) override
   {
     using WrappedRpc = xaya::WrappedRpcServer<pxd::PXRpcServer>;
-     auto rpc =  std::make_unique<WrappedRpc> (game, rules, conn);
+    auto* h = hasher.get ();
+    auto rpc = std::make_unique<WrappedRpc> (game, rules, h, conn);
                                                              
     if (FLAGS_unsafe_rpc)
     {

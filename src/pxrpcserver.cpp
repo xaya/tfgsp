@@ -28,6 +28,10 @@
 #include "proto/config.pb.h"
 
 #include <xayagame/gamerpcserver.hpp>
+#include <xayagame/sqliteintro.hpp>
+
+#include <xayautil/hash.hpp>
+#include <xayautil/uint256.hpp>
 
 #include <glog/logging.h>
 #include <jsonrpccpp/common/exception.h>
@@ -162,6 +166,44 @@ PXRpcServer::getfueldata (const Json::Value& candiesNew, const Json::Value& cand
   return BaseMoveProcessor::EvaluateFuelList(fightersSubmited, recipesSubmited, candiesSubmited, fightersNew, recipesNew, candiesNew, fighterData, recipeData, candylist);
 }
 
+
+Json::Value
+PXRpcServer::hashcurrentstate ()
+{
+  LOG (INFO) << "RPC method called: hashcurrentstate";
+  EnsureUnsafeAllowed ("hashcurrentstate");
+  return logic.GetCustomStateData (game, "data",
+    [] (const xaya::SQLiteDatabase& db)
+      {
+        xaya::SHA256 h;
+        xaya::WriteTables (h, db, xaya::GetSqliteTables (db));
+        return h.Finalise ().ToHex ();
+      });
+}
+
+Json::Value
+PXRpcServer::getstatehash (const std::string& block)
+{
+  LOG (INFO) << "RPC method called: getstatehash " << block;
+  if (hasher == nullptr)
+    throw jsonrpc::JsonRpcException (
+        jsonrpc::Errors::ERROR_RPC_METHOD_NOT_FOUND,
+        "state hashing is not enabled (start with --statehash_interval=N)");
+
+  xaya::uint256 blockHash;
+  if (!blockHash.FromHex (block))
+    throw jsonrpc::JsonRpcException (
+        jsonrpc::Errors::ERROR_RPC_INVALID_PARAMS, "invalid block hash");
+
+  return logic.GetCustomStateData (game, "data",
+    [this, &blockHash] (const xaya::SQLiteDatabase& db) -> Json::Value
+      {
+        xaya::uint256 value;
+        if (!hasher->GetHash (db, blockHash, value))
+          return Json::Value ();
+        return value.ToHex ();
+      });
+}
 
 /* ************************************************************************** */
 

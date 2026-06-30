@@ -212,11 +212,7 @@ PXLogic::UpdateState (xaya::SQLiteDatabase& db, const Json::Value& blockData)
   SQLiteGameDatabase dbObj(db, *this);
   UpdateState (dbObj, GetContext ().GetRandom (),
                GetChain (), blockData);
-         
-  const auto& blockMeta = blockData["block"];
-  const auto& heightVal = blockMeta["height"];
-  const uint64_t height = heightVal.asUInt64 ();  
-		 
+
   if (dumpStateToFile)
   {
     Json::Value fState = GetStateAsJson(db);
@@ -227,46 +223,8 @@ PXLogic::UpdateState (xaya::SQLiteDatabase& db, const Json::Value& blockData)
     std::unique_ptr<Json::StreamWriter> writer(builder.newStreamWriter());
     std::ofstream outputFileStream("./statedump.json");
     writer -> write(fState, &outputFileStream);
-	
-	GameStateJson::latestKnownStateBlock = height;
-    
+
     LOG (WARNING) << "Dumping state to file";
-  }
-  
-  // In order for state to match, we need it do be determenistic; Hence, lets 
-  // calculate it not from state itself, but from something simple;
-
-  if(height % 100 == 0 || GameStateJson::latestKnownStateBlock == 0)
-  {
-      Json::Value fState = GetStateAsJson(db);
-      
-      uint64_t stateNumericValue = 0;
-      stateNumericValue += fState["xayaplayers"].size();
-      stateNumericValue += fState["crystalbundles"].size();
-      stateNumericValue += fState["fighters"].size();
-      stateNumericValue += fState["rewards"].size();
-      stateNumericValue += fState["recepies"].size();
-
-      std::string finalStringForHasing = "";
-      finalStringForHasing +=std::to_string(stateNumericValue);
-
-      for(auto& ft: fState["fighters"])
-      {
-          finalStringForHasing += ft["name"].asString();
-      }
-      
-      std::ostringstream ss;
-      ss << height;
-      std::string hStd = ss.str();
-        
-      finalStringForHasing += hStd;
-      
-      xaya::uint256 heystring = xaya::SHA256::Hash(finalStringForHasing);
-      
-      GameStateJson::latestKnownStateHash = heystring.ToHex ();
-      GameStateJson::latestKnownStateBlock = height;    
-
-      LOG (WARNING) << "Calculating anti-fork hash";  
   }
 }
 

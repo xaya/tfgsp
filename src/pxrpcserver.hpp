@@ -24,6 +24,7 @@
 #include "logic.hpp"
 
 #include <xayagame/game.hpp>
+#include <xayagame/sqliteproc.hpp>
 
 #include <json/json.h>
 #include <jsonrpccpp/server.h>
@@ -92,7 +93,10 @@ private:
 
   /** The PX game logic implementation.  */
   PXLogic& logic;
-  
+
+  /** The state hasher, or null if --statehash_interval was not set.  */
+  xaya::SQLiteHasher* hasher;
+
  /**
    * Whether or not to allow "unsafe" RPC methods (like stop, that should
    * not be publicly exposed).
@@ -113,9 +117,9 @@ private:
 
 public:
 
-explicit PXRpcServer (xaya::Game& g, PXLogic& l,
+explicit PXRpcServer (xaya::Game& g, PXLogic& l, xaya::SQLiteHasher* h,
                         jsonrpc::AbstractServerConnector& conn)
-    : PXRpcServerStub(conn), game(g), logic(l)
+    : PXRpcServerStub(conn), game(g), logic(l), hasher(h)
   {}
 
   /**
@@ -137,6 +141,9 @@ explicit PXRpcServer (xaya::Game& g, PXLogic& l,
   Json::Value gettournaments (const std::string& userName) override;
   Json::Value getfueldata (const Json::Value& candiesNew, const Json::Value& candiesSubmited, const Json::Value& candylist, const Json::Value& fighterData, const Json::Value& fightersNew, const Json::Value& fightersSubmited, const Json::Value& recipeData, const Json::Value& recipesNew, const Json::Value& recipesSubmited) override;
   Json::Value getexchange () override;
+
+  Json::Value hashcurrentstate () override;
+  Json::Value getstatehash (const std::string& block) override;
 
 };
 

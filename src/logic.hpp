@@ -226,6 +226,11 @@ public:
   PXLogic (const PXLogic&) = delete;
   void operator= (const PXLogic&) = delete;
 
+  /* Bring the base SQLiteGame overload (raw xaya::SQLiteDatabase callback,
+     3-arg form) into scope for the state-hash RPCs; it overloads with the
+     TF-specific 2-arg GetCustomStateData declarations below.  */
+  using xaya::SQLiteGame::GetCustomStateData;
+
   /**
    * Returns custom game-state data as JSON, with a callback that
    * directly receives the database (and does not go through the
