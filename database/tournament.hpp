@@ -249,6 +249,15 @@ public:
   Database::Result<TournamentResult> QueryActive ();
 
   /**
+   * Queries for the active (non-Completed) instances of a single blueprint,
+   * identified by its authoredid (stored in the `name` column), ordered by ID.
+   * The per-blueprint hot query for ReopenMissingTournaments: backed by the
+   * `tournaments_by_name_state` index so it seeks one blueprint's active rows
+   * instead of rescanning every active tournament once per blueprint (DEF2).
+   */
+  Database::Result<TournamentResult> QueryActiveForBlueprint (const std::string& authoredid);
+
+  /**
    * Prunes old Completed tournaments down to a retention cap: keeps the most
    * recent `keep` Completed rows (by id) and deletes the older excess.  Cheap
    * at steady state (only the oldest excess is touched), backed by the

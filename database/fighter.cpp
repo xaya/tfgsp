@@ -476,6 +476,20 @@ FighterTable::QueryForOwner (const std::string& owner)
   return stmt.Query<FighterResult> ();
 }
 
+Database::Result<FighterResult>
+FighterTable::QueryForStatus (FighterStatus status)
+{
+  /* Per-block hot query (DEF2): only fighters in a given status need the
+     CheckFightersForSale / SetFreeTransfiguringFighters maintenance, so this
+     touches just those rows via the `fighters_by_status` index instead of
+     scanning the whole table every block.  Ordered by ID for determinism.  */
+  auto stmt = db.Prepare (
+      "SELECT * FROM `fighters` WHERE `status` = "
+      + std::to_string ((int) status)
+      + " ORDER BY `id`");
+  return stmt.Query<FighterResult> ();
+}
+
 namespace
 {
 

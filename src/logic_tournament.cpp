@@ -334,46 +334,50 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
 
 void PXLogic::CheckFightersForSale(Database& db, const Context& ctx)
 {
-    FighterTable fighters(db); 
+    FighterTable fighters(db);
 
-    auto res = fighters.QueryAll ();
-
-    bool tryAndStep = res.Step();
-    while (tryAndStep)
+    /* DEF2: only Exchange fighters can have an expired listing, so the
+       `fighters_by_status` index lets us touch just those rows instead of
+       scanning the whole table every block.  Collect the expired ids first, then
+       flip them -- never mutate the `status` column while the status-keyed cursor
+       is still open.  */
+    std::vector<Database::IdT> expired;
     {
-      auto fighterDb = fighters.GetFromResult (res, ctx.RoConfig ());
-      
-      if((pxd::FighterStatus)(int32_t)fighterDb->GetStatus() == pxd::FighterStatus::Exchange) 
+      auto res = fighters.QueryForStatus (pxd::FighterStatus::Exchange);
+      while (res.Step ())
       {
-         if(fighterDb->GetProto().exchangeexpire() < ctx.Height ())
-         {
-             fighterDb->SetStatus(pxd::FighterStatus::Available);
-         }
+        auto fighterDb = fighters.GetFromResult (res, ctx.RoConfig ());
+        if (fighterDb->GetProto ().exchangeexpire () < ctx.Height ())
+          expired.push_back (fighterDb->GetId ());
       }
-      
-      fighterDb.reset();
-      tryAndStep = res.Step ();
-    }      
+    }
+
+    for (const auto id : expired)
+    {
+      auto fighterDb = fighters.GetById (id, ctx.RoConfig ());
+      fighterDb->SetStatus (pxd::FighterStatus::Available);
+    }
 }
 
 void PXLogic::SetFreeTransfiguringFighters(Database& db, const Context& ctx)
 {
-    FighterTable fighters(db); 
-    auto res = fighters.QueryAll ();
+    FighterTable fighters(db);
 
-    bool tryAndStep = res.Step();
-    while (tryAndStep)
+    /* DEF2: same indexed pattern -- touch only Transfiguring fighters, and
+       collect-then-mutate so the status flip doesn't disturb the status-keyed
+       cursor mid-scan.  */
+    std::vector<Database::IdT> ids;
     {
-      auto fighterDb = fighters.GetFromResult (res, ctx.RoConfig ());
-      
-      if((pxd::FighterStatus)(int32_t)fighterDb->GetStatus() == pxd::FighterStatus::Transfiguring) 
-      {
-             fighterDb->SetStatus(pxd::FighterStatus::Available);
-      }
-      
-      fighterDb.reset();
-      tryAndStep = res.Step ();
-    }      	
+      auto res = fighters.QueryForStatus (pxd::FighterStatus::Transfiguring);
+      while (res.Step ())
+        ids.push_back (fighters.GetFromResult (res, ctx.RoConfig ())->GetId ());
+    }
+
+    for (const auto id : ids)
+    {
+      auto fighterDb = fighters.GetById (id, ctx.RoConfig ());
+      fighterDb->SetStatus (pxd::FighterStatus::Available);
+    }
 }
 
 void PXLogic::ReopenMissingTournaments(Database& db, const Context& ctx)
@@ -394,12 +398,13 @@ void PXLogic::ReopenMissingTournaments(Database& db, const Context& ctx)
     for(const auto& tournamentBP: sortedTournamentListTypesmap)
     {
         bool weNeedToCreateNewInstance = true;
-        
-        //This is not efficient to loop all the time, we just need query with authid directly, so
-        //move it outside proto, but for now will do i.e. // TODO
-        //Only active tournaments matter here: this loop only acts on Listed ones
-        //with open roster slots, so Completed rows are skipped (DEF3).
-        auto res = tournamentsDatabase.QueryActive ();
+
+        /* DEF2: seek straight to THIS blueprint's active instances (via the
+           `tournaments_by_name_state` index) instead of rescanning every active
+           tournament once per blueprint.  `name` holds the blueprint authoredid;
+           Completed rows are excluded, and the inner checks below still confirm
+           authoredid / Listed / open-roster.  */
+        auto res = tournamentsDatabase.QueryActiveForBlueprint (tournamentBP.second.authoredid ());
 
         bool tryAndStep = res.Step();
         while (tryAndStep)

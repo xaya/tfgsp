@@ -197,6 +197,23 @@ TournamentTable::QueryActive ()
   return stmt.Query<TournamentResult> ();
 }
 
+Database::Result<TournamentResult>
+TournamentTable::QueryActiveForBlueprint (const std::string& authoredid)
+{
+  /* The per-blueprint probe in ReopenMissingTournaments: only the active
+     (non-Completed) instances of one blueprint matter.  The `name` column holds
+     the blueprint's authoredid (set at CreateNew), so the
+     `tournaments_by_name_state` index lets this seek straight to that blueprint's
+     active rows instead of rescanning every active tournament once per blueprint
+     every block (DEF2).  Ordered by ID for determinism.  */
+  auto stmt = db.Prepare (
+      "SELECT * FROM `tournaments` WHERE `name` = ?1 AND `state` != "
+      + std::to_string ((int) pxd::TournamentState::Completed)
+      + " ORDER BY `id`");
+  stmt.Bind (1, authoredid);
+  return stmt.Query<TournamentResult> ();
+}
+
 namespace
 {
 

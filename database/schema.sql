@@ -44,6 +44,14 @@ CREATE TABLE IF NOT EXISTS `tournaments` (
 CREATE INDEX IF NOT EXISTS `tournaments_by_state`
   ON `tournaments` (`state`);
 
+-- "Is there an open instance for THIS blueprint?" -- ReopenMissingTournaments asks
+-- this once per blueprint every block.  `name` holds the blueprint authoredid, so
+-- this composite lets that probe seek one blueprint's active rows (the trailing
+-- `state` column also skips that blueprint's Completed backlog) instead of
+-- rescanning every active tournament once per blueprint (DEF2).
+CREATE INDEX IF NOT EXISTS `tournaments_by_name_state`
+  ON `tournaments` (`name`, `state`);
+
 -- Right now this is used for easy access to the last CHI crystal prices
 CREATE TABLE IF NOT EXISTS `globaldata` (
 
@@ -115,6 +123,13 @@ CREATE TABLE IF NOT EXISTS `fighters` (
   -- Is always Available on start, when fresh fighter is created.
   `status` INTEGER NULL    
 );
+
+-- "Which fighters need a per-block status flip" -- the two per-block maintenance
+-- scans (free Transfiguring fighters back to Available; expire for-sale listings)
+-- act only on Exchange/Transfiguring rows, so this index lets them seek just those
+-- instead of scanning the whole (unbounded) fighters table every block (DEF2).
+CREATE INDEX IF NOT EXISTS `fighters_by_status`
+  ON `fighters` (`status`);
 
 -- Data stored for the Xaya players (names) themselves.
 CREATE TABLE IF NOT EXISTS `xayaplayers` (

@@ -345,7 +345,14 @@ public:
   /**
    * Queries for all characters with a given owner, ordered by ID.
    */
-  Database::Result<FighterResult> QueryForOwner (const std::string& owner);  
+  Database::Result<FighterResult> QueryForOwner (const std::string& owner);
+
+  /**
+   * Queries for all fighters in a given status, ordered by ID.  Backed by the
+   * `fighters_by_status` index so the per-block maintenance scans (DEF2) touch
+   * only the actionable rows instead of the whole table.
+   */
+  Database::Result<FighterResult> QueryForStatus (FighterStatus status);
   
   /**
    * Counts for all fighters with a given owner
