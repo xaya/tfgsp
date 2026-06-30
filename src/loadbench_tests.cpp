@@ -61,6 +61,9 @@
 #include "database/dbtest.hpp"
 #include "database/xayaplayer.hpp"
 #include "database/ongoings.hpp"
+#include "database/tournament.hpp"
+#include "database/fighter.hpp"
+#include "database/recipe.hpp"
 
 #include <glog/logging.h>
 #include <gtest/gtest.h>
@@ -69,13 +72,17 @@
 
 #include <sqlite3.h>
 
+#include <algorithm>
+#include <array>
 #include <cctype>
 #include <chrono>
 #include <cstdint>
+#include <cstdio>
 #include <cstdlib>
 #include <iostream>
 #include <map>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace pxd
@@ -438,6 +445,610 @@ INSTANTIATE_TEST_SUITE_P (Sweep, LoadBenchTests, testing::ValuesIn (kConfigs),
                                 c = '_';
                             return s;
                           });
+
+/* ************************************************************************** */
+/* ================ SCALE / BLOCK-GROWTH stress benchmark =================== */
+/*
+   ScaleBenchTests measures how the per-block UpdateState cost GROWS over time
+   under sustained full activity at scale, to confirm + quantify DEF3:
+
+     completed-tournament rows are NEVER deleted, yet every block
+       * ProcessTournaments      QueryAll-scans the whole `tournaments` table
+       * ReopenMissingTournaments QueryAll-scans it once PER blueprint (~24x)
+     => ~25 full scans (with proto deserialisation) of an unbounded, ever-
+        growing table on every single block.  No other per-block full scan in
+        the pipeline grows here (fighters stays ~2*N; rewards/recepies are not
+        scanned per block), so a rising ms/block isolates the tournaments-table
+        growth = the DEF3 vector.
+
+   It drives a REALISTIC MIX through real moves:
+     1. TOURNAMENTS (primary): N players in fixed pairs.  Each pair enters a
+        2x2 re-enterable blueprint ("The Chocolate Chip Training Rounds",
+        authoredid e694d5f8-..., NOT the FTUE one).  Roster fills (4) -> runs
+        `duration` blocks -> Completed -> fighters freed -> re-enter.  Every
+        completion adds one permanent Completed row.  Entries are STAGGERED so
+        completions happen on (almost) every block (smooth growth curve).
+     2. COOKING (secondary): a dedicated cohort cooks the non-bound starter
+        recipe (one cook each, staggered across the run).
+     3. MARKET (secondary): dedicated seller/buyer pairs list + buy a non-bound
+        fighter (one trade each, staggered).
+
+   Instance creation + fighter rating/sweetness "keep-eligible" resets are done
+   in the harness OUTSIDE the timed region, so the measured ms/block is exactly
+   PXLogic::UpdateState and the entries/cooks/trades themselves run as real
+   moves inside it.  Env: TF_SCALE=1 (gate), TF_SCALE_N (players, def 2000),
+   TF_SCALE_M (blocks, def 200).  check_PROGRAM, never auto-run.
+*/
+
+/** Re-enterable 2x2 blueprint: Rank1a, duration 15, sweetness 1..3.  */
+constexpr const char* kScaleBlueprint = "e694d5f8-e454-7774-ca76-fc2637a9407f";
+constexpr int kScaleDuration = 15;          /* blocks the tournament runs.   */
+constexpr int kScaleCycle = kScaleDuration + 1;  /* full-roster -> re-enter.  */
+
+/** The four candies required to cook the non-bound starter recipe 1bbc7d99.  */
+constexpr const char* kCookRecipe = "1bbc7d99-7fce-24a4-c9a3-dfaf4b744efa";
+const std::vector<std::string> kCookCandies = {
+  "f9c0a4d2-f049-29a4-eb1e-2269de35798e",
+  "7ddba6f2-b08a-f954-4a97-eae6af175005",
+  "8aac4645-29cf-fe04-59c0-415508b0432e",
+  "3d47dfc5-ce51-9c54-68f1-6819b251e6c7",
+};
+
+/** One sampled block of the time series.  */
+struct ScaleSample
+{
+  int block = 0;
+  double ms = 0.0;
+  long long dbKiB = 0;
+  int undoBytes = 0;
+  long long tournaments = 0, fighters = 0, recepies = 0, rewards = 0;
+  long long completed = -1;   /* filled only at growth-curve points.  */
+};
+
+class ScaleBenchTests : public DBTestWithSchema
+{
+protected:
+  TestRandom rnd;
+  ContextForTesting ctx;
+
+  XayaPlayersTable xayaplayers;
+  FighterTable fighters;
+  TournamentTable tournaments;
+  RecipeInstanceTable recipes;
+
+  ScaleBenchTests ()
+    : xayaplayers(db), fighters(db), tournaments(db), recipes(db)
+  {
+    ctx.SetChain (xaya::Chain::POLYGON);
+    ctx.SetHeight (89246050);
+  }
+
+  sqlite3*
+  RawHandle ()
+  {
+    sqlite3* h = nullptr;
+    (*db).AccessDatabase ([&h] (sqlite3* raw) { h = raw; return 0; });
+    return h;
+  }
+
+  long long
+  Pragma (const char* name)
+  {
+    sqlite3* h = RawHandle ();
+    const std::string q = std::string ("PRAGMA ") + name + ";";
+    sqlite3_stmt* st = nullptr;
+    CHECK_EQ (sqlite3_prepare_v2 (h, q.c_str (), -1, &st, nullptr), SQLITE_OK);
+    long long v = 0;
+    if (sqlite3_step (st) == SQLITE_ROW)
+      v = sqlite3_column_int64 (st, 0);
+    sqlite3_finalize (st);
+    return v;
+  }
+
+  /** Live (non-freelist) on-disk size of the main DB in bytes.  */
+  long long
+  MainDbBytes ()
+  {
+    return (Pragma ("page_count") - Pragma ("freelist_count"))
+           * Pragma ("page_size");
+  }
+
+  /** SELECT COUNT(*) for a table (cheap; no proto deserialisation).  */
+  long long
+  CountRows (const char* table)
+  {
+    sqlite3* h = RawHandle ();
+    const std::string q = std::string ("SELECT COUNT(*) FROM ") + table + ";";
+    sqlite3_stmt* st = nullptr;
+    CHECK_EQ (sqlite3_prepare_v2 (h, q.c_str (), -1, &st, nullptr), SQLITE_OK);
+    long long v = 0;
+    if (sqlite3_step (st) == SQLITE_ROW)
+      v = sqlite3_column_int64 (st, 0);
+    sqlite3_finalize (st);
+    return v;
+  }
+
+  /** Ground-truth Completed-row count (deserialises every row; only used at the
+      growth-curve sample points).  */
+  long long
+  CountCompletedTournaments ()
+  {
+    long long c = 0;
+    auto res = tournaments.QueryAll ();
+    while (res.Step ())
+      {
+        auto h = tournaments.GetFromResult (res, ctx.RoConfig ());
+        if ((int) h->GetInstance ().state ()
+            == (int) pxd::TournamentState::Completed)
+          ++c;
+        h.reset ();
+      }
+    return c;
+  }
+
+  /** Deterministic distinct 64-hex hash per height (reseeds the POLYGON RNG so
+      combat outcomes vary realistically block to block).  */
+  static std::string
+  HashForHeight (const unsigned hgt)
+  {
+    char buf[65];
+    std::snprintf (buf, sizeof (buf), "%064x", hgt);
+    return std::string (buf);
+  }
+
+  Json::Value
+  BuildBlockData (const Json::Value& moves)
+  {
+    Json::Value blockData (Json::objectValue);
+    blockData["admin"] = Json::Value (Json::arrayValue);
+    blockData["moves"] = moves;
+
+    Json::Value meta (Json::objectValue);
+    meta["height"] = ctx.Height ();
+    meta["timestamp"] = 1500000000;
+    meta["hash"] = HashForHeight (ctx.Height ());
+    blockData["block"] = meta;
+    return blockData;
+  }
+
+  /** Runs ONE block (moves + full ongoing/tournament tick) wrapped in a
+      sqlite3 session exactly as xaya::SQLiteGame does, timing ONLY the
+      UpdateState call.  Returns wall-ms and undo-changeset bytes.  */
+  void
+  RunMeasuredBlock (const Json::Value& blockData, double& msOut, int& undoOut)
+  {
+    sqlite3* h = RawHandle ();
+    sqlite3_session* sess = nullptr;
+    CHECK_EQ (sqlite3session_create (h, "main", &sess), SQLITE_OK);
+    CHECK_EQ (sqlite3session_attach (sess, nullptr), SQLITE_OK);
+
+    const auto t0 = std::chrono::steady_clock::now ();
+    PXLogic::UpdateState (db, rnd, ctx.Chain (), blockData);
+    const auto t1 = std::chrono::steady_clock::now ();
+
+    int nBuf = 0;
+    void* pBuf = nullptr;
+    CHECK_EQ (sqlite3session_changeset (sess, &nBuf, &pBuf), SQLITE_OK);
+    sqlite3_free (pBuf);
+    sqlite3session_delete (sess);
+
+    msOut = std::chrono::duration<double, std::milli> (t1 - t0).count ();
+    undoOut = nBuf;
+  }
+
+  /** Forces a fighter back to a tournament-eligible baseline (status
+      Available, rating 1000, sweetness 1) so a pair can re-enter the
+      sweetness-1..3 blueprint wave after wave despite combat rating drift.
+      Harness fixup -- runs OUTSIDE the timed region.  */
+  void
+  KeepEligible (const int fid)
+  {
+    auto f = fighters.GetById (fid, ctx.RoConfig ());
+    if (f == nullptr)
+      return;
+    f->SetStatus (pxd::FighterStatus::Available);
+    f->MutableProto ().set_rating (1000);
+    f->MutableProto ().set_sweetness (1);
+    f->MutableProto ().set_tournamentinstanceid (0);
+    f.reset ();
+  }
+
+  /** Processes moves with NO block tick (for one-off setup like init).  */
+  void
+  ProcessMovesOnly (const Json::Value& moves)
+  {
+    MoveProcessor mvProc (db, rnd, ctx);
+    mvProc.ProcessAll (moves);
+  }
+
+  /* Move builders ------------------------------------------------------- */
+
+  static Json::Value
+  TournamentEntryMove (const std::string& name, const int tid,
+                       const int fid0, const int fid1)
+  {
+    Json::Value e (Json::objectValue);
+    e["tid"] = tid;
+    Json::Value fc (Json::arrayValue);
+    fc.append (fid0);
+    fc.append (fid1);
+    e["fc"] = fc;
+    Json::Value tm (Json::objectValue);
+    tm["e"] = e;
+    Json::Value mv (Json::objectValue);
+    mv["tm"] = tm;
+    Json::Value out (Json::objectValue);
+    out["name"] = name;
+    out["move"] = mv;
+    return out;
+  }
+
+  static Json::Value
+  CookMove (const std::string& name, const int rid)
+  {
+    Json::Value r (Json::objectValue);
+    r["rid"] = rid;
+    r["fid"] = 0;
+    Json::Value ca (Json::objectValue);
+    ca["r"] = r;
+    Json::Value mv (Json::objectValue);
+    mv["ca"] = ca;
+    Json::Value out (Json::objectValue);
+    out["name"] = name;
+    out["move"] = mv;
+    return out;
+  }
+
+  static Json::Value
+  SellMove (const std::string& name, const int fid, const int price)
+  {
+    Json::Value s (Json::objectValue);
+    s["fid"] = fid;
+    s["d"] = 3;
+    s["p"] = price;
+    Json::Value f (Json::objectValue);
+    f["s"] = s;
+    Json::Value mv (Json::objectValue);
+    mv["f"] = f;
+    Json::Value out (Json::objectValue);
+    out["name"] = name;
+    out["move"] = mv;
+    return out;
+  }
+
+  static Json::Value
+  BuyMove (const std::string& name, const int fid)
+  {
+    Json::Value b (Json::objectValue);
+    b["fid"] = fid;
+    Json::Value f (Json::objectValue);
+    f["b"] = b;
+    Json::Value mv (Json::objectValue);
+    mv["f"] = f;
+    Json::Value out (Json::objectValue);
+    out["name"] = name;
+    out["move"] = mv;
+    return out;
+  }
+};
+
+/* ------------------------------------------------------------------------- */
+
+TEST_F (ScaleBenchTests, BlockGrowthUnderFullActivity)
+{
+  if (std::getenv ("TF_SCALE") == nullptr)
+    GTEST_SKIP () << "set TF_SCALE=1 to run the scale / block-growth benchmark";
+
+  int N = 2000;
+  if (const char* e = std::getenv ("TF_SCALE_N")) N = std::atoi (e);
+  int M = 200;
+  if (const char* e = std::getenv ("TF_SCALE_M")) M = std::atoi (e);
+  CHECK_GE (N, 2);
+  CHECK_GE (M, 8);
+
+  const int pairs = N / 2;
+  const int cookCount = std::min (N, std::max (50, N / 10));
+  const int tradeCount = std::min (N / 2, std::max (20, N / 40));
+
+  std::cout << "[ scale ] N=" << N << " players (" << pairs << " tournament "
+            << "pairs), M=" << M << " blocks; cooks=" << cookCount
+            << " trades=" << tradeCount << std::endl;
+
+  /* ----- seed tournament players ----- */
+  for (int i = 0; i < N; ++i)
+    {
+      xayaplayers.CreateNew ("p" + std::to_string (i), ctx.RoConfig (), rnd);
+      if ((i + 1) % 20000 == 0)
+        std::cout << "    seeded " << (i + 1) << "/" << N << " players"
+                  << std::endl;
+    }
+
+  /* ----- seed cooking cohort (separate players; one cook each) ----- */
+  std::vector<std::pair<std::string, int>> cookJobs;  /* (player, recipeId) */
+  cookJobs.reserve (cookCount);
+  for (int i = 0; i < cookCount; ++i)
+    {
+      const std::string nm = "ck" + std::to_string (i);
+      auto p = xayaplayers.CreateNew (nm, ctx.RoConfig (), rnd);
+      p->AddBalance (1000);
+      for (const auto& candy : kCookCandies)
+        p->GetInventory ().SetFungibleCount (
+            BaseMoveProcessor::GetCandyKeyNameFromID (candy, ctx), 1000);
+      p.reset ();
+      const int rid
+          = recipes.CreateNew (nm, kCookRecipe, ctx.RoConfig ())->GetId ();
+      cookJobs.emplace_back (nm, rid);
+    }
+
+  /* ----- seed market cohort (seller+buyer pairs; one trade each) ----- */
+  struct TradeJob { std::string seller, buyer; int fid; };
+  std::vector<TradeJob> tradeJobs;
+  tradeJobs.reserve (tradeCount);
+  {
+    Json::Value inits (Json::arrayValue);
+    for (int i = 0; i < tradeCount; ++i)
+      {
+        const std::string sl = "sl" + std::to_string (i);
+        const std::string by = "by" + std::to_string (i);
+        xayaplayers.CreateNew (sl, ctx.RoConfig (), rnd)->AddBalance (100000);
+        xayaplayers.CreateNew (by, ctx.RoConfig (), rnd)->AddBalance (100000);
+        /* A non-account-bound, Available fighter the seller may list.  */
+        const int rid
+            = recipes.CreateNew (sl, kCookRecipe, ctx.RoConfig ())->GetId ();
+        const int fid
+            = fighters.CreateNew (sl, rid, ctx.RoConfig (), rnd)->GetId ();
+        {
+          auto f = fighters.GetById (fid, ctx.RoConfig ());
+          f->MutableProto ().set_isaccountbound (false);
+          f->SetStatus (pxd::FighterStatus::Available);
+          f.reset ();
+        }
+        tradeJobs.push_back ({sl, by, fid});
+        for (const std::string& who : {sl, by})
+          {
+            Json::Value init (Json::objectValue);
+            Json::Value a (Json::objectValue), in (Json::objectValue);
+            in["address"] = "CGUpAcjsb6MDktSYg8yRDxDutr7FhWtdWC";
+            a["init"] = in;
+            Json::Value mv (Json::objectValue);
+            mv["a"] = a;
+            init["name"] = who;
+            init["move"] = mv;
+            inits.append (init);
+          }
+      }
+    if (!inits.empty ())
+      ProcessMovesOnly (inits);
+  }
+
+  /* ----- discover each tournament player's two starter fighter ids via a
+           single raw scan (no proto deserialisation) ----- */
+  std::unordered_map<std::string, std::vector<int>> ownerFighters;
+  ownerFighters.reserve (static_cast<size_t> (N) * 2);
+  {
+    sqlite3* h = RawHandle ();
+    sqlite3_stmt* st = nullptr;
+    CHECK_EQ (sqlite3_prepare_v2 (
+                  h, "SELECT id, owner FROM fighters ORDER BY owner, id",
+                  -1, &st, nullptr), SQLITE_OK);
+    while (sqlite3_step (st) == SQLITE_ROW)
+      {
+        const int id = static_cast<int> (sqlite3_column_int64 (st, 0));
+        const unsigned char* o = sqlite3_column_text (st, 1);
+        if (o == nullptr) continue;
+        ownerFighters[reinterpret_cast<const char*> (o)].push_back (id);
+      }
+    sqlite3_finalize (st);
+  }
+
+  /* Per-pair fighter ids [a0,a1,b0,b1] and a staggered first-entry offset.  */
+  std::vector<std::array<int, 4>> pairFt (pairs);
+  std::vector<int> nextEligible (pairs);
+  int usablePairs = 0;
+  for (int k = 0; k < pairs; ++k)
+    {
+      const auto& fa = ownerFighters["p" + std::to_string (2 * k)];
+      const auto& fb = ownerFighters["p" + std::to_string (2 * k + 1)];
+      if (fa.size () >= 2 && fb.size () >= 2)
+        {
+          pairFt[k] = {fa[0], fa[1], fb[0], fb[1]};
+          ++usablePairs;
+        }
+      else
+        pairFt[k] = {-1, -1, -1, -1};
+      nextEligible[k] = k % kScaleCycle;        /* stagger first entries.  */
+    }
+  std::cout << "    usable tournament pairs: " << usablePairs << "/" << pairs
+            << "; main-db at start: " << (MainDbBytes () / 1024) << " KiB"
+            << std::endl;
+
+  /* ----- non-vacuity counters ----- */
+  long long entriesAttempted = 0, entriesConfirmed = 0;
+  long long cooksAttempted = 0, cooksConfirmed = 0;
+  long long tradesAttempted = 0, tradesConfirmed = 0;
+
+  const int curveAt[5] = {0, M / 4, M / 2, (3 * M) / 4, M - 1};
+  auto isCurve = [&] (const int b) {
+    for (int i = 0; i < 5; ++i) if (curveAt[i] == b) return true;
+    return false;
+  };
+
+  int cookCursor = 0, tradeCursor = 0;
+  const int cooksPerBlock = std::max (1, (cookCount + M - 1) / M);
+  const int tradesPerBlock = std::max (1, (tradeCount + M - 1) / M);
+
+  std::vector<ScaleSample> series;
+  series.reserve (M);
+
+  for (int b = 0; b < M; ++b)
+    {
+      ctx.SetHeight (ctx.Height () + 1);
+
+      Json::Value moves (Json::arrayValue);
+      std::vector<std::pair<int, int>> thisBlockInstances;  /* (tid, pairIdx) */
+
+      /* --- (1) tournaments: every due pair gets a fresh instance + entry --- */
+      for (int k = 0; k < pairs; ++k)
+        {
+          if (pairFt[k][0] < 0 || nextEligible[k] > b)
+            continue;
+          for (int f = 0; f < 4; ++f)
+            KeepEligible (pairFt[k][f]);     /* untimed eligibility reset.  */
+          const int tid
+              = tournaments.CreateNew (kScaleBlueprint, ctx.RoConfig ())
+                    ->GetId ();
+          moves.append (TournamentEntryMove ("p" + std::to_string (2 * k), tid,
+                                             pairFt[k][0], pairFt[k][1]));
+          moves.append (TournamentEntryMove ("p" + std::to_string (2 * k + 1),
+                                             tid, pairFt[k][2], pairFt[k][3]));
+          thisBlockInstances.emplace_back (tid, k);
+          nextEligible[k] = b + kScaleCycle;
+          ++entriesAttempted;
+        }
+
+      /* --- (2) cooking: a staggered batch each block --- */
+      std::vector<std::pair<std::string, int>> thisBlockCooks;
+      for (int c = 0; c < cooksPerBlock && cookCursor < cookCount; ++c, ++cookCursor)
+        {
+          moves.append (CookMove (cookJobs[cookCursor].first,
+                                  cookJobs[cookCursor].second));
+          thisBlockCooks.push_back (cookJobs[cookCursor]);
+          ++cooksAttempted;
+        }
+
+      /* --- (3) market: a staggered list+buy each block --- */
+      std::vector<TradeJob> thisBlockTrades;
+      for (int t = 0; t < tradesPerBlock && tradeCursor < tradeCount; ++t, ++tradeCursor)
+        {
+          const auto& tj = tradeJobs[tradeCursor];
+          moves.append (SellMove (tj.seller, tj.fid, 500));
+          moves.append (BuyMove (tj.buyer, tj.fid));
+          thisBlockTrades.push_back (tj);
+          ++tradesAttempted;
+        }
+
+      /* --- measured block --- */
+      double ms = 0.0;
+      int undo = 0;
+      RunMeasuredBlock (BuildBlockData (moves), ms, undo);
+
+      /* --- confirm non-vacuity for this block --- */
+      for (const auto& ti : thisBlockInstances)
+        {
+          auto h = tournaments.GetById (ti.first, ctx.RoConfig ());
+          if (h != nullptr && h->GetInstance ().fighters_size () == 4)
+            ++entriesConfirmed;
+          if (h != nullptr) h.reset ();
+        }
+      for (const auto& cj : thisBlockCooks)
+        {
+          auto r = recipes.GetById (cj.second);
+          /* a started cook clears the recipe instance's owner.  */
+          if (r != nullptr && r->GetOwner ().empty ())
+            ++cooksConfirmed;
+          if (r != nullptr) r.reset ();
+        }
+      for (const auto& tj : thisBlockTrades)
+        {
+          auto f = fighters.GetById (tj.fid, ctx.RoConfig ());
+          if (f != nullptr && f->GetOwner () == tj.buyer)
+            ++tradesConfirmed;
+          if (f != nullptr) f.reset ();
+        }
+
+      /* --- sample --- */
+      ScaleSample s;
+      s.block = b;
+      s.ms = ms;
+      s.undoBytes = undo;
+      s.dbKiB = MainDbBytes () / 1024;
+      s.tournaments = CountRows ("tournaments");
+      s.fighters = CountRows ("fighters");
+      s.recepies = CountRows ("recepies");
+      s.rewards = CountRows ("rewards");
+      if (isCurve (b))
+        s.completed = CountCompletedTournaments ();
+      series.push_back (s);
+
+      if (M >= 20 && (b + 1) % std::max (1, M / 10) == 0)
+        std::cout << "    block " << (b + 1) << "/" << M
+                  << "  ms=" << s.ms << "  tournaments=" << s.tournaments
+                  << "  db=" << s.dbKiB << " KiB" << std::endl;
+    }
+
+  /* ===================== report ===================== */
+  const long long finalCompleted = CountCompletedTournaments ();
+
+  std::cout << "\n==== SCALE BENCH (N=" << N << ", M=" << M << ") ====\n";
+  std::cout << "NON-VACUITY:\n"
+            << "  tournament pairs entered (attempted/confirmed): "
+            << entriesAttempted << " / " << entriesConfirmed << "\n"
+            << "  tournaments COMPLETED (final Completed rows):   "
+            << finalCompleted << "\n"
+            << "  cooks (attempted/confirmed):                    "
+            << cooksAttempted << " / " << cooksConfirmed << "\n"
+            << "  trades (attempted/confirmed):                   "
+            << tradesAttempted << " / " << tradesConfirmed << "\n"
+            << "  REJECTED moves (entries+cooks+trades):          "
+            << (entriesAttempted - entriesConfirmed)
+               + (cooksAttempted - cooksConfirmed)
+               + (tradesAttempted - tradesConfirmed)
+            << std::endl;
+
+  std::cout << "\nGROWTH CURVE (block / ms / tournaments-rows / completed / "
+            << "main-db KiB / fighters / rewards):\n";
+  for (const int b : curveAt)
+    {
+      const ScaleSample& s = series[b];
+      std::cout << "  ~" << (b * 100 / (M - 1)) << "%  blk=" << s.block
+                << "  ms=" << s.ms << "  tourn=" << s.tournaments
+                << "  completed=" << s.completed << "  db=" << s.dbKiB
+                << "  fighters=" << s.fighters << "  rewards=" << s.rewards
+                << std::endl;
+    }
+
+  /* first-10% vs last-10% mean ms (the growth factor).  */
+  const int win = std::max (1, M / 10);
+  double firstMs = 0.0, lastMs = 0.0;
+  for (int i = 0; i < win; ++i) firstMs += series[i].ms;
+  for (int i = 0; i < win; ++i) lastMs += series[M - 1 - i].ms;
+  firstMs /= win;
+  lastMs /= win;
+  std::cout << "\nMEAN ms/block  first-10% (" << win << " blks)=" << firstMs
+            << "   last-10%=" << lastMs << "   growth-factor="
+            << (firstMs > 0 ? lastMs / firstMs : 0.0) << "x" << std::endl;
+
+  /* machine-readable CSV.  */
+  std::cout << "SCALEBENCH_HDR,N,block,ms,dbKiB,undoBytes,tournaments,"
+            << "fighters,recepies,rewards,completed\n";
+  for (const ScaleSample& s : series)
+    std::cout << "SCALEBENCH," << N << "," << s.block << "," << s.ms << ","
+              << s.dbKiB << "," << s.undoBytes << "," << s.tournaments << ","
+              << s.fighters << "," << s.recepies << "," << s.rewards << ","
+              << s.completed << "\n";
+  std::cout << "SCALEBENCH_SUMMARY,N=" << N << ",M=" << M
+            << ",firstMs=" << firstMs << ",lastMs=" << lastMs
+            << ",growthFactor=" << (firstMs > 0 ? lastMs / firstMs : 0.0)
+            << ",completed=" << finalCompleted
+            << ",finalTournRows=" << series[M - 1].tournaments << std::endl;
+
+  /* ===================== assertions ===================== */
+  EXPECT_GT (entriesConfirmed, 0) << "no tournament entry was confirmed";
+  EXPECT_GT (entriesConfirmed, entriesAttempted * 0.9)
+      << "too many tournament entries were rejected -- benchmark is vacuous";
+  EXPECT_GT (finalCompleted, 0)
+      << "no tournament ever completed -- DEF3 vector not exercised";
+  /* The Completed-row count must GROW substantially across the run.  */
+  EXPECT_GT (series[curveAt[4]].completed, series[curveAt[1]].completed)
+      << "completed-tournament count did not grow -- benchmark is vacuous";
+  EXPECT_GT (cooksConfirmed, 0) << "no cook was confirmed";
+  /* market is best-effort: warn but do not fail the benchmark.  */
+  if (tradesAttempted > 0 && tradesConfirmed == 0)
+    std::cout << "WARNING: no trade confirmed (market signal vacuous)"
+              << std::endl;
+
+  SUCCEED ();
+}
 
 /* ************************************************************************** */
 
