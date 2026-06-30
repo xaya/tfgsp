@@ -314,6 +314,12 @@ namespace pxd
 		  return false;   			
 		}		
 
+        if(ca > MAX_TRANSFIGURE_CANDY)
+		{
+		  LOG (WARNING) << "Candy amount " << ca << " exceeds the transfigure cap";
+		  return false;
+		}
+
         if(ca < 10)
 		{
 		  LOG (WARNING) << "Minimum pack of candy is 10";
@@ -528,8 +534,17 @@ namespace pxd
 	std::map<fpm::fixed_24_8, fpm::fixed_24_8> sweetnersUsedInTransfigure;
 	
 	fpm::fixed_24_8 ratingsUsedInTransfigureAverage = fpm::fixed_24_8(0);
-	fpm::fixed_24_8 ratingsUsedInTransfigureMin = fpm::fixed_24_8(9999999);
-	fpm::fixed_24_8 ratingsUsedInTransfigureMax = fpm::fixed_24_8(-9999999);
+	/* OVF-01 sibling: these min/max rating sentinels were written
+	   fpm::fixed_24_8(9999999) / (-9999999), which OVERFLOW the int32 backing
+	   store (9999999*256 > INT32_MAX) -- undefined behaviour in a consensus path.
+	   The overflow wraps them to raw -1734967552 / +1734967552 (an INVERTED
+	   min/max), so the rating-diversity branch below never fires and
+	   rMinimalRatingDiff always collapses to rDiffAverage.  Pin those exact raws
+	   via from_raw_value to remove the UB while keeping the consensus result
+	   byte-identical.  (Making the branch actually track min/max would change
+	   transfigure economics -- a separate, sign-off-gated balance change.) */
+	fpm::fixed_24_8 ratingsUsedInTransfigureMin = fpm::fixed_24_8::from_raw_value (-1734967552);
+	fpm::fixed_24_8 ratingsUsedInTransfigureMax = fpm::fixed_24_8::from_raw_value (1734967552);
 	
 	std::vector<std::string> namesUsed;
 	std::vector<std::string> armorUsed;
@@ -754,7 +769,16 @@ namespace pxd
 	{
 		fpm::fixed_24_8 cRarity = fpm::fixed_24_8(0.1);
 		
-        fpm::fixed_24_8 ca = fpm::fixed_24_8(candy["a"].asInt());		
+        /* Defense-in-depth for the RPC fuel estimator (EvaluateFuelList), which
+		   reaches CalculateFuelPower WITHOUT ParseTransfigureData: clamp candy["a"]
+		   to the same cap so it cannot overflow the int32 fixed_24_8 store here.
+		   On the consensus path ParseTransfigureData already rejected ca outside
+		   [10, MAX_TRANSFIGURE_CANDY], so this clamp is a no-op there (the golden
+		   stays byte-identical); it only hardens the non-consensus RPC estimate. */
+		int32_t caInput = candy["a"].asInt();
+		if (caInput > MAX_TRANSFIGURE_CANDY) caInput = MAX_TRANSFIGURE_CANDY;
+		else if (caInput < -MAX_TRANSFIGURE_CANDY) caInput = -MAX_TRANSFIGURE_CANDY;
+		fpm::fixed_24_8 ca = fpm::fixed_24_8(caInput);		
 		fpm::fixed_24_8 candySets = ca / fpm::fixed_24_8(10);
 
 		candyRarityAccumulated = candyRarityAccumulated + (candySets * cRarity);	

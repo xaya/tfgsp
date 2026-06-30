@@ -44,6 +44,15 @@ namespace pxd
 inline constexpr unsigned MAX_MOVE_ARRAY = 1000;
 inline constexpr unsigned MAX_SUBMOVES = 100;
 
+/** OVF-01: upper bound on a single transfigure candy amount (the move's
+    {"ic":[{"a":N,...}]}).  N is fed into fpm::fixed_24_8, whose int32 backing
+    store computes raw = N*256 and overflows (signed-overflow UB) at N == 2^23
+    (8'388'608).  Cap well below that (256M raw, ~8x margin) so neither the
+    per-candy construction nor the deduplicated-per-type candyRarityAccumulated
+    sum can overflow.  Legitimate transfigures use tens of candy; this only
+    rejects absurd attacker inputs.  Mirrors the EXCH-1 seller-payout fix. */
+inline constexpr int32_t MAX_TRANSFIGURE_CANDY = 1'000'000;
+
 /* Dedups a vector in place (the same algorithm the move parsers used inline)
    and reports whether any duplicate was removed, so duplicate-id moves are
    rejected identically across every call site.  */

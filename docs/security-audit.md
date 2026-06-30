@@ -190,3 +190,65 @@ Test count: **98 unit tests** (was 92) + golden replay, all green on the `-O2` c
 - **F1 (reorg):** make `PendingStateUpdater::ProcessMove` strictly read-only (no writes to the confirmed DB).
 - **SB-06:** remove the hardcoded name-gift. **OVF-01 (low):** clamp candy magnitude before `fixed_24_8`.
 - **Pass C (event-driven + determinism):** H3 = Stage 2b height-keyed ongoing table + indexed per-block queries; F2/F3 = remove raw `double`/`float` from consensus (sweetness/percentage/bundle cost) + CI lint; F1 = make pending strictly read-only.
+
+## 11. Launch-readiness re-verification (2026-06-30) — code-state audit of every "remaining" item
+
+The §10 "Remaining" list predated the cleanup/quality sweep and was reconciled
+against the **actual current source** (post Pass-F split, so old line numbers are
+stale) by a 10-verifier + completeness-critic workflow (`wnugk5ru7`). Outcome:
+most items had in fact already landed; the headline 80-/security-audit had also
+**missed one real launch-blocker** (OVF-01 on the candy/fuel path). Findings:
+
+**Re-confirmed DONE in current code (first-hand evidence):**
+- **F2/F3 determinism** — no raw runtime `float`/`double` reaches hashed state.
+  Sweetness bucket is integer (`fighter.cpp` `((rating-1000)/100)+1`, all `uint32`);
+  `GetFighterPercentageFromQuality` returns `fpm::fixed_24_8` (no `count/size`
+  double); prestige uses `fpm::log10` on `fixed_24_8`; the dead `log10`/`double`
+  OLD-prestige branch is gone.
+- **F1 (REORG-01)** — pending is read-only: `BaseMoveProcessor(readOnly=true)`; the
+  only Parse\*-reachable confirmed-DB write (`globalData.SetQueueData` in the
+  tournament-entry validator) is `if(!readOnly)`-guarded; regression test
+  `PendingTournamentEntryDoesNotWriteQueueData` locks it.
+- **Pass-A C1/C8/C9** present and correct; **ECON-03** leave path is a no-op.
+- **Tournament-entry affordability** — NOT a gap (critic false positive):
+  `ParseTournamentEntryData` already rejects `GetBalance() < joincost` before
+  `MaybeEnterTournament`'s `AddBalance(-joincost)`.
+
+**Fixed this session — security/determinism pass (golden byte-identical, full suite green):**
+- **OVF-01 (was the one real launch-blocker)** — attacker-controlled candy amount
+  `{"ic":[{"a":N}]}` was fed straight into `fpm::fixed_24_8(N)`, whose int32 store
+  overflows (UB) at `N == 2^23` (raw `N*256 == INT_MIN`); inventory cap `2^50`
+  makes it reachable, and it's the byte-identical mechanism already fixed for the
+  EXCH-1 exchange path. Fix: reject `N > MAX_TRANSFIGURE_CANDY` (1'000'000, ~8x
+  under the overflow point) in `ParseTransfigureData` + a defensive clamp in
+  `CalculateFuelPower` for the non-consensus RPC fuel estimator. Regression test
+  pinned at `8'388'608` added to `TransfigureWrongValues`.
+- **Sentinel UB (same function)** — `fpm::fixed_24_8(9999999)/(-9999999)` rating
+  min/max sentinels overflow int32 at construction; replaced with
+  `from_raw_value(-1734967552)/(1734967552)` (the exact wrapped raws, captured
+  empirically in-container) → UB removed, result provably byte-identical. The
+  min/max diversity branch is consequently inert (collapses to `rDiffAverage`);
+  making it actually track min/max is a separate, sign-off-gated balance change.
+- **Determinism guardrails (F2/F3 insurance)** — `-ffp-contract=off` added to
+  `configure.ac` (portable `AX_CHECK_COMPILE_FLAG`); a `make check` gate
+  (`contrib/check-consensus-determinism.py`, wired via top-level `check-local`)
+  now fails the build on any raw `float`/`double` in `src/`+`database/` consensus
+  code (excludes `fpm/`, display TUs, tests). Verified: passes clean on the tree,
+  catches a planted `double`, ignores comments/strings.
+
+**Still OPEN, but all deterministic ⇒ NOT chain-safety blockers (economic / scalability / scoped):**
+- **SB-06** — every new account auto-mints 2 free fighters + item stacks + 3 recipes
+  (crystals already 0). Deterministic; economics/product sign-off, not a chain bug.
+- **DEF2/DEF3** — per-block full-table scans of fighters (`CheckFightersForSale`,
+  `SetFreeTransfiguringFighters`) and tournaments (`ProcessTournaments` QueryAll,
+  `ReopenMissingTournaments` O(blueprints×tournaments)) remain; H3 covered only
+  ongoings. Deterministic; scalability — fix with WHERE/indexed queries + prune
+  Completed rows before sustained load.
+- **Tournament `JoinCost`** — entry IS guarded today; but enabling any non-zero
+  `JoinCost` still needs an audit (all 21 blueprints are 0 now).
+
+**Bottom line:** the one move-reachable consensus launch-blocker (OVF-01) is closed
+and regression-tested. No deterministic chain-halt/fork/economy-fatal vector remains
+open in code. Remaining items are economic (SB-06), scalability (DEF2/DEF3), or
+non-code launch prep: **confirm the real `dev_address`** (still TEMP `0x59F5…`),
+a **live Polygon + XayaX bridge end-to-end test**, and a **CI roconfig-blob hash assertion**.

@@ -16,6 +16,16 @@ AC_LANG([C++])
 AX_CXX_COMPILE_STDCXX([17], [noext])
 AX_CHECK_COMPILE_FLAG([-Wall], [CXXFLAGS="${CXXFLAGS} -Wall"])
 
+# Determinism guard for the consensus state machine: forbid the compiler from
+# contracting floating-point expressions (e.g. fusing a*b+c into an FMA with a
+# single rounding step).  Contraction is permitted to vary by target / -O level,
+# so two honest node operators could otherwise derive a 1-ULP-different value
+# from identical source and fork the chain.  The consensus code is integer /
+# fixed-point today (enforced by contrib/check-consensus-determinism.py), so
+# this only insures against a future stray float; no effect on current codegen.
+AX_CHECK_COMPILE_FLAG([-ffp-contract=off],
+                      [CXXFLAGS="${CXXFLAGS} -ffp-contract=off"])
+
 # Windows defines ERROR, which requires us to tell glog to not define
 # it as abbreviated log severity (LOG(ERROR) still works, though, and
 # that is all that we actually use in the code).

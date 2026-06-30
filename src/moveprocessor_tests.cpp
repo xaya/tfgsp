@@ -618,6 +618,24 @@ TEST_F (CoinOperationTests, TransfigureWrongValues)
   ft.reset();
   
   
+  /* OVF-01 (CRITICAL) regression: a candy amount at the int32 fixed_24_8
+     overflow point (2^23 == 8'388'608, where the backing raw == a*256 == INT_MIN)
+     must be REJECTED at parse time, never reaching CalculateFuelPower where the
+     overflow would corrupt the consensus fuel result and could fork the chain.
+     Grant enough candy that the inventory-sufficiency check passes, so the move
+     is stopped specifically by the MAX_TRANSFIGURE_CANDY cap (not lack of funds). */
+  a = xayaplayers.GetByName("domob", ctx.RoConfig());
+  a->GetInventory().SetFungibleCount(BaseMoveProcessor::GetCandyKeyNameFromID(candyID, ctx), 9000000);
+  a.reset();
+
+  Process (R"([
+    {"name": "domob", "move": {"f": {"t": {"fid": 4, "o": 3, "if": [)"+sFc+R"(], "ic": [{"a":8388608, "n":")"+sCc+R"("}], "ir": [)"+sRc+R"(]}}}}
+  ])");
+
+  ft = tbl3.GetById(4, ctx.RoConfig());
+  EXPECT_EQ (ft->GetStatus(), pxd::FighterStatus::Available);
+  ft.reset();
+
   Process (R"([
     {"name": "domob", "move": {"f": {"t": {"fid": 4, "o": 3, "if": [)"+sFc+R"(], "ic": [{"a":10, "n":")"+sCc+R"("}], "ir": [)"+sRc+R"(]}}}}
   ])");    
