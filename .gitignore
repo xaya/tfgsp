@@ -31,3 +31,9 @@ config.log
 
 Makefile
 Makefile.in
+
+# secrets — never commit RPC keys / private keys (the live .env lives outside this repo)
+.env
+.env.*
+*.key
+*.pem

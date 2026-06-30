@@ -236,19 +236,26 @@ most items had in fact already landed; the headline 80-/security-audit had also
   code (excludes `fpm/`, display TUs, tests). Verified: passes clean on the tree,
   catches a planted `double`, ignores comments/strings.
 
-**Still OPEN, but all deterministic ⇒ NOT chain-safety blockers (economic / scalability / scoped):**
+**Still OPEN, but all deterministic ⇒ NOT chain-safety blockers (economic / scoped):**
 - **SB-06** — every new account auto-mints 2 free fighters + item stacks + 3 recipes
   (crystals already 0). Deterministic; economics/product sign-off, not a chain bug.
-- **DEF2/DEF3** — per-block full-table scans of fighters (`CheckFightersForSale`,
-  `SetFreeTransfiguringFighters`) and tournaments (`ProcessTournaments` QueryAll,
-  `ReopenMissingTournaments` O(blueprints×tournaments)) remain; H3 covered only
-  ongoings. Deterministic; scalability — fix with WHERE/indexed queries + prune
-  Completed rows before sustained load.
 - **Tournament `JoinCost`** — entry IS guarded today; but enabling any non-zero
   `JoinCost` still needs an audit (all 21 blueprints are 0 now).
 
+**RESOLVED since this audit (scalability, deterministic — golden BYTE-IDENTICAL):**
+- **DEF3** (`0ceb591`) + **DEF2** (`6179a4a`) — the per-block full-table scans of
+  fighters (`CheckFightersForSale`, `SetFreeTransfiguringFighters`) and tournaments
+  (`ProcessTournaments`, `ReopenMissingTournaments`) are gone: replaced with indexed
+  filtered queries (`fighters_by_status`, `tournaments_by_name_state`,
+  `tournaments_by_state`) plus a completed-tournament prune. Idle/maintenance floor is
+  now FLAT ~0.33 ms across 0–50k players (was 135.8 ms @50k), independent of game size;
+  validated at N=20k full load (0 rejected, no per-block ratchet). See
+  `docs/original-vs-rewrite.md` §3.
+
 **Bottom line:** the one move-reachable consensus launch-blocker (OVF-01) is closed
 and regression-tested. No deterministic chain-halt/fork/economy-fatal vector remains
-open in code. Remaining items are economic (SB-06), scalability (DEF2/DEF3), or
-non-code launch prep: **confirm the real `dev_address`** (still TEMP `0x59F5…`),
+open in code, and the scalability ratchet (DEF2/DEF3) is fixed. Remaining items are
+economic (SB-06) and non-code launch prep: **re-pin the POLYGON genesis height**
+(`src/logic.cpp` — still the placeholder tip `89'246'000`; consensus-critical, set it
+to the real launch-time tip), **confirm the real `dev_address`** (still TEMP `0x59F5…`),
 a **live Polygon + XayaX bridge end-to-end test**, and a **CI roconfig-blob hash assertion**.
