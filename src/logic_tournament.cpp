@@ -46,12 +46,18 @@
 namespace pxd
 {
 
+/* Windowed retention cap for Completed tournaments: the per-block prune keeps
+   this many most-recent Completed rows and deletes older ones, bounding disk
+   while leaving late reward claims (and the frontend results display) working
+   for recent tournaments.  */
+constexpr unsigned MAX_RETAINED_COMPLETED_TOURNAMENTS = 10000;
+
 void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random& rnd)
 {
     TournamentTable tournamentsDatabase(db);
     FighterTable fighters(db);
-    
-    auto res = tournamentsDatabase.QueryAll ();
+
+    auto res = tournamentsDatabase.QueryActive ();
 
     bool tryAndStep = res.Step();
     while (tryAndStep)
@@ -316,6 +322,14 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
 		// Reset
 		gd.SetQueueData("");
 	}
+
+	/* Windowed retention GC: prune old Completed tournaments down to the cap so
+	   the table (and the active-scan exclusion list) stays bounded.  Runs after
+	   the demand-queue drain so any tournaments created this block are in place
+	   first.  Only the oldest excess beyond the cap is deleted (cheap at steady
+	   state); recent Completed rows are kept for late reward claims and the
+	   frontend results display.  */
+	tournamentsDatabase.PruneCompleted (MAX_RETAINED_COMPLETED_TOURNAMENTS);
 }
 
 void PXLogic::CheckFightersForSale(Database& db, const Context& ctx)
@@ -383,7 +397,9 @@ void PXLogic::ReopenMissingTournaments(Database& db, const Context& ctx)
         
         //This is not efficient to loop all the time, we just need query with authid directly, so
         //move it outside proto, but for now will do i.e. // TODO
-        auto res = tournamentsDatabase.QueryAll ();
+        //Only active tournaments matter here: this loop only acts on Listed ones
+        //with open roster slots, so Completed rows are skipped (DEF3).
+        auto res = tournamentsDatabase.QueryActive ();
 
         bool tryAndStep = res.Step();
         while (tryAndStep)

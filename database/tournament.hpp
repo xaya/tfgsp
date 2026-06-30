@@ -240,7 +240,22 @@ public:
    * ordered by ID to make the result deterministic.
    */
   Database::Result<TournamentResult> QueryAll ();
-  
+
+  /**
+   * Queries for the active (non-Completed) tournaments only, ordered by ID.
+   * This is the per-block hot query: Completed rows do zero per-block work, so
+   * skipping them keeps UpdateState independent of the Completed backlog (DEF3).
+   */
+  Database::Result<TournamentResult> QueryActive ();
+
+  /**
+   * Prunes old Completed tournaments down to a retention cap: keeps the most
+   * recent `keep` Completed rows (by id) and deletes the older excess.  Cheap
+   * at steady state (only the oldest excess is touched), backed by the
+   * `tournaments_by_state` index.
+   */
+  void PruneCompleted (unsigned keep);
+
   /**
    * Deletes the tournament with the given ID.
    */

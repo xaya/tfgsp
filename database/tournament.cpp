@@ -20,6 +20,9 @@
 
 #include <glog/logging.h>
 
+#include <string>
+#include <vector>
+
 namespace pxd
 {
 
@@ -95,18 +98,24 @@ TournamentInstance::~TournamentInstance ()
           << " has been modified including proto data, updating DB";
       auto stmt = db.Prepare (R"(
         INSERT OR REPLACE INTO `tournaments`
-          (`id`, `name`, `proto`, `instance`)
+          (`id`, `name`, `proto`, `instance`, `state`)
           VALUES
           (?1,
            ?2,
            ?3,
-           ?4)
+           ?4,
+           ?5)
       )");
 
       BindFieldValues (stmt);
       stmt.BindProto (3, data);
       stmt.BindProto (4, instance);
-    
+      /* Mirror the proto's state into its own column so active tournaments can
+         be filtered without deserialising the instance BLOB.  The destructor
+         writes whenever dirty and every state transition dirties the instance,
+         so the column stays in sync automatically.  */
+      stmt.Bind (5, (int) GetInstance ().state ());
+
       stmt.Execute ();
 
       return;
@@ -173,6 +182,76 @@ TournamentTable::QueryAll ()
 {
   auto stmt = db.Prepare ("SELECT * FROM `tournaments` ORDER BY `id`");
   return stmt.Query<TournamentResult> ();
+}
+
+Database::Result<TournamentResult>
+TournamentTable::QueryActive ()
+{
+  /* Only Listed/Pending/Running tournaments do per-block work; Completed rows
+     are skipped here (they draw no RNG and run no logic) so the per-block tick
+     no longer scales with the unbounded Completed backlog (DEF3).  */
+  auto stmt = db.Prepare (
+      "SELECT * FROM `tournaments` WHERE `state` != "
+      + std::to_string ((int) pxd::TournamentState::Completed)
+      + " ORDER BY `id`");
+  return stmt.Query<TournamentResult> ();
+}
+
+namespace
+{
+
+/** Result type for the cheap Completed-count probe.  */
+struct CompletedCountResult : public Database::ResultType
+{
+  RESULT_COLUMN (int64_t, cnt, 1);
+};
+
+} // anonymous namespace
+
+void
+TournamentTable::PruneCompleted (const unsigned keep)
+{
+  /* Windowed retention GC: keep the most recent `keep` Completed tournaments
+     (by id) and delete the older excess.
+
+     First a cheap covering-index COUNT over `tournaments_by_state` tells us how
+     many Completed rows exist (no row/proto reads).  Only when that exceeds the
+     cap -- the rare case at steady state, since the cap holds it down -- do we
+     fetch and delete the oldest excess.  This keeps the per-block cost O(1)-ish
+     in the common (under-cap) path instead of scanning the whole Completed
+     backlog every block.  */
+  unsigned completedCount;
+  {
+    auto stmt = db.Prepare (
+        "SELECT COUNT(*) AS `cnt` FROM `tournaments` WHERE `state` = "
+        + std::to_string ((int) pxd::TournamentState::Completed));
+    auto res = stmt.Query<CompletedCountResult> ();
+    CHECK (res.Step ());
+    completedCount = (unsigned) res.Get<CompletedCountResult::cnt> ();
+    CHECK (!res.Step ());
+  }
+
+  if (completedCount <= keep)
+    return;
+
+  const unsigned toDelete = completedCount - keep;
+
+  /* Fetch only the oldest `toDelete` ids (ascending id == oldest first) and
+     delete them.  Reads no proto BLOBs.  */
+  std::vector<Database::IdT> ids;
+  ids.reserve (toDelete);
+  {
+    auto stmt = db.Prepare (
+        "SELECT `id` FROM `tournaments` WHERE `state` = "
+        + std::to_string ((int) pxd::TournamentState::Completed)
+        + " ORDER BY `id` ASC LIMIT " + std::to_string (toDelete));
+    auto res = stmt.Query<TournamentResult> ();
+    while (res.Step ())
+      ids.push_back (res.Get<TournamentResult::id> ());
+  }
+
+  for (const auto id : ids)
+    DeleteById (id);
 }
 
 void

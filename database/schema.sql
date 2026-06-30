@@ -29,8 +29,20 @@ CREATE TABLE IF NOT EXISTS `tournaments` (
   `proto` BLOB NOT NULL,
   
   -- Additional data encoded as a TournamentInstance protocol buffer.
-  `instance` BLOB NOT NULL  
+  `instance` BLOB NOT NULL,
+
+  -- Mirror of the TournamentInstance proto's `state` field (the TournamentState
+  -- enum as an integer).  Kept in sync on every row write so the per-block tick
+  -- can filter active tournaments (and the retention GC can find old completed
+  -- ones) without deserialising the `instance` BLOB (DEF3).  Added last so the
+  -- RESULT_COLUMN indices 1..4 stay valid.
+  `state` INTEGER NOT NULL
 );
+
+-- "Which tournaments are still active" (per-block hot filter) and the windowed
+-- retention GC over Completed rows.
+CREATE INDEX IF NOT EXISTS `tournaments_by_state`
+  ON `tournaments` (`state`);
 
 -- Right now this is used for easy access to the last CHI crystal prices
 CREATE TABLE IF NOT EXISTS `globaldata` (
@@ -76,8 +88,15 @@ CREATE TABLE IF NOT EXISTS `rewards` (
   `owner` TEXT NOT NULL,  
 
   -- Additional data encoded as a ActivityRewardInstance protocol buffer.
-  `proto` BLOB NOT NULL  
+  `proto` BLOB NOT NULL
 );
+
+-- Per-owner reward lookups (CountForOwner / QueryForOwner) are hit on every
+-- reward roll and every claim; without this index they full-scan the unbounded
+-- `rewards` table, which dominates per-block cost under sustained reward
+-- generation (mirrors the ongoing_operations_by_owner pattern).
+CREATE INDEX IF NOT EXISTS `rewards_by_owner`
+  ON `rewards` (`owner`);
 
 -- Data for the fighters in the game.
 CREATE TABLE IF NOT EXISTS `fighters` (

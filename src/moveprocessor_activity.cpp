@@ -53,14 +53,13 @@ namespace pxd
     }
     
     tournamentID = tournament["tid"].asInt();
-    auto tournamentData = tournamentsTbl.GetById(tournamentID, ctx.RoConfig ());
-    
-    if(tournamentData == nullptr)
-    {
-        LOG (WARNING) << "Could not resolve tournament entry with authID: " << tournamentID;
-        return false;              
-    }    
-        
+
+    /* A claim is validated purely by the player owning reward rows tagged with
+       this tournamentID (the totalEntries<=0 check below rejects bogus tids).
+       We no longer require the tournament row itself to still exist, so late
+       reward claims keep working after the tournament has been pruned by the
+       windowed retention GC (DEF3).  */
+
     auto res = rewards.QueryForOwner(a.GetName());
     
     int32_t totalEntries = 0;
