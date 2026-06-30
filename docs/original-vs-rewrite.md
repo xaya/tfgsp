@@ -171,18 +171,18 @@ far past any gas-limited Polygon block):
 
 (DEF3 — already fixed — was the worst case: it grew UNBOUNDED, so a deep sync would never have finished at all.)
 
-**Remaining periodic scan (flagged, not yet fixed): the every-100-block anti-fork hash** (`logic.cpp:239`,
-`if (height % 100 == 0) { GetStateAsJson() … }`) rebuilds the ENTIRE game state as JSON (QueryAll on every
-table) inline in `UpdateState`, every 100 blocks — the largest remaining O(game-size) scan in the sync path
-(100× rarer than a per-block scan; transient memory, not disk). libxayagame already provides the right tool:
-`xaya::SQLiteHasher` (a `SQLiteProcessor`) — registered via `AddProcessor` + `SetInterval(N)`, it SHA256-hashes
-the DB **async on a read-only snapshot off the block thread**, persists `(blockhash, statehash)` into
-`xayagame_statehashes` (so it is reorg-rolled-back — fixing audit finding **F4**), and the cadence is a real
-arg. Soccerverse (`smcd`) and the xayaships example both wire it to a `--statehash_interval` gflags flag
-(default 0 = off). Treatfighter is the outlier with a hardcoded inline `% 100` + a weak hash (row counts +
-fighter names only) stored in non-rolled-back statics. **Recommendation:** replace the inline block with the
-framework `SQLiteHasher` + a `--statehash_interval` flag (Soccerverse pattern). The hash is diagnostic/RPC-only
-(`statehex`), not consensus, and not in golden — so this is consensus-safe. Deferred pending owner sign-off.
+**Last periodic scan — FIXED (`23d3c50`): the every-100-block anti-fork hash.** It used to rebuild the ENTIRE
+game state as JSON (QueryAll on every table) **inline in `UpdateState`** every 100 blocks (`logic.cpp:239`
+`if (height % 100 == 0)`) and hash a weak summary (row counts + fighter names + height) into process statics
+exposed as RPC `statehex`/`stateblock` — an O(game-size) scan on the sync hot path, hardcoded cadence, weak
+hash, and (audit **F4**) statics NOT rolled back on reorg. Replaced with libxayagame's built-in
+`xaya::SQLiteHasher` (a `SQLiteProcessor`): SHA256 over all non-internal tables, **async on a read-only snapshot
+off the block thread** (zero hot-path cost), persisted in `xayagame_statehashes` (**reorg-rolled-back → fixes
+F4**), cadence via a `--statehash_interval` gflags flag (default 0 = off), read back via new smcd-style
+`getstatehash`/`hashcurrentstate` RPCs. This is the Soccerverse `smcd` / xayaships pattern; TF needs no
+`GetTables()` override (all 7 tables are pure consensus state). Hash is diagnostic/non-consensus; golden
+BYTE-IDENTICAL (it was never in golden). With this, **no O(game-size) full-state scan remains on the per-block
+or per-100-block sync path.**
 
 **Complementary mitigation:** node operators normally start from a published state **snapshot/checkpoint** at a
 recent height rather than syncing from genesis (standard for libxayagame GSPs) — worth setting up too. With the
@@ -199,7 +199,7 @@ per-block floor now flat ~0.33 ms, from-genesis sync is also feasible.
 | Sentinel UB | transfigure | `fpm::fixed_24_8(9999999)` rating sentinels overflow int32 at construction | UB (deterministic) | DONE (`f72ed26`) |
 | DEF3 | tournaments | completed rows never GC'd + re-scanned every block → unbounded per-block time | launch-blocker (scalability) | DONE — `QueryActive` filter + indexed `state` column + windowed retention GC (golden byte-identical; steady-state curve flattened, §2) |
 | DEF2 | fighters / tournaments | `CheckFightersForSale` + `SetFreeTransfiguringFighters` full-scanned ALL fighters every block; `ReopenMissingTournaments` rescanned all active tournaments per blueprint → per-block floor grew with game size | launch-blocker (sync feasibility) | DONE (`6179a4a`) — `fighters_by_status` + `tournaments_by_name_state` indexes + filtered queries (collect-then-mutate); idle floor 135.8→0.33 ms @50k, now FLAT; golden byte-identical (§3) |
-| F4 / statehash | anti-fork hash | inline `% 100` full-state JSON scan in `UpdateState`; weak hash (counts + fighter names) in non-rolled-back process statics | scalability + reorg-correctness (diagnostic, non-consensus) | OPEN — recommend libxayagame `xaya::SQLiteHasher` + `--statehash_interval` flag (§3, Soccerverse pattern) |
+| F4 / statehash | anti-fork hash | inline `% 100` full-state JSON scan in `UpdateState`; weak hash (counts + fighter names) in non-rolled-back process statics | scalability + reorg-correctness (diagnostic, non-consensus) | DONE (`23d3c50`) — replaced with libxayagame `xaya::SQLiteHasher` + `--statehash_interval` flag + `getstatehash`/`hashcurrentstate` RPCs (async/snapshot, reorg-safe, golden byte-identical; §3) |
 | rewards-idx | rewards | `CountForOwner`/`QueryForOwner` full-scanned the unbounded `rewards` table every reward roll/claim (no owner index) | scalability (found by the scale bench) | DONE — added `rewards_by_owner` index (golden-neutral) |
 | DEF8–14 | determinism | raw float/double in consensus (probabilities, alms, exchange %, sweetness, prestige) | fork-risk discipline | DONE (Pass D) — now integer/fpm fixed-point; CI lint + `-ffp-contract=off` guardrails (`f72ed26`) |
 | Quality audit | repo-wide | 80 findings: dead code, DRY, money-path correctness (reward-roll `<=`, transfigure fuel cost, armor-reward by-value, demand-queue double-append, role-load HALT, …) | mixed | DONE (quality-audit-findings.md) |
@@ -212,5 +212,5 @@ per-block floor now flat ~0.33 ms, from-genesis sync is also feasible.
 - Crystal economy: WCHI-gated, sink-heavy, not inflationary.
 
 ### Still open (non-blocking, deterministic)
-- **Anti-fork state hash** (`logic.cpp:239` `% 100` inline FullState scan): replace with libxayagame's `xaya::SQLiteHasher` + a `--statehash_interval` flag (Soccerverse pattern) — async on a snapshot off the block thread, configurable cadence, reorg-safe (fixes audit **F4**), stronger SHA256-over-tables hash. Diagnostic/non-consensus, golden-safe. Deferred pending owner sign-off. See §3.
+- **Reward-cap UX polish** (optional, non-consensus): a player parked at the unclaimed-reward cap (`max_unclaimed_reward_amount = 100`, `logic_resolve.cpp:99`) silently forfeits passive reward rolls earned while at the cap (claiming reopens room, so it only bites non-claimers). Investigated: it's DB-safe/deterministic/bounded — NOT a DB defect. Optional improvements: an entry-time "you're at the reward cap" guard so a capped player isn't charged a tournament joincost for a reward that will drop, + a unit assertion that the config value isn't 0 (0 would block all rewards).
 - Launch prep (non-code): confirm the real `dev_address` (still TEMP `0x59F5…`), a live Polygon + XayaX end-to-end test, a CI roconfig-blob hash assertion.
