@@ -1007,15 +1007,21 @@ TEST_F (ScaleBenchTests, BlockGrowthUnderFullActivity)
                 << std::endl;
     }
 
-  /* first-10% vs last-10% mean ms (the growth factor).  */
+  /* Steady-state growth factor: an early-STEADY window (just after the initial
+     ramp, where the tournament tables have reached their GC-bounded plateau) vs
+     the final window.  Starting at block 0 would conflate the cold-start ramp
+     (near-empty DB, tiny ms) with real per-block growth and overstate the factor;
+     the meaningful question is whether ms ratchets up DURING steady state.  */
   const int win = std::max (1, M / 10);
+  const int earlyStart = std::min (M - win, M / 3);   /* skip the ramp */
   double firstMs = 0.0, lastMs = 0.0;
-  for (int i = 0; i < win; ++i) firstMs += series[i].ms;
+  for (int i = 0; i < win; ++i) firstMs += series[earlyStart + i].ms;
   for (int i = 0; i < win; ++i) lastMs += series[M - 1 - i].ms;
   firstMs /= win;
   lastMs /= win;
-  std::cout << "\nMEAN ms/block  first-10% (" << win << " blks)=" << firstMs
-            << "   last-10%=" << lastMs << "   growth-factor="
+  std::cout << "\nMEAN ms/block  early-steady-10% (" << win << " blks @blk"
+            << earlyStart << ")=" << firstMs << "   last-10%=" << lastMs
+            << "   steady growth-factor="
             << (firstMs > 0 ? lastMs / firstMs : 0.0) << "x" << std::endl;
 
   /* machine-readable CSV.  */
@@ -1038,9 +1044,15 @@ TEST_F (ScaleBenchTests, BlockGrowthUnderFullActivity)
       << "too many tournament entries were rejected -- benchmark is vacuous";
   EXPECT_GT (finalCompleted, 0)
       << "no tournament ever completed -- DEF3 vector not exercised";
-  /* The Completed-row count must GROW substantially across the run.  */
-  EXPECT_GT (series[curveAt[4]].completed, series[curveAt[1]].completed)
-      << "completed-tournament count did not grow -- benchmark is vacuous";
+  /* Post-DEF3 the Completed-row count is GC-bounded at the retention cap
+     (MAX_RETAINED_COMPLETED_TOURNAMENTS = 10000): it grows during the ramp then
+     PLATEAUS at the cap, so it must NOT keep growing unbounded.  Real churn is
+     proven by entriesConfirmed (e.g. 187k for N=20000) + finalCompleted>0 above;
+     here we assert the prune actually BOUNDS the table.  (The old "Completed
+     must keep growing across the whole run" check was invalid once the cap binds
+     -- it fired precisely BECAUSE the prune works and plateaus the count.)  */
+  EXPECT_LE (finalCompleted, 10000)
+      << "completed rows exceeded the DEF3 retention cap -- prune not bounding";
   EXPECT_GT (cooksConfirmed, 0) << "no cook was confirmed";
   /* market is best-effort: warn but do not fail the benchmark.  */
   if (tradesAttempted > 0 && tradesConfirmed == 0)

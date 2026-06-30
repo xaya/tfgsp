@@ -151,10 +151,23 @@ the floor no longer climbs.
   tournament once per blueprint.
 - No schema column / proto change. Verified: golden byte-identical; 98 unit + 4 reorg + 2 reorg-game + 28 db green.
 
-**Under FULL load it stays flat too** (scale bench, 20k players all entering tournaments + cooking + trading):
-per-block time is identical at block 30 and block 60 (11,472 → 11,471 ms — those seconds are pure saturation,
-~3,300 tournament resolutions/block, nothing like a gas-limited Polygon block) → **no ratchet** as state grows.
-[Full curve + growth-factor + disk plateau + 0-rejected: filled in when the run completes.]
+**Under FULL load it stays flat too** (scale bench `BlockGrowthUnderFullActivity`, N=20,000 players, M=300
+blocks, all entering tournaments + cooking + trading simultaneously — ~3,300 tournament *resolutions* per block,
+far past any gas-limited Polygon block):
+- **0 rejected** out of 187,500 tournament entries + 2,000 cooks + 500 trades — correct under extreme load.
+- **No per-block ratchet:** steady-state growth-factor **0.97×** (mean ms blk100–129 = 11,441 → blk270–299 =
+  11,077; per-block time flat/slightly *down* as state accumulates; steady range 10.1–14.3 s = variance, no trend).
+  The naive "first-10% vs last-10%" metric reported 1.88× — purely the cold-start ramp (block 0 = 187 ms on a
+  near-empty DB); the bench now measures the post-ramp steady window, and its stale "Completed must keep growing"
+  assertion was fixed (it failed *because* DEF3's prune correctly plateaus the count).
+- **Tournaments bounded:** table plateaued at **19,395 rows** (≈9.4k active + 10,000 completed cap) and held flat
+  for 220 blocks — DEF3 prune confirmed under churn.
+- **Disk = O(players), not O(time):** main-db grew 59→193 MB purely as *rewards* filled toward their
+  `players × 100` cap (890,625 / 2,000,000 rows at M=300 — still climbing; cap binds ~block 675). Every
+  table that could grow with time is capped (rewards ≤100/player `logic_resolve.cpp:99`, riding the new
+  `rewards_by_owner` index; fighters ≤48/acct; tournaments pruned at 10k completed; ongoing-ops transient), so
+  total disk ≈ 2.5 KB/account empty → ~10 KB/fully-active player ⇒ **~5 GB at 500k saturated players**. No
+  time-based ratchet.
 
 (DEF3 — already fixed — was the worst case: it grew UNBOUNDED, so a deep sync would never have finished at all.)
 
