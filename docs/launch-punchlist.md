@@ -52,16 +52,54 @@ launch-time) vs implementable now. Companion docs: `original-vs-rewrite.md` (per
    `SetSerializationDeterministic`). Validated: 15× clean parallel rebuilds all parse, blob md5
    constant. See `original-vs-rewrite.md` §"Issues found & fixed".
 
+7. ✅ **DONE (2026-07-01) — tournament roster `fc` DoS cap (DOS-FC).** The sign-off re-verification
+   audit found `fc` (`ParseTournamentEntryData`, `moveprocessor_activity.cpp`) was the **lone**
+   user-supplied id-array with no `MAX_MOVE_ARRAY` guard: the O(n²) `HasDuplicates` dedup + the
+   per-entry `fighters.GetById` loop ran **before** the `size()!=teamsize()` reject and before the
+   joincost payment gate, so one cheap move carrying a huge `fc` forces super-linear per-block work
+   on every honest node (deterministic near-halt — **not** a fork). Fixed (`0bdab5e`) by adding the
+   cap right after the `isArray()` check, mirroring the expedition `fid` sibling; extended the
+   Pass-B regression test (`OversizedMoveArraysAreCappedNotFatal`) with a huge-`fc` entry move.
+   Golden byte-identical; full `make check` + determinism lint green.
+
 ## 🟢 Done — re-verify at sign-off (launch-day confirmation, not code work)
 
-- **C7** — confirm a valid-address crownholder exists at fresh-launch heights (else reroll
-  returns early; clamp at `database/fighter.cpp:284`).
-- **C9** — run the UnitTest expedition farm to confirm the faucet is closed (depends on #4).
-- **F1/REORG-01** — human/runtime reorg + addressless-crownholder test (regression test
-  covers the queue-data write path; confirm no other Parse\* path writes during pending).
-- **F2/F3** — confirm the determinism lint exclusion list hides no hashed float path + that
-  third-party builders inherit `-ffp-contract=off`.
-- **security-audit §11** move-reachability re-verify.
+**Code-verifiable portions RE-VERIFIED 2026-07-01** (adversarial 6-dimension audit, each finding
+confirmed/refuted by 3 independent lenses — determinism / exploitability / fork-divergence):
+- **F2/F3 — CLEAN.** Consensus state is integer / `fpm::fixed_24_8` fixed-point only; the
+  determinism lint (`contrib/check-consensus-determinism.py`) runs under `make check` and its
+  exclusion list hides no hashed-float path; `-ffp-contract=off` is applied globally via
+  `configure.ac` `CXXFLAGS` (inherited by every consensus TU and any downstream `./configure`
+  builder). Low-risk note (not a bug): a handful of `fpm::fixed_24_8(0.1|0.5|0.6|1.25|100.0)`
+  literals sit in consensus code — invisible to the token-based lint, but provably deterministic
+  (×256 is exact for the exact-representable ones; `0.1`/`0.6` land at `25.6`/`153.6`, far from a
+  `.5` round boundary, so `round()` collapses any literal-rounding ambiguity) and frozen in the
+  pinned golden. Left as readable literals rather than churned to `from_raw_value()`.
+- **C7 — CLEAN.** The crownholder mechanic is fully removed (`crown-removal.md`); reroll name
+  selection is deterministic (proto map copied to a vector and sorted by unique key — no
+  iteration-order dependence, all randomness via seeded `xaya::Random`), and the empty/edge state
+  early-returns safely. The former chain-halt is fixed by the clamp at **`database/fighter.cpp:299`**
+  (`increasedProbability>1000 → 1000`, guaranteeing `NextInt(≥1)`). *(Doc-drift fix: earlier notes
+  cited line 284; 284 is `probabilityIndex`, the clamp is 299.)*
+- **C9 — CLEAN.** No reachable unbounded/unsinked mint: crystal mint is WCHI-gated (CRYS-1/C8),
+  all candy/reward credit funnels through the H5 `max_unclaimed_reward_amount` cap, and the
+  UnitTest faucet lives only in `regtest_merge{}` which MAIN strips — the `LaunchConfigIsPinned`
+  pin test asserts no `zzzz/xxxx/UnitTest` survive in the assembled MAIN blob.
+- **F1/REORG-01 — CLEAN.** `pending.cpp` performs **zero** consensus-state DB writes (every `Parse*`
+  reachable from pending is read-only; all mutators live only on the confirmed `ProcessOne` path);
+  undo is automatic via libxayagame's SQLite session (no manual backward override); no
+  non-reproducible clock/random/height on the consensus path (per-block RNG reseeded from block hash).
+- **Integer overflow (OVF-01 siblings) — CLEAN.** `isInt()` bounds every `asInt()` to int32; OVF-01
+  (`MAX_TRANSFIGURE_CANDY`) and EXCH-1 (`CHECK_LE(pctRaw,256)`) closed; unsigned-balance deductions
+  all pre-checked. One low-risk defensive note: `fuelPower *100/*1.25` narrowing is bounded by the
+  48-inventory cap (defined, node-identical wrap — no fork).
+
+**Still needs a live/launch-day confirmation (cannot be done from code alone):**
+
+- All of the above are now **code-confirmed clean** (2026-07-01) — no remaining code sign-off work.
+  The only launch-day confirmations left are the operational ones already tracked as 🔴 blockers
+  above: a live Polygon + XayaX end-to-end sync / move round-trip (which also exercises a runtime
+  reorg on the live chain, complementing `reorg_game_tests`), run against the re-pinned genesis height.
 
 ## ⚪ Economy / product sign-offs (deterministic, owner's call — not chain bugs)
 

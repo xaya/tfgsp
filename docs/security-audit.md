@@ -264,3 +264,29 @@ live-Polygon TEST address `0x2576…8722` (real foundation address TODO for prod
 to fixing a latent **blob parallel-build race** (consensus-critical; see `original-vs-rewrite.md`
 BLOB-RACE: two concurrent `roconfig_gen` writers under `make -j` could embed a corrupt config
 blob → daemon abort or silent fork).
+
+## 12. Sign-off re-verification (2026-07-01) — adversarial 6-dimension code audit
+
+A final launch sign-off re-verification (6 parallel auditors — FP determinism, move reachability,
+crownholder/C7, faucet/C9, reorg/F1, integer overflow — each finding confirmed or refuted by 3
+independent lenses: determinism / exploitability / fork-divergence). Result: **all dimensions
+clean except one move-reachable DoS**, now fixed.
+
+- **DOS-FC (found + fixed, `0bdab5e`)** — the tournament-entry roster array `fc`
+  (`ParseTournamentEntryData`, `moveprocessor_activity.cpp`) was the **lone** user-supplied id-array
+  with no `MAX_MOVE_ARRAY` cap (the H1/H2/H7 §3 hardening covered expedition `fid`, reward `eid`,
+  transfigure `if/ic/ir`, but missed this sibling). The O(n²) `HasDuplicates` dedup + the per-entry
+  `GetById` loop ran before the `size()!=teamsize()` reject and before the joincost gate, so one
+  cheap move with a large `fc` forces super-linear per-block work on every honest node — a
+  deterministic per-block near-halt (**not** a fork). Fix mirrors the expedition cap after the
+  `isArray()` check; `OversizedMoveArraysAreCappedNotFatal` extended with a huge-`fc` entry move.
+- **All other sign-off items re-confirmed CLEAN first-hand:** F2/F3 (integer/fixed-point only,
+  lint + `-ffp-contract=off` global; the `fixed_24_8(0.x)` literals are provably deterministic and
+  golden-pinned), C7 (crownholder mechanic removed; deterministic reroll; empty-state safe; clamp
+  at `fighter.cpp:299`), C9 (no unbounded/unsinked mint; MAIN strips the test faucet, pin-test
+  asserted), F1/REORG-01 (zero pending-time state writes; SQLite-session undo), integer overflow
+  (OVF-01/EXCH-1/CRYS-1 closed; `isInt()` bounds all `asInt()`).
+
+**Bottom line (2026-07-01):** no move-reachable chain-halt / fork / economy-fatal / DoS vector
+remains open in code. The only remaining launch work is operational: re-pin the POLYGON genesis
+height and a live Polygon + XayaX end-to-end test.
