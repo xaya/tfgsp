@@ -99,16 +99,19 @@ followed three determinism/safety sweeps (16 dimensions; see `security-audit.md`
   reworded the 6 residual "faction" comments. Consensus change ⇒ golden **regenerated**; full
   `make check` + determinism lint green.
 
-### Deferred safe cleanups (low value; skipped to avoid unsupervised build-bisect risk)
-- **DC-01** — `CalculateFuelPower`'s `outputDebug` param is always `false`; the param + its ~9
-  `if(outputDebug)` LOG blocks + the 5 `, false` call sites are dead. Safe to remove (all callers pass
-  `false`), just mechanical surgery across a signature — do when convenient.
-- **DC-02/03/04** — never-called `OngoingsTable::DeleteForHeight`/`DeleteForOwner` and
-  `RecipeInstanceTable::CountForAll` (decl+def, zero callers). Safe to delete.
-- **DC-05/07/08/09/10** — unused `<thread>/<fstream>/<cmath>/<sstream>/<iostream>` includes in various
-  consensus TUs. Legit removals, but the review's include analysis was **unreliable** (it wrongly
-  flagged `<chrono>` in `moveprocessor.cpp`, which IS used), so re-verify each per-file before removing.
-- **DC-12** — `XayaPlayersTable::QueryInitialised` has only a test caller; keep or drop per intent.
+### Deferred safe cleanups
+- **DC-01 — DONE (`fba0c9c`, 2026-07-01).** `CalculateFuelPower`'s `outputDebug` param was always
+  `false` (all 5 call sites). Dropped the param from decl + def and deleted the 19 dead
+  `if(outputDebug) LOG(...)` statements (1 block + 18 single-liners). Golden byte-identical.
+- **DC-02/03/04 — DONE (`fba0c9c`, 2026-07-01).** Removed the never-called
+  `OngoingsTable::DeleteForHeight`/`DeleteForOwner` and `RecipeInstanceTable::CountForAll` (decl+def,
+  zero callers). Golden byte-identical.
+- **DC-12 — DONE (`ffc6fe5`, 2026-07-01).** `XayaPlayersTable::QueryInitialised` (only a test caller,
+  and `WHERE role IS NOT NULL`) was removed together with the role system.
+- **DC-05/07/08/09/10 — STILL OPEN (low value).** Unused `<thread>/<fstream>/<cmath>/<sstream>/<iostream>`
+  includes in various consensus TUs. Legit removals, but the review's include analysis was **unreliable**
+  (it wrongly flagged `<chrono>` in `moveprocessor.cpp`, which IS used), so re-verify each per-file
+  before removing.
 
 ## Notes
 - Every fix in this session was verified with a full Docker `make check` (proto2 + database + src +
