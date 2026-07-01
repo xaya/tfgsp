@@ -849,7 +849,44 @@ TEST_F (ValidateStateTests, ClaimRewardsTestAllRewardTypesBeingAwardedProperly)
   ])");  
 
   ft = tbl3.GetById(4, ctx.RoConfig());
-  EXPECT_EQ (ft->GetProto().animationid(), "05633498-ace9-de14-c939-9435a6343d0f");  
+  EXPECT_EQ (ft->GetProto().animationid(), "05633498-ace9-de14-c939-9435a6343d0f");
+}
+
+TEST_F (ValidateStateTests, ClaimRewardAfterFighterDeletedDoesNotHalt)
+{
+  /* HALT-01 regression. A Move/Armor/Animation reward row stays bound to a
+     fighter id. If that fighter is deleted (e.g. transfigure / cook-replace)
+     while the reward is still unclaimed, the reward row dangles. Claiming it
+     used to GetById(deleted id) -> nullptr and dereference it -> a SIGSEGV that
+     every node hits identically at the same height = a permanent chain HALT.
+     The claim path must instead skip and discard the now-unapplicable reward.
+     Without the fix this test SEGVs the binary (hard failure); with it, it
+     drains the rewards cleanly. */
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
+  auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
+  ft.reset();
+  xp.reset();
+
+  Process (R"([
+    {"name": "domob", "move": {"exp": {"f": {"eid": "00000000-0000-0000-zzzz-zzzzzzzzzzzz", "fid": 4}}}}
+  ])");
+
+  UpdateState ("[]");   // expedition resolves -> rewards (incl. a fighter-bound Animation) created
+
+  ASSERT_GT (tbl4.CountForOwner("domob"), 0u);
+
+  // The fighter is consumed/deleted before the reward is claimed; the reward
+  // rows keep the now-dangling fighter id.
+  tbl3.DeleteById(4);
+  ASSERT_TRUE (tbl3.GetById(4, ctx.RoConfig()) == nullptr);
+
+  Process (R"([
+    {"name": "domob", "move": {"exp": {"c": {"eid": "00000000-0000-0000-zzzz-zzzzzzzzzzzz"}}}}
+  ])");
+
+  // No crash, and every reward row consumed (granted where possible, discarded
+  // where its fighter is gone).
+  EXPECT_EQ (tbl4.CountForOwner("domob"), 0u);
 }
 
 TEST_F (ValidateStateTests, ClaimRewardsInvalidParams)

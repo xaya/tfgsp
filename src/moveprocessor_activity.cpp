@@ -713,6 +713,19 @@ namespace pxd
           else if((pxd::RewardType)(int32_t)rewardTableDb.rewards(rewardData->GetProto().positionintable()).type() == pxd::RewardType::Move)
           {
               auto fighter = fighters.GetById(rewardData->GetProto().fighterid(), ctx.RoConfig());
+              if(fighter == nullptr)
+              {
+                  /* HALT-01: the reward's fighter can be deleted (transfigure /
+                     cook-replace) while this Move/Armor/Animation reward is still
+                     unclaimed -- the reward row keeps the now-dangling fighterid.
+                     GetById then returns null and dereferencing it would SIGSEGV
+                     every node at the same height => a permanent chain halt. Discard
+                     the now-unapplicable reward deterministically instead. */
+                  LOG (WARNING) << "Reward fighter no longer exists, discarding reward for fighter " << rewardData->GetProto().fighterid();
+                  markedToRemove.push_back(rw);
+                  rewardData.reset();
+                  continue;
+              }
               std::string* newMove = fighter->MutableProto().add_moves();
               newMove->assign(rewardTableDb.rewards(rewardData->GetProto().positionintable()).moveid());
               
@@ -722,6 +735,13 @@ namespace pxd
           else if((pxd::RewardType)(int32_t)rewardTableDb.rewards(rewardData->GetProto().positionintable()).type() == pxd::RewardType::Animation)
           {
               auto fighter = fighters.GetById(rewardData->GetProto().fighterid(), ctx.RoConfig());
+              if(fighter == nullptr)   // HALT-01: reward fighter deleted before claim -> skip, never null-deref
+              {
+                  LOG (WARNING) << "Reward fighter no longer exists, discarding reward for fighter " << rewardData->GetProto().fighterid();
+                  markedToRemove.push_back(rw);
+                  rewardData.reset();
+                  continue;
+              }
               fighter->MutableProto().set_animationid(rewardTableDb.rewards(rewardData->GetProto().positionintable()).animationid());
           
               LOG (INFO) << "Granted " << " animation to figher " << rewardData->GetProto().fighterid() << " as reward"; 
@@ -730,7 +750,14 @@ namespace pxd
           else if((pxd::RewardType)(int32_t)rewardTableDb.rewards(rewardData->GetProto().positionintable()).type() == pxd::RewardType::Armor)
           {
               auto fighter = fighters.GetById(rewardData->GetProto().fighterid(), ctx.RoConfig());
-              
+              if(fighter == nullptr)   // HALT-01: reward fighter deleted before claim -> skip, never null-deref
+              {
+                  LOG (WARNING) << "Reward fighter no longer exists, discarding reward for fighter " << rewardData->GetProto().fighterid();
+                  markedToRemove.push_back(rw);
+                  rewardData.reset();
+                  continue;
+              }
+
               bool armorTypeWasPresent = false;
               for(int i = 0; i < fighter->MutableProto().armorpieces_size(); ++i)
               {
