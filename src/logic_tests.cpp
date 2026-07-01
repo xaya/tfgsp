@@ -306,7 +306,7 @@ TEST_F (ValidateStateTests, RecepieInstanceGeneratedFullCycleTest)
   auto r = tbl2.GetById(rcpID);
   
   
-  EXPECT_EQ (r->GetProto().duration(), 15); //todo, read 15 just from config of common file
+  EXPECT_EQ (r->GetProto().duration(), ctx.RoConfig()->params().common_recipe_cook_cost());
 
   auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
   r->SetOwner(a->GetName());
@@ -341,7 +341,7 @@ TEST_F (ValidateStateTests, RecepieInstanceGeneratedFullCycleTest)
   EXPECT_EQ (a->GetOngoingsSize (), 1);
   a.reset ();
   
-  for (unsigned i = 0; i < 15; ++i) //todo same as 15 up above
+  for (unsigned i = 0; i < ctx.RoConfig()->params().common_recipe_cook_cost(); ++i)
   {
     UpdateState ("[]");
   }    

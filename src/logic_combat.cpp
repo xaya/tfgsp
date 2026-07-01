@@ -167,8 +167,8 @@ fpm::fixed_24_8 PXLogic::ExecuteOneMoveAgainstAnother(const Context& ctx, std::s
  * FIDE (the World Chess Foundation), gives players with less than 30 played games a K-factor of 25. 
  * Normal players get a K-factor of 15 and pro's get a K-factor of 10.  (Pro = 2400 rating)
  * Once you reach a pro status, you're K-factor never changes, even if your rating drops.
- * 
- * For now set to 15 for everyone.
+ *
+ * The K-factor used here is read from config (params.elok_factor).
  */
 
 void PXLogic::CreateEloRating(const Context& ctx, fpm::fixed_24_8& ratingA, fpm::fixed_24_8& ratingB, fpm::fixed_24_8& scoreA, fpm::fixed_24_8& scoreB, fpm::fixed_24_8& expectedA, 

@@ -714,7 +714,7 @@ namespace pxd
           else if((pxd::RewardType)(int32_t)rewardTableDb.rewards(rewardData->GetProto().positionintable()).type() == pxd::RewardType::Animation)
           {
               auto fighter = fighters.GetById(rewardData->GetProto().fighterid(), ctx.RoConfig());
-              fighter->MutableProto().set_animationid(rewardTableDb.rewards(rewardData->GetProto().positionintable()).animationid()); //TODO into repeated list? Prob... But ok, ignore for now;
+              fighter->MutableProto().set_animationid(rewardTableDb.rewards(rewardData->GetProto().positionintable()).animationid());
           
               LOG (INFO) << "Granted " << " animation to figher " << rewardData->GetProto().fighterid() << " as reward"; 
           }   

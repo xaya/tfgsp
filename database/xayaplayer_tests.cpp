@@ -225,15 +225,5 @@ TEST_F (XayaPlayersTableTests, StartingItems)
   EXPECT_EQ (h->GetBalance (), cfg2->params().starting_crystals());
 }
 
-TEST_F (XayaPlayersTableTests, Prestige)
-{
-  //const RoConfig& cfg2 = *cfg;
-  //auto h = tbl.CreateNew ("domob", *cfg, rnd);
-  //h.reset ();
-
-  //h = tbl.GetByName ("domob", *cfg);
-  //todo EXPECT_EQ (h->GetPresitge(), cfg2->params().base_prestige());
-}
-
 } // anonymous namespace
 } // namespace pxd

@@ -622,19 +622,6 @@ PendingState::XayaPlayerState::ToJson () const
 	
     for(const auto& trsf: pendingTransfigure) 
     {		
-	  //Lets detect, what actually did change? TODO :: this needs some deep refactoring of code, so lets do this front-end only for now
-	 /*	
-	 if(trsf["o"] == 1)
-	 {
-		 // Lets compare names of the fighter we submited before, and his name we have now
-		auto fighterDb = fighters.GetById (trsf["fid"].asInt(), config);
-		fighterDb.reset(); 
-	 }
-
-	  }*/
-	  
-	  
-	  
 	  transfigurers.append(trsf);
 	}		
 	

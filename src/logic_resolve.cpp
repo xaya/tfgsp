@@ -599,18 +599,11 @@ void PXLogic::ResolveCookingRecepie(std::unique_ptr<XayaPlayer>& a, const uint32
         newFighter->SetStatus(FighterStatus::Cooked);
         
         LOG (WARNING) << "Cooked new fighter with id: " << newFighter->GetId();
-        
-        /**
-        recipeTbl.DeleteById(recepieID);  
-        
-        now, jere ideally we want to erase it. but, for example, fighter object stores recepie ID,
-        and I am not sure will it be ever used somewhere else again? so, FOR NOW, lets not delete,
-        just keep empty owner so it marks this as used this way
-        
-        UPD: Its used in sweetener cauldron display, for example, so defo need to keep ID as fighter
-        object references it
-        */
-    }        
+
+        /* The recipe row is intentionally kept (not deleted): the cooked
+           fighter references its recipe id (e.g. the sweetener-cauldron
+           display reads it).  Cleared ownership marks it as used.  */
+    }
 }
 
 void PXLogic::TickAndResolveOngoings(Database& db, const Context& ctx, xaya::Random& rnd)
