@@ -18,8 +18,15 @@
 
 #include "../proto/roconfig.hpp"
 
+#include <xayautil/hash.hpp>
+
+#include <google/protobuf/io/coded_stream.h>
+#include <google/protobuf/io/zero_copy_stream_impl.h>
+
 #include <glog/logging.h>
 #include <gtest/gtest.h>
+
+#include <string>
 
 namespace pxd
 {
@@ -53,6 +60,46 @@ TEST (RoConfigTests, ChainDependence)
   EXPECT_FALSE (main->params ().god_mode ());
   EXPECT_FALSE (test->params ().god_mode ());
   EXPECT_TRUE (regtest->params ().god_mode ());
+}
+
+/**
+ * Pins the assembled launch (MAIN) config.  RoConfig(MAIN) has both merge
+ * submessages stripped (roconfig.cpp), so it is exactly the config every node
+ * runs at launch.  This guards two things at once: (a) no god_mode / regtest /
+ * unit-test fixture may leak into the mainnet blob, and (b) any change to the
+ * assembled config is caught by the pinned hash.  Re-pin PINNED_HASH
+ * deliberately when a config value legitimately changes -- the same event also
+ * requires regenerating src/goldenreplay.golden.json.
+ */
+TEST (RoConfigTests, LaunchConfigIsPinned)
+{
+  const RoConfig main (xaya::Chain::MAIN);
+
+  EXPECT_FALSE (main->params ().god_mode ());
+  EXPECT_FALSE (main->has_testnet_merge ());
+  EXPECT_FALSE (main->has_regtest_merge ());
+
+  /* Deterministic serialisation: ConfigData carries map<> fields whose default
+     wire order is unstable, which would make the hash flake.  */
+  std::string bytes;
+  {
+    google::protobuf::io::StringOutputStream zos (&bytes);
+    google::protobuf::io::CodedOutputStream cos (&zos);
+    cos.SetSerializationDeterministic (true);
+    ASSERT_TRUE (main->SerializeToCodedStream (&cos));
+  }
+
+  /* No regtest / unit-test identifiers may survive into the launch blob.  */
+  EXPECT_EQ (bytes.find ("zzzz"), std::string::npos);
+  EXPECT_EQ (bytes.find ("xxxx"), std::string::npos);
+  EXPECT_EQ (bytes.find ("UnitTest"), std::string::npos);
+
+  static constexpr const char* PINNED_HASH =
+      "dd48e3fab54ee95c858e09392d971c0aca11b91224c9a2a76416cf167eb78ba1";
+  const std::string actual = xaya::SHA256::Hash (bytes).ToHex ();
+  EXPECT_EQ (actual, PINNED_HASH)
+      << "Assembled launch roconfig changed.  If intentional, re-pin "
+         "PINNED_HASH to the value above and regenerate the golden.";
 }
 
 /* ************************************************************************** */
