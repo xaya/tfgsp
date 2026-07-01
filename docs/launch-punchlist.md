@@ -62,6 +62,17 @@ launch-time) vs implementable now. Companion docs: `original-vs-rewrite.md` (per
    Pass-B regression test (`OversizedMoveArraysAreCappedNotFatal`) with a huge-`fc` entry move.
    Golden byte-identical; full `make check` + determinism lint green.
 
+8. ✅ **DONE (2026-07-01) — UPD-1 latent-UB guard + deep determinism audit.** A second adversarial
+   pass (6 subtle-fork dimensions: SQLite row-order, in-memory/proto-map iteration, JSON-key order,
+   integer div/mod/shift, uninit/proto-default, locale/string) came back **0 confirmed issues** — the
+   consensus code is defensively written (every state query `ORDER BY` unique PK; every proto-`map<>`
+   iteration find-by-key-or-sort-first; no `std::unordered_*`; ASCII-only case-fold). It surfaced one
+   latent defense-in-depth gap, now hardened: **UPD-1 (`1cc8862`)** re-guards the
+   `sweetenerBlueprint.rewardchoices(rewardID)` repeated-field index in `ResolveSweetener` (out-of-
+   range access would be UB → silent fork in an `NDEBUG` build; currently unreachable via the
+   cook-time bound). Golden byte-identical. See `security-audit.md` §13. (LOC-5 stringstream map-keys
+   noted as an optional non-fork DRY tidy.)
+
 ## 🟢 Done — re-verify at sign-off (launch-day confirmation, not code work)
 
 **Code-verifiable portions RE-VERIFIED 2026-07-01** (adversarial 6-dimension audit, each finding

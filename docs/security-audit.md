@@ -290,3 +290,44 @@ clean except one move-reachable DoS**, now fixed.
 **Bottom line (2026-07-01):** no move-reachable chain-halt / fork / economy-fatal / DoS vector
 remains open in code. The only remaining launch work is operational: re-pin the POLYGON genesis
 height and a live Polygon + XayaX end-to-end test.
+
+## 13. Deep determinism audit (2026-07-01) — the subtle fork vectors
+
+A second adversarial pass (6 auditors + 3-lens verification) targeting the SUBTLE cross-node
+divergence vectors §12 did not dedicate a dimension to. **Result: 0 confirmed issues; 1 latent-UB
+hardening applied.**
+
+- **SQLite query/row-order — CLEAN.** Every state-feeding SELECT has an explicit `ORDER BY` on a
+  UNIQUE primary key (`id` / `name`); there is no `ORDER BY` on a non-unique column, no bare `LIMIT`,
+  no `GROUP BY`, no rowid/insertion-order reliance. The one `LIMIT` (`TournamentTable::PruneCompleted`)
+  is `ORDER BY id ASC LIMIT n`. Per-block maintenance scans collect-then-mutate (materialise rows in
+  `id` order before any status flip/delete), so RNG-draw order is fixed and cursors aren't
+  invalidated mid-scan. Winner selection folds an ordered `std::map<owner,score>` with strict `>`
+  (ties → lowest owner name).
+- **In-memory iteration order — CLEAN.** ZERO `std::unordered_*` in consensus code. Every protobuf
+  `map<>` iteration is either find-and-break on a unique `authoredid` (result order-independent) or
+  copy-to-vector-then-sort-by-key (centralised `SortPairsByKey`, `moveprocessor_internal.hpp`) before
+  any RNG draw / order-sensitive accumulation. Fungible inventory `map` writes are per-key
+  (commutative).
+- **JSON object-key / handler order — CLEAN.** Fixed explicit per-move handler sequence; sub-moves by
+  array index (DoS-capped); the only object-member iteration is the commutative `paidToDev` sum.
+- **Integer division / modulo / shift — CLEAN.** No `%` in game `.cpp`; signed `/` truncation is
+  C++11-standardised; no bit-shifts on negative values. Negative-operand ELO/rating paths verified
+  deterministic.
+- **Uninitialized / proto-default — CLEAN (+ UPD-1 hardened).** proto2 zero-defaults are
+  deterministic; object IDs are reserved to 1000 (start at 1001) so `0` unambiguously means "none";
+  no read-before-write into committed state. **UPD-1 (`1cc8862`)**: `ResolveSweetener` indexed
+  `sweetenerBlueprint.rewardchoices(rewardID)` directly. `rewardID` is bounds-checked at cook time
+  and a missed re-lookup returns early, so it is not currently reachable — but an out-of-range index
+  on a repeated field is UB in an `NDEBUG` build (a potential silent fork), so the index is now
+  re-guarded at the resolve site (golden byte-identical).
+- **Locale / string-parse — CLEAN.** dev_address case-fold uses a custom ASCII-only `AsciiToLower`
+  (no libc `tolower`); the one `std::stoi` is base-10 + try/catch + clamp; no `setlocale`/
+  `std::locale::global` anywhere (global C locale). *Optional (LOC-5, non-fork):* four
+  `std::stringstream << int` map-key builders in `moveprocessor_fighter.cpp` are transient,
+  self-consistent, never-committed keys — could be simplified to `std::to_string` for DRY, but they
+  cannot diverge even under a global-locale change, so left as-is.
+
+**Bottom line (deep audit):** across 12 audited dimensions (this pass + §12), the only real find was
+DOS-FC (fixed); everything else is code-confirmed deterministic. No fork/halt/economy/DoS vector is
+open in code.
