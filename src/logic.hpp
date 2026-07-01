@@ -111,10 +111,10 @@ public:
                            const Json::Value& blockData);  
 						   
   /** Helper function that generates and pushes new reward instance into the database and returns unique auto ID */
-  static std::vector<uint32_t> GenerateActivityReward(const uint32_t fighterID, const std::string blueprintAuthID, 
-  const uint32_t tournamentID,  const pxd::proto::AuthoredActivityReward rw, const Context& ctx, Database& db, 
+  static std::vector<uint32_t> GenerateActivityReward(const uint32_t fighterID, const std::string& blueprintAuthID, 
+  const uint32_t tournamentID,  const pxd::proto::AuthoredActivityReward& rw, const Context& ctx, Database& db, 
   std::unique_ptr<XayaPlayer>& a, xaya::Random& rnd, const uint32_t posInTableList,
-  const std::string basedRewardsTableAuthId, const std::string sweetenerAuthID,
+  const std::string& basedRewardsTableAuthId, const std::string& sweetenerAuthID,
   const uint32_t recursionDepth = 0);
 
   /**

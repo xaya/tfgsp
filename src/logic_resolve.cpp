@@ -46,7 +46,7 @@
 namespace pxd
 {
 
-std::vector<uint32_t> PXLogic::GenerateActivityReward(const uint32_t fighterID, const std::string blueprintAuthID, const uint32_t tournamentID, const pxd::proto::AuthoredActivityReward rw, const Context& ctx, Database& db, std::unique_ptr<XayaPlayer>& a, xaya::Random& rnd, const uint32_t posInTableList, const std::string basedRewardsTableAuthId, const std::string sweetenerAuthID, const uint32_t recursionDepth)
+std::vector<uint32_t> PXLogic::GenerateActivityReward(const uint32_t fighterID, const std::string& blueprintAuthID, const uint32_t tournamentID, const pxd::proto::AuthoredActivityReward& rw, const Context& ctx, Database& db, std::unique_ptr<XayaPlayer>& a, xaya::Random& rnd, const uint32_t posInTableList, const std::string& basedRewardsTableAuthId, const std::string& sweetenerAuthID, const uint32_t recursionDepth)
 {
   RecipeInstanceTable recipeTbl(db);
   RewardsTable rewardsTbl(db);
