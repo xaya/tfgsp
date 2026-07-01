@@ -174,8 +174,12 @@ void PXLogic::ResolveSweetener(std::unique_ptr<XayaPlayer>& a, std::string sweet
   fighterDb->SetStatus(pxd::FighterStatus::Available);
   fighterDb.reset();  
     
-  // rewards apply  
-  if(sweetenerBlueprint.rewardchoices(rewardID).rewardstableid() != "")
+  // rewards apply. rewardID was bounds-checked at cook time
+  // (moveprocessor_cooking.cpp) against this same pinned blueprint; re-guard the
+  // repeated-field index here so a default/short blueprint can never out-of-bounds
+  // index rewardchoices() -- that would be UB (a silent fork) in an NDEBUG build.
+  if(rewardID < (uint32_t) sweetenerBlueprint.rewardchoices_size()
+     && sweetenerBlueprint.rewardchoices(rewardID).rewardstableid() != "")
   {
     pxd::proto::ActivityReward rewardTableDb;
     
