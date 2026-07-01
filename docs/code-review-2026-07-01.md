@@ -85,8 +85,10 @@ followed three determinism/safety sweeps (16 dimensions; see `security-audit.md`
 - **UNSAFE-02 — test-name spellings** (`Shedule`, `Uninitialised`). British-spelling / API-mirroring
   identifiers in test names; renaming is churn with no consensus benefit. Leave.
 - **`Faction` enum** — still referenced in `database/xayaplayer.cpp:315/339/367` (bind/validate). It is
-  a possible Taurion remnant but is live-referenced, so it was **not** touched. Owner decision: confirm
-  whether `Faction` is a real tf concept or dead scaffolding to excise (would need golden regen).
+  a possible Taurion remnant but is live-referenced, so it was **not** touched at review time.
+  **UPDATE (owner, 2026-07-01): Faction is NOT needed — approved for removal.** This is a consensus
+  change (touches the xaya_player proto + bind/validate + any state that stores it) and will require a
+  golden regen; to be done as a dedicated commit.
 
 ### Deferred safe cleanups (low value; skipped to avoid unsupervised build-bisect risk)
 - **DC-01** — `CalculateFuelPower`'s `outputDebug` param is always `false`; the param + its ~9
