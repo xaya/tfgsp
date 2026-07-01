@@ -259,6 +259,12 @@ TEST_F (SecurityTests, OversizedMoveArraysAreCappedNotFatal)
   EXPECT_NO_THROW (Process (
       R"([{"name":"atk","move":)" + bigArr + R"(}])"));
 
+  /* A huge tournament-entry roster ("fc") is rejected by the same MAX_MOVE_ARRAY
+     cap before the O(n^2) duplicate scan and the per-entry fighter lookups.  */
+  EXPECT_NO_THROW (Process (
+      R"([{"name":"atk","move":{"tm":{"e":{"tid":1,"fc":)" + bigFid
+      + R"(}}}}])"));
+
   EXPECT_TRUE (xayaplayers.GetByName ("atk", ctx.RoConfig ()) != nullptr);
 }
 

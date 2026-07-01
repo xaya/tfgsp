@@ -272,7 +272,15 @@ namespace pxd
       LOG (WARNING) << "Fighter is not array for tournament with id: " << tournamentID;
       return false;
     }
-    
+
+    /* DoS cap (H2): bound the roster array before the O(n^2) dedup and the
+       per-entry DB lookups below (mirrors the expedition fid / transfigure caps).  */
+    if (fghtrs.size () > MAX_MOVE_ARRAY)
+    {
+      LOG (WARNING) << "Tournament fc array exceeds the size cap for id: " << tournamentID;
+      return false;
+    }
+
     auto tournamentData = tournamentsTbl.GetById(tournamentID, ctx.RoConfig ());
     
     for (const auto& ft : fghtrs)
