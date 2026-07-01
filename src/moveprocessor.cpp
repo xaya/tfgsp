@@ -284,7 +284,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
     try
     {
 	/* We perform account updates first.  That ensures that it is possible to
-    e.g. choose one's faction and create characters in a single move.  */
+    e.g. initialise an account and act on it in a single move.  */
     TryXayaPlayerUpdate (name, mrl["a"]);
 	
 	 /* Launch-date gate dropped (legacy fork baggage): Polygon genesis is post-launch; REGTEST never gated. */

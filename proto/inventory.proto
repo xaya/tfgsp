@@ -22,9 +22,9 @@ option cc_enable_arenas = true;
 package pxd.proto;
 
 /**
- * Data about loot "somewhere".  This can be the inventory of a character,
- * it can be the assets of an account in a building, and it can be the loot
- * on the ground at a certain coordinate.
+ * Data about an item collection.  This is a fighter's inventory or a
+ * player's asset holdings; tf is non-spatial, so there is no world
+ * location or coordinate here.
  */
 message Inventory
 {

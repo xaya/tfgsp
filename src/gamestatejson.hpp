@@ -113,7 +113,7 @@ public:
   Json::Value FullState();
 
   /**
-   * Converts a state instance (like a Character or Region) to the corresponding
+   * Converts a state instance (like a Fighter or Tournament) to the corresponding
    * JSON value in the game state.
    */
   template <typename T>

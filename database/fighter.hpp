@@ -343,7 +343,7 @@ public:
   Database::Result<FighterResult> QueryAll ();
   
   /**
-   * Queries for all characters with a given owner, ordered by ID.
+   * Queries for all fighters with a given owner, ordered by ID.
    */
   Database::Result<FighterResult> QueryForOwner (const std::string& owner);
 

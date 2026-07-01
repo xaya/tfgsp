@@ -84,7 +84,7 @@ namespace pxd
     
     if(fighterDb == nullptr)
     {
-      LOG (WARNING) << "Fatal erorr, could not get fighter with ID" << fighterID;
+      LOG (WARNING) << "Fatal error, could not get fighter with ID" << fighterID;
       fighterDb.reset();
       return false;                
     }
@@ -148,7 +148,7 @@ namespace pxd
     
     if(fighterDb == nullptr)
     {
-      LOG (WARNING) << "Fatal erorr, could not get fighter with ID" << fighterID;
+      LOG (WARNING) << "Fatal error, could not get fighter with ID" << fighterID;
       return false;                
     }
     
@@ -190,7 +190,7 @@ namespace pxd
     
     if(fighterDb == nullptr)
     {
-      LOG (WARNING) << "Fatal erorr, could not get fighter with ID" << fighterID;
+      LOG (WARNING) << "Fatal error, could not get fighter with ID" << fighterID;
       return false;                
     }
     

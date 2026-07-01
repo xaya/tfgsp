@@ -95,7 +95,7 @@ public:
    * Returns the next auto-generated ID.  Unlike SQLiteGame, we only use
    * a single series for all IDs.  There is no harm in doing that, and it
    * avoids the risk of mixing up IDs if the same one can be, e.g. both
-   * a character and an item.
+   * a fighter and a recipe.
    */
   virtual IdT GetNextId () = 0;
 
@@ -266,8 +266,8 @@ struct Database::ResultType
 /**
  * Wrapper around sqlite3_stmt, but taking care of reading results of a
  * query rather than binding values.  Results are "typed", where the type
- * indicates what kind of row this is (e.g. from the character table or
- * from accounts).
+ * indicates what kind of row this is (e.g. from the fighters table or
+ * from the players table).
  */
 template <typename T>
   class Database::Result

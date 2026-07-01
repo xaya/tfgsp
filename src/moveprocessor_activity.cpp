@@ -379,7 +379,7 @@ namespace pxd
         
         if(fighter == nullptr)
         {
-          LOG (WARNING) << "Fatal erorr, could not get fighter with ID" << fighterIDS[r];
+          LOG (WARNING) << "Fatal error, could not get fighter with ID" << fighterIDS[r];
           return false;                
         }
         
@@ -424,7 +424,7 @@ namespace pxd
         
         if(fighter == nullptr)
         {
-          LOG (WARNING) << "Fatal erorr, could not get fighter with ID" << fighterAlreadyInside;
+          LOG (WARNING) << "Fatal error, could not get fighter with ID" << fighterAlreadyInside;
           return false;                
         }        
         
@@ -691,7 +691,7 @@ namespace pxd
           {
               if(curRecipeSlots >= maxRecipeSlots)
               {
-                  LOG (INFO) << "Can not grant recipe, maxomus lots reached  of" << curRecipeSlots << " where max is " << maxRecipeSlots;
+                  LOG (INFO) << "Can not grant recipe, maximum lots reached  of" << curRecipeSlots << " where max is " << maxRecipeSlots;
                   markedToRemove.push_back(rw);
                   rewardData.reset();
                   continue;
@@ -739,7 +739,7 @@ namespace pxd
               std::string* newMove = fighter->MutableProto().add_moves();
               newMove->assign(rewardTableDb.rewards(rewardData->GetProto().positionintable()).moveid());
               
-              LOG (INFO) << "Granted " << " move to figher " << rewardData->GetProto().fighterid() << " as reward";   
+              LOG (INFO) << "Granted " << " move to fighter " << rewardData->GetProto().fighterid() << " as reward";   
           }   
 
           else if((pxd::RewardType)(int32_t)rewardTableDb.rewards(rewardData->GetProto().positionintable()).type() == pxd::RewardType::Animation)
@@ -754,7 +754,7 @@ namespace pxd
               }
               fighter->MutableProto().set_animationid(rewardTableDb.rewards(rewardData->GetProto().positionintable()).animationid());
           
-              LOG (INFO) << "Granted " << " animation to figher " << rewardData->GetProto().fighterid() << " as reward"; 
+              LOG (INFO) << "Granted " << " animation to fighter " << rewardData->GetProto().fighterid() << " as reward"; 
           }   
 
           else if((pxd::RewardType)(int32_t)rewardTableDb.rewards(rewardData->GetProto().positionintable()).type() == pxd::RewardType::Armor)
@@ -792,7 +792,7 @@ namespace pxd
                   newArmorPiece->set_armortype(rewardTableDb.rewards(rewardData->GetProto().positionintable()).armortype());                  
               }
               
-              LOG (INFO) << "Granted " << " armor to figher " << rewardData->GetProto().fighterid();
+              LOG (INFO) << "Granted " << " armor to fighter " << rewardData->GetProto().fighterid();
           } 
           
           else
@@ -889,7 +889,7 @@ namespace pxd
     
     a.reset();
     
-    LOG (INFO) << "Tournament " << tournamentID << " leaved succesfully ";
+    LOG (INFO) << "Tournament " << tournamentID << " left successfully ";
   }    
 
   void MoveProcessor::MaybeEnterTournament (const std::string& name, const Json::Value& tournament)
@@ -931,7 +931,7 @@ namespace pxd
     
     a.reset();
     
-    LOG (INFO) << "Tournament " << tournamentID << " entered succesfully ";
+    LOG (INFO) << "Tournament " << tournamentID << " entered successfully ";
   }      
 
   void MoveProcessor::MaybeGoForExpedition (const std::string& name, const Json::Value& expedition)
@@ -978,7 +978,7 @@ namespace pxd
       fighterDD->SetStatus(FighterStatus::Expedition);
       fighterDD->MutableProto().set_expeditioninstanceid(expedition["eid"].asString ());
 
-      LOG (INFO) << "Expedition " << expedition << " submitted succesfully ";
+      LOG (INFO) << "Expedition " << expedition << " submitted successfully ";
       fighterDD.reset();
     }
     

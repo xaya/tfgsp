@@ -103,7 +103,7 @@ BaseMoveProcessor::ParseSweetenerPurchase(const Json::Value& mv, Amount& cost, c
   if (balance < cost * total)
   {
       LOG (WARNING)
-          << "Required amount to purchace bundle character not paid by " << name
+          << "Required amount to purchase bundle not paid by " << name
           << " (only have " << balance << ")";
       return false;
   }     
@@ -163,7 +163,7 @@ BaseMoveProcessor::ParseGoodyBundlePurchase(const Json::Value& mv, Amount& cost,
   if (balance < cost)
   {
       LOG (WARNING)
-          << "Required amount to purchace bundle character not paid by " << name
+          << "Required amount to purchase bundle not paid by " << name
           << " (only have " << balance << ")";
       return false;
   }     
@@ -205,7 +205,7 @@ BaseMoveProcessor::ParseGoodyPurchase(const Json::Value& mv, Amount& cost, const
   if (balance < cost)
   {
       LOG (WARNING)
-          << "Required amount to purchace bundle character not paid by " << name
+          << "Required amount to purchase bundle not paid by " << name
           << " (only have " << balance << ")";
       return false;
   }     
@@ -229,7 +229,7 @@ BaseMoveProcessor::ParseNameRerollPurchase(const Json::Value& mv, int64_t& treat
 
   if(fighterDb == nullptr)
   {
-	  LOG (WARNING) << "Fatal erorr, could not get fighter with ID" << treatId;
+	  LOG (WARNING) << "Fatal error, could not get fighter with ID" << treatId;
 	  fighterDb.reset();
 	  return false;                
   }
@@ -317,7 +317,7 @@ BaseMoveProcessor::ParseCrystalPurchase(const Json::Value& mv, std::string& bund
   if (paidToDev < cost)
   {
       LOG (WARNING)
-          << "Required amount to purchace bundle character not paid by " << name
+          << "Required amount to purchase bundle not paid by " << name
           << " (only have " << paidToDev << ")";
       return false;
   }     

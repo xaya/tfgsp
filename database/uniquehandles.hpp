@@ -29,7 +29,7 @@ namespace pxd
 
 /**
  * A helper class to ensure that database handles for a particular instance
- * (like the character with a given ID, or the account with a given name)
+ * (like the fighter with a given ID, or the player with a given name)
  * exist at most once at any given moment, so as to make sure there are no
  * bugs with conflicting changes or reads.
  *

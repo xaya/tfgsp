@@ -327,8 +327,7 @@ private:
   
   
    /**
-   * Tries to handle an account initialisation (choosing faction) from
-   * the given move.
+   * Tries to deconstruct the given fighter from the move.
    */
   void MaybeDeconstructFighter(const std::string& name, const Json::Value& fighter);  
   
@@ -421,11 +420,6 @@ private:
   */    
   void MaybeLeaveTournament (const std::string& name, const Json::Value& tournament);    
   
-   /**
-   * Tries to update tutorial state even further on.
-   */
-  void MaybeUpdateFTUEState (const std::string& name, const Json::Value& init); 
-
   /**
    * Tries to handle a move that updates an account.
    */

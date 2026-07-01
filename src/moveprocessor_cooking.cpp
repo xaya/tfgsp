@@ -261,7 +261,7 @@ namespace pxd
     
     if(fighterDb == nullptr)
     {
-      LOG (WARNING) << "Fatal erorr, could not get fighter with ID" << fighterID;
+      LOG (WARNING) << "Fatal error, could not get fighter with ID" << fighterID;
       fighterDb.reset();
       return false;                
     }
@@ -316,7 +316,7 @@ namespace pxd
      
      if(rewardID >= sweetenerBlueprint.rewardchoices_size() || rewardID < 0)
      {
-      LOG (WARNING) << "Reward ID is invalid, must be in raonge of 0 to : " << sweetenerBlueprint.rewardchoices_size();
+      LOG (WARNING) << "Reward ID is invalid, must be in range of 0 to : " << sweetenerBlueprint.rewardchoices_size();
       fighterDb.reset();
       return false;           
      }
@@ -767,7 +767,7 @@ namespace pxd
 	
     a->CalculatePrestige(ctx.RoConfig());
     a.reset();
-    LOG (INFO) << "Destroy instance " << recepie << " submitted succesfully ";
+    LOG (INFO) << "Destroy instance " << recepie << " submitted successfully ";
   }    
 
   void
@@ -849,7 +849,7 @@ namespace pxd
 
     a->CalculatePrestige(ctx.RoConfig());
     a.reset();
-    LOG (INFO) << "Cooking instance " << recepie << " submitted succesfully ";
+    LOG (INFO) << "Cooking instance " << recepie << " submitted successfully ";
   }  
 
 } // namespace pxd

@@ -134,7 +134,7 @@ private:
   /** General proto data.  */
   LazyProto<proto::XayaPlayer> data;
   
-  /** The character's inventory.  */
+  /** The player's inventory.  */
   Inventory inv;  
 
   /** Total prestige of this account*/

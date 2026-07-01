@@ -242,7 +242,7 @@ public:
   Database::Result<RecipeInstanceResult> QueryAll ();
   
   /**
-   * Queries for all characters with a given owner, ordered by ID.
+   * Queries for all recipes with a given owner, ordered by ID.
    */
   Database::Result<RecipeInstanceResult> QueryForOwner (const std::string& owner);  
 

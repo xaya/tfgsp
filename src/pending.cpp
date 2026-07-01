@@ -635,7 +635,7 @@ namespace
 {
 
 /**
- * Converts a map of entries (building, character, account states) to
+ * Converts a map of entries (fighter, tournament, player states) to
  * a JSON array.
  */
 template <typename Map>

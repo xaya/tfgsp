@@ -249,7 +249,7 @@ public:
   Database::Result<RewardInstanceResult> QueryAll ();
   
   /**
-   * Queries for all characters with a given owner, ordered by ID.
+   * Queries for all rewards with a given owner, ordered by ID.
    */
   Database::Result<RewardInstanceResult> QueryForOwner (const std::string& owner);  
   

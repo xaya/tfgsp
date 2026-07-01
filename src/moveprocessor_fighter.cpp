@@ -62,7 +62,7 @@ namespace pxd
     
     if(fighterDb == nullptr)
     {
-      LOG (WARNING) << "Fatal erorr, could not get fighter with ID" << fighterID;
+      LOG (WARNING) << "Fatal error, could not get fighter with ID" << fighterID;
       fighterDb.reset();
       return false;                
     }
@@ -234,7 +234,7 @@ namespace pxd
     
     if(fighterDb == nullptr)
     {
-      LOG (WARNING) << "Fatal erorr, could not get fighter with ID" << fighterID;
+      LOG (WARNING) << "Fatal error, could not get fighter with ID" << fighterID;
       return false;                
     }
     
@@ -263,27 +263,27 @@ namespace pxd
 	{
 		if(!ft.isInt()) return false;
 		
-		auto fighterToSactifice = fighters.GetById (ft.asInt(), ctx.RoConfig ());
-		if(fighterToSactifice == nullptr)
+		auto fighterToSacrifice = fighters.GetById (ft.asInt(), ctx.RoConfig ());
+		if(fighterToSacrifice == nullptr)
 		{
-		  LOG (WARNING) << "Fatal erorr, could not get fighter with ID" << ft;
+		  LOG (WARNING) << "Fatal error, could not get fighter with ID" << ft;
 		  return false;                
 		}
 		
-		if(fighterToSactifice->GetOwner() != a.GetName())
+		if(fighterToSacrifice->GetOwner() != a.GetName())
 		{
 		  LOG (WARNING) << "Fighter does not belong to: " << a.GetName();
-		  fighterToSactifice.reset();
+		  fighterToSacrifice.reset();
 		  return false;               
 		}    
 		
-		if((pxd::FighterStatus)(int32_t)fighterToSactifice->GetStatus() != pxd::FighterStatus::Available)
+		if((pxd::FighterStatus)(int32_t)fighterToSacrifice->GetStatus() != pxd::FighterStatus::Available)
 		{
 		  LOG (WARNING) << "Fighter status is busy for decomposition with id: " << ft;
-		  fighterToSactifice.reset();
+		  fighterToSacrifice.reset();
 		  return false;              
 		}    	
-		fighterToSactifice.reset();			
+		fighterToSacrifice.reset();			
 	}
 	
     for(auto& candy : itemCandy)
@@ -418,7 +418,7 @@ namespace pxd
     
     if(fighterDb == nullptr)
     {
-      LOG (WARNING) << "Fatal erorr, could not get fighter with ID" << fighterID;
+      LOG (WARNING) << "Fatal error, could not get fighter with ID" << fighterID;
       return false;                
     }
     
@@ -561,11 +561,11 @@ namespace pxd
 	    keySS << ft.asInt();
 	    std::string keySSStr = keySS.str();
    
-		auto fighterToSactifice = wholeFighterData[keySSStr];	
+		auto fighterToSacrifice = wholeFighterData[keySSStr];	
 		
 		// Fighter crystal cost
 		fpm::fixed_24_8 basedQualityCost = fpm::fixed_24_8(0);
-		fpm::fixed_24_8 basedQualityLevel = fpm::fixed_24_8(fighterToSactifice["q"].asInt());
+		fpm::fixed_24_8 basedQualityLevel = fpm::fixed_24_8(fighterToSacrifice["q"].asInt());
 		
 		if(basedQualityLevel == fpm::fixed_24_8(1))
 		{
@@ -592,7 +592,7 @@ namespace pxd
 			basedQualityCost += fpm::fixed_24_8(wholeFighterData["urcc"].asInt());			
 		}		
 		
-	    fpm::fixed_24_8 appliedSW = fpm::fixed_24_8(fighterToSactifice["has"].asInt());
+	    fpm::fixed_24_8 appliedSW = fpm::fixed_24_8(fighterToSacrifice["has"].asInt());
 		fpm::fixed_24_8 sumToAdd = (appliedSW-basedQualityLevel) * fpm::fixed_24_8(50);
 	
 	    if(outputDebug) LOG (WARNING) << "basedQualityCost: " << (int32_t)basedQualityCost;  
@@ -641,7 +641,7 @@ namespace pxd
 		fpm::fixed_24_8 qualityDiversitiCoefficient =  fpm::fixed_24_8(1) / (qualitiesUsedInTransfigure[basedQualityLevel] * qualitiesUsedInTransfigure[basedQualityLevel]);
 		
 		// Rating
-		fpm::fixed_24_8 currentRating = fpm::fixed_24_8(fighterToSactifice["r"].asInt());
+		fpm::fixed_24_8 currentRating = fpm::fixed_24_8(fighterToSacrifice["r"].asInt());
 		fpm::fixed_24_8 rDiffAverage = fpm::abs(ratingsUsedInTransfigureAverage - currentRating) ;
 		fpm::fixed_24_8 rDiffMin = fpm::abs(currentRating - ratingsUsedInTransfigureMin);
 		fpm::fixed_24_8 rDiffMax = fpm::abs(currentRating - ratingsUsedInTransfigureMax);
@@ -681,7 +681,7 @@ namespace pxd
 		
 		// HighestAppliedSweetner
 
-        fpm::fixed_24_8 basedSweetLevel = fpm::fixed_24_8(fighterToSactifice["has"].asInt());
+        fpm::fixed_24_8 basedSweetLevel = fpm::fixed_24_8(fighterToSacrifice["has"].asInt());
         if (sweetnersUsedInTransfigure.find(basedSweetLevel) == sweetnersUsedInTransfigure.end())
         {
             sweetnersUsedInTransfigure.insert(std::pair<fpm::fixed_24_8, fpm::fixed_24_8>(basedSweetLevel, fpm::fixed_24_8(1)));
@@ -694,7 +694,7 @@ namespace pxd
 		
 		// Name	
 		std::vector<std::string> output;
-		std::string originalName = fighterToSactifice["n"].asString();
+		std::string originalName = fighterToSacrifice["n"].asString();
 		std::vector<std::string> outputNamePieces;
 		std::string::size_type prev_pos = 0, pos = 0;
 
@@ -724,7 +724,7 @@ namespace pxd
 		// ArmorPieces		
 		fpm::fixed_24_8 uniqueArmorCollected = fpm::fixed_24_8(0);
 		
-		for(auto& armorPiece : fighterToSactifice["ap"])
+		for(auto& armorPiece : fighterToSacrifice["ap"])
 		{
 		    if(std::find(armorUsed.begin(), armorUsed.end(), armorPiece["c"].asString()) == armorUsed.end()) 
 			{

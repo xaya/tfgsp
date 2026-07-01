@@ -283,8 +283,8 @@ public:
 
 /**
  * Processor for pending moves in tf.  This keeps track of some information
- * that we use in the frontend, like the modified waypoints of characters
- * and creation of new characters.
+ * that we use in the frontend, like newly created fighters and their
+ * in-flight cook / exchange operations.
  */
 class PendingMoves : public xaya::SQLiteGame::PendingMoves
 {
