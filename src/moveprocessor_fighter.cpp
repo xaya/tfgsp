@@ -518,14 +518,10 @@ namespace pxd
     
   } 
 
- fpm::fixed_24_8 MoveProcessor::CalculateFuelPower(const Json::Value& fighter, const Json::Value& wholeFighterData, const Json::Value& wholeRecipeData, bool outputDebug)
+ fpm::fixed_24_8 MoveProcessor::CalculateFuelPower(const Json::Value& fighter, const Json::Value& wholeFighterData, const Json::Value& wholeRecipeData)
  {
     // Now that recipe formula is validated, lets calculates all the raw valies first
 	
-	if(outputDebug)
-	{
-		 LOG (WARNING) << "STARTING FUEL CALCULATIONS --------------------- ";  
-	}
 	
 	fpm::fixed_24_8 fuel20 = fpm::fixed_24_8(0);
 	fpm::fixed_24_8 fuel80 = fpm::fixed_24_8(0);
@@ -555,7 +551,6 @@ namespace pxd
 	
     for(auto& ft : itemFighter)
 	{
-		if(outputDebug) LOG (WARNING) << "Evaluating fighter  --------------------- " << ft.asInt();  
 		
 	    std::stringstream keySS;
 	    keySS << ft.asInt();
@@ -595,8 +590,6 @@ namespace pxd
 	    fpm::fixed_24_8 appliedSW = fpm::fixed_24_8(fighterToSacrifice["has"].asInt());
 		fpm::fixed_24_8 sumToAdd = (appliedSW-basedQualityLevel) * fpm::fixed_24_8(50);
 	
-	    if(outputDebug) LOG (WARNING) << "basedQualityCost: " << (int32_t)basedQualityCost;  
-		if(outputDebug) LOG (WARNING) << "sumToAdd: " << (int32_t)sumToAdd;
 	
 	    // We have our final raw crystal worth value now
 		fpm::fixed_24_8 totalCrystalCost =  (basedQualityCost + sumToAdd);
@@ -717,7 +710,6 @@ namespace pxd
 			}
 		}	
 
-        if(outputDebug) LOG (WARNING) << "namesUsed: " << (int32_t)namesUsed.size();
 		
 		fpm::fixed_24_8 nameDiversitiCoefficient = (uniquePiecesCollected * fpm::fixed_24_8(1)) / fpm::fixed_24_8(8);
 		
@@ -733,16 +725,10 @@ namespace pxd
 			}				
 		}
 		
-		if(outputDebug) LOG (WARNING) << "armorUsed: " << (int32_t)armorUsed.size();
 		
 		fpm::fixed_24_8 armorDiversitiCoefficient = (uniqueArmorCollected* fpm::fixed_24_8(1)) / fpm::fixed_24_8(8);
 		
 		
-		if(outputDebug) LOG (WARNING) << "armorDiversitiCoefficient: " << (int32_t)(armorDiversitiCoefficient *  fpm::fixed_24_8(1000));
-		if(outputDebug) LOG (WARNING) << "nameDiversitiCoefficient: " << (int32_t)(nameDiversitiCoefficient *  fpm::fixed_24_8(1000));
-		if(outputDebug) LOG (WARNING) << "sweetnerDiversitiCoefficient: " << (int32_t)(sweetnerDiversitiCoefficient *  fpm::fixed_24_8(1000));
-		if(outputDebug) LOG (WARNING) << "qualityDiversitiCoefficient: " << (int32_t)(qualityDiversitiCoefficient *  fpm::fixed_24_8(1000));
-		if(outputDebug) LOG (WARNING) << "ratingDiversitiCoefficient: " << (int32_t)(ratingDiversitiCoefficient *  fpm::fixed_24_8(1000));
 		
 		diversityFinalCoefficient = diversityFinalCoefficient + armorDiversitiCoefficient + nameDiversitiCoefficient + sweetnerDiversitiCoefficient + qualityDiversitiCoefficient + ratingDiversitiCoefficient;
 		
@@ -756,13 +742,10 @@ namespace pxd
 			diversityFinalCoefficient = fpm::fixed_24_8(0);
 		}
 		
-		if(outputDebug) LOG (WARNING) << "totalCrystalCost: " << (int32_t)totalCrystalCost;  
-		if(outputDebug) LOG (WARNING) << "diversityFinalCoefficient: " << (int32_t)(diversityFinalCoefficient *  fpm::fixed_24_8(1000));  
 		
 		totalCrystalCost = totalCrystalCost * diversityFinalCoefficient;
         fuel80 = fuel80 + totalCrystalCost;
 		
-		if(outputDebug) LOG (WARNING) << "fuel80: " << (int32_t)(fuel80 *  fpm::fixed_24_8(1000));		
 	}
 	
 	// now that we have fuel80 from sacrificed treats, lets look into recepies and candies
@@ -787,7 +770,6 @@ namespace pxd
 
 		candyRarityAccumulated = candyRarityAccumulated + (candySets * cRarity);	
 
-        if(outputDebug) LOG (WARNING) << "candyRarityAccumulated: " << (int32_t)(candyRarityAccumulated *  fpm::fixed_24_8(1000));		
 	}
 	
 	// Recipe difference coefficient should be simple, we do not want to overcomplicate 20% calculation for no reason
@@ -815,14 +797,12 @@ namespace pxd
 
 		recipeRarityAccumulated = recipeRarityAccumulated + ((fpm::fixed_24_8(1) / (qualitiesUsedInTransfigureRecipe[recipeQual]))) * 10 * (recipeQual * recipeQual);	
 		
-		if(outputDebug) LOG (WARNING) << "recipeRarityAccumulated: " << (int32_t)(recipeRarityAccumulated *  fpm::fixed_24_8(1000));
 	}	
 	
 	// Now we can construct final fuel_20 value
 	
 	fuel20 = recipeRarityAccumulated + candyRarityAccumulated;
 	
-	if(outputDebug) LOG (WARNING) << "fuel20: " << (int32_t)(fuel20 *  fpm::fixed_24_8(1000));
 	
 	// so, fuel80 is totcal crustal cost, and fuel20 is rarity	
 	// Firstly, lets imagine, how much fule it would be if 80 were actually 20
@@ -830,7 +810,6 @@ namespace pxd
 	fpm::fixed_24_8 imaginary100 = fuel80 * fpm::fixed_24_8(1.25);
 	fpm::fixed_24_8 missingFuelPoints = imaginary100 - fuel80;
 	
-	if(outputDebug) LOG (WARNING) << "imaginary100: " << (int32_t)(imaginary100 *  fpm::fixed_24_8(1000));
 	
 	if(missingFuelPoints > fuel20)
 	{
@@ -838,7 +817,6 @@ namespace pxd
 	}
 
 	fpm::fixed_24_8 fuelPower = (fuel80 + missingFuelPoints) *  fpm::fixed_24_8(100);
-	if(outputDebug) LOG (WARNING) << "fuelPower: " << (int32_t)(fuelPower);
 
 	return fuelPower;
  }
@@ -952,7 +930,7 @@ namespace pxd
 	wholeFightersData["rrcc"] = ctx.RoConfig()->params().rare_recipe_cook_cost();
 	wholeFightersData["ercc"] = ctx.RoConfig()->params().epic_recipe_cook_cost();
 	
-	fpm::fixed_24_8 fuelPower = CalculateFuelPower(fighter, wholeFightersData, wholeRecipeData, false);
+	fpm::fixed_24_8 fuelPower = CalculateFuelPower(fighter, wholeFightersData, wholeRecipeData);
 
 	// Now that we have our value, we can finally try and transifure the input_iterator
     fpm::fixed_24_8 fuelPowerUnit = fpm::floor(fuelPower / 25000);

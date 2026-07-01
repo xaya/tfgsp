@@ -563,23 +563,6 @@ RecipeInstanceTable::CountForOwner (const std::string& owner)
   return count;
 }
 
-unsigned
-RecipeInstanceTable::CountForAll ()
-{
-  auto stmt = db.Prepare (R"(
-    SELECT COUNT(*) AS `cnt`
-      FROM `recepies`
-  )");
-
-  auto res = stmt.Query<CountResult> ();
-  CHECK (res.Step ());
-  const unsigned count = res.Get<CountResult::cnt> ();
-  CHECK (!res.Step ());
-  
-  return count;
-}
-
-
 RecipeInstanceTable::Handle
 RecipeInstanceTable::CreateNew (const std::string& owner, const pxd::proto::CraftedRecipe cr, const RoConfig& cfg)
 {

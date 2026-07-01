@@ -249,13 +249,8 @@ public:
   
   /**
    * Counts for all recepies with a given owner
-   */  
-  unsigned CountForOwner (const std::string& owner);  
-  
-  /**
-   * Counts for all recepies in database table
-   */  
-  unsigned CountForAll ();    
+   */
+  unsigned CountForOwner (const std::string& owner);
 };
 
 } // namespace pxd

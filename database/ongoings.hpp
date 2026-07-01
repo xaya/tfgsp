@@ -228,18 +228,6 @@ public:
   unsigned CountForOwner (const std::string& owner);
 
   /**
-   * Deletes all operations with exactly the given height.  Used to clean up
-   * the operations resolved this block (exact height so a rescheduled op, now
-   * at a future height, survives).
-   */
-  void DeleteForHeight (unsigned h);
-
-  /**
-   * Deletes all operations owned by the given player.
-   */
-  void DeleteForOwner (const std::string& owner);
-
-  /**
    * Deletes the operation with the given ID.
    */
   void DeleteById (Database::IdT id);

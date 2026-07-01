@@ -92,7 +92,7 @@ namespace pxd
 	 fighter["ic"] = aic;
 	 fighter["ir"] = air;
 
-	 fpm::fixed_24_8 fuelPowerOriginal = MoveProcessor::CalculateFuelPower(fighter, wholeFightersData, wholeRecipeData, false);
+	 fpm::fixed_24_8 fuelPowerOriginal = MoveProcessor::CalculateFuelPower(fighter, wholeFightersData, wholeRecipeData);
 	 
 	 Json::Value outputNewValues(Json::objectValue);	 
 	 Json::Value aif2(Json::arrayValue);
@@ -103,7 +103,7 @@ namespace pxd
 	 {
 		 Json::Value newEstimation = fighter;
 		 newEstimation["if"].append(ft);
-		 fpm::fixed_24_8 fuelPowerNewValue = MoveProcessor::CalculateFuelPower(newEstimation, wholeFightersData, wholeRecipeData, false);
+		 fpm::fixed_24_8 fuelPowerNewValue = MoveProcessor::CalculateFuelPower(newEstimation, wholeFightersData, wholeRecipeData);
 		 fpm::fixed_24_8 diff = (fuelPowerNewValue - fuelPowerOriginal);
 		 
 		 Json::Value result(Json::objectValue);
@@ -117,7 +117,7 @@ namespace pxd
 	 {
 		 Json::Value newEstimation = fighter;
 		 newEstimation["ir"].append(rc);
-		 fpm::fixed_24_8 fuelPowerNewValue = MoveProcessor::CalculateFuelPower(newEstimation, wholeFightersData, wholeRecipeData, false);
+		 fpm::fixed_24_8 fuelPowerNewValue = MoveProcessor::CalculateFuelPower(newEstimation, wholeFightersData, wholeRecipeData);
 		 fpm::fixed_24_8 diff = (fuelPowerNewValue - fuelPowerOriginal);
 		 
 		 Json::Value result(Json::objectValue);
@@ -136,7 +136,7 @@ namespace pxd
 		 cData["a"] = 10;
 		 newEstimation["ic"].append(cData);		 
 
-		 fpm::fixed_24_8 fuelPowerNewValue = MoveProcessor::CalculateFuelPower(newEstimation, wholeFightersData, wholeRecipeData, false);
+		 fpm::fixed_24_8 fuelPowerNewValue = MoveProcessor::CalculateFuelPower(newEstimation, wholeFightersData, wholeRecipeData);
 		 fpm::fixed_24_8 diff = (fuelPowerNewValue - fuelPowerOriginal);
 		 
 		 Json::Value result(Json::objectValue);

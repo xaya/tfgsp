@@ -163,26 +163,6 @@ OngoingsTable::CountForOwner (const std::string& owner)
 }
 
 void
-OngoingsTable::DeleteForHeight (const unsigned h)
-{
-  auto stmt = db.Prepare (R"(
-    DELETE FROM `ongoing_operations` WHERE `height` = ?1
-  )");
-  stmt.Bind (1, h);
-  stmt.Execute ();
-}
-
-void
-OngoingsTable::DeleteForOwner (const std::string& owner)
-{
-  auto stmt = db.Prepare (R"(
-    DELETE FROM `ongoing_operations` WHERE `owner` = ?1
-  )");
-  stmt.Bind (1, owner);
-  stmt.Execute ();
-}
-
-void
 OngoingsTable::DeleteById (const Database::IdT id)
 {
   auto stmt = db.Prepare (R"(

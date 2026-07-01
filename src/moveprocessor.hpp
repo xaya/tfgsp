@@ -456,7 +456,7 @@ public:
    * Evaluates all submited resources and computes
    * final fuel power out of them
    */		
-  static fpm::fixed_24_8 CalculateFuelPower(const Json::Value& fighter, const Json::Value& wholeFighterData, const Json::Value& wholeRecipeData, bool outputDebug);
+  static fpm::fixed_24_8 CalculateFuelPower(const Json::Value& fighter, const Json::Value& wholeFighterData, const Json::Value& wholeRecipeData);
 
   explicit MoveProcessor (Database& d, xaya::Random& r,
                           const Context& c)
