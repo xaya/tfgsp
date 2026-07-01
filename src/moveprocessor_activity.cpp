@@ -660,7 +660,11 @@ namespace pxd
           */
           LOG (INFO) << "Ready to give with id " << rw;
           
-          auto rewardData = rewards.GetById(rw);          
+          auto rewardData = rewards.GetById(rw);
+          if(rewardData == nullptr)   // ROB-6: reward row already gone (e.g. a repeated id); skip, never null-deref
+          {
+              continue;
+          }
           pxd::proto::ActivityReward rewardTableDb;
  
           bool rewardsSolved = false;
@@ -694,6 +698,12 @@ namespace pxd
               }
               
               auto ourRec = recipeTbl.GetById(rewardData->GetProto().generatedrecipeid());
+              if(ourRec == nullptr)   // ROB-6 / HALT-01 sibling: the generated recipe was deleted before claim
+              {
+                  markedToRemove.push_back(rw);
+                  rewardData.reset();
+                  continue;
+              }
               ourRec->SetOwner(a->GetName());
               
               LOG (INFO) << "Granted " << " recipe " << rewardData->GetProto().generatedrecipeid() << " reward";

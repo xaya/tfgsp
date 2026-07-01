@@ -112,6 +112,12 @@ FighterInstance::FighterInstance (Database& d, const std::string& o, uint32_t r,
            if(moveBlueprint.second.authoredid() == move)
            {   
              std::vector<pxd::ArmorType> aType = ArmorTypeFromMoveType((pxd::MoveType)moveBlueprint.second.movetype());
+             /* ROB-3: an unmapped movetype yields an empty armor list; indexing it
+                with NextInt(0) would abort the daemon. Skip armor for this move. */
+             if(aType.empty())
+             {
+               continue;
+             }
              pxd::ArmorType randomElement = aType[rnd.NextInt(aType.size())];
              
              if(slotsUsed.find(randomElement) == slotsUsed.end())
@@ -127,8 +133,13 @@ FighterInstance::FighterInstance (Database& d, const std::string& o, uint32_t r,
            }
        }
        
-       std::string randomAnimationElement = animationsToChoiceFrom[rnd.NextInt(animationsToChoiceFrom.size())];
-       MutableProto().set_animationid(randomAnimationElement);            
+       /* ROB-4: guard against an empty animation list (no animation for this
+          quality) so NextInt(0) cannot abort the daemon. */
+       if(!animationsToChoiceFrom.empty())
+       {
+         std::string randomAnimationElement = animationsToChoiceFrom[rnd.NextInt(animationsToChoiceFrom.size())];
+         MutableProto().set_animationid(randomAnimationElement);
+       }
   }
 
   recepie.reset();

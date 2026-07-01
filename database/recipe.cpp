@@ -426,40 +426,61 @@ uint32_t RecipeInstance::Generate(pxd::Quality quality, const RoConfig& cfg,  xa
     
     for(int32_t g = 0; g < numberOfMoves; g++)
     {
+        /* ROB-2: bound the reroll loop. On a well-formed roconfig it converges
+           quickly (exactly one rolled move), but a degenerate move-probability
+           config could spin forever or feed NextInt(0); on a zero threshold or
+           after too many retries, stop deterministically rather than hang/abort.
+           The guard consumes no RNG, so a well-formed config is byte-identical. */
+        uint32_t rerollGuard = 0;
         while(true)
         {
+            if(probabilityTreshholdMaximum <= 0 || ++rerollGuard > 10000)
+            {
+                LOG (ERROR) << "Recipe move generation did not converge (degenerate "
+                            << "move-probability config); leaving move slot empty";
+                break;
+            }
+
             std::vector<pxd::proto::FighterTypeMoveProbability> validMoves;
-            
+
             for(auto& probableMove: fighterType.moveprobabilities())
             {
                 int32_t probabilityTreshhold = (int32_t) probableMove.probability() * 1000;
-                
-                int32_t rolCurNum = rnd.NextInt(probabilityTreshholdMaximum * 2);  
+
+                int32_t rolCurNum = rnd.NextInt(probabilityTreshholdMaximum * 2);
                 if(rolCurNum < probabilityTreshhold)
-                {    
+                {
                   validMoves.push_back(probableMove);
-                } 
+                }
             }
-            
+
             if(validMoves.size() == 1)
             {
                   std::vector<std::pair<std::string, pxd::proto::FighterMoveBlueprint>> validCandidates;
-                  
+
                   for(auto& moveBlp: sortedMoveBlueprintTypesmap)
-                  {       
+                  {
                     if( (Quality)(uint32_t)moveBlp.second.quality() == quality)
-                    {                        
+                    {
                       if( moveBlp.second.movetype() == validMoves[0].movetype())
                       {
                         validCandidates.push_back(moveBlp);
                       }
                     }
-                  }  
-                          
-                  generatedMoveblueprints.push_back(validCandidates[rnd.NextInt(validCandidates.size())].second);                          
+                  }
+
+                  /* ROB-1: no blueprint for the rolled (quality, movetype) would make
+                     NextInt(0) abort the daemon; leave the slot empty instead. */
+                  if(validCandidates.empty())
+                  {
+                      LOG (ERROR) << "No move blueprint for the rolled quality/movetype "
+                                  << "during recipe generation; leaving move slot empty";
+                      break;
+                  }
+                  generatedMoveblueprints.push_back(validCandidates[rnd.NextInt(validCandidates.size())].second);
                   break;
             }
-            
+
             validMoves.clear();
         }
     }

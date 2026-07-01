@@ -473,6 +473,10 @@ namespace pxd
     /* H4: capture the recipe this fighter was cooked from; once the fighter is
        deleted below nothing else references it, so it must be deleted too. */
     const uint32_t deconstructedRecipeId = (fighterDb != nullptr) ? fighterDb->GetProto().recipeid() : 0;
+    /* ROB-5: capture account-bound status behind the same null guard; the reward
+       loop below must not dereference a null fighterDb (line 475 already
+       anticipates it). No behaviour change when the fighter is present. */
+    const bool fighterIsAccountBound = (fighterDb != nullptr) && fighterDb->GetProto().isaccountbound();
     bool tryAndStep = res.Step();
     while (tryAndStep)
     {
@@ -482,9 +486,9 @@ namespace pxd
       {
         for(const auto& reward: rw->GetProto().deconstructions())
         {
-          if(fighterDb->GetProto().isaccountbound() == false)
+          if(fighterIsAccountBound == false)
           {
-             a->GetInventory().AddFungibleCount(reward.candytype(), reward.quantity()); 
+             a->GetInventory().AddFungibleCount(reward.candytype(), reward.quantity());
           }
         }
           
