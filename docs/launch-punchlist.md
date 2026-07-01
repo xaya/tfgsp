@@ -96,6 +96,18 @@ launch-time) vs implementable now. Companion docs: `original-vs-rewrite.md` (per
     RNG/state paths (golden-identity necessary-but-not-sufficient) so they want human sign-off. **Do NOT
     rename `recepie(s)`** — it is the load-bearing proto/config/JSON identifier.
 
+11. ✅ **DONE (2026-07-01) — Faction/PlayerRole removal (owner-approved Taurion strip).** The item-10
+    "still-referenced `Faction` enum" follow-up was a mischaracterisation: there was no `Faction` enum —
+    the Taurion `Faction` had already been refactored into an **inert** `PlayerRole` enum (nothing sets
+    a role, nothing gates on it; god-mode uses the roconfig `god_mode()` bool; the lone assignment was a
+    hardcoded `name=="tftr"` block the author flagged as "leftover from original source"). It *was*
+    consensus state, though: a `role` DB column (always NULL) + a `"role"` account-JSON field (always
+    `"i"`). Owner approved full removal. Removed the enum, `ResultWithRole`, the `role` column
+    (`schema.sql`), the JSON field (`gamestatejson.cpp`), all Bind/ToString/FromString/GetNullable +
+    Set/GetRole + `QueryInitialised`, the now-empty `xayaplayer.tpp`, and every role test ref; reworded
+    the 6 residual "faction" comments. Consensus change ⇒ golden **regenerated**; full `make check` +
+    determinism lint green.
+
 ## 🟢 Done — re-verify at sign-off (launch-day confirmation, not code work)
 
 **Code-verifiable portions RE-VERIFIED 2026-07-01** (adversarial 6-dimension audit, each finding

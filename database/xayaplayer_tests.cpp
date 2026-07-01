@@ -74,19 +74,7 @@ TEST_F (XayaPlayerTests, DefaultData)
   auto a = tbl.CreateNew ("foobar", *cfg, rnd);
   EXPECT_EQ (a->GetName (), "foobar");
 
-  EXPECT_EQ (a->GetRole (), PlayerRole::INVALID);
   EXPECT_EQ (a->GetBalance (), 0);
-}
-
-TEST_F (XayaPlayerTests, UpdateFields)
-{
-  auto a = tbl.CreateNew ("foobar", *cfg, rnd);
-  a->SetRole (PlayerRole::PLAYER);
-  a.reset ();
-
-  a = tbl.GetByName ("foobar", *cfg);
-
-  EXPECT_EQ (a->GetRole (), PlayerRole::PLAYER);
 }
 
 TEST_F (XayaPlayerTests, UpdateProto)
@@ -122,42 +110,17 @@ TEST_F (XayaPlayersTableTests, CreateAlreadyExisting)
 TEST_F (XayaPlayersTableTests, QueryAll)
 {
   tbl.CreateNew ("uninit", *cfg, rnd);
-  tbl.CreateNew ("foo", *cfg, rnd)->SetRole (PlayerRole::PLAYER);
+  tbl.CreateNew ("foo", *cfg, rnd);
 
   auto res = tbl.QueryAll ();
 
   ASSERT_TRUE (res.Step ());
   auto a = tbl.GetFromResult (res, *cfg);
   EXPECT_EQ (a->GetName (), "foo");
-  EXPECT_EQ (a->GetRole (), PlayerRole::PLAYER);
 
   ASSERT_TRUE (res.Step ());
   a = tbl.GetFromResult (res, *cfg);
   EXPECT_EQ (a->GetName (), "uninit");
-  EXPECT_EQ (a->GetRole (), PlayerRole::INVALID);
-
-  ASSERT_FALSE (res.Step ());
-}
-
-TEST_F (XayaPlayersTableTests, QueryInitialised)
-{
-  tbl.CreateNew ("foo", *cfg, rnd)->SetRole (PlayerRole::PLAYER);
-  tbl.CreateNew ("uninit", *cfg, rnd);
-  auto a = tbl.CreateNew ("bar", *cfg, rnd);
-  a->SetRole (PlayerRole::ROLEADMIN);
-  a.reset ();
-
-  auto res = tbl.QueryInitialised ();
-
-  ASSERT_TRUE (res.Step ());
-  a = tbl.GetFromResult (res, *cfg);
-  EXPECT_EQ (a->GetName (), "bar");
-  EXPECT_EQ (a->GetRole (), PlayerRole::ROLEADMIN);
-
-  ASSERT_TRUE (res.Step ());
-  a = tbl.GetFromResult (res, *cfg);
-  EXPECT_EQ (a->GetName (), "foo");
-  EXPECT_EQ (a->GetRole (), PlayerRole::PLAYER);
 
   ASSERT_FALSE (res.Step ());
 }
@@ -176,7 +139,6 @@ TEST_F (XayaPlayersTableTests, GetByName)
 TEST_F (XayaPlayersTableTests, Inventory)
 {
   auto h = tbl.CreateNew ("domob", *cfg, rnd);
-  h->SetRole( PlayerRole::PLAYER);
   h->GetInventory ().SetFungibleCount ("candy", 10);
   h.reset ();
 

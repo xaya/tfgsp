@@ -33,7 +33,7 @@ noinst_HEADERS = \
   recipe.hpp \
   ongoings.hpp \
   fighter.hpp fighter.tpp\
-  xayaplayer.hpp xayaplayer.tpp \
+  xayaplayer.hpp \
   globaldata.hpp \
   uniquehandles.hpp uniquehandles.tpp
 

@@ -1080,7 +1080,6 @@
         [
           10
         ],
-        "role" : "i",
         "tournamentperformance" : 1,
         "valuecommon" : 476,
         "valueepic" : 0,
@@ -1118,7 +1117,6 @@
         [
           15
         ],
-        "role" : "i",
         "tournamentperformance" : 1,
         "valuecommon" : 476,
         "valueepic" : 0,
@@ -1157,7 +1155,6 @@
           20,
           1
         ],
-        "role" : "i",
         "tournamentperformance" : 1,
         "valuecommon" : 476,
         "valueepic" : 0,
@@ -1197,7 +1194,6 @@
         [
           25
         ],
-        "role" : "i",
         "tournamentperformance" : 1,
         "valuecommon" : 476,
         "valueepic" : 0,
@@ -1228,7 +1224,6 @@
         [
           5
         ],
-        "role" : "i",
         "tournamentperformance" : 1,
         "valuecommon" : 476,
         "valueepic" : 0,

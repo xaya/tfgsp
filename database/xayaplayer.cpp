@@ -28,20 +28,11 @@ namespace pxd
 
 XayaPlayer::XayaPlayer (Database& d, const std::string& n, const RoConfig& cfg, xaya::Random& rnd)
   : db(d), name(n), tracker(db.TrackHandle ("xayaplayer", n)),
-    role(PlayerRole::INVALID), dirtyFields(true)
+    dirtyFields(true)
 {
   VLOG (1) << "Created instance for newly initialised account " << name;
   data.SetToDefault ();
-  
 
-  /*Probably not needed and is just leftover from original source,
-  but lets transfer administrator name role just in case*/
-  
-  if(name == "tftr")
-  {
-      role = PlayerRole::ADMINISTRATOR;
-  }
-  
   /*Load configuration values*/
   prestige = cfg->params().base_prestige();
   
@@ -96,7 +87,6 @@ XayaPlayer::XayaPlayer (Database& d, const Database::Result<XayaPlayerResult>& r
   name = res.Get<XayaPlayerResult::name> ();
   tracker = d.TrackHandle ("xayaplayer", name);
 
-  role = GetNullablePlayerRoleFromColumn (res);
   data = res.GetProto<XayaPlayerResult::proto> ();
 
   inv = res.GetProto<XayaPlayerResult::inventory> ();
@@ -121,15 +111,14 @@ XayaPlayer::~XayaPlayer ()
 
   auto stmt = db.Prepare (R"(
     INSERT OR REPLACE INTO `xayaplayers`
-      (`name`, `role`, `proto`, `inventory`, `prestige`)
-      VALUES (?1, ?2, ?3, ?4, ?5)
+      (`name`, `proto`, `inventory`, `prestige`)
+      VALUES (?1, ?2, ?3, ?4)
   )");
 
   stmt.Bind (1, name);
-  BindPlayerRoleParameter (stmt, 2, role);
-  stmt.BindProto (3, data);
-  stmt.Bind (5, prestige);
-  stmt.BindProto (4, inv.GetProtoForBinding ());
+  stmt.BindProto (2, data);
+  stmt.BindProto (3, inv.GetProtoForBinding ());
+  stmt.Bind (4, prestige);
 
   stmt.Execute ();
 }
@@ -294,81 +283,6 @@ XayaPlayer::CalculatePrestige(const RoConfig& cfg)
 }
 
 void
-BindPlayerRoleParameter (Database::Statement& stmt, const unsigned ind,
-                      const PlayerRole f)
-{
-  switch (f)
-    {
-    case PlayerRole::PLAYER:
-    case PlayerRole::ROLEADMIN:
-    case PlayerRole::CONENTADMIN:
-    case PlayerRole::CONFIGADMIN:
-    case PlayerRole::EXCHANGEADMIN:
-    case PlayerRole::ADMINISTRATOR:
-      stmt.Bind (ind, static_cast<int64_t> (f));
-      return;
-    case PlayerRole::INVALID:
-      stmt.BindNull (ind);
-      return;
-    default:
-      LOG (FATAL)
-          << "Binding invalid faction to parameter: " << static_cast<int32_t> (f);
-    }
-}
-
-std::string
-PlayerRoleToString (const PlayerRole f)
-{
-  switch (f)
-    {
-    case PlayerRole::PLAYER:
-      return "p";
-    case PlayerRole::ROLEADMIN:
-      return "r";
-    case PlayerRole::CONENTADMIN:
-      return "c";
-    case PlayerRole::CONFIGADMIN:
-      return "f";
-    case PlayerRole::EXCHANGEADMIN:
-      return "e";
-    case PlayerRole::ADMINISTRATOR:
-      return "a";   
-    case PlayerRole::INVALID:
-      return "i";        
-    default:
-      LOG (FATAL) << "Invalid faction: " << static_cast<int32_t> (f);
-    }
-}
-
-void
-XayaPlayer::SetRole (const PlayerRole f)
-{  
-  role = f;
-  dirtyFields = true;
-}
-
-PlayerRole
-PlayerRoleFromString (const std::string& str)
-{
-  if (str == "p")
-    return PlayerRole::PLAYER;
-  if (str == "r")
-    return PlayerRole::ROLEADMIN;
-  if (str == "c")
-    return PlayerRole::CONENTADMIN;
-  if (str == "f")
-    return PlayerRole::CONFIGADMIN;
-  if (str == "e")
-    return PlayerRole::EXCHANGEADMIN;
-  if (str == "a")
-    return PlayerRole::ADMINISTRATOR;
-
-
-  LOG (WARNING) << "String is not a valid faction: " << str;
-  return PlayerRole::INVALID;
-}
-
-void
 XayaPlayer::AddBalance (const Amount val)
 {
   Amount balance = data.Get ().balance ();
@@ -424,18 +338,6 @@ XayaPlayersTable::QueryForOwner (const std::string& owner)
     SELECT * FROM `xayaplayers` WHERE `name` = ?1 ORDER BY `name`
   )");
   stmt.Bind (1, owner);
-  return stmt.Query<XayaPlayerResult> ();
-}
-
-Database::Result<XayaPlayerResult>
-XayaPlayersTable::QueryInitialised ()
-{
-  auto stmt = db.Prepare (R"(
-    SELECT *
-      FROM `xayaplayers`
-      WHERE `role` IS NOT NULL
-      ORDER BY `name`
-  )");
   return stmt.Query<XayaPlayerResult> ();
 }
 

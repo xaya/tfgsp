@@ -359,7 +359,6 @@ template <>
   Json::Value bal(Json::objectValue);
   bal["available"] = IntToJson (a.GetBalance ());
   res["balance"] = bal;
-  res["role"] = PlayerRoleToString (a.GetRole ());
 
   res["inventory"] = Convert (a.GetInventory ());
   

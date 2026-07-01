@@ -51,40 +51,9 @@ enum class OngoingType : int8_t
 };
 
 /**
- * A player role in the game
- */
-enum class PlayerRole : int8_t
-{
-  INVALID = 0,
-  PLAYER = 1,
-  ROLEADMIN = 2,
-  CONENTADMIN = 3,
-  CONFIGADMIN = 4,
-  EXCHANGEADMIN = 8,
-  ADMINISTRATOR = 15
-};
-
-/**
- * A database result that includes a "role" column.
- */
-struct ResultWithRole : public Database::ResultType
-{
-  RESULT_COLUMN (int64_t, role, 50);
-};
-
-
-/**
- * Retrieves a faction from a database column, which can also be NULL.
- * In the case of NULL, Faction::INVALID is returned.  Any other
- * value (i.e. non-matching integer values) will CHECK-fail.
- */
-template <typename T>
-  PlayerRole GetNullablePlayerRoleFromColumn (const Database::Result<T>& res);
-
-/**
  * Database result type for rows from the accounts table.
  */
-struct XayaPlayerResult : public ResultWithRole
+struct XayaPlayerResult : public Database::ResultType
 {
   RESULT_COLUMN (std::string, name, 1);
   RESULT_COLUMN (pxd::proto::XayaPlayer, proto, 2);
@@ -92,23 +61,6 @@ struct XayaPlayerResult : public ResultWithRole
   RESULT_COLUMN (int64_t, prestige, 4);
 };
 
-
-/**
- * Converts the faction to a string.  This is used for logging and other
- * messages, as well as in the JSON format of game states.
- */
-std::string PlayerRoleToString (PlayerRole f);
-
-/**
- * Parses a faction value from a string.  Returns INVALID if the string does
- * not represent any of the real factions.
- */
-PlayerRole PlayerRoleFromString (const std::string& str);
-
-/**
- * Binds a role value to a role parameter. 
- */
-void BindPlayerRoleParameter (Database::Statement& stmt, unsigned ind, PlayerRole f);
 
 /**
  * Wrapper class around the state of one Xaya account (name) in the database.
@@ -128,24 +80,20 @@ private:
   /** UniqueHandles tracker for this instance.  */
   Database::HandleTracker tracker;
 
-  /** The role of this account.  May be INVALID if not yet initialised.  */
-  PlayerRole role;
-   
   /** General proto data.  */
   LazyProto<proto::XayaPlayer> data;
-  
+
   /** The player's inventory.  */
-  Inventory inv;  
+  Inventory inv;
 
   /** Total prestige of this account*/
   int64_t prestige;
 
-  /** Whether or not this is dirty in the fields (like faction).  */
+  /** Whether or not this is dirty in the non-proto fields (like prestige).  */
   bool dirtyFields;
 
   /**
-   * Constructs an instance with "default / empty" data for the given name
-   * and not-yet-set faction.
+   * Constructs an instance with "default / empty" data for the given name.
    */
   explicit XayaPlayer (Database& d, const std::string& n, const RoConfig& cfg, xaya::Random& rnd);
 
@@ -169,8 +117,6 @@ public:
   XayaPlayer (const XayaPlayer&) = delete;
   void operator= (const XayaPlayer&) = delete;
 
-  void SetRole (PlayerRole f);
-
   const std::string&
   GetName () const
   {
@@ -181,12 +127,6 @@ public:
   GetPresitge () const
   {
     return prestige;
-  }
-
-  PlayerRole
-  GetRole () const
-  {
-    return role;
   }
 
   const proto::XayaPlayer&
@@ -299,17 +239,8 @@ public:
    */
   Database::Result<XayaPlayerResult> QueryAll ();
 
-  /**
-   * Queries the database for all accounts which have been initialised yet
-   * with a faction.  Returns a result set that can be used together with
-   * GetFromResult.
-   */
-  Database::Result<XayaPlayerResult> QueryInitialised ();
-
 };
 
 } // namespace pxd
-
-#include "xayaplayer.tpp"
 
 #endif // DATABASE_XAYAPLAYER_HPP

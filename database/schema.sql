@@ -137,10 +137,6 @@ CREATE TABLE IF NOT EXISTS `xayaplayers` (
   -- The Xaya p/ name of this account.
   `name` TEXT PRIMARY KEY,
 
-  -- The role (as integer corresponding to the role enum in C++).
-  -- Can be null for accounts that are not yet initialised.
-  `role` INTEGER NULL,
- 
   -- Additional data for the account as a serialised Account proto.
   `proto` BLOB NOT NULL,
   

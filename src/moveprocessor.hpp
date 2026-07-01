@@ -343,8 +343,8 @@ private:
   void MaybeClaimDeconstructionReward(const std::string& name, const Json::Value& fighter);    
   
    /**
-   * Tries to handle an account initialisation (choosing faction) from
-   * the given move.
+   * Tries to handle an account initialisation (setting the payout address)
+   * from the given move.
    */
   void MaybeInitXayaPlayer (const std::string& name, const Json::Value& init);
   

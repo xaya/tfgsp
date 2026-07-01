@@ -84,11 +84,20 @@ followed three determinism/safety sweeps (16 dimensions; see `security-audit.md`
   break the pinned roconfig, the golden replay, and clients. **Leave as-is.**
 - **UNSAFE-02 — test-name spellings** (`Shedule`, `Uninitialised`). British-spelling / API-mirroring
   identifiers in test names; renaming is churn with no consensus benefit. Leave.
-- **`Faction` enum** — still referenced in `database/xayaplayer.cpp:315/339/367` (bind/validate). It is
-  a possible Taurion remnant but is live-referenced, so it was **not** touched at review time.
-  **UPDATE (owner, 2026-07-01): Faction is NOT needed — approved for removal.** This is a consensus
-  change (touches the xaya_player proto + bind/validate + any state that stores it) and will require a
-  golden regen; to be done as a dedicated commit.
+- **`Faction` enum — REMOVED (owner-approved, 2026-07-01).** Correction to the review's initial
+  framing: there was **no `Faction` enum**. The Taurion `Faction` had already been refactored into a
+  `PlayerRole` enum (`PLAYER` + `ROLEADMIN`/`CONENTADMIN`/`CONFIGADMIN`/`EXCHANGEADMIN`/`ADMINISTRATOR`);
+  the word "faction" survived only in 3 log strings + ~11 doc-comments. The role system itself was
+  **inert** — nothing in move-processing ever called `SetRole`, nothing gated on role (god-mode uses
+  the roconfig `god_mode()` bool), and the sole assignment was a hardcoded `if (name == "tftr")` block
+  the original author flagged as *"leftover from original source"*. It **was** consensus state,
+  though: a `role INTEGER` column (always NULL in practice) + a `"role"` account-JSON field (always
+  `"i"`). Owner confirmed full removal. Deleted: the `PlayerRole` enum, `ResultWithRole`, the `role`
+  DB column (`schema.sql`), the JSON field (`gamestatejson.cpp`),
+  `BindPlayerRoleParameter`/`PlayerRoleToString`/`PlayerRoleFromString`/`GetNullablePlayerRoleFromColumn`,
+  `SetRole`/`GetRole`, `QueryInitialised`, the now-empty `xayaplayer.tpp`, and every role test ref;
+  reworded the 6 residual "faction" comments. Consensus change ⇒ golden **regenerated**; full
+  `make check` + determinism lint green.
 
 ### Deferred safe cleanups (low value; skipped to avoid unsupervised build-bisect risk)
 - **DC-01** — `CalculateFuelPower`'s `outputDebug` param is always `false`; the param + its ~9

@@ -89,7 +89,6 @@ TEST_F (PendingStateTests, Empty)
 TEST_F (PendingStateTests, Clear)
 {
   auto a = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
-  a->SetRole (PlayerRole::PLAYER);
   state.AddCrystalPurchase (*a, "T1", 100, tbl3, ctx.RoConfig ());
   a.reset ();
 
@@ -190,7 +189,7 @@ TEST_F (PendingStateUpdaterTests, UninitialisedAndNonExistantAccount)
     "xq": {"x": 5}
   })");
   Process ("domob", R"({
-    "a": {"init": {"role": "p"}}
+    "a": {"init": {"address": "CGUpAcjsb6MDktSYg8yRDxDutr7FhWtdWC"}}
   })");
 
   ASSERT_EQ (xayaplayers.GetByName ("domob",  ctx.RoConfig()), nullptr);

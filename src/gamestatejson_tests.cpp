@@ -121,25 +121,23 @@ protected:
 TEST_F (XayaPlayersJsonTests, KillsAndFame)
 {
   auto a = tbl.CreateNew ("foo", ctx.RoConfig(), rnd);
-  a->SetRole (PlayerRole::PLAYER);
   a.reset ();
 
   a = tbl.CreateNew ("bar", ctx.RoConfig(), rnd);
-  a->SetRole (PlayerRole::ROLEADMIN);
   a.reset ();
 
   ExpectStateJson (R"({
     "xayaplayers":
       [
-        {"name": "bar", "role": "r"},
-        {"name": "foo", "role": "p"}
+        {"name": "bar"},
+        {"name": "foo"}
       ]
   })");
 }
 
 TEST_F (XayaPlayersJsonTests, UninitialisedBalance)
 {
-  tbl.CreateNew ("foo", ctx.RoConfig(), rnd)->SetRole (PlayerRole::PLAYER);
+  tbl.CreateNew ("foo", ctx.RoConfig(), rnd);
 
   auto a = tbl.CreateNew ("bar", ctx.RoConfig(), rnd);
   a->AddBalance (42);
@@ -170,8 +168,7 @@ TEST_F (XayaPlayersJsonTests, UninitialisedBalance)
                         "recepies" :
                         [
                                 10
-                        ],
-                        "role" : "i"
+                        ]
                 },
                 {
                         "balance" :
@@ -195,8 +192,7 @@ TEST_F (XayaPlayersJsonTests, UninitialisedBalance)
                         "recepies" :
                         [
                                 5
-                        ],
-                        "role" : "p"
+                        ]
                 }
         ]
 
@@ -207,20 +203,19 @@ TEST_F (XayaPlayersJsonTests, UninitialisedBalance)
 TEST_F (XayaPlayersJsonTests, FighterInstance)
 {
   auto a = tbl.CreateNew ("foo", ctx.RoConfig(), rnd);
-  a->SetRole (PlayerRole::PLAYER);
   a.reset ();
 
   auto r0 = tbl3.CreateNew("foo", "5864a19b-c8c0-2d34-eaef-9455af0baf2c", *cfg);
   const auto id0 = r0->GetId ();
-  r0.reset();  
-  
+  r0.reset();
+
   auto f1 = tbl2.CreateNew ("foo", id0, *cfg, rnd);
   f1.reset();
-  
+
   ExpectStateJson (R"({
     "xayaplayers":
       [
-        {"name": "foo", "role": "p"}
+        {"name": "foo"}
       ],
    "fighters" :
         [
@@ -349,17 +344,16 @@ TEST_F (XayaPlayersJsonTests, FighterInstance)
 TEST_F (XayaPlayersJsonTests, RecipeInstance)
 {
   auto a = tbl.CreateNew ("foo", ctx.RoConfig(), rnd);
-  a->SetRole (PlayerRole::PLAYER);
   a.reset ();
 
   auto r0 = tbl3.CreateNew("foo", "5864a19b-c8c0-2d34-eaef-9455af0baf2c", *cfg);
   r0->MutableProto().set_authoredid("generated");
-  r0.reset();  
+  r0.reset();
 
   ExpectStateJson (R"({
     "xayaplayers":
       [
-        {"name": "foo", "role": "p"}
+        {"name": "foo"}
       ],
      "recepies" :
         [
@@ -426,7 +420,6 @@ TEST_F (XayaPlayersJsonTests, RecipeInstance)
 TEST_F (XayaPlayersJsonTests, ExpeditionInstance)
 {
   auto a = tbl.CreateNew ("foo", ctx.RoConfig(), rnd);
-  a->SetRole (PlayerRole::PLAYER);
   a.reset ();
 
   auto rw = tbl4.CreateNew ("foo");
@@ -606,7 +599,6 @@ TEST_F (XayaPlayersJsonTests, ExpeditionInstance)
                         [
                                 5
                         ],
-                        "role" : "p",
                         "tournamentperformance" : 1,
                         "valuecommon" : 476,
                         "valueepic" : 0,
@@ -628,7 +620,6 @@ TEST_F (XayaPlayersJsonTests, BlocksLeftSurvivesHeightlessDump)
      so the live GSP crashed as soon as anybody had an expedition / cook /
      deconstruction in progress and any state RPC was served. */
   auto a = tbl.CreateNew ("foo", ctx.RoConfig (), rnd);
-  a->SetRole (PlayerRole::PLAYER);
   a.reset ();
 
   auto r0 = tbl3.CreateNew ("foo", "5864a19b-c8c0-2d34-eaef-9455af0baf2c", *cfg);
