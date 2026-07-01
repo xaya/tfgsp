@@ -365,3 +365,22 @@ halt hardened; time/RNG and replay/idempotency clean.**
 (chain halt), both fixed and regression-tested; UPD-1 and CC-1 latent-halt/UB paths hardened. No
 move-reachable fork / halt / economy / DoS vector remains open in code. Remaining launch work is
 operational only: re-pin genesis height + live Polygon/XayaX e2e.
+
+## 15. Quality review — additional halt guards (2026-07-01)
+
+The comprehensive code-quality review (`docs/code-review-2026-07-01.md`) surfaced **6 more latent
+deterministic-abort paths, all fixed in `e4a7115`** (golden byte-identical — the pinned config never
+drives them):
+- **ROB-1/2** `database/recipe.cpp` — recipe move-generation could `NextInt(0)`-abort (no blueprint
+  for a rolled quality/movetype) or spin/`NextInt(0)` in a `while(true)` reroll on a degenerate
+  move-probability config. Guarded + retry-bounded.
+- **ROB-3/4** `database/fighter.cpp` — armor (`ArmorTypeFromMoveType`) and animation selection indexed
+  a possibly-empty vector with `NextInt(size())`. Empty-guarded.
+- **ROB-5** `moveprocessor_fighter.cpp` — deconstruction-reward loop dereferenced `fighterDb` though a
+  prior line already anticipates it may be null. Captured behind the null guard.
+- **ROB-6** `moveprocessor_activity.cpp` — reward-claim dereferenced `rewards.GetById(rw)` and
+  `recipeTbl.GetById(generatedrecipeid)` with no null check (a direct HALT-01 sibling: the generated
+  recipe can be deleted before claim). Null-checked + deterministic discard.
+
+Owner-gated structural follow-ups (scalability/DRY, and the still-referenced `Faction` enum) are
+catalogued in the review doc; none is an open chain-safety vector.

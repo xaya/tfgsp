@@ -85,6 +85,17 @@ launch-time) vs implementable now. Companion docs: `original-vs-rewrite.md` (per
    determinism lint green. See `security-audit.md` §14. **This sweep earning its keep by catching
    HALT-01 is why the extra passes were run.**
 
+10. ✅ **DONE (2026-07-01) — comprehensive code-quality + security review** (`docs/code-review-2026-07-01.md`).
+    6-dimension review (Taurion, dead-code, DRY, naming, scalability, security), consensus-risk-triaged.
+    Confirmed **Taurion is gone from code**; reworded the residual Taurion-flavoured comments/log strings
+    + fixed log typos + removed dead decls (`94ec3ee`). Found + fixed **6 more latent halt paths
+    ROB-1..6** (`e4a7115`, `NextInt(0)`/null-deref guards, all golden byte-identical). Applied the one
+    provably-safe perf win PERF-01 (const-ref, `c63a5da`). The higher-value structural refactors
+    (PERF-02..06 scalability, DRY-01..06, MAGIC-01/02, `outputDebug`/dead-method removals, the
+    still-referenced `Faction` enum) are documented as **owner-gated follow-ups** — they touch consensus
+    RNG/state paths (golden-identity necessary-but-not-sufficient) so they want human sign-off. **Do NOT
+    rename `recepie(s)`** — it is the load-bearing proto/config/JSON identifier.
+
 ## 🟢 Done — re-verify at sign-off (launch-day confirmation, not code work)
 
 **Code-verifiable portions RE-VERIFIED 2026-07-01** (adversarial 6-dimension audit, each finding
