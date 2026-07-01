@@ -46,13 +46,26 @@
 namespace pxd
 {
 
-std::vector<uint32_t> PXLogic::GenerateActivityReward(const uint32_t fighterID, const std::string blueprintAuthID, const uint32_t tournamentID, const pxd::proto::AuthoredActivityReward rw, const Context& ctx, Database& db, std::unique_ptr<XayaPlayer>& a, xaya::Random& rnd, const uint32_t posInTableList, const std::string basedRewardsTableAuthId, const std::string sweetenerAuthID)
+std::vector<uint32_t> PXLogic::GenerateActivityReward(const uint32_t fighterID, const std::string blueprintAuthID, const uint32_t tournamentID, const pxd::proto::AuthoredActivityReward rw, const Context& ctx, Database& db, std::unique_ptr<XayaPlayer>& a, xaya::Random& rnd, const uint32_t posInTableList, const std::string basedRewardsTableAuthId, const std::string sweetenerAuthID, const uint32_t recursionDepth)
 {
   RecipeInstanceTable recipeTbl(db);
   RewardsTable rewardsTbl(db);
     
   std::vector<uint32_t> iDS;
     
+  /* CC-1: bound the recursive RewardType::List expansion. Reward tables
+     reference sub-tables via listtableid(); a cyclic or pathologically-deep
+     reference in the (pinned, dev-authored) roconfig would recurse until the
+     stack overflows -> a deterministic chain halt. Real nesting is shallow, so
+     stop past a safe cap rather than trust the config to be acyclic. */
+  constexpr uint32_t MAX_REWARD_LIST_DEPTH = 16;
+  if(recursionDepth > MAX_REWARD_LIST_DEPTH)
+  {
+    LOG (ERROR) << "Reward List recursion exceeded max depth " << MAX_REWARD_LIST_DEPTH
+                << " (cyclic or too-deep reward-table config); stopping generation";
+    return iDS;
+  }
+
   if((int8_t)rw.type() != (int8_t)RewardType::None)
   {
     if((RewardType)(int32_t)rw.type() == RewardType::List)
@@ -77,7 +90,7 @@ std::vector<uint32_t> PXLogic::GenerateActivityReward(const uint32_t fighterID, 
             
             for(auto& rw2: rewardsTable.second.rewards())
             {
-                std::vector<uint32_t> newIDS = GenerateActivityReward(fighterID, blueprintAuthID, tournamentID, rw2, ctx, db, a, rnd, posInTableList2, rw.listtableid(), sweetenerAuthID);
+                std::vector<uint32_t> newIDS = GenerateActivityReward(fighterID, blueprintAuthID, tournamentID, rw2, ctx, db, a, rnd, posInTableList2, rw.listtableid(), sweetenerAuthID, recursionDepth + 1);
                 
                 for(int32_t j = 0; j < (int32_t)newIDS.size(); j++)
                 {
