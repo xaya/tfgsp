@@ -59,8 +59,21 @@ tests_LDADD = \
 tests_SOURCES = \
   roconfig_tests.cpp
 
-roconfig.pb roconfig.pb.text: $(builddir)/../proto/roconfig_gen
+# roconfig_gen writes BOTH roconfig.pb and its text form in a single run.
+# Declare only roconfig.pb as the real target, with roconfig.pb.text as a
+# dependent alias: a multi-target rule ("roconfig.pb roconfig.pb.text:") makes
+# GNU make -j run the recipe once per requested target -- i.e. two roconfig_gen
+# processes writing roconfig.pb concurrently -> a truncated/corrupt blob that
+# fails to parse at runtime.  This is consensus-critical: a corrupt config blob
+# aborts the daemon on startup or, worse, silently diverges it.
+roconfig.pb: $(builddir)/../proto/roconfig_gen
 	$(builddir)/../proto/roconfig_gen \
           --out_binary="$(builddir)/roconfig.pb" \
           --out_text="$(builddir)/roconfig.pb.text"
 	touch $(srcdir)/roconfig_blob.s
+roconfig.pb.text: roconfig.pb
+
+# roconfig_blob.s embeds roconfig.pb via `.incbin`, a dependency make cannot see.
+# Pin the ordering so the blob object is never assembled before roconfig.pb is
+# complete (belt-and-suspenders alongside the single-output rule above).
+roconfig_blob.lo: roconfig.pb

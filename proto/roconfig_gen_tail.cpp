@@ -25,7 +25,13 @@ main (int argc, char** argv)
     {
       LOG (INFO) << "Writing binary proto to output file " << FLAGS_out_binary;
       std::ofstream out(FLAGS_out_binary, std::ios::binary);
-      CHECK (pb.SerializeToOstream (&out));
+      /* Serialise deterministically so the embedded config blob is
+         byte-reproducible across builds (ConfigData has map<> fields whose
+         default wire order is otherwise unstable).  */
+      google::protobuf::io::OstreamOutputStream zos (&out);
+      google::protobuf::io::CodedOutputStream cos (&zos);
+      cos.SetSerializationDeterministic (true);
+      CHECK (pb.SerializeToCodedStream (&cos));
     }
 
   if (!FLAGS_out_text.empty ())
