@@ -331,3 +331,37 @@ hardening applied.**
 **Bottom line (deep audit):** across 12 audited dimensions (this pass + §12), the only real find was
 DOS-FC (fixed); everything else is code-confirmed deterministic. No fork/halt/economy/DoS vector is
 open in code.
+
+## 14. Final safety sweep (2026-07-01) — halt/liveness surfaces
+
+A third sweep (4 dimensions + completeness critic, 3-lens verification) targeting the remaining
+surfaces: time/RNG-seed determinism, move replay/idempotency, container-bounds crash-safety (a node
+HALT is a liveness fork), and a completeness critic. **Result: 1 CRITICAL found + fixed, 1 latent
+halt hardened; time/RNG and replay/idempotency clean.**
+
+- **HALT-01 — CRITICAL, found + fixed (`acc1cfd`).** `ClaimRewardsInnerLogic`'s Move / Armor /
+  Animation reward branches (`moveprocessor_activity.cpp`) did `fighters.GetById(reward.fighterid())`
+  and dereferenced the handle with **no null check**. A reward row keeps its fighter id, but that
+  fighter can be deleted by **transfigure / cook-replace** (which, unlike deconstruct, do *not*
+  cascade-delete its reward rows) while the reward is unclaimed. Claiming then null-derefs →
+  **SIGSEGV on every node at the same height = permanent chain HALT.** Reachable by a permissionless
+  confirmed-move sequence (earn a Move/Armor/Animation reward → delete the fighter → claim). Fixed:
+  null-check + deterministic discard (mark-for-removal) in all three branches, mirroring the existing
+  unsolved-reward skip and the deconstruct/cook-replace fighter-delete guards. Regression test
+  `ClaimRewardAfterFighterDeletedDoesNotHalt` (SEGVs the binary without the fix). Golden
+  byte-identical.
+- **CC-1 — latent halt hardened (`f1a8b41`).** `GenerateActivityReward` recurses on `RewardType::List`
+  reward tables with no depth/cycle guard; a cyclic/too-deep reference in the (pinned, dev-authored)
+  roconfig would stack-overflow → halt. Not attacker-reachable (config, not a move), but bounded
+  anyway with a defaulted `recursionDepth` param + `MAX_REWARD_LIST_DEPTH=16` cap. Golden
+  byte-identical.
+- **Time / RNG-seed — CLEAN.** No clock/entropy source reaches state; the one `std::time` is in the
+  report-only `GetStateAsJson`. The per-block RNG is reseeded from the block hash and consumed in
+  deterministic (id/key) order.
+- **Replay / idempotency — CLEAN.** `paidToDev` is single-spent per move; block attach/detach is
+  exactly reversible; the tournament-leave / reward-double-claim guards hold.
+
+**Bottom line (all three sweeps — 16 dimensions):** the real finds were DOS-FC (DoS) and HALT-01
+(chain halt), both fixed and regression-tested; UPD-1 and CC-1 latent-halt/UB paths hardened. No
+move-reachable fork / halt / economy / DoS vector remains open in code. Remaining launch work is
+operational only: re-pin genesis height + live Polygon/XayaX e2e.

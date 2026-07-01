@@ -73,6 +73,18 @@ launch-time) vs implementable now. Companion docs: `original-vs-rewrite.md` (per
    cook-time bound). Golden byte-identical. See `security-audit.md` §13. (LOC-5 stringstream map-keys
    noted as an optional non-fork DRY tidy.)
 
+9. ✅ **DONE (2026-07-01) — HALT-01 (critical chain halt) + CC-1 (latent halt).** A third/final
+   safety sweep (time/RNG, replay/idempotency, container-bounds crash-safety, completeness critic)
+   caught a **CRITICAL move-reachable chain HALT: HALT-01 (`acc1cfd`)** — claiming a
+   Move/Armor/Animation reward whose fighter had been deleted (transfigure/cook-replace) null-derefed
+   `fighters.GetById(...)` → SIGSEGV on every node = permanent halt. Fixed with a null-check +
+   deterministic discard in all three reward branches + regression test
+   `ClaimRewardAfterFighterDeletedDoesNotHalt`. Also hardened **CC-1 (`f1a8b41`)** — bounded the
+   `RewardType::List` recursion (`MAX_REWARD_LIST_DEPTH`) against a cyclic/deep reward-table config.
+   Time/RNG + replay/idempotency dimensions came back clean. Golden byte-identical; full suite +
+   determinism lint green. See `security-audit.md` §14. **This sweep earning its keep by catching
+   HALT-01 is why the extra passes were run.**
+
 ## 🟢 Done — re-verify at sign-off (launch-day confirmation, not code work)
 
 **Code-verifiable portions RE-VERIFIED 2026-07-01** (adversarial 6-dimension audit, each finding
