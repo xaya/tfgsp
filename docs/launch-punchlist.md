@@ -18,8 +18,10 @@ launch-time) vs implementable now. Companion docs: `original-vs-rewrite.md` (per
    - **DECIDED (owner 2026-06-30): use `0x25763F408461ddc66d8955d22963815DEA6d8722`** for the
      live-Polygon TEST gameid. This is **NOT the final foundation address** — a separate real
      gameid + real address will be set later for the production launch.
-   - Action: replace TEMP `0x59F5f46dC284e3414F67EDa31eE90126bC48BF95` → `0x2576…`. Config
-     value change ⇒ rebuild roconfig blob + golden regen (full clean rebuild).
+   - ✅ **DONE (2026-07-01):** replaced TEMP `0x59F5…BF95` → `0x2576…8722`. Rebuilt the
+     roconfig blob; **golden byte-identical** (dev_address does not reach the golden replay
+     state), full `make check` green. All tests read `dev_address` dynamically, so no test/
+     fixture edits were needed. The **production** address remains TODO for the real gameid.
 
 3. **Live Polygon + XayaX end-to-end test** — `polygon-test/integration.py` only runs vs a
    FORKED (Anvil) Polygon, manually. Need a real-chain sync + move round-trip on live Polygon
@@ -27,13 +29,28 @@ launch-time) vs implementable now. Companion docs: `original-vs-rewrite.md` (per
 
 ## 🟡 Recommended hardening (implementable now)
 
-4. **CI roconfig-blob hash assertion** — no CI pipeline exists (only `make check` at docker
-   build). Add a test that hashes the assembled roconfig blob and pins it; assert
-   `god_mode=false` + no `zzzz/xxxx`/UnitTest ids. Closes the C9 sign-off.
+4. ✅ **DONE (2026-07-01) — roconfig-blob pin test.** Added `RoConfigTests.LaunchConfigIsPinned`
+   (`proto2/roconfig_tests.cpp`): deterministic-serialises `RoConfig(MAIN)` + SHA256, pins the
+   hash (`dd48e3fa…78ba1`), and asserts `god_mode==false`, no testnet/regtest merge, and no
+   `zzzz`/`xxxx`/`UnitTest` leakage. Runs under `make check`. Closes the C9 sign-off.
+   **This test immediately caught a latent consensus bug** — see the blob-race fix below.
 
-5. **Remove the hardcoded name-gift** — `moveprocessor.cpp:5068` gifts fighters/recipes to
-   `DonRinkula`/`PandaBoss`/`"1 John"`. On a fresh relaunch a name-squatter who registers
-   those `p/` names claims it. Distinct from SB-06 (kept). Economy change + golden regen.
+5. ✅ **DONE (already fixed) — hardcoded name-gift removed in commit `3a3c46c`** ("SB-06: remove
+   hardcoded early-access free-recipe gift", ancestor of HEAD). `MaybeInitXayaPlayer` no longer
+   gifts recipes to `DonRinkula`/`PandaBoss`/`"1 John"`; grep-verified zero references in code/
+   tests. Golden byte-identical (the three names aren't in the golden fixture). Distinct from
+   SB-06 starter-mint (kept).
+
+6. ✅ **DONE (2026-07-01) — roconfig blob parallel-build race (consensus-critical).** Surfaced by
+   #4 under `make -j`: the multi-target rule `roconfig.pb roconfig.pb.text:` made GNU make run
+   `roconfig_gen` **twice concurrently** (once per requested target), two processes writing the
+   same 4.5 MB `roconfig.pb` → a truncated/corrupt blob embedded via `.incbin`. At runtime this
+   aborts the daemon (`CHECK(ParseFromArray)` — the "lucky" case) or could embed a valid-but-
+   different config → **silent fork**. Fixed in `proto2/Makefile.am` (single-output rule +
+   `roconfig.pb.text` alias + explicit `roconfig_blob.lo: roconfig.pb` `.incbin` edge) and made
+   the blob **deterministic/byte-reproducible** (`roconfig_gen` now uses
+   `SetSerializationDeterministic`). Validated: 15× clean parallel rebuilds all parse, blob md5
+   constant. See `original-vs-rewrite.md` §"Issues found & fixed".
 
 ## 🟢 Done — re-verify at sign-off (launch-day confirmation, not code work)
 
@@ -49,23 +66,34 @@ launch-time) vs implementable now. Companion docs: `original-vs-rewrite.md` (per
 ## ⚪ Economy / product sign-offs (deterministic, owner's call — not chain bugs)
 
 - **SB-06** free starter mint — DECIDED: keep (account-bound, not exploitable).
-- **Hardcoded name-gift** (#5) — recommend remove.
+- **Hardcoded name-gift** (#5) — ✅ already removed (`3a3c46c`).
 - **Non-zero tournament JoinCost** — needs audit before enabling (all blueprints 0 today).
 - **Reward-cap UX polish** — parked: entry-time "at cap" guard + a
   `max_unclaimed_reward_amount != 0` assertion (cap itself is DB-safe/deterministic/bounded).
 
 ## 🧹 Code hygiene / DRY (non-blocking tech-debt — clean/compact/DRY directive)
 
-- `database/fighter_tests.cpp:33` — copy-pasted `TestRandomS`; dedup vs `testutils.hpp`.
-- `src/moveprocessor.hpp:278` — remove redundant `authID`.
-- `src/logic_combat.cpp:171` (+ `logic_tests.cpp:309,344`) — combat duration hardcoded `15`;
-  read from config.
-- `src/logic_resolve.cpp:603` — trim the stale dead-code `DeleteById` comment to the
-  resolved decision.
-- `src/moveprocessor_activity.cpp:717` — `animationid` as a repeated list (TODO).
-- `database/xayaplayer_tests.cpp:235` — commented-out prestige assertion.
-- `src/pending.cpp:625` — transfigure-diff refactor; parked (`pending_moves=false` on Polygon
-  ⇒ `PendingStateUpdater::ProcessMove` is a dead path).
+✅ **DONE (2026-07-01)** — the safe, non-consensus trims (comment/test/dead-code only; golden
+byte-identical, full `make check` green):
+- `src/logic_tests.cpp:309,344` — test magic-`15` now reads `params().common_recipe_cook_cost()`
+  (the real config field; same value, so no behaviour change).
+- `src/logic_combat.cpp:171` — dropped the stale "For now set to 15 for everyone" comment (the
+  K-factor already reads `params().elok_factor()`; it's ELO, not combat duration).
+- `src/logic_resolve.cpp:603` — trimmed the resolved dead-code `DeleteById` block to a one-line
+  note (recipe kept because the cooked fighter references its id).
+- `src/moveprocessor_activity.cpp:717` — trimmed the trailing `//TODO` comment (live
+  `set_animationid` statement untouched).
+- `database/xayaplayer_tests.cpp:228` — removed the fully-commented-out empty `Prestige` test.
+- `src/pending.cpp:625` — removed the parked commented transfigure-diff block (dead path:
+  `pending_moves=false` on Polygon).
+
+⏭️ **Skipped (recon found these mischaracterised / unsafe):**
+- `database/fighter_tests.cpp:33` `TestRandomS` — **NOT a clean dedup**: it seeds `"test seed 1"`
+  while the shared `testutils` `TestRandom` seeds `"test seed"`; switching would change the RNG
+  seed and shift fighter-stat expectations. Also kept separate to avoid a `database/`→`src/`
+  link dependency. Left as-is.
+- `src/moveprocessor.hpp:278` `authID` — **nothing removable**: it's a used parameter of
+  `GetCandyKeyNameFromID` (consumed in `moveprocessor_cooking.cpp`), not a redundant member.
 
 ## ✅ Confirmed clean (no action)
 

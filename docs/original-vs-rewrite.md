@@ -205,6 +205,7 @@ per-block floor now flat ~0.33 ms, from-genesis sync is also feasible.
 | Quality audit | repo-wide | 80 findings: dead code, DRY, money-path correctness (reward-roll `<=`, transfigure fuel cost, armor-reward by-value, demand-queue double-append, role-load HALT, …) | mixed | DONE (quality-audit-findings.md) |
 | F1/REORG-01 | pending | pending processing must not write the confirmed DB | reorg-safety | DONE (read-only flag + regression test) |
 | P-E1 | ongoings | per-block O(players) write/scan (the "clogs the DB" root cause) | scalability | DONE (Stage 1 + H3) |
+| BLOB-RACE | build / roconfig | multi-target rule `roconfig.pb roconfig.pb.text:` ran `roconfig_gen` twice concurrently under `make -j` → two writers on the same 4.5 MB blob → truncated `.incbin` embed → daemon abort on `CHECK(ParseFromArray)`, or a valid-but-different blob → silent fork | consensus (build reproducibility / fork) | DONE (`2026-07-01`) — single-output rule + `roconfig.pb.text` alias + explicit `roconfig_blob.lo: roconfig.pb` `.incbin` edge; `roconfig_gen` now serialises deterministically (byte-reproducible blob). Surfaced by the new `RoConfigTests.LaunchConfigIsPinned`; validated 15× clean parallel rebuild (0 fail, constant md5) |
 
 ### Economy / product decisions (chain-safe, see `tf-economy-decisions` memory)
 - SB-06 starter giveaway: **kept** (verified not exploitable — starter fighters account-bound, no item transfer, crystals WCHI-gated).
@@ -213,4 +214,4 @@ per-block floor now flat ~0.33 ms, from-genesis sync is also feasible.
 
 ### Still open (non-blocking, deterministic)
 - **Reward-cap UX polish** (optional, non-consensus): a player parked at the unclaimed-reward cap (`max_unclaimed_reward_amount = 100`, `logic_resolve.cpp:99`) silently forfeits passive reward rolls earned while at the cap (claiming reopens room, so it only bites non-claimers). Investigated: it's DB-safe/deterministic/bounded — NOT a DB defect. Optional improvements: an entry-time "you're at the reward cap" guard so a capped player isn't charged a tournament joincost for a reward that will drop, + a unit assertion that the config value isn't 0 (0 would block all rewards).
-- Launch prep (non-code): confirm the real `dev_address` (still TEMP `0x59F5…`), a live Polygon + XayaX end-to-end test, a CI roconfig-blob hash assertion.
+- Launch prep: **`dev_address` set** to the live-Polygon TEST address `0x2576…8722` (real foundation address still TODO for the production gameid); **roconfig-blob pin test added** (`LaunchConfigIsPinned` — which caught the BLOB-RACE above). Still to do at launch: re-pin the POLYGON genesis height + a live Polygon + XayaX end-to-end test.

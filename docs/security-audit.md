@@ -79,7 +79,7 @@ Confidence high on existence/reachability of all H-items. Magnitude of H1/H2 is 
 
 - **C8 — Unlimited crystal minting (CRITICAL, confirmed).** Pay one bundle (~0.14 CHI), receive N bundles via a repeated-`pc` array move. Root cause is the always-zero `fraction = paidToDev/35` computed before the summation, plus `cost % 35 == 0` for every configured bundle, plus the shared `paidToCrownHolders` across array sub-moves. **The same `fraction`-before-sum bug also exists in `TryNameRerollPurchase` (700-795)** and could enable analogous array replay — fix both. See §2 C8.
 - **C9 — Free recipe/fighter faucet (HIGH, confirmed).** `chain==MAIN` dead-guard + `UnitTest_Expedition` in the mainnet config. See §2 C9.
-- **SB-06 — Hardcoded free-recipe gift to 3 names (LOW, confirmed).** `MaybeInitXayaPlayer` (`moveprocessor.cpp:5068-5072`) mints a free recipe to exactly `DonRinkula`, `PandaBoss`, `"1 John"` on init. On a fresh relaunch these `p/` names are likely unregistered → an attacker registers them and claims. One-time, one recipe each. **Fix:** remove the hardcoded name gift from the consensus path. Confidence medium.
+- **SB-06 — Hardcoded free-recipe gift to 3 names (LOW, confirmed).** `MaybeInitXayaPlayer` (`moveprocessor.cpp:5068-5072`) mints a free recipe to exactly `DonRinkula`, `PandaBoss`, `"1 John"` on init. On a fresh relaunch these `p/` names are likely unregistered → an attacker registers them and claims. One-time, one recipe each. **Fix:** remove the hardcoded name gift from the consensus path. Confidence medium. **✅ RESOLVED (`3a3c46c`):** the gift is removed from `MaybeInitXayaPlayer`; grep-verified zero references to the three names / the recipe uuid in code+tests; golden byte-identical (the names aren't in the golden fixture).
 - **ECON-03 — Tournament-leave double-deduct (LATENT chain-halt, currently guarded).** `MaybeLeaveTournament` (`moveprocessor.cpp:3564`) charges `joincost` *again* on leave with no balance check; `AddBalance`'s `CHECK_GE(balance,0)` aborts on underflow. **Safe today only because all 42 shipped tournament blueprints have `JoinCost: 0`** (grep-verified). The instant any blueprint ships a non-zero `joincost`, a player who joins at minimal balance then leaves halts the chain. **Fix now** (make leave a refund `+joincost` or a no-op, and guard balance before any `AddBalance(-x)`) — this is a config-fragile guard, not a real gate.
 - **OVF-01 — `fpm::fixed_24_8` overflow on large transfigure candy (LOW, uncertain).** `candy["a"].asInt()` (up to INT32_MAX) → `val*256` signed-overflow UB in the `int32` base (`moveprocessor.cpp:3953`, `fpm/fixed.hpp:40`) for candy magnitude >8,388,607. Reachable (inventory `Quantity` is `int64`, MAX 2^50). **But:** build is `-O2` without `-ftrapv` so it wraps (no halt); all nodes wrap identically (no practical fork); the corrupted `fuel20` is capped at 25% of `fuel80` and only lowers the attacker's own rating (no gain). `reachable_needs_fix` / impact uncertain. **Fix:** clamp `candy["a"]` to ≤8,388,607 (and during `fuel20` accumulation) before the conversion.
 
@@ -255,7 +255,12 @@ most items had in fact already landed; the headline 80-/security-audit had also
 **Bottom line:** the one move-reachable consensus launch-blocker (OVF-01) is closed
 and regression-tested. No deterministic chain-halt/fork/economy-fatal vector remains
 open in code, and the scalability ratchet (DEF2/DEF3) is fixed. Remaining items are
-economic (SB-06) and non-code launch prep: **re-pin the POLYGON genesis height**
-(`src/logic.cpp` — still the placeholder tip `89'246'000`; consensus-critical, set it
-to the real launch-time tip), **confirm the real `dev_address`** (still TEMP `0x59F5…`),
-a **live Polygon + XayaX bridge end-to-end test**, and a **CI roconfig-blob hash assertion**.
+economic (SB-06 starter-mint kept; name-gift removed `3a3c46c`) and non-code launch prep:
+**re-pin the POLYGON genesis height** (`src/logic.cpp` — still the placeholder tip
+`89'246'000`; consensus-critical, set it to the real launch-time tip) and a **live Polygon +
+XayaX bridge end-to-end test**. Since this audit (2026-07-01): **`dev_address` set** to the
+live-Polygon TEST address `0x2576…8722` (real foundation address TODO for production) and the
+**roconfig-blob pin test added** (`RoConfigTests.LaunchConfigIsPinned`) — which surfaced and led
+to fixing a latent **blob parallel-build race** (consensus-critical; see `original-vs-rewrite.md`
+BLOB-RACE: two concurrent `roconfig_gen` writers under `make -j` could embed a corrupt config
+blob → daemon abort or silent fork).
