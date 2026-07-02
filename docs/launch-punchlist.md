@@ -179,6 +179,52 @@ byte-identical, full `make check` green):
 - `src/moveprocessor.hpp:278` `authID` — **nothing removable**: it's a used parameter of
   `GetCandyKeyNameFromID` (consumed in `moveprocessor_cooking.cpp`), not a redundant member.
 
+## 2026-07-02 — full-codebase audit (13-dim find→adversarial-verify), commit `ec9aea6`
+
+A fresh 13-dimension audit over the whole repo + the web frontend surfaced findings the
+earlier crash-safety passes had missed (they focused on the confirmed move path; these
+live on the RPC/reward/serialization edges). All fixed, `make check` green (golden
+byte-identical):
+
+- **getfueldata RPC daemon crash (high).** A malformed RPC array element (e.g.
+  `candiesSubmited:[5]`, `fightersSubmited:["x"]`) made jsoncpp throw `Json::LogicError`
+  out through the libmicrohttpd C callback → `std::terminate`, killing the whole daemon
+  (reachable unauthenticated through the web proxy whitelist). `getfueldata` now wraps
+  `EvaluateFuelList` in try/catch → invalid-params. Non-consensus (no fork), recoverable
+  by restart — but a trivial remote DoS. **This is why the "no chain-fatal vector open"
+  posture needed this line: it was true for consensus, not for daemon availability.**
+- **Tournament claim `tid<=0` reward destruction (med).** `ParseTournamentRewardData`
+  matched reward rows purely on `tournamentid==tid`; a `tid:0` claim collected the
+  tournamentid-0 rows (expedition/sweetener/**deconstruction**) and silently deleted the
+  deconstruction rewards without paying their candy. Now rejects `tid<=0`.
+- **Two latent OOB indexings (low, config-revision-triggered UB):** `ResolveSweetener`
+  guarded only the first of three `rewardchoices(rewardID)` accesses; `ClaimRewardsInner`
+  indexed a DB-persisted `positionintable()` with no bound. Both now bounds-checked.
+- **RerollName money-brick (high, `nr` path).** Set `isnamererolled` before the empty-pool
+  early-returns (a no-op reroll permanently bricked the fighter) and hard-coded the pool
+  cap at Common, so a paid `nr` on any uncommon/rare/epic fighter consumed the WCHI and
+  changed nothing. Now marks rerolled only on success and caps at the fighter's own quality.
+- **Transfigure self-sacrifice (low)** and an **unguarded tournament `GetById` on the
+  serialization path (low)** — both guarded.
+- **Two hot-path indexes** added (`fighters_by_owner`, `recepies_by_owner`) — owner-filtered
+  `CountForOwner/QueryForOwner` ran unindexed on nearly every move (same class DEF2/DEF3 fixed
+  for rewards/ongoings).
+- **Dead code / DRY:** removed empty `BaseMapInstances`, unused `CollectTournaments`, the unused
+  `ongoing.proto` import; unified `ArmorTypesForMoveType` + `RecipeCookCostForQuality` and dropped
+  a redundant transfigure candy re-validation.
+
+⏭️ **Intentionally deferred (documented):**
+- The **5-way reward-table-roll** duplication (sweetener×3 / expedition / tournament) and the
+  **fighter-fetch / authoredid-scan** boilerplate — real duplication, but all copies compute
+  identical results today and **tournament resolution has no golden scenario**, so a bit-identical
+  extraction can't be fully regression-verified. Add tournament/purchase golden coverage FIRST
+  (see next), then extract.
+- **Golden coverage gap:** `goldenreplay_tests` exercises cook/expedition/deconstruct/sweetener/
+  exchange but NOT tournament join+resolve, `pc`/purchase, transfigure, or `nr`. Extend before the
+  reward-roll DRY and before mainnet.
+- The fighter-inventory cap `>` at cook/buy parse is **intentional** (speculative cook reverts with
+  a full refund at resolve — `RecepieInstanceRevertIfFullRoster`), NOT an off-by-one.
+
 ## ✅ Confirmed clean (no action)
 
 - Taurion fully stripped (only doc mentions remain).
