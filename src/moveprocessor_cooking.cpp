@@ -61,7 +61,20 @@ namespace pxd
     }      
       
     return "";
-  }  
+  }
+
+  Amount
+  BaseMoveProcessor::RecipeCookCostForQuality(int32_t quality, const RoConfig& cfg)
+  {
+    switch(quality)
+    {
+      case 1: return cfg->params().common_recipe_cook_cost();
+      case 2: return cfg->params().uncommon_recipe_cook_cost();
+      case 3: return cfg->params().rare_recipe_cook_cost();
+      case 4: return cfg->params().epic_recipe_cook_cost();
+      default: return -1;
+    }
+  }
 
   Json::Value BaseMoveProcessor::EvaluateFuelList(const Json::Value& fightersSubmited, const Json::Value& recipesSubmited, const Json::Value& candiesSubmited, const Json::Value& fightersNew, const Json::Value& recipesNew, const Json::Value& candiesNew, const Json::Value wholeFightersData,  const Json::Value wholeRecipeData, const Json::Value& candylist)
   {
@@ -428,8 +441,8 @@ namespace pxd
 		if(slots > ctx.RoConfig()->params().max_fighter_inventory_amount())
 		{
 			LOG (WARNING) << "Not enough slots to host a new fighter";
-			return false;         
-		}		
+			return false;
+		}
 
     return true;
   }
@@ -469,25 +482,7 @@ namespace pxd
         return false;           
     }
 
-    if(itemInventoryRecipe->GetProto().quality() == 1)
-    {
-        cookCost = ctx.RoConfig()->params().common_recipe_cook_cost();
-    }
-    
-    if(itemInventoryRecipe->GetProto().quality() == 2)
-    {
-        cookCost = ctx.RoConfig()->params().uncommon_recipe_cook_cost();
-    }
-
-    if(itemInventoryRecipe->GetProto().quality() == 3)
-    {
-        cookCost = ctx.RoConfig()->params().rare_recipe_cook_cost();
-    }
-
-    if(itemInventoryRecipe->GetProto().quality() == 4)
-    {
-        cookCost = ctx.RoConfig()->params().epic_recipe_cook_cost();
-    }  
+    cookCost = RecipeCookCostForQuality(itemInventoryRecipe->GetProto().quality(), ctx.RoConfig());
 
     if(cookCost == -1)
     {
@@ -530,7 +525,7 @@ namespace pxd
     if(slots > ctx.RoConfig()->params().max_fighter_inventory_amount())
     {
         LOG (WARNING) << "Not enough slots to host a new fighter for " << recepieID;
-        return false;         
+        return false;
     }
     
     if (itemInventoryRecipe->GetProto().requiredfighterquality() > 0 && fighterID <= 0)

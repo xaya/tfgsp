@@ -270,7 +270,8 @@ protected:
    */  
   bool InventoryHasItem(const std::string& itemKeyName, const Inventory& inventory, const google::protobuf::uint64 amount);  
   
-  /*Function copypasted from hifghter.hpp, helps in transifuration to resolve armor type*/
+  /* Thin wrapper over pxd::ArmorTypesForMoveType (database/fighter.hpp); helps transfigure resolve
+     which armor slots a move type governs. */
   std::vector<pxd::ArmorType> ArmorTypeFromMoveType(pxd::MoveType moveType);
   
 public:
@@ -280,7 +281,11 @@ public:
    *  this point, but need to keep for now to be more consistant with the
    *  original source */     
   pxd::RecipeInstanceTable::Handle GetRecepieObjectFromID(const uint32_t& ID);
-  static std::string GetCandyKeyNameFromID(const std::string& authID, const Context& ctx); 
+  static std::string GetCandyKeyNameFromID(const std::string& authID, const Context& ctx);
+  /* Crystal cost to cook a recipe of the given quality (1..4), or -1 if the quality is out of range.
+     One source of truth for both the charge (ParseCookRecepie) and the refund (ResolveCookingRecepie)
+     so the two can never drift into an over/under-refund. */
+  static Amount RecipeCookCostForQuality(int32_t quality, const RoConfig& cfg);
   static Json::Value EvaluateFuelList(const Json::Value& fightersSubmited, const Json::Value& recipesSubmited, const Json::Value& candiesSubmited, const Json::Value& fightersNew, const Json::Value& recipesNew, const Json::Value& candiesNew, const Json::Value wholeFightersData,  const Json::Value wholeRecipeData, const Json::Value& candylist);
 
   virtual ~BaseMoveProcessor () = default;

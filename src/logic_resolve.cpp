@@ -191,8 +191,18 @@ void PXLogic::ResolveSweetener(std::unique_ptr<XayaPlayer>& a, std::string sweet
   // (moveprocessor_cooking.cpp) against this same pinned blueprint; re-guard the
   // repeated-field index here so a default/short blueprint can never out-of-bounds
   // index rewardchoices() -- that would be UB (a silent fork) in an NDEBUG build.
-  if(rewardID < (uint32_t) sweetenerBlueprint.rewardchoices_size()
-     && sweetenerBlueprint.rewardchoices(rewardID).rewardstableid() != "")
+  // The candy/move/armor blocks below all index rewardchoices(rewardID), so the
+  // guard must cover the whole span, not just the first block (the tier bump and
+  // prestige above still stand: the cook succeeded, only the reward rolls drop).
+  if(rewardID >= (uint32_t) sweetenerBlueprint.rewardchoices_size())
+  {
+    LOG (WARNING) << "sweetener rewardID " << rewardID << " out of range ("
+                  << sweetenerBlueprint.rewardchoices_size() << "); skipping reward rolls";
+    a->CalculatePrestige(ctx.RoConfig());
+    return;
+  }
+
+  if(sweetenerBlueprint.rewardchoices(rewardID).rewardstableid() != "")
   {
     pxd::proto::ActivityReward rewardTableDb;
     
@@ -564,26 +574,8 @@ void PXLogic::ResolveCookingRecepie(std::unique_ptr<XayaPlayer>& a, const uint32
             return;
         }
         
-        if(recepie->GetProto().quality() == 1)
-        {
-            cookCost = ctx.RoConfig()->params().common_recipe_cook_cost();
-        }
-        
-        if(recepie->GetProto().quality() == 2)
-        {
-            cookCost = ctx.RoConfig()->params().uncommon_recipe_cook_cost();
-        }
+        cookCost = BaseMoveProcessor::RecipeCookCostForQuality(recepie->GetProto().quality(), ctx.RoConfig());
 
-        if(recepie->GetProto().quality() == 3)
-        {
-            cookCost = ctx.RoConfig()->params().rare_recipe_cook_cost();
-        }
-
-        if(recepie->GetProto().quality() == 4)
-        {
-            cookCost = ctx.RoConfig()->params().epic_recipe_cook_cost();
-        } 
-        
         for(const auto& candyNeeds: recepie->GetProto().requiredcandy())
         {
           std::string candyInventoryName = BaseMoveProcessor::GetCandyKeyNameFromID(candyNeeds.candytype(), ctx);

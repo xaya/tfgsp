@@ -113,6 +113,13 @@ enum class ArmorType : int8_t
 };
 
 /**
+ * The armor slots a given move type governs. Single source of truth for both fighter creation
+ * (FighterInstance::ArmorTypeFromMoveType) and transfigure (BaseMoveProcessor::ArmorTypeFromMoveType),
+ * which previously carried byte-identical copies of this switch that had to be kept in sync by hand.
+ */
+std::vector<ArmorType> ArmorTypesForMoveType(MoveType moveType);
+
+/**
  * Database result type for rows from the fighter table.
  */
 struct FighterResult : public Database::ResultType

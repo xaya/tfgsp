@@ -428,7 +428,12 @@ BaseMoveProcessor::TryNameRerollPurchase (const std::string& name, const Json::V
     return;
 
   auto fighterDb = fighters.GetById (treatId, ctx.RoConfig ());
-  fighterDb->RerollName (cost, cfg, rnd, pxd::Quality::Common);
+  /* Cap the name pool at the fighter's own quality: RerollName draws only names
+     whose quality equals the fighter's, so a hard-coded Common cap emptied the
+     pool for every uncommon/rare/epic fighter -- the paid reroll then consumed
+     the WCHI and changed nothing.  Passing the fighter's quality lets the reroll
+     draw a same-quality name (Common fighters are unaffected). */
+  fighterDb->RerollName (cost, cfg, rnd, (pxd::Quality)(int32_t)fighterDb->GetProto().quality());
   fighterDb.reset ();
 
   /* C8 (twin): consume the dev payment so the same on-chain payment cannot be

@@ -163,7 +163,23 @@ PXRpcServer::waitforchange (const std::string& knownBlock)
 Json::Value
 PXRpcServer::getfueldata (const Json::Value& candiesNew, const Json::Value& candiesSubmited, const Json::Value& candylist, const Json::Value& fighterData, const Json::Value& fightersNew, const Json::Value& fightersSubmited, const Json::Value& recipeData, const Json::Value& recipesNew, const Json::Value& recipesSubmited)
 {
-  return BaseMoveProcessor::EvaluateFuelList(fightersSubmited, recipesSubmited, candiesSubmited, fightersNew, recipesNew, candiesNew, fighterData, recipeData, candylist);
+  /* getfueldata is a pure client-side estimator fed entirely by untrusted RPC
+     input.  EvaluateFuelList/CalculateFuelPower index those arrays with
+     operator[]/asInt/asString without per-element type checks, so a malformed
+     element (e.g. a non-object candy or a string fighter id) makes jsoncpp throw
+     Json::LogicError.  jsonrpccpp only catches JsonRpcException, so an unguarded
+     throw would unwind through the libmicrohttpd C callback and terminate the
+     whole daemon.  Convert any such throw into a normal invalid-params error. */
+  try
+    {
+      return BaseMoveProcessor::EvaluateFuelList(fightersSubmited, recipesSubmited, candiesSubmited, fightersNew, recipesNew, candiesNew, fighterData, recipeData, candylist);
+    }
+  catch (const Json::Exception& exc)
+    {
+      throw jsonrpc::JsonRpcException (
+          jsonrpc::Errors::ERROR_RPC_INVALID_PARAMS,
+          std::string ("malformed getfueldata input: ") + exc.what ());
+    }
 }
 
 

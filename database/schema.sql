@@ -85,6 +85,13 @@ CREATE TABLE IF NOT EXISTS `recepies` (
   `proto` BLOB NOT NULL
 );
 
+-- Per-owner recipe lookups (CountForOwner / QueryForOwner) gate the recipe
+-- slot-limit check on every cook and the reward-claim path; without this index
+-- they full-scan the unbounded, never-pruned `recepies` table (mirrors
+-- rewards_by_owner).
+CREATE INDEX IF NOT EXISTS `recepies_by_owner`
+  ON `recepies` (`owner`);
+
 -- Data for the rewards in the game.
 CREATE TABLE IF NOT EXISTS `rewards` (
 
@@ -130,6 +137,13 @@ CREATE TABLE IF NOT EXISTS `fighters` (
 -- instead of scanning the whole (unbounded) fighters table every block (DEF2).
 CREATE INDEX IF NOT EXISTS `fighters_by_status`
   ON `fighters` (`status`);
+
+-- Per-owner fighter lookups (CountForOwner / QueryForOwner) run on essentially
+-- every fighter-affecting move: the inventory-cap gate on cook/buy/expedition
+-- and CalculatePrestige's CollectInventoryFighters. Without this index they
+-- full-scan the unbounded `fighters` table each time (mirrors rewards_by_owner).
+CREATE INDEX IF NOT EXISTS `fighters_by_owner`
+  ON `fighters` (`owner`);
 
 -- Data stored for the Xaya players (names) themselves.
 CREATE TABLE IF NOT EXISTS `xayaplayers` (

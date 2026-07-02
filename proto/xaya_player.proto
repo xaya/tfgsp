@@ -19,8 +19,6 @@
 syntax = "proto2";
 option cc_enable_arenas = true;
 
-import "proto/ongoing.proto";
-
 package pxd.proto;
 
 /**

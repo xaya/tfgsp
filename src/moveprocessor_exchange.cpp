@@ -244,8 +244,8 @@ namespace pxd
     if(slots > ctx.RoConfig()->params().max_fighter_inventory_amount())
     {
         LOG (WARNING) << "Not enough slots to host a new fighter for " << fighterID;
-        return false;         
-    }        
+        return false;
+    }
 
     fighterDb.reset(); 
     return true;    

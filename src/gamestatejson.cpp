@@ -241,8 +241,13 @@ template <>
   {
     TournamentTable tournamentsDatabase(db);
     auto tnm = tournamentsDatabase.GetById (pb.tournamentinstanceid(), ctx.RoConfig ());
-    res["blocksleft"] = IntToJson (tnm->GetInstance().blocksleft());
-    tnm.reset();
+    /* Guard the row lookup: a serialization read must never crash the daemon if a
+       fighter references a tournament row that has already been pruned. */
+    if(tnm != nullptr)
+    {
+      res["blocksleft"] = IntToJson (tnm->GetInstance().blocksleft());
+      tnm.reset();
+    }
   }
 
   Json::Value deconstructsArray(Json::arrayValue);

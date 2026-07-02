@@ -52,7 +52,21 @@ namespace pxd
         return false;
     }
     
-    tournamentID = tournament["tid"].asInt();
+    const int64_t requestedTid = tournament["tid"].asInt();
+
+    /* Real tournament instances have positive AutoIds; non-tournament rewards
+       (expedition, sweetener, deconstruction) all carry tournamentid 0.  Reject
+       a 0 (or negative) tid so a tournament claim can never collect those rows --
+       in particular deconstruction rewards (rewardid ""), which ClaimRewardsInner
+       cannot resolve and would delete WITHOUT paying out the deconstruction
+       candy. */
+    if(requestedTid <= 0)
+    {
+        LOG (WARNING) << "Tournament claim with non-positive tid: " << requestedTid;
+        return false;
+    }
+
+    tournamentID = requestedTid;
 
     /* A claim is validated purely by the player owning reward rows tagged with
        this tournamentID (the totalEntries<=0 check below rejects bogus tids).
@@ -686,7 +700,22 @@ namespace pxd
               rewardData.reset();
               continue;
           }
-          
+
+          /* positionintable() is a DB-persisted index captured when the reward was
+             rolled; every branch below indexes rewardTableDb.rewards(pos) with it.
+             If a roconfig revision shortened this reward table after the reward was
+             created, the stale index would out-of-bounds the repeated field (UB /
+             silent fork).  Guard once here for all branches. */
+          if(rewardData->GetProto().positionintable() >= (uint32_t) rewardTableDb.rewards_size())
+          {
+              LOG (ERROR) << "Reward positionintable " << rewardData->GetProto().positionintable()
+                          << " out of range (" << rewardTableDb.rewards_size() << ") for table "
+                          << rewardData->GetProto().rewardid();
+              markedToRemove.push_back(rw);
+              rewardData.reset();
+              continue;
+          }
+
           if((pxd::RewardType)(int32_t)rewardTableDb.rewards(rewardData->GetProto().positionintable()).type() == pxd::RewardType::CraftedRecipe || (pxd::RewardType)(int32_t)rewardTableDb.rewards(rewardData->GetProto().positionintable()).type() == pxd::RewardType::GeneratedRecipe)
           {
               if(curRecipeSlots >= maxRecipeSlots)

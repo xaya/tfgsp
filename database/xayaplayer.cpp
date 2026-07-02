@@ -138,20 +138,6 @@ std::vector<FighterTable::Handle> XayaPlayer::CollectInventoryFighters(const RoC
 }
 
 
-std::vector<TournamentTable::Handle> XayaPlayer::CollectTournaments(const RoConfig& cfg)
-{
-  std::vector<TournamentTable::Handle> tournaments;
-  
-  TournamentTable tournamentsTable(db);
-  auto res = tournamentsTable.QueryAll();
-  while (res.Step ())
-  {
-      auto c = tournamentsTable.GetFromResult (res, cfg);
-      tournaments.push_back(std::move(c));
-  }
-  return tournaments;
-}
-
 fpm::fixed_24_8 XayaPlayer::GetFighterPercentageFromQuality(uint32_t quality, std::vector<FighterTable::Handle>& fighters)
 {
   fpm::fixed_24_8 totalFighters = fpm::fixed_24_8(0);

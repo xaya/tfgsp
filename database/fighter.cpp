@@ -160,11 +160,11 @@ FighterInstance::FighterInstance (Database& d, const Database::Result<FighterRes
   Validate ();
 }
 
-std::vector<pxd::ArmorType> FighterInstance::ArmorTypeFromMoveType(pxd::MoveType moveType)
+std::vector<pxd::ArmorType> ArmorTypesForMoveType(pxd::MoveType moveType)
 {
   std::vector<pxd::ArmorType> pieceList;
-    
-  switch(moveType) 
+
+  switch(moveType)
   {
      case pxd::MoveType::Heavy:
         pieceList.push_back(pxd::ArmorType::Head);
@@ -191,20 +191,23 @@ std::vector<pxd::ArmorType> FighterInstance::ArmorTypeFromMoveType(pxd::MoveType
         pieceList.push_back(pxd::ArmorType::LowerRightLeg);
         pieceList.push_back(pxd::ArmorType::RightFoot);
         pieceList.push_back(pxd::ArmorType::LeftFoot);
-        break;        
-    
+        break;
+
      // you can have any number of case statements.
      default : //Optional
         LOG (WARNING) << "Default should not be triggered for the moveType of type " << (uint32_t)moveType;
   }
 
-  return pieceList;  
+  return pieceList;
+}
+
+std::vector<pxd::ArmorType> FighterInstance::ArmorTypeFromMoveType(pxd::MoveType moveType)
+{
+  return ArmorTypesForMoveType(moveType);
 }
 
 void FighterInstance::RerollName(Amount cost, const RoConfig& cfg,  xaya::Random& rnd, pxd::Quality ql)
 {
-	MutableProto().set_isnamererolled(true);
-	
     std::vector<pxd::proto::FighterName> potentialNames;
     const auto& fighterNames = cfg->fighternames();
     
@@ -264,8 +267,14 @@ void FighterInstance::RerollName(Amount cost, const RoConfig& cfg,  xaya::Random
     {
         LOG (ERROR) << "psnm1 The script would and in infinite loop for quality" << (int32_t)GetProto().quality();
         return;
-    }    
-    
+    }
+
+    /* Only mark the fighter as rerolled once we know a name will actually be
+       drawn.  Setting this before the empty-pool early-returns above would
+       permanently lock a fighter whose candidate pool was empty (e.g. a paid nr
+       whose quality cap excluded every name) without ever changing its name. */
+    MutableProto().set_isnamererolled(true);
+
     std::vector<std::string> candidates0collected;
 	std::vector<std::string> candidates1collected;
 	

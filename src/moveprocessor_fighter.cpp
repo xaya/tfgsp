@@ -180,8 +180,18 @@ namespace pxd
 	if(HasDuplicates(fighterIDS))
 	{
 	  LOG (WARNING) << "Entry contained fighter duplicate ids";
-	  return false;             
-	}   
+	  return false;
+	}
+
+	/* The target must not also be sacrificed: DestroyUsedElements deletes every
+	   sacrifice id, so listing the target there would hard-delete the very fighter
+	   being transfigured (and could drop the player to zero fighters, which the
+	   deconstruct path explicitly forbids). */
+	if(std::find(fighterIDS.begin(), fighterIDS.end(), fighterID) != fighterIDS.end())
+	{
+	  LOG (WARNING) << "Transfigure target cannot also be a sacrifice: " << fighterID;
+	  return false;
+	}
 
     std::vector<uint32_t> itemRecipeIDS;
     for (const auto& rc : itemRecipe)
@@ -286,26 +296,10 @@ namespace pxd
 		fighterToSacrifice.reset();			
 	}
 	
+    // Type validity (isObject / a int / n string) was already fully gated by the itemCandyIDS loop
+    // above, which returns false on any malformed entry; here we only apply the balance/cap/min checks.
     for(auto& candy : itemCandy)
 	{
-		if (!candy.isObject ())
-		{
-		  VLOG (1) << "candy is not an object";
-		  return false;
-		}	
-
-		if (!candy["a"].isInt ())
-		{
-		  VLOG (1) << "candy amount not integer";
-		  return false;
-		}	
-
-		if (!candy["n"].isString ())
-		{
-		  VLOG (1) << "candy authid is not string";
-		  return false;
-		}		
- 
         int32_t ca = candy["a"].asInt();
         if(a.GetInventory().GetFungibleCount(BaseMoveProcessor::GetCandyKeyNameFromID(candy["n"].asString(), ctx)) < ca)
 			
@@ -359,44 +353,8 @@ namespace pxd
 
   std::vector<pxd::ArmorType> BaseMoveProcessor::ArmorTypeFromMoveType(pxd::MoveType moveType)
   {
-	std::vector<pxd::ArmorType> pieceList;
-    
-	  switch(moveType) 
-	  {
-		 case pxd::MoveType::Heavy:
-			pieceList.push_back(pxd::ArmorType::Head);
-			pieceList.push_back(pxd::ArmorType::RightShoulder);
-			pieceList.push_back(pxd::ArmorType::LeftShoulder);
-			break;
-		 case pxd::MoveType::Speedy:
-			pieceList.push_back(pxd::ArmorType::UpperRightArm);
-			pieceList.push_back(pxd::ArmorType::LowerRightArm);
-			pieceList.push_back(pxd::ArmorType::UpperLeftArm);
-			pieceList.push_back(pxd::ArmorType::LowerLeftArm);
-			break;
-		 case pxd::MoveType::Tricky:
-			pieceList.push_back(pxd::ArmorType::RightHand);
-			pieceList.push_back(pxd::ArmorType::Torso);
-			pieceList.push_back(pxd::ArmorType::LeftHand);
-			break;
-		 case pxd::MoveType::Distance:
-			pieceList.push_back(pxd::ArmorType::Waist);
-			pieceList.push_back(pxd::ArmorType::UpperRightLeg);
-			pieceList.push_back(pxd::ArmorType::UpperLeftLeg);
-			break;
-		 case pxd::MoveType::Blocking:
-			pieceList.push_back(pxd::ArmorType::LowerRightLeg);
-			pieceList.push_back(pxd::ArmorType::RightFoot);
-			pieceList.push_back(pxd::ArmorType::LeftFoot);
-			break;        
-		
-		 // you can have any number of case statements.
-		 default : //Optional
-			LOG (WARNING) << "Default should not be triggered for the moveType of type " << (uint32_t)moveType;
-	  }
-
-	  return pieceList;  
-  }  
+    return pxd::ArmorTypesForMoveType(moveType);
+  }
 
   bool BaseMoveProcessor::ParseDeconstructData(const XayaPlayer& a, const Json::Value& fighter, uint32_t& fighterID)
   {

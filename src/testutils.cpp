@@ -37,35 +37,6 @@ TestRandom::TestRandom ()
   Seed (seed.Finalise ());
 }
 
-namespace
-{
-
-/**
- * Global test environment that constructs BaseMap instances for all
- * possible chains.  Since this construction takes some time (due to the
- * SafeZones), we do it only once rather than in each test.
- */
-class BaseMapInstances : public testing::Environment
-{
-
-
-public:
-
-  BaseMapInstances ()
-  {
-
-  }
-
-  BaseMapInstances (const BaseMapInstances&) = delete;
-  void operator= (const BaseMapInstances&) = delete;
-
-
-};
-
-const auto* maps = testing::AddGlobalTestEnvironment (new BaseMapInstances ());
-
-} // anonymous namespace
-
 void
 ContextForTesting::SetChain (const xaya::Chain c)
 {

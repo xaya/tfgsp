@@ -175,8 +175,7 @@ public:
   fetch all kind of differnt intems in posession information*/
   
   std::vector<FighterTable::Handle> CollectInventoryFighters(const RoConfig& cfg);
-  std::vector<TournamentTable::Handle> CollectTournaments(const RoConfig& cfg);
-  
+
   /*This is calculated every block based on all the different assets 
   player contains globally for the player name*/
   
