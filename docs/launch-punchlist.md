@@ -224,6 +224,14 @@ byte-identical):
   reward-roll DRY and before mainnet.
 - The fighter-inventory cap `>` at cook/buy parse is **intentional** (speculative cook reverts with
   a full refund at resolve — `RecepieInstanceRevertIfFullRoster`), NOT an off-by-one.
+- **Frontend serving scale — SSE block-signal fanout (web client, not GSP).** Every browser today
+  holds its own GSP `waitforchange` long-poll + per-block batched read → O(clients) load per block,
+  and the first ceiling to break at hundreds–thousands of clients is the **N parked `waitforchange`
+  connections** against libxayagame's bounded RPC thread pool. Fix = one server-side reader holds the
+  single `waitforchange` loop and pushes block signals to browsers over **SSE** (reuse taurionui
+  `fanout/{reader,server}.mjs`; `tf-frontend/poller.ts` is already modeled on it) — ~1–2 days.
+  Fine to soft-launch without it (≤ low-hundreds); **load-test the parked-connection ceiling before
+  scaling wide.** Full spec in `tf-frontend/BUILD_PLAN.md` §11 "Deferred — SSE block-signal fanout".
 
 ## ✅ Confirmed clean (no action)
 
