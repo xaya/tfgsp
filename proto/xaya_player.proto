@@ -74,4 +74,14 @@ message XayaPlayer
    * receiver for on-chain rewards.
    */
   optional string address = 17;
+
+  /**
+   * Append-only counter, +1 for every activity reward credited to this player
+   * at resolve (candy / recipe / move / armor / animation).  Rewards auto-credit
+   * the moment an activity resolves (no claim tx), so the client detects "new
+   * rewards since I last looked" by watching this serial advance rather than by
+   * reading now-absent unclaimed-reward rows.  Held recipe-overflow rewards do
+   * NOT bump it until they drain into ownership (they aren't in inventory yet).
+   */
+  optional uint64 rewards_serial = 18;
 }

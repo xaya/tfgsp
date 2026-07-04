@@ -76,34 +76,19 @@ public:
    */    
   void AddSweetenerCookingInstance (const XayaPlayer& a, const std::string sweetenerKeyName, int32_t duration, int32_t fighterID, Amount cookingCost, std::map<std::string, pxd::Quantity> fungibleItemAmountForDeduction, FighterTable& fighters, const pxd::RoConfig& config); 
   
-  /**
-   * Updates the state for a cooked sweetener being claimed back on fighter
-   */  
-  void AddClaimingSweetenerReward (const XayaPlayer& a, const std::string sweetenerAuthId, int32_t fighterID, FighterTable& fighters, const pxd::RoConfig& config);
-  
    /**
    * Updates the state for a new recepie instance bundle
-   */    
+   */
   void AddExpeditionInstance (const XayaPlayer& a, int32_t duration, std::string expeditionID, std::vector<int> fighterID, FighterTable& fighters, const pxd::RoConfig& config);  
 
    /**
    * Updates the state for a collecting cooked fighter recepie
    */    
-  void AddCookedRecepieCollectInstance(const XayaPlayer& a, int32_t fighterToCollectID, FighterTable& fighters, const pxd::RoConfig& config);     
-  
-   /**
-   * Updates the state for a new pending rewards
-   */      
-  void AddRewardIDs (const XayaPlayer& a, std::vector<std::string> expeditionIDArray, std::vector<uint32_t> rewardDatabaseIds, FighterTable& fighters, const pxd::RoConfig& config);
-  
-   /**
-   * Updates the state for a new pending rewards
-   */      
-  void AddTournamentRewardIDs (const XayaPlayer& a, uint32_t tournamentID, std::vector<uint32_t> rewardDatabaseIds, FighterTable& fighters, const pxd::RoConfig& config);  
-  
+  void AddCookedRecepieCollectInstance(const XayaPlayer& a, int32_t fighterToCollectID, FighterTable& fighters, const pxd::RoConfig& config);
+
    /**
    * Updates the state for a new pending tournament entries
-   */      
+   */
   void AddTournamentEntries (const XayaPlayer& a, uint32_t tournamentID, std::vector<uint32_t> fighterIDS, FighterTable& fighters, const pxd::RoConfig& config);
   
    /**
@@ -119,16 +104,11 @@ public:
    /**
    * Updates the state for a new fighter deconstruction
    */      
-  void AddDeconstructionData (const XayaPlayer& a, uint32_t fighterID, FighterTable& fighters, const pxd::RoConfig& config);   
-  
-   /**
-   * Updates the state for a deconstructed fighter reward claiming
-   */     
-  void AddDeconstructionRewardData (const XayaPlayer& a, uint32_t fighterID, FighterTable& fighters, const pxd::RoConfig& config);
-  
+  void AddDeconstructionData (const XayaPlayer& a, uint32_t fighterID, FighterTable& fighters, const pxd::RoConfig& config);
+
    /**
    * Updates the state for a fighter being bought
-   */      
+   */
   void AddFighterForBuyData (const XayaPlayer& a, uint32_t fighterID, Amount exchangeprice, FighterTable& fighters, const pxd::RoConfig& config);
 
    /**
@@ -175,13 +155,7 @@ public:
      * Returns the JSON representation of the pending state.
      */
     Json::Value ToJson () const;
-    
-    /** IDs of rewards currently pending for claiming */
-    std::map<std::string, std::vector<uint32_t>> rewardDatabaseIds;
-    
-    /** IDs of tournaments rewards currently pending for claiming */
-    std::map<uint32_t, std::vector<uint32_t>> rewardDatabaseIdsTournaments;    
-    
+
     /** List of the tournament entries which are pending for the
         not yet started tournaments to enter
     */
@@ -194,11 +168,7 @@ public:
     
     /** Pending ids of fighters player currently  being deconstructed
     */    
-    std::vector<uint32_t> deconstructionData;    
-    
-    /** Pending ids of fighters claiming deonstruction data
-    */    
-    std::vector<uint32_t> deconstructionDataClaiming; 
+    std::vector<uint32_t> deconstructionData;
 
     /** Pending ids of fighters being putted for sale
     */    
@@ -214,14 +184,8 @@ public:
     
     /** Pending authids of currently items purchasing
     */    
-    std::vector<std::string> purchasing;   
- 
-    /** IAuth ids of sweeteners being claimed */
-    std::vector<std::string> sweetenerClaimingAuthIds;
-    
-    /** IAuth ids of sweetener fighters attached when being claimed */
-    std::vector<std::uint32_t> sweetenerClaimingFightersIds;    
-    
+    std::vector<std::string> purchasing;
+
     /** Pending ids of fighters ready to collect
     */    
     std::vector<int32_t> cookedFightersToCollect;    

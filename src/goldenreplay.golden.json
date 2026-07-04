@@ -30,7 +30,6 @@
           }
         ],
         "blocksleft" : 0,
-        "deconstructions" : [],
         "exchangeexpire" : 0,
         "exchangeprice" : 0,
         "expeditioninstanceid" : "",
@@ -77,7 +76,6 @@
           }
         ],
         "blocksleft" : 0,
-        "deconstructions" : [],
         "exchangeexpire" : 8685,
         "exchangeprice" : 500,
         "expeditioninstanceid" : "",
@@ -124,7 +122,6 @@
           }
         ],
         "blocksleft" : 0,
-        "deconstructions" : [],
         "exchangeexpire" : 0,
         "exchangeprice" : 0,
         "expeditioninstanceid" : "",
@@ -171,7 +168,6 @@
           }
         ],
         "blocksleft" : 0,
-        "deconstructions" : [],
         "exchangeexpire" : 0,
         "exchangeprice" : 0,
         "expeditioninstanceid" : "",
@@ -218,7 +214,6 @@
           }
         ],
         "blocksleft" : 0,
-        "deconstructions" : [],
         "exchangeexpire" : 0,
         "exchangeprice" : 0,
         "expeditioninstanceid" : "",
@@ -265,7 +260,6 @@
           }
         ],
         "blocksleft" : 0,
-        "deconstructions" : [],
         "exchangeexpire" : 0,
         "exchangeprice" : 0,
         "expeditioninstanceid" : "",
@@ -312,7 +306,6 @@
           }
         ],
         "blocksleft" : 0,
-        "deconstructions" : [],
         "exchangeexpire" : 0,
         "exchangeprice" : 0,
         "expeditioninstanceid" : "",
@@ -359,7 +352,6 @@
           }
         ],
         "blocksleft" : 0,
-        "deconstructions" : [],
         "exchangeexpire" : 0,
         "exchangeprice" : 0,
         "expeditioninstanceid" : "",
@@ -406,7 +398,6 @@
           }
         ],
         "blocksleft" : 0,
-        "deconstructions" : [],
         "exchangeexpire" : 0,
         "exchangeprice" : 0,
         "expeditioninstanceid" : "",
@@ -453,7 +444,6 @@
           }
         ],
         "blocksleft" : 0,
-        "deconstructions" : [],
         "exchangeexpire" : 0,
         "exchangeprice" : 0,
         "expeditioninstanceid" : "",
@@ -500,7 +490,6 @@
           }
         ],
         "blocksleft" : 0,
-        "deconstructions" : [],
         "exchangeexpire" : 0,
         "exchangeprice" : 0,
         "expeditioninstanceid" : "c064e7f7-acbf-4f74-fab8-cccd7b2d4004",
@@ -547,7 +536,6 @@
           }
         ],
         "blocksleft" : 6,
-        "deconstructions" : [],
         "exchangeexpire" : 0,
         "exchangeprice" : 0,
         "expeditioninstanceid" : "",
@@ -594,7 +582,6 @@
           }
         ],
         "blocksleft" : 16,
-        "deconstructions" : [],
         "exchangeexpire" : 0,
         "exchangeprice" : 0,
         "expeditioninstanceid" : "",
@@ -641,7 +628,6 @@
           }
         ],
         "blocksleft" : 11,
-        "deconstructions" : [],
         "exchangeexpire" : 0,
         "exchangeprice" : 0,
         "expeditioninstanceid" : "93ad71bb-cd8f-dc24-7885-2c3fd0013245",
@@ -688,7 +674,6 @@
           }
         ],
         "blocksleft" : 0,
-        "deconstructions" : [],
         "exchangeexpire" : 0,
         "exchangeprice" : 0,
         "expeditioninstanceid" : "",
@@ -798,46 +783,11 @@
       },
       {
         "authoredid" : "ba0121ba-e8a6-7e64-9bc1-71dfeca27daa",
-        "did" : 58,
-        "owner" : ""
+        "did" : 57,
+        "owner" : "andy"
       }
     ],
-    "rewards" : 
-    [
-      {
-        "expeditionid" : "c064e7f7-acbf-4f74-fab8-cccd7b2d4004",
-        "fighterid" : 26,
-        "generatedrecipeid" : 58,
-        "owner" : "andy",
-        "positionintable" : 0,
-        "rewardid" : "e72d7dc0-2b81-d114-3803-652de993041f",
-        "rid" : 57,
-        "sweetenerid" : "",
-        "tournamentid" : 0
-      },
-      {
-        "expeditionid" : "c064e7f7-acbf-4f74-fab8-cccd7b2d4004",
-        "fighterid" : 26,
-        "generatedrecipeid" : 0,
-        "owner" : "andy",
-        "positionintable" : 1,
-        "rewardid" : "e72d7dc0-2b81-d114-3803-652de993041f",
-        "rid" : 59,
-        "sweetenerid" : "",
-        "tournamentid" : 0
-      },
-      {
-        "expeditionid" : "c064e7f7-acbf-4f74-fab8-cccd7b2d4004",
-        "fighterid" : 26,
-        "generatedrecipeid" : 0,
-        "owner" : "andy",
-        "positionintable" : 2,
-        "rewardid" : "e72d7dc0-2b81-d114-3803-652de993041f",
-        "rid" : 60,
-        "sweetenerid" : "",
-        "tournamentid" : 0
-      }
-    ],
+    "rewards" : [],
     "tournaments" : 
     [
       {
@@ -1066,9 +1016,9 @@
         {
           "fungible" : 
           {
-            "Common_Candy Cane" : 9,
+            "Common_Candy Cane" : 19,
             "Common_Chocolate Chip" : 20,
-            "Common_Fizzy Powder" : 9,
+            "Common_Fizzy Powder" : 19,
             "Common_Icing" : 20,
             "Common_Nonpareil" : 10
           }
@@ -1078,8 +1028,10 @@
         "prestige" : 1586,
         "recepies" : 
         [
-          10
+          10,
+          57
         ],
+        "rewardsserial" : 3,
         "tournamentperformance" : 1,
         "valuecommon" : 476,
         "valueepic" : 0,
@@ -1117,6 +1069,7 @@
         [
           15
         ],
+        "rewardsserial" : 0,
         "tournamentperformance" : 1,
         "valuecommon" : 476,
         "valueepic" : 0,
@@ -1155,6 +1108,7 @@
           20,
           1
         ],
+        "rewardsserial" : 0,
         "tournamentperformance" : 1,
         "valuecommon" : 476,
         "valueepic" : 0,
@@ -1194,6 +1148,7 @@
         [
           25
         ],
+        "rewardsserial" : 0,
         "tournamentperformance" : 1,
         "valuecommon" : 476,
         "valueepic" : 0,
@@ -1224,6 +1179,7 @@
         [
           5
         ],
+        "rewardsserial" : 0,
         "tournamentperformance" : 1,
         "valuecommon" : 476,
         "valueepic" : 0,

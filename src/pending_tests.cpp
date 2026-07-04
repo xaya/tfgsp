@@ -246,32 +246,6 @@ TEST_F (PendingStateUpdaterTests, CrystalBalancePendingTestings)
   )");
 }
 
-TEST_F (PendingStateUpdaterTests, TestSweetenerCollect) //(*a, sweetenerAuthId, fighterID, fighters, ctx.RoConfig ());  
-{
-    auto a = xayaplayers.CreateNew ("testy2", ctx.RoConfig(), rnd);
-    state.AddClaimingSweetenerReward (*a, "authyauth", 14, tbl3, ctx.RoConfig ());
-    a.reset();
-    
-    ExpectStateJson (R"(
-    {
-      "xayaplayers":
-        [
-          {
-            "name": "testy2",
-			"sweetclmauth" : 
-			[
-              "authyauth"
-			],
-			"sweetclmfghtr" : 
-			[
-              14
-			]            
-          }
-        ]
-    }
-  )");    
-}
-
 /*
 TEST_F (PendingStateUpdaterTests, BatchSubmitPendingTests)
 {
@@ -511,43 +485,6 @@ TEST_F (PendingStateUpdaterTests, PendingTournamentEntryDoesNotWriteQueueData)
   EXPECT_EQ (globalData.GetQueueData(), "");
 }
 
-
-TEST_F (PendingStateUpdaterTests, ExpeditionGetRewards)
-{
-  auto a = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
-  
-  std::vector<std::string> expeditionIDArray;
-  expeditionIDArray.push_back("tst");
-  std::vector<uint32_t> rewardDatabaseIds;
-  rewardDatabaseIds.push_back(1);
-  rewardDatabaseIds.push_back(4);
-   
-  state.AddRewardIDs (*a, expeditionIDArray, rewardDatabaseIds, tbl3, ctx.RoConfig ());
-  a.reset ();
-   
-  ExpectStateJson (R"(
-    {
-    "xayaplayers" : 
-	[
-		{
-			"claimingrewards" : 
-			[
-				{
-					"ids" : 
-					[
-						1,
-						4
-					],
-					"type" : "tst"
-				}
-			],
-			"name" : "domob"
-		}
-	]
-    }
-  )"); 
-  
-}
 
 TEST_F (PendingStateUpdaterTests, SubmitRecepieInstanceMultiple)
 {

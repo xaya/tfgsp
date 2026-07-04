@@ -462,7 +462,6 @@ TEST_F (XayaPlayersJsonTests, ExpeditionInstance)
                                 }
                         ],
                         "blocksleft" : 0,
-                        "deconstructions" : [],
                         "exchangeexpire" : 0,
                         "exchangeprice" : 0,
                         "expeditioninstanceid" : "",
@@ -507,7 +506,6 @@ TEST_F (XayaPlayersJsonTests, ExpeditionInstance)
                                 }
                         ],
                         "blocksleft" : 0,
-                        "deconstructions" : [],
                         "exchangeexpire" : 0,
                         "exchangeprice" : 0,
                         "expeditioninstanceid" : "",

@@ -91,16 +91,6 @@ PendingState::AddCrystalPurchase (const XayaPlayer& a, std::string crystalBundle
 }
 
 void
-PendingState::AddClaimingSweetenerReward (const XayaPlayer& a, const std::string sweetenerAuthId, int32_t fighterID, FighterTable& fighters, const pxd::RoConfig& config)
-{
-  VLOG (1) << "Adding pending claiming sweetener reward" << a.GetName ();
-
-  auto& aState = GetXayaPlayerState (a, fighters, config);
-  aState.sweetenerClaimingAuthIds.push_back(sweetenerAuthId);
-  aState.sweetenerClaimingFightersIds.push_back(fighterID);
-}
-
-void
 PendingState::AddSweetenerCookingInstance (const XayaPlayer& a, const std::string sweetenerKeyName, int32_t duration, int32_t fighterID, Amount cookingCost, std::map<std::string, pxd::Quantity> fungibleItemAmountForDeduction, FighterTable& fighters, const pxd::RoConfig& config)
 {
   VLOG (1) << "Adding pending sweetener cooking operation for name" << a.GetName ();
@@ -278,66 +268,12 @@ PendingState::AddFighterForSaleData (const XayaPlayer& a, uint32_t fighterID, Am
 }
 
 void
-PendingState::AddDeconstructionRewardData (const XayaPlayer& a, uint32_t fighterID, FighterTable& fighters, const pxd::RoConfig& config)
-{
-  VLOG (1) << "Adding deconstruction reward claiming for name" << a.GetName ();
-  
-  auto& aState = GetXayaPlayerState (a, fighters, config);
-  aState.deconstructionDataClaiming.push_back(fighterID);  
-}
-
-void
 PendingState::AddDeconstructionData (const XayaPlayer& a, uint32_t fighterID, FighterTable& fighters, const pxd::RoConfig& config)
 {
   VLOG (1) << "Adding pending tournament retracts for name" << a.GetName ();
   
   auto& aState = GetXayaPlayerState (a, fighters, config);
   aState.deconstructionData.push_back(fighterID);  
-}
-
-void
-PendingState::AddRewardIDs (const XayaPlayer& a, std::vector<std::string> expeditionIDArray, std::vector<uint32_t> rewardDatabaseIds, FighterTable& fighters, const pxd::RoConfig& config)
-{
-  VLOG (1) << "Adding pending claim reward operations for name" << a.GetName ();
-
-  auto& aState = GetXayaPlayerState (a, fighters, config);
-  
-  for(auto& expeditionName: expeditionIDArray)
-  {
-    const auto mit = aState.rewardDatabaseIds.find (expeditionName);
-    if (mit == aState.rewardDatabaseIds.end ())
-    {
-      aState.rewardDatabaseIds.insert(std::pair<std::string, std::vector<uint32_t>>(expeditionName, rewardDatabaseIds));  
-    }
-    else
-    {
-      for(const auto& val: rewardDatabaseIds)
-      {
-        aState.rewardDatabaseIds[expeditionName].push_back(val); 
-      }
-    }
-  }
-}
-
-void
-PendingState::AddTournamentRewardIDs (const XayaPlayer& a, uint32_t tournamentID, std::vector<uint32_t> rewardDatabaseIds, FighterTable& fighters, const pxd::RoConfig& config)
-{
-  VLOG (1) << "Adding pending claim reward operations for name" << a.GetName ();
-
-  auto& aState = GetXayaPlayerState (a, fighters, config);
-  
-  const auto mit = aState.rewardDatabaseIdsTournaments.find (tournamentID);
-  if (mit == aState.rewardDatabaseIdsTournaments.end ())
-  {
-    aState.rewardDatabaseIdsTournaments.insert(std::pair<uint32_t, std::vector<uint32_t>>(tournamentID, rewardDatabaseIds));  
-  }
-  else
-  {
-    for(const auto& val: rewardDatabaseIds)
-    {
-      aState.rewardDatabaseIdsTournaments[tournamentID].push_back(val); 
-    }
-  }
 }
 
 Json::Value
@@ -393,53 +329,7 @@ PendingState::XayaPlayerState::ToJson () const
   {
     res["balance"] = balance;
   }
-  
-  
 
-  if(rewardDatabaseIds.size() > 0)
-  {
-    Json::Value dtbrw(Json::arrayValue);
-    for(const auto& rw: rewardDatabaseIds) 
-    {
-      Json::Value rwOBJ(Json::objectValue);
-      rwOBJ["type"] = rw.first;
-      
-      Json::Value idsArr(Json::arrayValue);
-      for(const auto& vv: rw.second) 
-      {
-      idsArr.append(vv);
-      }
-      
-      rwOBJ["ids"] = idsArr;
-      
-      dtbrw.append(rwOBJ);
-    }  
-        
-    res["claimingrewards"] = dtbrw;  
-  }
-  
-  if(rewardDatabaseIdsTournaments.size() > 0)
-  {
-    Json::Value dtbrw(Json::arrayValue);
-    for(const auto& rw: rewardDatabaseIdsTournaments) 
-    {
-      Json::Value rwOBJ(Json::objectValue);
-      rwOBJ["type"] = IntToJson(rw.first);
-      
-      Json::Value idsArr(Json::arrayValue);
-      for(const auto& vv: rw.second) 
-      {
-      idsArr.append(vv);
-      }
-      
-      rwOBJ["ids"] = idsArr;
-      
-      dtbrw.append(rwOBJ);
-    }  
-        
-    res["claimingrewardstournament"] = dtbrw;  
-  }  
-  
   if(tournamentEntries.size() > 0)
   {
     Json::Value trnmentr(Json::arrayValue);
@@ -490,20 +380,9 @@ PendingState::XayaPlayerState::ToJson () const
       fghttrs.append(rw);
     }  
       
-    res["deconstruction"] = fghttrs;      
-  }   
+    res["deconstruction"] = fghttrs;
+  }
 
-  if(deconstructionDataClaiming.size() > 0)
-  {
-    Json::Value fghttrs(Json::arrayValue);
-    for(const auto& rw: deconstructionDataClaiming) 
-    {
-      fghttrs.append(rw);
-    }  
-      
-    res["deconstructionClaiming"] = fghttrs;      
-  }     
-  
   if(cookedFightersToCollect.size() > 0)
   {
     Json::Value fghttrs(Json::arrayValue);
@@ -534,28 +413,9 @@ PendingState::XayaPlayerState::ToJson () const
       purchasingArr.append(pp);
     }  
       
-    res["purchasing"] = purchasingArr;       
-  }  
-  
-  if(sweetenerClaimingAuthIds.size() > 0)
-  {
-    Json::Value sweetClaimingArr(Json::arrayValue);
-    for(const auto& sclm: sweetenerClaimingAuthIds) 
-    {
-      sweetClaimingArr.append(sclm);
-    }  
-      
-    res["sweetclmauth"] = sweetClaimingArr;         
-    
-    Json::Value sweetClaimingFighterArr(Json::arrayValue);
-    for(const auto& sclm: sweetenerClaimingFightersIds) 
-    {
-      sweetClaimingFighterArr.append(sclm);
-    }  
-      
-    res["sweetclmfghtr"] = sweetClaimingFighterArr;       
+    res["purchasing"] = purchasingArr;
   }
-  
+
   if(fightingForSale.size() > 0)
   {
     Json::Value forSaleArr(Json::arrayValue);
@@ -723,7 +583,6 @@ PendingStateUpdater::ProcessMove (const Json::Value& moveObj)
       int32_t duration = -1;
       std::string weHaveApplibeGoodyName = "";
       std::string sweetenerKeyName = "";
-      std::vector<uint32_t> rewardDatabaseIds;  
       Amount price = 0;
       
       Json::Value& upd = mrl["ca"];
@@ -751,13 +610,7 @@ PendingStateUpdater::ProcessMove (const Json::Value& moveObj)
         
         if(ParseSweetener(*a, name, upd["s"], fungibleItemAmountForDeduction, cookCost, fighterID, duration, sweetenerKeyName))
         {
-           state.AddSweetenerCookingInstance(*a, sweetenerKeyName, duration, fighterID, cookCost, fungibleItemAmountForDeduction, fighters, ctx.RoConfig ());  
-        }
-        
-        std::string sweetenerAuthId = "";
-        if(ParseClaimSweetener(*a, name, upd["sc"], fighterID, rewardDatabaseIds, sweetenerAuthId))
-        {
-           state.AddClaimingSweetenerReward(*a, sweetenerAuthId, fighterID, fighters, ctx.RoConfig ());   
+           state.AddSweetenerCookingInstance(*a, sweetenerKeyName, duration, fighterID, cookCost, fungibleItemAmountForDeduction, fighters, ctx.RoConfig ());
         }
       }
       
@@ -770,15 +623,7 @@ PendingStateUpdater::ProcessMove (const Json::Value& moveObj)
         if(ParseExpeditionData(*a, upd2["f"], expeditionBlueprint, fighter, duration, weHaveApplibeGoodyName))
         {
           state.AddExpeditionInstance(*a, duration, expeditionBlueprint.authoredid(), fighter, fighters, ctx.RoConfig ());
-        }  
-
-        std::vector<std::string> expeditionIDArray;
-        
-        if(ParseRewardData(*a, upd2["c"], rewardDatabaseIds, expeditionIDArray))
-        {
-          state.AddRewardIDs(*a, expeditionIDArray, rewardDatabaseIds, fighters, ctx.RoConfig ());
-        }  
-        
+        }
       }
       
       Json::Value& upd3 = mrl["tm"];   
@@ -796,14 +641,9 @@ PendingStateUpdater::ProcessMove (const Json::Value& moveObj)
         
         if(ParseTournamentLeaveData(*a, name, upd3["l"], tournamentID, fighterIDSL))
         {
-           state.AddTournamentLeaves(*a, tournamentID, fighterIDSL, fighters, ctx.RoConfig ());  
-        }    
-        
-        if(ParseTournamentRewardData(*a, upd3["c"], rewardDatabaseIds, tournamentID))
-        {
-           state.AddTournamentRewardIDs(*a, tournamentID, rewardDatabaseIds, fighters, ctx.RoConfig ()); 
-        }    
-      }  
+           state.AddTournamentLeaves(*a, tournamentID, fighterIDSL, fighters, ctx.RoConfig ());
+        }
+      }
       
       Json::Value& upd4 = mrl["f"];   
       Amount exchangeprice = 0;
@@ -813,14 +653,9 @@ PendingStateUpdater::ProcessMove (const Json::Value& moveObj)
       {  
         if(ParseDeconstructData(*a, upd4["d"], fighterID))
         {
-          state.AddDeconstructionData(*a, fighterID, fighters, ctx.RoConfig ());  
+          state.AddDeconstructionData(*a, fighterID, fighters, ctx.RoConfig ());
         }
-        
-        if(ParseDeconstructRewardData(*a, upd4["c"], fighterID))
-        {
-          state.AddDeconstructionRewardData(*a, fighterID, fighters, ctx.RoConfig ());  
-        }    
-        
+
         uint32_t durationI = -1;
         if(ParseFighterForSaleData(*a, upd4["s"], fighterID, durationI, price, listingfee))
         {

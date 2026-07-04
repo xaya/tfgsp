@@ -250,32 +250,10 @@ template <>
     }
   }
 
-  Json::Value deconstructsArray(Json::arrayValue);
-  
-  RewardsTable tbl(db);
-  auto ourRewards = tbl.QueryForOwner(fighter.GetOwner ());
-  bool stepLoop = ourRewards.Step ();
-  while (stepLoop)
-  {
-      auto h = tbl.GetFromResult (ourRewards);
-      
-      if(h->GetProto().fighterid() == fighter.GetId() && h->GetProto().deconstructions_size() > 0)
-      {
-          for(const auto& dcdata: h->GetProto().deconstructions())
-          {
-              Json::Value dcObj(Json::objectValue);
-              dcObj["candytype"] = dcdata.candytype();
-              dcObj["quantity"] = dcdata.quantity();
-              deconstructsArray.append(dcObj);
-          }
-      }
-      
-	  h.reset();
-      stepLoop = ourRewards.Step ();
-  }  
-  
-  res["deconstructions"] = deconstructsArray;
-  
+  /* Deconstruction candy now credits straight into inventory at resolve (no
+     reward row, no held deconstruction data), so there is nothing per-fighter to
+     serialize here -- the old rewards-table scan is dead and has been removed. */
+
   Json::Value salesHistory(Json::arrayValue);
   
   for (int i = 0; i < pb.salehistory_size (); ++i)
@@ -364,6 +342,10 @@ template <>
   Json::Value bal(Json::objectValue);
   bal["available"] = IntToJson (a.GetBalance ());
   res["balance"] = bal;
+
+  /* Append-only reward counter: the client watches this advance to know new
+     activity rewards were auto-credited (no claim tx / unclaimed rows to read). */
+  res["rewardsserial"] = IntToJson (pb.rewards_serial ());
 
   res["inventory"] = Convert (a.GetInventory ());
   

@@ -110,12 +110,32 @@ public:
                            xaya::Chain chain,
                            const Json::Value& blockData);  
 						   
-  /** Helper function that generates and pushes new reward instance into the database and returns unique auto ID */
-  static std::vector<uint32_t> GenerateActivityReward(const uint32_t fighterID, const std::string& blueprintAuthID, 
-  const uint32_t tournamentID,  const pxd::proto::AuthoredActivityReward& rw, const Context& ctx, Database& db, 
+  /** Rolls one activity-reward table entry at resolve, recursing through
+      RewardType::List sub-tables, and credits each leaf reward directly into the
+      player/fighter via CreditActivityReward (no claim tx).  */
+  static void GenerateActivityReward(const uint32_t fighterID, const std::string& blueprintAuthID,
+  const uint32_t tournamentID,  const pxd::proto::AuthoredActivityReward& rw, const Context& ctx, Database& db,
   std::unique_ptr<XayaPlayer>& a, xaya::Random& rnd, const uint32_t posInTableList,
   const std::string& basedRewardsTableAuthId, const std::string& sweetenerAuthID,
   const uint32_t recursionDepth = 0);
+
+  /** Credits one rolled leaf reward directly into player/fighter state at resolve.
+      Candy/move/armor/animation credit unconditionally (move/armor/anim drop if
+      their target fighter is gone -- HALT-01); recipe rewards credit if a recipe
+      slot is free, else HOLD as a bounded overflow row that auto-drains later.
+      Bumps rewards_serial on each landed reward.  Adds no rnd draw beyond the
+      recipe generation that already happened at resolve.  The reward source
+      (Expedition/Tournament/Sweetener) is derived from the id args.  */
+  static void CreditActivityReward(std::unique_ptr<XayaPlayer>& a, const uint32_t fighterID,
+  const std::string& blueprintAuthID, const uint32_t tournamentID,
+  const pxd::proto::AuthoredActivityReward& rw, const Context& ctx, Database& db, xaya::Random& rnd,
+  const uint32_t posInTableList, const std::string& basedRewardsTableAuthId, const std::string& sweetenerAuthID);
+
+  /** Drains held recipe-overflow rewards (owner=player rows carrying a generated
+      recipe) into ownership, oldest-first, while recipe slots remain.  Event-driven:
+      call only when the player frees a recipe slot or right after crediting.
+      O(pending), bounded by max_unclaimed_reward_amount; adds no rnd draw.  */
+  static void DrainPendingRecipeRewards(std::unique_ptr<XayaPlayer>& a, const Context& ctx, Database& db);
 
   /**
    * When cooking sweetener operation reaches 0 blocks, we either

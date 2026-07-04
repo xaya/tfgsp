@@ -399,13 +399,8 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
 		MaybeCookSweetener (name, upd["s"]);  
 	}
 
-    /*Trying to claim sweetener rewards */
-	const auto& ref5 = upd["sc"];
-    if (!ref5.isNull ())
-	{
-		MaybeClaimSweetenerReward (name, upd["sc"]);   
-	}	
-  } 
+    /* Sweetener rewards auto-credit at resolve -- no claim verb. */
+  }
   
   void
   MoveProcessor::TryExpeditionAction (const std::string& name,
@@ -421,14 +416,8 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
 		MaybeGoForExpedition (name, upd["f"]);
 	}
     
-    /*Trying to claim reward from the finished expedition*/
-	const auto& ref2 = upd["c"];
-    if (!ref2.isNull ())
-	{	
-		MaybeClaimReward (name, upd["c"]);    
-	}
- 
-  }  
+    /* Expedition rewards auto-credit at resolve -- no claim verb. */
+  }
   
 
   void
@@ -452,13 +441,8 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
 		MaybeLeaveTournament (name, upd["l"]);     
 	}
 
-    /*Trying to claim reward from the finished tournament*/
-	const auto& ref3 = upd["c"];
-    if (!ref3.isNull ())
-	{	
-		MaybeClaimTournamentReward (name, upd["c"]);  
-	}    
-  }     
+    /* Tournament rewards auto-credit at resolve -- no claim verb. */
+  }
   
   void
   MoveProcessor::TryFighterAction (const std::string& name,
@@ -474,12 +458,7 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
 		MaybeDeconstructFighter (name, upd["d"]); 
 	}
     
-    /*Trying to claim reward after deconstruction is done*/
-	const auto& ref2 = upd["c"];
-    if (!ref2.isNull ())
-	{	
-		MaybeClaimDeconstructionReward (name, upd["c"]);  
-	}
+    /* Deconstruction candy auto-credits at resolve -- no claim verb. */
 
     /*Trying to auction the fighter*/
 	const auto& ref3 = upd["s"];

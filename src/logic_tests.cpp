@@ -511,18 +511,24 @@ TEST_F (ValidateStateTests, GeneratedRecipeMakeSureItWorks)
   ft = tbl3.GetById(2, ctx.RoConfig());
   ft.reset();
   
-  EXPECT_EQ (tbl2.CountForOwner(""), 3);
-  auto res = tbl2.QueryForOwner("");
-  ASSERT_TRUE (res.Step ());
-  ASSERT_TRUE (res.Step ());
-  ASSERT_TRUE (res.Step ());
-  auto r = tbl2.GetFromResult (res);
-  
-  EXPECT_EQ (r->GetProto().authoredid(), "generated");
-  
-  EXPECT_EQ (r->GetProto().moves_size(), 3);
-  EXPECT_EQ (r->GetProto().requiredcandy_size(), 3);
-} 
+  /* The generated recipe is auto-credited to the player at resolve (no claim),
+     so the unowned-template count is unchanged and it appears among domob's. */
+  EXPECT_EQ (tbl2.CountForOwner(""), 2);
+
+  bool foundGenerated = false;
+  auto res = tbl2.QueryForOwner("domob");
+  while (res.Step ())
+  {
+    auto r = tbl2.GetFromResult (res);
+    if (r->GetProto().authoredid() == "generated")
+    {
+      foundGenerated = true;
+      EXPECT_EQ (r->GetProto().moves_size(), 3);
+      EXPECT_EQ (r->GetProto().requiredcandy_size(), 3);
+    }
+  }
+  EXPECT_TRUE (foundGenerated);
+}
 
 TEST_F (ValidateStateTests, RecepieInstanceFailWithMissingIngridients)
 {
@@ -566,9 +572,11 @@ TEST_F (ValidateStateTests, RecepieInstanceFailWithMissingIngridients)
 
 TEST_F (ValidateStateTests, SweetenerRandomRewardConsistency)
 {
-  /* This test validates deterministic sweetener reward RNG by accumulating
-     thousands of unclaimed rewards; raise the H5 cap so it does not interfere. */
-  const_cast<proto::ConfigData&>(*ctx.RoConfig()).mutable_params()->set_max_unclaimed_reward_amount(10000000);
+  /* This test validates deterministic sweetener reward RNG.  Rewards now
+     auto-credit at resolve; raise the recipe cap so recipe rewards always credit
+     (never overflow into the held queue), keeping the credited-reward count a
+     clean determinism fingerprint that the append-only rewards_serial tracks. */
+  const_cast<proto::ConfigData&>(*ctx.RoConfig()).mutable_params()->set_max_recipe_inventory_amount(10000000);
 
   auto pl = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
   pl->AddBalance(100);
@@ -607,56 +615,53 @@ TEST_F (ValidateStateTests, SweetenerRandomRewardConsistency)
   }
   
   
-  /* Deterministic total across 1000 sweetener rolls.  Re-pinned 2063 -> 2046
-     after the FN1 reward-roll fix (`<=` -> `<`): the corrected roll shifts a
-     handful of per-roll bucket selections (last bucket now reachable, first no
-     longer over-weighted), changing the cumulative reward count. */
-  EXPECT_EQ (tbl4.CountForOwner("domob"), 2046);
-  
+  /* Deterministic credited-reward total across 1000 sweetener rolls.  The RNG
+     stream is unchanged by the auto-credit rewrite (crediting adds no draw and
+     the recipe Generate draw still fires), so every reward that used to become an
+     unclaimed row now bumps the serial 1:1 -> the fingerprint carries over as
+     2046.  RE-PIN from the build if this diverges. */
+  auto plFinal = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  ASSERT_TRUE (plFinal != nullptr);
+  EXPECT_EQ (plFinal->GetProto().rewards_serial(), 2046u);
+  EXPECT_EQ (tbl4.CountForOwner("domob"), 0);   // nothing overflowed
+  plFinal.reset();
 
-
+  /* Restore the production default: RoConfig is a process-global mutable
+     singleton shared across tests. */
+  const_cast<proto::ConfigData&>(*ctx.RoConfig()).mutable_params()->set_max_recipe_inventory_amount(48);
 }
 
-TEST_F (ValidateStateTests, UnclaimedRewardCapRejectsPassiveRewards)
+TEST_F (ValidateStateTests, RecipeOverflowQueueIsBounded)
 {
-  /* H5: once a player holds max_unclaimed_reward_amount unclaimed rewards, no
-     further passive (sweetener/expedition/tournament) rewards are granted, so
-     the rewards table can never grow without bound. */
-  const_cast<proto::ConfigData&>(*ctx.RoConfig()).mutable_params()->set_max_unclaimed_reward_amount(3);
+  /* The held recipe-overflow queue is the only remaining user of the rewards
+     table; max_unclaimed_reward_amount bounds it so it can never grow without
+     bound (the DB-bloat guard).  With recipe slots forced full, every recipe
+     reward overflows; past the queue cap the recipe is dropped, not stored. */
+  proto::ConfigData& cfg = const_cast<proto::ConfigData&>(*ctx.RoConfig());
+  cfg.mutable_params()->set_max_recipe_inventory_amount(0);   // every recipe reward overflows
+  cfg.mutable_params()->set_max_unclaimed_reward_amount(3);   // overflow-queue cap
 
   auto pl = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
-  pl->GetInventory().SetFungibleCount("Sweetener_R2", 1);
-  pl->GetInventory().SetFungibleCount("Common_Icing", 10);
-  pl->GetInventory().SetFungibleCount("Common_Fruit Slice", 10);
-  pl.reset();
 
-  auto ft = tbl3.GetById(4, ctx.RoConfig());
-  ASSERT_TRUE (ft != nullptr);
-  ft->MutableProto().set_rating(1210);
-  ft->MutableProto().set_sweetness((int)pxd::Sweetness::Bittersweet);
-  ft.reset();
+  pxd::proto::AuthoredActivityReward rec;
+  rec.set_type ((uint32_t) pxd::RewardType::GeneratedRecipe);
+  rec.set_generatedrecipequality (1);
 
-  tbl2.GetById(1)->SetOwner("domob");
-
-  /* Each ResolveSweetener mints ~2 rewards; the count must clamp at the cap (3)
-     and never exceed it no matter how many times we roll. */
   for (unsigned i = 0; i < 20; ++i)
   {
-    pl = xayaplayers.GetByName ("domob", ctx.RoConfig());
-    auto f = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
-    int fID = f->GetId();
-    f.reset();
-    PXLogic::ResolveSweetener(pl, "a5d19aba-ba28-01d4-e8a7-77ba3481288e", fID, 0, db, ctx, rnd);
-    pl.reset();
-    UpdateState ("[]");
-    EXPECT_LE (tbl4.CountForOwner("domob"), 3u);
+    PXLogic::CreditActivityReward (pl, 0, "someexp", 0, rec, ctx, db, rnd, 0, "sometable", "");
+    EXPECT_LE (tbl4.CountForOwner("domob"), 3u);   // clamps at the cap, never grows past it
   }
 
   EXPECT_EQ (tbl4.CountForOwner("domob"), 3u);
+  /* Held recipes are not credited, so the serial stayed at 0 the whole time. */
+  EXPECT_EQ (pl->GetProto().rewards_serial(), 0u);
+  pl.reset();
 
   /* RoConfig is a process-global mutable singleton shared across tests; restore
-     the production default so this small cap does not leak into later tests. */
-  const_cast<proto::ConfigData&>(*ctx.RoConfig()).mutable_params()->set_max_unclaimed_reward_amount(100);
+     the production defaults so these small caps do not leak into later tests. */
+  cfg.mutable_params()->set_max_recipe_inventory_amount(48);
+  cfg.mutable_params()->set_max_unclaimed_reward_amount(100);
 }
 
 TEST_F (ValidateStateTests, SweetenerCookAndProperRewardsClaimed)
@@ -689,32 +694,30 @@ TEST_F (ValidateStateTests, SweetenerCookAndProperRewardsClaimed)
 
   EXPECT_EQ (tbl4.CountForOwner("domob"), 0);
 
+  ft = tbl3.GetById(4, ctx.RoConfig());
+  ASSERT_TRUE (ft != nullptr);
+  EXPECT_EQ(ft->GetProto().moves_size(), 2);   // 2 base moves before the cook resolves
+  ft.reset();
+
   for (unsigned i = 0; i < 22; ++i)
   {
     UpdateState ("[]");
   }
-  
+
   pl = xayaplayers.GetByName ("domob", ctx.RoConfig());
   ASSERT_TRUE (pl != nullptr);
   EXPECT_EQ (pl->GetOngoingsSize (), 0);
-  pl.reset();  
-    
-  EXPECT_EQ (tbl4.CountForOwner("domob"), 1);
+  /* Auto-credit at resolve: the sweetener's move reward is applied to the fighter
+     the moment the cook resolves -- no claim step, no reward row. */
+  EXPECT_EQ (pl->GetProto().rewards_serial(), 1u);
+  pl.reset();
+
+  EXPECT_EQ (tbl4.CountForOwner("domob"), 0);
 
   ft = tbl3.GetById(4, ctx.RoConfig());
-  ASSERT_TRUE (ft != nullptr); 
-  EXPECT_EQ(ft->GetProto().moves_size(), 2);
+  ASSERT_TRUE (ft != nullptr);
+  EXPECT_EQ(ft->GetProto().moves_size(), 3);    // sweetener move granted at resolve
   ft.reset();
-
-  Process (R"([
-    {"name": "domob", "move": {"ca": {"sc": {"fid": 4}}}}
-  ])"); 
-
-  EXPECT_EQ (tbl4.CountForOwner("domob"), 0);  
-  
-  ft = tbl3.GetById(4, ctx.RoConfig());
-  ASSERT_TRUE (ft != nullptr); 
-  EXPECT_EQ(ft->GetProto().moves_size(), 3);
 }
 
 TEST_F (ValidateStateTests, ExpeditionInstanceSolveTwiceTest)
@@ -799,13 +802,11 @@ TEST_F (ValidateStateTests, ClaimRewardsAfterExpedition)
   
   a = xayaplayers.GetByName ("domob", ctx.RoConfig());
   EXPECT_EQ (a->GetOngoingsSize (), 0);
+  /* Auto-credit at resolve: c064e7f7 rolls a List of 1 CraftedRecipe + 2 Candy.
+     All three credit straight into the player at resolve (recipe slot free), so
+     the rewards table holds nothing and the serial advanced by 3. */
+  EXPECT_EQ (a->GetProto().rewards_serial(), 3u);
   a.reset ();
-  
-  EXPECT_EQ (tbl4.CountForOwner("domob"), 3);
-  
-  Process (R"([
-    {"name": "domob", "move": {"exp": {"c": {"eid": "c064e7f7-acbf-4f74-fab8-cccd7b2d4004"}}}}
-  ])");  
 
   EXPECT_EQ (tbl4.CountForOwner("domob"), 0);
 }
@@ -821,115 +822,61 @@ TEST_F (ValidateStateTests, ClaimRewardsTestAllRewardTypesBeingAwardedProperly)
   
   Process (R"([
     {"name": "domob", "move": {"exp": {"f": {"eid": "00000000-0000-0000-zzzz-zzzzzzzzzzzz", "fid": 4}}}}
-  ])");  
-  
-  for (unsigned i = 0; i < 1; ++i)
-  {
-    UpdateState ("[]");
-  }  
-  
-  auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
-  a.reset ();
-   
-  ft = tbl3.GetById(4, ctx.RoConfig());
-  ft.reset();
-  
-  EXPECT_EQ (tbl2.CountForOwner(""), 3);
-  auto res = tbl2.QueryForOwner("");
-  ASSERT_TRUE (res.Step ());
-  ASSERT_TRUE (res.Step ());
-  ASSERT_TRUE (res.Step ());
-  auto r = tbl2.GetFromResult (res);
-  
-  EXPECT_EQ (r->GetProto().authoredid(), "generated"); 
-  r.reset();  
+  ])");
 
-  Process (R"([
-    {"name": "domob", "move": {"exp": {"c": {"eid": "00000000-0000-0000-zzzz-zzzzzzzzzzzz"}}}}
-  ])");  
+  UpdateState ("[]");   // resolves in 1 block -> 1 GeneratedRecipe, auto-credited to domob (slot free)
+
+  auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  ASSERT_TRUE (a != nullptr);
+  EXPECT_EQ (a->GetProto().rewards_serial(), 1u);   // one recipe reward credited
+  a.reset ();
+
+  /* The generated recipe is owned by the player directly (no claim step): the
+     unowned-template count is unchanged and nothing sits in the rewards table. */
+  EXPECT_EQ (tbl2.CountForOwner(""), 2);
+  EXPECT_EQ (tbl4.CountForOwner("domob"), 0);
+
+  bool foundGenerated = false;
+  {
+    auto res = tbl2.QueryForOwner("domob");
+    while (res.Step ())
+    {
+      auto r = tbl2.GetFromResult (res);
+      if (r->GetProto().authoredid() == "generated") foundGenerated = true;
+    }
+  }
+  EXPECT_TRUE (foundGenerated);
 
   ft = tbl3.GetById(4, ctx.RoConfig());
   EXPECT_EQ (ft->GetProto().animationid(), "05633498-ace9-de14-c939-9435a6343d0f");
 }
 
-TEST_F (ValidateStateTests, ClaimRewardAfterFighterDeletedDoesNotHalt)
+TEST_F (ValidateStateTests, CreditRewardWithMissingFighterDoesNotHalt)
 {
-  /* HALT-01 regression. A Move/Armor/Animation reward row stays bound to a
-     fighter id. If that fighter is deleted (e.g. transfigure / cook-replace)
-     while the reward is still unclaimed, the reward row dangles. Claiming it
-     used to GetById(deleted id) -> nullptr and dereference it -> a SIGSEGV that
-     every node hits identically at the same height = a permanent chain HALT.
-     The claim path must instead skip and discard the now-unapplicable reward.
-     Without the fix this test SEGVs the binary (hard failure); with it, it
-     drains the rewards cleanly. */
-  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
-  auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
-  ft.reset();
-  xp.reset();
+  /* HALT-01 regression. A Move/Armor/Animation reward is credited at resolve
+     against a fighter id.  A tournament reward carries fighterID 0, and a fighter
+     can already be gone by the time its reward credits.  CreditActivityReward
+     must DROP such a reward instead of dereferencing a null fighter handle --
+     otherwise every node SIGSEGVs at the same height = a permanent chain HALT. */
+  auto pl = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
 
-  Process (R"([
-    {"name": "domob", "move": {"exp": {"f": {"eid": "00000000-0000-0000-zzzz-zzzzzzzzzzzz", "fid": 4}}}}
-  ])");
+  pxd::proto::AuthoredActivityReward mv;
+  mv.set_type ((uint32_t) pxd::RewardType::Move);
+  mv.set_moveid ("some-move");
+  // fighter id 999999 does not exist -> must be dropped, not dereferenced.
+  EXPECT_NO_FATAL_FAILURE (
+    PXLogic::CreditActivityReward (pl, 999999, "", 0, mv, ctx, db, rnd, 0, "", ""));
 
-  UpdateState ("[]");   // expedition resolves -> rewards (incl. a fighter-bound Animation) created
+  pxd::proto::AuthoredActivityReward arm;
+  arm.set_type ((uint32_t) pxd::RewardType::Armor);
+  arm.set_armortype (1);
+  // tournament-reward path: fighterID 0 (no fighter) -> must be dropped.
+  EXPECT_NO_FATAL_FAILURE (
+    PXLogic::CreditActivityReward (pl, 0, "", 5, arm, ctx, db, rnd, 0, "", ""));
 
-  ASSERT_GT (tbl4.CountForOwner("domob"), 0u);
-
-  // The fighter is consumed/deleted before the reward is claimed; the reward
-  // rows keep the now-dangling fighter id.
-  tbl3.DeleteById(4);
-  ASSERT_TRUE (tbl3.GetById(4, ctx.RoConfig()) == nullptr);
-
-  Process (R"([
-    {"name": "domob", "move": {"exp": {"c": {"eid": "00000000-0000-0000-zzzz-zzzzzzzzzzzz"}}}}
-  ])");
-
-  // No crash, and every reward row consumed (granted where possible, discarded
-  // where its fighter is gone).
-  EXPECT_EQ (tbl4.CountForOwner("domob"), 0u);
-}
-
-TEST_F (ValidateStateTests, ClaimRewardsInvalidParams)
-{
-  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
-  auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
-  ft.reset();
-  xp.reset();
-  
-  EXPECT_EQ (tbl2.CountForOwner(""), 2);
-  
-  Process (R"([
-    {"name": "domob", "move": {"exp": {"f": {"eid": "00000000-0000-0000-zzzz-zzzzzzzzzzzz", "fid": 4}}}}
-  ])");  
-  
-  for (unsigned i = 0; i < 1; ++i)
-  {
-    UpdateState ("[]");
-  }  
-  
-  auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
-  a.reset ();
-   
-  ft = tbl3.GetById(4, ctx.RoConfig());
-  ft.reset();
-  
-  EXPECT_EQ (tbl2.CountForOwner(""), 3);
-  auto res = tbl2.QueryForOwner("");
-  ASSERT_TRUE (res.Step ());
-  ASSERT_TRUE (res.Step ());
-  ASSERT_TRUE (res.Step ());
-  auto r = tbl2.GetFromResult (res);
-  
-  EXPECT_EQ (r->GetProto().authoredid(), "generated"); 
-  r.reset();  
-
-  Process (R"([
-    {"name": "domob", "move": {"exp": {"c": {"eid": "50379c2b-2422-8104-ea69-bb2882e9cac0"}}}}
-  ])");  
-
-  a = xayaplayers.GetByName ("domob", ctx.RoConfig());
-  EXPECT_EQ (a->GetInventory().GetFungibleCount("Common_Candy Button"), 0);
-  a.reset();    
+  // Nothing credited (no valid fighter): the serial did not advance, no crash.
+  EXPECT_EQ (pl->GetProto().rewards_serial(), 0u);
+  pl.reset ();
 }
 
 TEST_F (ValidateStateTests, DeconstructionTest)
@@ -946,84 +893,131 @@ TEST_F (ValidateStateTests, DeconstructionTest)
      the reward claimed, instead of being orphaned (owner='') forever. */
   ft = tbl3.GetById (fID, ctx.RoConfig());
   const uint32_t srcRecipe = ft->GetProto().recipeid();
+  /* First Recipe fighters are account-bound (recover nothing on deconstruct);
+     clear the flag here so this test exercises the candy-recovery credit path. */
+  ft->MutableProto().set_isaccountbound(false);
   ft.reset();
   EXPECT_GT (srcRecipe, 0u);
   EXPECT_TRUE (tbl2.GetById(srcRecipe) != nullptr);
 
   EXPECT_EQ (tbl4.CountForOwner("domob"), 0);
 
+  /* First Recipe = Gumdrop x1 + Icing x1 (total 2); 50% return -> exactly 1
+     candy recovered, of one of the two types.  Capture the baseline. */
+  auto a0 = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  const int64_t candyBefore = a0->GetInventory().GetFungibleCount("Common_Gumdrop")
+                            + a0->GetInventory().GetFungibleCount("Common_Icing");
+  a0.reset();
+
   std::ostringstream s;
   s << fID;
-  std::string converted(s.str());  
-  
+  std::string converted(s.str());
+
   Process (R"([
     {"name": "domob", "move": {"f": {"d": {"fid": )"+converted+R"(}}}}
-  ])");  
+  ])");
 
   for (unsigned i = 0; i < 15; ++i)
   {
     UpdateState ("[]");
-  }  
+  }
 
-  EXPECT_EQ (tbl4.CountForOwner("domob"), 1);   
-
-  Process (R"([
-    {"name": "domob", "move": {"f": {"c": {"fid": )"+converted+R"(}}}}
-  ])");    
-  
-  UpdateState ("[]");
-
+  /* Auto-credit at resolve: the recovered candy lands in inventory and the
+     fighter + its source recipe are deleted immediately -- no claim step, and a
+     deconstruction never creates a reward row.  H4: the source recipe is gone,
+     not leaked owner=''. */
   EXPECT_EQ (tbl4.CountForOwner("domob"), 0);
-
-  /* H4: the source recipe of the now-deconstructed fighter is gone, not leaked. */
+  EXPECT_TRUE (tbl3.GetById(fID, ctx.RoConfig()) == nullptr);
   EXPECT_TRUE (tbl2.GetById(srcRecipe) == nullptr);
+
+  auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  ASSERT_TRUE (a != nullptr);
+  EXPECT_EQ (a->GetProto().rewards_serial(), 1u);   // recovered candy credited once
+  EXPECT_EQ (a->GetInventory().GetFungibleCount("Common_Gumdrop")
+             + a->GetInventory().GetFungibleCount("Common_Icing"), candyBefore + 1);
+  a.reset();
 }
 
-TEST_F (ValidateStateTests, ClaimRewardsWhenFullSlotsEmptySomeAndFinishClaiming)
+TEST_F (ValidateStateTests, DeconstructionAccountBoundRecoversNothing)
 {
+  /* Account-bound fighters recover NO candy on deconstruct (the payout is
+     suppressed), but the fighter + its recipe are still deleted at resolve. */
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
+  auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);   // First Recipe = account-bound
+  int fID = ft->GetId();
+  ASSERT_TRUE (ft->GetProto().isaccountbound());
+  ft.reset();
+  xp.reset();
+
+  ft = tbl3.GetById (fID, ctx.RoConfig());
+  const uint32_t srcRecipe = ft->GetProto().recipeid();
+  ft.reset();
+
+  std::ostringstream s;
+  s << fID;
+  std::string converted(s.str());
+
+  Process (R"([
+    {"name": "domob", "move": {"f": {"d": {"fid": )"+converted+R"(}}}}
+  ])");
+
+  for (unsigned i = 0; i < 15; ++i)
+  {
+    UpdateState ("[]");
+  }
+
+  EXPECT_TRUE (tbl3.GetById(fID, ctx.RoConfig()) == nullptr);   // fighter deleted
+  EXPECT_TRUE (tbl2.GetById(srcRecipe) == nullptr);             // recipe deleted
+  EXPECT_EQ (tbl4.CountForOwner("domob"), 0);
+
+  auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  ASSERT_TRUE (a != nullptr);
+  EXPECT_EQ (a->GetProto().rewards_serial(), 0u);   // no candy recovered -> no credit
+  a.reset();
+}
+
+TEST_F (ValidateStateTests, RecipeRewardOverflowHoldsAndDrains)
+{
+  /* Recipe is the only capped reward.  At full recipe slots a recipe reward is
+     not lost or credited immediately -- it is HELD as a bounded overflow row and
+     auto-drains once a slot frees.  Candy in the same roll always credits. */
   auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
   auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
   EXPECT_EQ (ft->GetStatus(), FighterStatus::Available);
   ft.reset();
   EXPECT_EQ (xp->CollectInventoryFighters(ctx.RoConfig()).size(), 3);
   xp.reset();
-  
+
   proto::ConfigData& cfg = const_cast <proto::ConfigData&>(*ctx.RoConfig());
-  cfg.mutable_params()->set_max_recipe_inventory_amount(0); 
-  
+  cfg.mutable_params()->set_max_recipe_inventory_amount(0);   // every recipe reward overflows
+
   Process (R"([
     {"name": "domob", "move": {"exp": {"f": {"eid": "c064e7f7-acbf-4f74-fab8-cccd7b2d4004", "fid": 4}}}}
-  ])");  
-  
+  ])");
+
+  UpdateState ("[]");   // resolves: c064e7f7 -> 2 Candy credited, 1 CraftedRecipe held (slots full)
+
   auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
   ASSERT_TRUE (a != nullptr);
-  EXPECT_EQ (a->GetOngoingsSize (), 1);
+  EXPECT_EQ (a->GetOngoingsSize (), 0);
+  EXPECT_EQ (a->GetProto().rewards_serial(), 2u);   // 2 candy credited; held recipe not yet
   a.reset ();
-   
-  ft = tbl3.GetById(4, ctx.RoConfig());
-  EXPECT_EQ (ft->GetStatus(), FighterStatus::Expedition);
-  ft.reset();
-  
-  for (unsigned i = 0; i < 1; ++i)
-  {
-    UpdateState ("[]");
-  }
-  
+
   ft = tbl3.GetById(4, ctx.RoConfig());
   EXPECT_EQ (ft->GetStatus(), FighterStatus::Available);
-  ft.reset();  
-  
-  a = xayaplayers.GetByName ("domob", ctx.RoConfig());
-  EXPECT_EQ (a->GetOngoingsSize (), 0);
-  a.reset ();
-  
-  EXPECT_EQ (tbl4.CountForOwner("domob"), 3);
-  
-  Process (R"([
-    {"name": "domob", "move": {"exp": {"c": {"eid": "c064e7f7-acbf-4f74-fab8-cccd7b2d4004"}}}}
-  ])");  
+  ft.reset();
 
-  EXPECT_EQ (tbl4.CountForOwner("domob"), 0);
+  /* The recipe reward is HELD as a bounded overflow row (not lost, not credited). */
+  EXPECT_EQ (tbl4.CountForOwner("domob"), 1);
+
+  /* Free the recipe slots and drain: the held recipe now lands in ownership. */
+  cfg.mutable_params()->set_max_recipe_inventory_amount(48);
+  a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  PXLogic::DrainPendingRecipeRewards (a, ctx, db);
+  EXPECT_EQ (a->GetProto().rewards_serial(), 3u);   // held recipe drained -> serial advances
+  a.reset ();
+
+  EXPECT_EQ (tbl4.CountForOwner("domob"), 0);        // overflow queue emptied
 }
 
 TEST_F (ValidateStateTests, ExpeditionInstanceBusyFighterNotSending)
@@ -1087,9 +1081,13 @@ TEST_F (ValidateStateTests, ExpeditionTestRewards)
   {
     UpdateState ("[]");
   }
-  
-  EXPECT_EQ (tbl4.CountForOwner("domob"), 3);
 
+  /* Auto-credit at resolve: c064e7f7's 1 CraftedRecipe + 2 Candy land directly
+     (recipe slot free), so nothing sits unclaimed and the serial advanced by 3. */
+  EXPECT_EQ (tbl4.CountForOwner("domob"), 0);
+  a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  EXPECT_EQ (a->GetProto().rewards_serial(), 3u);
+  a.reset();
 }
 
 TEST_F (ValidateStateTests, ExpeditionWithApplicableGoodieTest)
@@ -1518,21 +1516,23 @@ TEST_F (ValidateStateTests, TournamentResolvedTest)
     UpdateState ("[]");
   }
   
-  EXPECT_EQ (tbl4.CountForOwner("domob"), 7);
-  EXPECT_EQ (tbl4.CountForOwner("andy"), 10);
-  
-  Process (R"([
-    {"name": "andy", "move": {"tm": {"c": {"tid": )" + converted + R"(}}}}
-  ])"); 
-  
-  UpdateState ("[]");
-  
-  EXPECT_EQ (tbl4.CountForOwner("domob"), 7);
-  EXPECT_EQ (tbl4.CountForOwner("andy"), 0);  
-  
+  /* Auto-credit at resolve: the tutorial tournament rolls only candy + a crafted
+     recipe (no fighter-bound move/armor/anim, which a fighterID-0 tournament
+     reward would drop), so every reward lands directly and nothing sits
+     unclaimed.  Loser domob gets 7, winner andy gets 10. */
+  EXPECT_EQ (tbl4.CountForOwner("domob"), 0);
+  EXPECT_EQ (tbl4.CountForOwner("andy"), 0);
+
+  auto pd = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  EXPECT_EQ (pd->GetProto().rewards_serial(), 7u);
+  pd.reset();
+  auto pa = xayaplayers.GetByName ("andy", ctx.RoConfig());
+  EXPECT_EQ (pa->GetProto().rewards_serial(), 10u);
+  pa.reset();
+
   tutorialTrmn = tbl5.GetById(TID, ctx.RoConfig());
   EXPECT_EQ (tutorialTrmn->GetInstance().results_size(), 4);
-  tutorialTrmn.reset();  
+  tutorialTrmn.reset();
 }
 
 TEST_F (ValidateStateTests, FighterSacrifice)
@@ -1662,18 +1662,12 @@ TEST_F (ValidateStateTests, RatingSweetnessUpgrades)
     {
       UpdateState ("[]");
     }
-    
-    Process (R"([
-      {"name": "andy", "move": {"tm": {"c": {"tid": )" + converted + R"(}}}}
-    ])"); 
-    
-    Process (R"([
-      {"name": "domob", "move": {"tm": {"c": {"tid": )" + converted + R"(}}}}
-    ])");     
-    
+
+    /* Rewards auto-credit at resolve (no claim); rating/sweetness come from the
+       combat resolution, so the accumulated upgrades are unaffected. */
     tbl5.DeleteById(TID);
-    
-    UpdateState ("[]");         
+
+    UpdateState ("[]");
   }
   
   ftA = tbl3.GetById(ftA1id, ctx.RoConfig());
@@ -2211,11 +2205,19 @@ TEST_F (ValidateStateTests, SweetnessRatingStaysCapped)
     UpdateState ("[]");
   }
   
-  EXPECT_EQ (tbl4.CountForOwner("domob"), 10);
-  EXPECT_EQ (tbl4.CountForOwner("andy"), 7);
+  /* Auto-credit at resolve: candy + crafted recipe land directly, nothing sits
+     unclaimed; winner domob credited 10, loser andy 7. */
+  EXPECT_EQ (tbl4.CountForOwner("domob"), 0);
+  EXPECT_EQ (tbl4.CountForOwner("andy"), 0);
+  {
+    auto pdom = xayaplayers.GetByName ("domob", ctx.RoConfig());
+    EXPECT_EQ (pdom->GetProto().rewards_serial(), 10u);
+    auto pand = xayaplayers.GetByName ("andy", ctx.RoConfig());
+    EXPECT_EQ (pand->GetProto().rewards_serial(), 7u);
+  }
 
   tutorialTrmn = tbl5.GetById(TID, ctx.RoConfig());
-  
+
   for(const auto& result: tutorialTrmn->GetInstance().results())
   {
      EXPECT_LT(result.ratingdelta(), 100000);
@@ -2458,8 +2460,15 @@ TEST_F (ValidateStateTests, TournamentStrongerFighterWins)
     UpdateState ("[]");
   }
   
-  EXPECT_EQ (tbl4.CountForOwner("domob"), 10);
-  EXPECT_EQ (tbl4.CountForOwner("andy"), 7);
+  /* Auto-credit at resolve: nothing sits unclaimed; winner domob 10, loser andy 7. */
+  EXPECT_EQ (tbl4.CountForOwner("domob"), 0);
+  EXPECT_EQ (tbl4.CountForOwner("andy"), 0);
+  {
+    auto pdom = xayaplayers.GetByName ("domob", ctx.RoConfig());
+    EXPECT_EQ (pdom->GetProto().rewards_serial(), 10u);
+    auto pand = xayaplayers.GetByName ("andy", ctx.RoConfig());
+    EXPECT_EQ (pand->GetProto().rewards_serial(), 7u);
+  }
 
   auto superFighter = tbl3.GetById(ftA2idx, ctx.RoConfig());
   EXPECT_EQ (superFighter->GetProto().sweetness(), 10);

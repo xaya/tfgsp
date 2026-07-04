@@ -46,13 +46,8 @@
 namespace pxd
 {
 
-std::vector<uint32_t> PXLogic::GenerateActivityReward(const uint32_t fighterID, const std::string& blueprintAuthID, const uint32_t tournamentID, const pxd::proto::AuthoredActivityReward& rw, const Context& ctx, Database& db, std::unique_ptr<XayaPlayer>& a, xaya::Random& rnd, const uint32_t posInTableList, const std::string& basedRewardsTableAuthId, const std::string& sweetenerAuthID, const uint32_t recursionDepth)
+void PXLogic::GenerateActivityReward(const uint32_t fighterID, const std::string& blueprintAuthID, const uint32_t tournamentID, const pxd::proto::AuthoredActivityReward& rw, const Context& ctx, Database& db, std::unique_ptr<XayaPlayer>& a, xaya::Random& rnd, const uint32_t posInTableList, const std::string& basedRewardsTableAuthId, const std::string& sweetenerAuthID, const uint32_t recursionDepth)
 {
-  RecipeInstanceTable recipeTbl(db);
-  RewardsTable rewardsTbl(db);
-    
-  std::vector<uint32_t> iDS;
-    
   /* CC-1: bound the recursive RewardType::List expansion. Reward tables
      reference sub-tables via listtableid(); a cyclic or pathologically-deep
      reference in the (pinned, dev-authored) roconfig would recurse until the
@@ -63,95 +58,221 @@ std::vector<uint32_t> PXLogic::GenerateActivityReward(const uint32_t fighterID, 
   {
     LOG (ERROR) << "Reward List recursion exceeded max depth " << MAX_REWARD_LIST_DEPTH
                 << " (cyclic or too-deep reward-table config); stopping generation";
-    return iDS;
+    return;
   }
 
-  if((int8_t)rw.type() != (int8_t)RewardType::None)
-  {
-    if((RewardType)(int32_t)rw.type() == RewardType::List)
-    {
-        const auto& rewardsList = ctx.RoConfig()->activityrewards();
-     
-        std::vector<std::pair<std::string, pxd::proto::ActivityReward>> sortedActivityRewardTypesmap;
-        for (auto itr = rewardsList.begin(); itr != rewardsList.end(); ++itr)
-            sortedActivityRewardTypesmap.push_back(*itr);
+  if((int8_t)rw.type() == (int8_t)RewardType::None)
+    return;
 
-        sort(sortedActivityRewardTypesmap.begin(), sortedActivityRewardTypesmap.end(), [=](std::pair<std::string, pxd::proto::ActivityReward>& a, std::pair<std::string, pxd::proto::ActivityReward>& b)
-        {
-            return a.first < b.first;
-        } 
-        );  
-    
-        for(const auto& rewardsTable: sortedActivityRewardTypesmap)
-        {          
-          if(rewardsTable.second.authoredid() == rw.listtableid())
-          {            
-            uint32_t posInTableList2 = 0;
-            
-            for(auto& rw2: rewardsTable.second.rewards())
-            {
-                std::vector<uint32_t> newIDS = GenerateActivityReward(fighterID, blueprintAuthID, tournamentID, rw2, ctx, db, a, rnd, posInTableList2, rw.listtableid(), sweetenerAuthID, recursionDepth + 1);
-                
-                for(int32_t j = 0; j < (int32_t)newIDS.size(); j++)
-                {
-                  iDS.push_back(newIDS[j]);
-                }
-                
-                posInTableList2++;
-            }
-          }
-          
-          
-        }     
-    }      
-    else
-    {
-      /* H5: bound passive unclaimed-reward accumulation. At the cap the reward
-         (and its generated recipe) is not created; the player must claim some
-         first. Deconstruction rewards bypass this (see ResolveDeconstruction). */
-      if(rewardsTbl.CountForOwner(a->GetName()) >= ctx.RoConfig()->params().max_unclaimed_reward_amount())
+  if((RewardType)(int32_t)rw.type() == RewardType::List)
+  {
+      const auto& rewardsList = ctx.RoConfig()->activityrewards();
+
+      std::vector<std::pair<std::string, pxd::proto::ActivityReward>> sortedActivityRewardTypesmap;
+      for (auto itr = rewardsList.begin(); itr != rewardsList.end(); ++itr)
+          sortedActivityRewardTypesmap.push_back(*itr);
+
+      sort(sortedActivityRewardTypesmap.begin(), sortedActivityRewardTypesmap.end(), [=](std::pair<std::string, pxd::proto::ActivityReward>& a, std::pair<std::string, pxd::proto::ActivityReward>& b)
       {
-        LOG (WARNING) << "Player " << a->GetName() << " at unclaimed-reward cap ("
-                      << ctx.RoConfig()->params().max_unclaimed_reward_amount() << "); passive reward not granted";
-        return iDS;
+          return a.first < b.first;
+      }
+      );
+
+      for(const auto& rewardsTable: sortedActivityRewardTypesmap)
+      {
+        if(rewardsTable.second.authoredid() == rw.listtableid())
+        {
+          uint32_t posInTableList2 = 0;
+          for(auto& rw2: rewardsTable.second.rewards())
+          {
+              /* Same draw order as before: the sub-table is expanded in sorted
+                 authoredid order, each entry recursed in field order. */
+              GenerateActivityReward(fighterID, blueprintAuthID, tournamentID, rw2, ctx, db, a, rnd, posInTableList2, rw.listtableid(), sweetenerAuthID, recursionDepth + 1);
+              posInTableList2++;
+          }
+        }
+      }
+      return;
+  }
+
+  /* Leaf reward: credit it straight into the player/fighter at resolve
+     (no claim tx). */
+  CreditActivityReward(a, fighterID, blueprintAuthID, tournamentID, rw, ctx, db, rnd, posInTableList, basedRewardsTableAuthId, sweetenerAuthID);
+}
+
+void PXLogic::CreditActivityReward(std::unique_ptr<XayaPlayer>& a, const uint32_t fighterID, const std::string& blueprintAuthID, const uint32_t tournamentID, const pxd::proto::AuthoredActivityReward& rw, const Context& ctx, Database& db, xaya::Random& rnd, const uint32_t posInTableList, const std::string& basedRewardsTableAuthId, const std::string& sweetenerAuthID)
+{
+  const RewardType type = (RewardType)(int32_t)rw.type();
+
+  /* The true issuing source, derived from which resolve path we came through.
+     (The armor branch used to hard-code Expedition -- D5 fixes it.) */
+  const RewardSource source = (sweetenerAuthID != "")
+      ? RewardSource::Sweetener
+      : (tournamentID != 0 ? RewardSource::Tournament : RewardSource::Expedition);
+
+  const auto bumpSerial = [&a] ()
+  {
+    a->MutableProto().set_rewards_serial(a->GetProto().rewards_serial() + 1);
+  };
+
+  switch(type)
+  {
+    case RewardType::Candy:
+    {
+      const std::string candyName = BaseMoveProcessor::GetCandyKeyNameFromID(rw.candytype(), ctx);
+      a->GetInventory().AddFungibleCount(candyName, rw.quantity());
+      bumpSerial();
+      return;
+    }
+
+    case RewardType::Move:
+    case RewardType::Animation:
+    case RewardType::Armor:
+    {
+      /* HALT-01: the reward's fighter can already be gone -- a tournament reward
+         carries fighterID 0, and a fighter can be transfigured/cook-replaced
+         between rolls.  Drop the reward deterministically instead of ever
+         dereferencing a null handle (which would SIGSEGV every node at the same
+         height -> a permanent chain halt). */
+      FighterTable fighters(db);
+      auto fighter = fighters.GetById(fighterID, ctx.RoConfig());
+      if(fighter == nullptr)
+      {
+        LOG (WARNING) << "Reward fighter " << fighterID << " no longer exists; dropping reward type " << (int32_t)type;
+        return;
       }
 
-      auto newReward = rewardsTbl.CreateNew(a->GetName());              
+      if(type == RewardType::Move)
+      {
+        fighter->MutableProto().add_moves()->assign(rw.moveid());
+      }
+      else if(type == RewardType::Animation)
+      {
+        fighter->MutableProto().set_animationid(rw.animationid());
+      }
+      else /* Armor */
+      {
+        bool armorTypeWasPresent = false;
+        for(int i = 0; i < fighter->MutableProto().armorpieces_size(); ++i)
+        {
+          /* Mutable reference, not a copy: set_* must persist to the proto. */
+          auto& armorPiece = *fighter->MutableProto().mutable_armorpieces(i);
+          if(armorPiece.armortype() == rw.armortype())
+          {
+            armorTypeWasPresent = true;
+            armorPiece.set_candy(rw.candytype());
+            armorPiece.set_rewardsourceid(basedRewardsTableAuthId);
+            armorPiece.set_rewardsource((uint32_t)source);
+          }
+        }
+        if(armorTypeWasPresent == false)
+        {
+          auto newArmorPiece = fighter->MutableProto().add_armorpieces();
+          newArmorPiece->set_candy(rw.candytype());
+          newArmorPiece->set_rewardsourceid(basedRewardsTableAuthId);
+          newArmorPiece->set_rewardsource((uint32_t)source);
+          newArmorPiece->set_armortype(rw.armortype());
+        }
+      }
+
+      fighter.reset();
+      bumpSerial();
+      return;
+    }
+
+    case RewardType::CraftedRecipe:
+    case RewardType::GeneratedRecipe:
+    {
+      RecipeInstanceTable recipeTbl(db);
+      const uint32_t maxRecipeSlots = ctx.RoConfig()->params().max_recipe_inventory_amount();
+
+      /* Recipe is the only capped reward.  Slot free -> credit immediately by
+         creating the recipe already owned by the player.  The GeneratedRecipe
+         rnd draw fires here exactly as it did at resolve before. */
+      if(recipeTbl.CountForOwner(a->GetName()) < maxRecipeSlots)
+      {
+        if(type == RewardType::CraftedRecipe)
+          recipeTbl.CreateNew(a->GetName(), rw.craftedrecipeid(), ctx.RoConfig());
+        else
+          pxd::RecipeInstance::Generate((pxd::Quality)(int32_t)rw.generatedrecipequality(), ctx.RoConfig(), rnd, db, a->GetName());
+        bumpSerial();
+        return;
+      }
+
+      /* Slots full -> HOLD as a bounded overflow row (owner=player, recipe
+         attached with owner="") that auto-drains when a slot frees.  This is now
+         the ONLY user of the rewards table, so max_unclaimed_reward_amount bounds
+         just the recipe-overflow queue.  At the cap the recipe is dropped (no
+         generation, no row) -- matching the old at-cap drop, and keeping the
+         GeneratedRecipe draw count identical to the free-slot path only when
+         under the cap. */
+      RewardsTable rewardsTbl(db);
+      if(rewardsTbl.CountForOwner(a->GetName()) >= ctx.RoConfig()->params().max_unclaimed_reward_amount())
+      {
+        LOG (WARNING) << "Player " << a->GetName() << " at recipe-overflow cap ("
+                      << ctx.RoConfig()->params().max_unclaimed_reward_amount() << "); recipe reward dropped";
+        return;
+      }
+
+      auto newReward = rewardsTbl.CreateNew(a->GetName());
       newReward->MutableProto().set_expeditionid(blueprintAuthID);
       newReward->MutableProto().set_rewardid(basedRewardsTableAuthId);
       newReward->MutableProto().set_tournamentid(tournamentID);
       newReward->MutableProto().set_positionintable(posInTableList);
       newReward->MutableProto().set_fighterid(fighterID);
-      
-      if(sweetenerAuthID != "")
-      {
-        newReward->MutableProto().set_sweetenerid(sweetenerAuthID);  
-      }
-      else
-      {
-        newReward->MutableProto().set_sweetenerid(""); 
-      }
+      newReward->MutableProto().set_sweetenerid(sweetenerAuthID);
 
-      if((RewardType)(int32_t)rw.type() == RewardType::CraftedRecipe)
-      {
-          auto newRecipe = recipeTbl.CreateNew("", rw.craftedrecipeid(), ctx.RoConfig());          
-          newReward->MutableProto().set_generatedrecipeid(newRecipe->GetId());
-          iDS.push_back(newReward->GetId());
-          
-          LOG (INFO) << "CraftedRecipe reward generated";
-      }
-      
-      if((RewardType)(int32_t)rw.type() == RewardType::GeneratedRecipe)
-      {
-          newReward->MutableProto().set_generatedrecipeid(pxd::RecipeInstance::Generate((pxd::Quality)(int32_t)rw.generatedrecipequality(), ctx.RoConfig(), rnd, db, ""));
-          iDS.push_back(newReward->GetId());
-          
-          LOG (INFO) << "GeneratedRecipe reward generated";
-      }
+      if(type == RewardType::CraftedRecipe)
+        newReward->MutableProto().set_generatedrecipeid(recipeTbl.CreateNew("", rw.craftedrecipeid(), ctx.RoConfig())->GetId());
+      else
+        newReward->MutableProto().set_generatedrecipeid(pxd::RecipeInstance::Generate((pxd::Quality)(int32_t)rw.generatedrecipequality(), ctx.RoConfig(), rnd, db, ""));
+
+      /* Do NOT bump the serial: a held recipe is not in inventory yet.  It bumps
+         when it drains into ownership (DrainPendingRecipeRewards). */
+      return;
+    }
+
+    default:
+      LOG (WARNING) << "Unknown reward type not credited: " << (int32_t)type;
+      return;
+  }
+}
+
+void PXLogic::DrainPendingRecipeRewards(std::unique_ptr<XayaPlayer>& a, const Context& ctx, Database& db)
+{
+  RewardsTable rewardsTbl(db);
+  RecipeInstanceTable recipeTbl(db);
+  const uint32_t maxRecipeSlots = ctx.RoConfig()->params().max_recipe_inventory_amount();
+
+  /* Collect this player's held recipe-overflow rows first (QueryForOwner is
+     ORDER BY id == oldest-first), then drain -- never mutate recipe ownership
+     while the owner-keyed cursor is still open.  Bounded by the overflow cap. */
+  std::vector<std::pair<Database::IdT, uint32_t>> pending;   // {rewardRowId, generatedRecipeId}
+  {
+    auto res = rewardsTbl.QueryForOwner(a->GetName());
+    while(res.Step())
+    {
+      auto rw = rewardsTbl.GetFromResult(res);
+      if(rw->GetProto().generatedrecipeid() > 0)
+        pending.push_back({rw->GetId(), rw->GetProto().generatedrecipeid()});
     }
   }
 
-  return iDS;
+  for(const auto& p : pending)
+  {
+    if(recipeTbl.CountForOwner(a->GetName()) >= maxRecipeSlots)
+      break;   // no more slots; leave the rest held for the next slot-free event
+
+    auto rec = recipeTbl.GetById(p.second);
+    if(rec != nullptr)
+    {
+      rec->SetOwner(a->GetName());
+      rec.reset();
+      a->MutableProto().set_rewards_serial(a->GetProto().rewards_serial() + 1);
+    }
+    /* Whether or not the recipe still existed, the holding row is now spent. */
+    rewardsTbl.DeleteById(p.first);
+  }
 }
 
 void PXLogic::ResolveSweetener(std::unique_ptr<XayaPlayer>& a, std::string sweetenerAuthID, const uint32_t fighterID, const uint32_t rewardID, Database& db, const Context& ctx, xaya::Random& rnd)
@@ -417,36 +538,38 @@ void PXLogic::ResolveDeconstruction(std::unique_ptr<XayaPlayer>& a, const uint32
     
     uint64_t recovered = (total * returnPercent) / 100;
     std::map<std::string, uint64_t> dict;
-    
-    for(uint64_t x =0; x < recovered; x++)
+
+    /* Identical rnd draws / order as before: `recovered` picks over candyTypes. */
+    for(uint64_t x = 0; x < recovered; x++)
     {
         std::string candyType = candyTypes[rnd.NextInt(candyTypes.size())];
-        
-        if (dict.find(candyType) == dict.end())
-        {
-            dict.insert(std::pair<std::string, uint64_t>(candyType, 0));
-        }
-        
         dict[candyType] += 1;
     }
-    
-    RewardsTable rewardsTbl(db);
-    auto newReward = rewardsTbl.CreateNew(a->GetName());              
-    newReward->MutableProto().set_expeditionid("");
-    newReward->MutableProto().set_rewardid("");
-    newReward->MutableProto().set_tournamentid(0);
-    newReward->MutableProto().set_positionintable(0);
-    newReward->MutableProto().set_fighterid(fighterID);    
-    
-    for(const auto& entry: dict)
-    {
-      proto::Deconstruction* newD = newReward->MutableProto().add_deconstructions();
-      newD->set_candytype(entry.first);
-      newD->set_quantity(entry.second);
-    }
-    
+
+    /* Account-bound fighters recover nothing (matches the old claim behaviour,
+       which skipped the payout when isaccountbound). */
+    const bool isAccountBound = fighter->GetProto().isaccountbound();
+    const uint32_t deconstructedRecipeId = fighter->GetProto().recipeid();
+
     recepie.reset();
     fighter.reset();
+
+    /* Credit the recovered candy straight into inventory (no claim tx), then
+       delete the fighter + its source recipe and recompute prestige -- the roster
+       slot now frees at resolve instead of at a follow-up claim.  Candy is
+       unbounded-safe, so it credits unconditionally (no cap gate). */
+    if(isAccountBound == false && !dict.empty())
+    {
+      for(const auto& entry: dict)
+        a->GetInventory().AddFungibleCount(entry.first, entry.second);
+      a->MutableProto().set_rewards_serial(a->GetProto().rewards_serial() + 1);
+    }
+
+    fighters.DeleteById(fighterID);
+    if(deconstructedRecipeId > 0)
+      recipeTbl.DeleteById(deconstructedRecipeId);
+
+    a->CalculatePrestige(ctx.RoConfig());
 }
 
 void PXLogic::ResolveExpedition(std::unique_ptr<XayaPlayer>& a, const std::string blueprintAuthID, const uint32_t fighterID, Database& db, const Context& ctx, xaya::Random& rnd)
@@ -514,6 +637,15 @@ void PXLogic::ResolveExpedition(std::unique_ptr<XayaPlayer>& a, const std::strin
     }
    
     fighter->SetStatus(FighterStatus::Available);
+
+    /* Release the fighter handle BEFORE rolling rewards.  A Move/Armor/Animation
+       reward credits via CreditActivityReward, which re-opens a FighterTable
+       handle for this same fighter -- two live handles for the same id would trip
+       libxayagame's UniqueHandles CHECK (a deterministic all-node abort = chain
+       halt), and the stale outer handle would otherwise clobber the credited
+       reward on flush.  reset() flushes the SetStatus write and adds no rnd draw,
+       so the RNG stream is untouched.  Mirrors ResolveSweetener's pattern.  */
+    fighter.reset();
 
     uint32_t totalWeight = 0;
     for(auto& rw: rewardTableDb.rewards())

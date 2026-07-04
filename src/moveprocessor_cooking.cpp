@@ -18,6 +18,7 @@
 
 #include "moveprocessor.hpp"
 #include "moveprocessor_internal.hpp"
+#include "logic.hpp"   // PXLogic::DrainPendingRecipeRewards (recipe-slot-free drain)
 
 #include "jsonutils.hpp"
 #include "proto/config.pb.h"
@@ -167,77 +168,6 @@ namespace pxd
 	 return outputNewValues;
   }	  
 
-  bool
-  BaseMoveProcessor::ParseClaimSweetener(const XayaPlayer& a, const std::string& name, const Json::Value& sweetener, uint32_t& fighterID, std::vector<uint32_t>& rewardDatabaseIds, std::string& sweetenerAuthId)
-  {
-    if (!sweetener.isObject ())
-    {
-       return false;
-    } 
-
-    if (!sweetener["fid"].isInt())
-    {
-       LOG (WARNING) << "fid is not a int";
-       return false;
-    } 
-    
-    fighterID = (uint32_t)sweetener["fid"].asInt();
-    auto fighterDb = fighters.GetById (fighterID, ctx.RoConfig ());       
-    
-    if(fighterDb == nullptr)
-    {
-      LOG (WARNING) << "Fighter is not present for id : " << fighterID;
-      fighterDb.reset();
-      return false;               
-    }       
-    
-    if(fighterDb->GetOwner() != a.GetName())
-    {
-      LOG (WARNING) << "Fighter does not belong to: " << a.GetName();
-      fighterDb.reset();
-      return false;               
-    }   
-
-    if((pxd::FighterStatus)(int32_t)fighterDb->GetStatus() != pxd::FighterStatus::Available) 
-    {
-      LOG (WARNING) << "Fighter status is not available: " << fighterID;
-      fighterDb.reset();
-      return false;              
-    }    
-
-    auto res = rewards.QueryForOwner(a.GetName()); 
-    int32_t totalEntries = 0;
-    bool tryAndStep = res.Step();
-    while (tryAndStep)
-    {
-      auto rw = rewards.GetFromResult (res, ctx.RoConfig ());
-      
-      if(rw->GetProto().fighterid() == fighterDb->GetId() && rw->GetProto().sweetenerid() != "")
-      {
-        totalEntries++;
-        rewardDatabaseIds.push_back(rw->GetId());
-        sweetenerAuthId = rw->GetProto().sweetenerid();
-      }
-      
-      tryAndStep = res.Step ();
-    }
-    
-    if(sweetenerAuthId == "")
-    {
-        LOG (WARNING) << "Could not resolve sweetenerID for fighter: " << fighterDb->GetId();
-        return false;              
-    }      
-   
-    if(totalEntries <= 0)
-    {
-        LOG (WARNING) << "Could not find any relevan rewards for sweetenwer fighter: " << fighterDb->GetId();
-        return false;              
-    }      
-     
-    fighterDb.reset();
-    return true;  
-    
-  }      
 
   bool
   BaseMoveProcessor::ParseSweetener(const XayaPlayer& a, const std::string& name, const Json::Value& sweetener, std::map<std::string, pxd::Quantity>& fungibleItemAmountForDeduction, int32_t& cookCost, uint32_t& fighterID, int32_t& duration, std::string& sweetenerKeyName)
@@ -380,24 +310,6 @@ namespace pxd
         fighterDb.reset();
         return false;          
      }   
-
-	// Additionally, no sweetning, if user did not collect reward from previous one
-
-	auto res = rewards.QueryForOwner(a.GetName()); 
-	bool tryAndStep = res.Step();
-	while (tryAndStep)
-	{
-	  auto rw = rewards.GetFromResult (res, ctx.RoConfig ());
-	  
-	  if(rw->GetProto().fighterid() == fighterID && rw->GetProto().sweetenerid() != "")
-	  {
-		LOG (WARNING) << "Reward for previous sweetness not collected for fighter id: " << fighterID;
-		fighterDb.reset();
-		return false;          
-	  }
-	  
-	  tryAndStep = res.Step ();
-	}	
 
      fighterDb.reset();
      return true;   
@@ -637,30 +549,13 @@ namespace pxd
         std::string candyAuth = cd["n"].asString();
 		Amount ca = cd["a"].asInt();	
 		
-        player->GetInventory().AddFungibleCount(BaseMoveProcessor::GetCandyKeyNameFromID(candyAuth, ctx), -ca);			
-	}		
- }
+        player->GetInventory().AddFungibleCount(BaseMoveProcessor::GetCandyKeyNameFromID(candyAuth, ctx), -ca);
+	}
 
-  void
-  MoveProcessor::MaybeClaimSweetenerReward (const std::string& name, const Json::Value& sweetener)
-  {    
-    auto a = xayaplayers.GetByName (name, ctx.RoConfig ());
-    
-    if(a == nullptr)
-    {
-      LOG (INFO) << "Player " << name << " not found";
-      return;
-    }    
-    
-    uint32_t fighterID = -1; 
-    std::vector<uint32_t> rewardDatabaseIds;  
-    std::string sweetenerAuthId = "";
-    
-    if(!ParseClaimSweetener(*a, name, sweetener, fighterID, rewardDatabaseIds, sweetenerAuthId)) return;    
-    
-    a.reset();    
-    ClaimRewardsInnerLogic(name, rewardDatabaseIds); 
-  }  
+	/* Sacrificing recipes may have freed recipe slots -> drain any held
+	   recipe-overflow rewards into ownership. */
+	PXLogic::DrainPendingRecipeRewards(player, ctx, db);
+ }
 
   void
   MoveProcessor::MaybeCookSweetener (const std::string& name, const Json::Value& sweetener)
@@ -758,8 +653,11 @@ namespace pxd
          it -- delete the row outright instead of orphaning it as owner=''. */
       recipeTbl.DeleteById(rcp);
     }
-    
-	
+
+    /* A destroyed recipe frees a recipe slot -> drain any held recipe-overflow
+       rewards into ownership. */
+    PXLogic::DrainPendingRecipeRewards(a, ctx, db);
+
     a->CalculatePrestige(ctx.RoConfig());
     a.reset();
     LOG (INFO) << "Destroy instance " << recepie << " submitted successfully ";
@@ -834,6 +732,10 @@ namespace pxd
     auto itemInventoryRecipe = GetRecepieObjectFromID((uint32_t)recepie["rid"].asInt());
     itemInventoryRecipe->SetOwner("");
     itemInventoryRecipe.reset();
+
+    /* Starting a cook de-owns the recipe -> a recipe slot just freed, so drain
+       any held recipe-overflow rewards into ownership. */
+    PXLogic::DrainPendingRecipeRewards(a, ctx, db);
 
     if(weHaveApplibeGoodyName != "")
     {
