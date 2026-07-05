@@ -474,6 +474,32 @@ TEST_F (ValidateStateTests, RecepieInstanceRevertIfFullRoster)
   EXPECT_EQ (a->GetInventory().GetFungibleCount("Common_Icing"), 1);
 }
 
+TEST_F (ValidateStateTests, CollectCookMoveIsInert)
+{
+  /* ca.cl is deleted (cooks auto-collect at resolve).  A stale client sending it
+     must be a harmless no-op: the move parses without effect and no fighter
+     changes state. */
+  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (100);
+
+  int fid;
+  {
+    auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+    auto owned = a->CollectInventoryFighters (ctx.RoConfig());
+    ASSERT_FALSE (owned.empty ());
+    fid = owned.front ()->GetId ();
+  }
+
+  Process (R"([
+    {"name": "domob", "move": {"ca": {"cl": {"fid": )" + std::to_string (fid) + R"(}}}}
+  ])");
+
+  /* The fighter is untouched -- still Available, still owned by domob. */
+  auto ft = tbl3.GetById (fid, ctx.RoConfig());
+  ASSERT_TRUE (ft != nullptr);
+  EXPECT_EQ (ft->GetStatus (), pxd::FighterStatus::Available);
+  EXPECT_EQ (ft->GetOwner (), "domob");
+}
+
 TEST_F (ValidateStateTests, UnitTestExpeditionFailsOnMainNet)
 {  
   ctx.SetChain (xaya::Chain::MAIN);

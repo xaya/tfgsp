@@ -385,13 +385,6 @@ MoveProcessor::ProcessOne (const Json::Value& moveObj)
 		MaybeDestroyRecepie (name, upd["d"]); 
 	}	
     
-    /*Trying to collect cooked recepie*/
-	const auto& ref3 = upd["cl"];
-    if (!ref3.isNull ())
-	{
-		MaybeCollectCookedRecepie (name, upd["cl"]); 
-	}	
-    
     /*Trying to cook sweetener */
 	const auto& ref4 = upd["s"];
     if (!ref4.isNull ())

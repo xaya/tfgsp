@@ -315,50 +315,6 @@ namespace pxd
      return true;   
   }      
 
-  bool BaseMoveProcessor::ParseCollectCookRecepie(const XayaPlayer& a, const std::string& name, const Json::Value& recepie, int32_t& fighterID)
-  {
-    if (!recepie.isObject ())
-    return false;
-   
-    if(!recepie["fid"].isInt())
-    {
-        return false;
-    }      
-
-    fighterID = recepie["fid"].asInt();    
-    auto fighter = fighters.GetById(fighterID, ctx.RoConfig());
-    
-    if(fighter == nullptr)
-    {
-      LOG (WARNING) << "Wrong fighter ID " << fighterID;
-      return false; 
-    }
-    
-    if(fighter->GetOwner() != a.GetName())
-    {
-      LOG (WARNING) << "Fighter does not belong to player " << fighterID;
-      fighter.reset();
-      return false;             
-    }
-    
-    if((pxd::FighterStatus)(int32_t)fighter->GetStatus() != pxd::FighterStatus::Cooked) 
-    {
-      LOG (WARNING) << "Fighter status is not Cooked: " << fighterID;
-      fighter.reset();
-      return false;              
-    }  
-	
-		uint32_t slots = fighters.CountForOwner(a.GetName());
-
-		if(slots > ctx.RoConfig()->params().max_fighter_inventory_amount())
-		{
-			LOG (WARNING) << "Not enough slots to host a new fighter";
-			return false;
-		}
-
-    return true;
-  }
-
   bool
   BaseMoveProcessor::ParseCookRecepie(const XayaPlayer& a, const std::string& name, const Json::Value& recepie, std::map<std::string, pxd::Quantity>& fungibleItemAmountForDeduction, int32_t& cookCost, int32_t& duration, std::string& weHaveApplibeGoodyName)
   {
@@ -609,31 +565,9 @@ namespace pxd
     newOp.reset();
   }
 
-  void MoveProcessor::MaybeCollectCookedRecepie(const std::string& name, const Json::Value& recepie)
-  {     
-      auto a = xayaplayers.GetByName (name, ctx.RoConfig ());  
-      
-      if(a == nullptr)
-      {
-        LOG (INFO) << "Player " << name << " not found";
-        return;
-      }    
-      
-      int32_t fighterID = 0;
-      
-      if(!ParseCollectCookRecepie(*a, name, recepie, fighterID)) return;     
-
-      auto fighter = fighters.GetById(fighterID, ctx.RoConfig());
-        
-      if(fighter != nullptr)
-      {
-         fighter->SetStatus(pxd::FighterStatus::Available);          
-      }
-  }
-
   void
   MoveProcessor::MaybeDestroyRecepie (const std::string& name, const Json::Value& recepie)
-  {          
+  {
     auto a = xayaplayers.GetByName (name, ctx.RoConfig ());
     
     if(a == nullptr)

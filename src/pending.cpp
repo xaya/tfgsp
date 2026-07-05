@@ -113,13 +113,6 @@ PendingState::AddSweetenerCookingInstance (const XayaPlayer& a, const std::strin
   aState.ongoings.push_back(newOp);
 }
 
-void PendingState::AddCookedRecepieCollectInstance(const XayaPlayer& a, int32_t fighterToCollectID, FighterTable& fighters, const pxd::RoConfig& config)
-{
-  VLOG (1) << "Adding pending collect cooked recepie" << a.GetName ();
-  auto& aState = GetXayaPlayerState (a, fighters, config);
-  aState.cookedFightersToCollect.push_back(fighterToCollectID);
-}
-
 void
 PendingState::AddRecepieCookingInstance (const XayaPlayer& a, int32_t duration, int32_t recepieID, Amount cookingCost, std::map<std::string, pxd::Quantity> fungibleItemAmountForDeduction, FighterTable& fighters, const pxd::RoConfig& config)
 {
@@ -383,17 +376,6 @@ PendingState::XayaPlayerState::ToJson () const
     res["deconstruction"] = fghttrs;
   }
 
-  if(cookedFightersToCollect.size() > 0)
-  {
-    Json::Value fghttrs(Json::arrayValue);
-    for(const auto& rw: cookedFightersToCollect) 
-    {
-      fghttrs.append(rw);
-    }  
-      
-    res["cookedFightersToCollect"] = fghttrs;      
-  }   
-  
   if(destroyrecipe.size() > 0)
   {
     Json::Value rcp(Json::arrayValue);
@@ -590,13 +572,6 @@ PendingStateUpdater::ProcessMove (const Json::Value& moveObj)
       {
         pxd::proto::ExpeditionBlueprint expeditionBlueprint;
         FighterTable::Handle fighter;
-        int32_t fighterIdToCollect = 0;
-        
-        if(ParseCollectCookRecepie(*a, name, upd["cl"], fighterIdToCollect))
-        {
-           state.AddCookedRecepieCollectInstance(*a, fighterIdToCollect, fighters, ctx.RoConfig ());
-        }    
-        
         std::vector<uint32_t> recepieIDS;
         if(ParseDestroyRecepie(*a, name, upd["d"], recepieIDS))
         {

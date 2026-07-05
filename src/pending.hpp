@@ -79,12 +79,7 @@ public:
    /**
    * Updates the state for a new recepie instance bundle
    */
-  void AddExpeditionInstance (const XayaPlayer& a, int32_t duration, std::string expeditionID, std::vector<int> fighterID, FighterTable& fighters, const pxd::RoConfig& config);  
-
-   /**
-   * Updates the state for a collecting cooked fighter recepie
-   */    
-  void AddCookedRecepieCollectInstance(const XayaPlayer& a, int32_t fighterToCollectID, FighterTable& fighters, const pxd::RoConfig& config);
+  void AddExpeditionInstance (const XayaPlayer& a, int32_t duration, std::string expeditionID, std::vector<int> fighterID, FighterTable& fighters, const pxd::RoConfig& config);
 
    /**
    * Updates the state for a new pending tournament entries
@@ -186,12 +181,8 @@ public:
     */    
     std::vector<std::string> purchasing;
 
-    /** Pending ids of fighters ready to collect
-    */    
-    std::vector<int32_t> cookedFightersToCollect;    
-    
     /** Pending ids of recepies ready to destroy
-    */    
+    */
     std::vector<int32_t> destroyrecipe;      
 	
     /** Pending data for all transfigure-involved objects

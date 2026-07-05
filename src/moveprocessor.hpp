@@ -191,17 +191,11 @@ protected:
    */       
    
   bool ParseTransfigureData(const XayaPlayer& a, const Json::Value& fighter);
-    
-  /**
-   * Tries to parse a move that collects cooked fighter
-   */       
-   
-  bool ParseCollectCookRecepie(const XayaPlayer& a, const std::string& name, const Json::Value& recepie, int32_t& fighterID);
-    
+
    /**
    * Tries to parse a move that send fighter on the expedition
-   */    
- 
+   */
+
   bool ParseExpeditionData(const XayaPlayer& a, const Json::Value& expedition, pxd::proto::ExpeditionBlueprint& expeditionBlueprint, std::vector<int32_t>& fightersIds, int32_t& duration, std::string& weHaveApplibeGoodyName);
  
    /**
@@ -373,20 +367,15 @@ private:
   /**
   * Tries to destroy recepie instance
   */  
-  void MaybeDestroyRecepie (const std::string& name, const Json::Value& recepie);  
-  
+  void MaybeDestroyRecepie (const std::string& name, const Json::Value& recepie);
+
   /**
-  * Tries to colled cooked fighter
-  */  
-  void MaybeCollectCookedRecepie (const std::string& name, const Json::Value& recepie);  
-  
-  /**
-  */   
-  
+  */
+
   /**
   * Tries to cook sweetener instance
-  */  
-  void MaybeCookSweetener (const std::string& name, const Json::Value& sweetener);  
+  */
+  void MaybeCookSweetener (const std::string& name, const Json::Value& sweetener);
   
   /**
   * Tries to send the fighter for the expedition

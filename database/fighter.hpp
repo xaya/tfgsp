@@ -70,7 +70,7 @@ enum class FighterStatus : int8_t
   Cooking = 4,
   Deconstructing = 5,
   // 6 retired (special-tournament feature removed)
-  Cooked = 7,
+  // 7 retired (cook-collect status removed; cooks auto-collect at resolve)
   Transfiguring = 8
 };
 
