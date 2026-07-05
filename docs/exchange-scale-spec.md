@@ -98,7 +98,7 @@ getexchange({
   order,          // 'asc' | 'desc'
   minquality?, maxquality?,   // optional filters
   minprice?,     maxprice?,
-  affordableFor?, // optional: price <= this many crystals (maps to caller balance)
+  affordablefor?, // optional: price <= this many crystals (maps to caller balance)
   excludeowner?   // caller's name; self-listings filtered SERVER-side
 })
 ```
@@ -106,10 +106,15 @@ getexchange({
 **Response:**
 
 ```
+Exchange() returns just:
 { fighters: [ ...one page, already Convert<FighterInstance> ... ],
-  total,     // COUNT(*) of rows matching the filter (before LIMIT/OFFSET) — for "N listings" + page count
-  height }
+  total }    // COUNT(*) of rows matching the filter (before LIMIT/OFFSET) — for "N listings" + page count
 ```
+
+`height` is NOT a key of this object — it rides on the standard libxayagame read envelope
+(`{ blockhash, height, state, data: {fighters, total} }`), so `GspClient.getExchange` reads
+`total` from `.data` and `height` from the envelope. All request keys are lowercase
+(`affordablefor`, `excludeowner`, `minquality`, …) — the exact keys `GameStateJson::Exchange` reads.
 
 **Query shape:**
 
