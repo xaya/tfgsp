@@ -34,6 +34,7 @@
 #include "database/ongoings.hpp"
 #include "database/amount.hpp"
 #include "database/globaldata.hpp"
+#include "database/params.hpp"
 
 #include <xayautil/random.hpp>
 
@@ -309,7 +310,18 @@ private:
    * integration testing, so that this will only be done on regtest.
    */
   void HandleGodMode (const Json::Value& cmd);
-  
+
+  /**
+   * Handles a runtime-parameter admin command (the `param` verb).  Unlike
+   * god-mode this is NOT gated on REGTEST -- it is live on POLYGON, authorised
+   * solely by ownership of the g/tf admin name (libxayagame only delivers admin
+   * moves from that name).  Parses an array of {n:string, v:int|null} ops and
+   * applies range-guarded SetParam; unknown names and out-of-range values are
+   * ignored (soft-fail, never CHECK), and removal of the required knobs is
+   * refused (GetParam CHECK-fails on unset).
+   */
+  void HandleSetParam (const Json::Value& cmd);
+
   /*Global data command to set up using regtest commands on in production using xaya owned game name*/
   void MaybeSetNewCostMultiplier (const Json::Value& cmd);
   void MaybeSetNewVersionIdentifier (const Json::Value& cmd);

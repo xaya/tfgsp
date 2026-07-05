@@ -25,6 +25,7 @@
 #include "database/recipe.hpp"
 #include "database/ongoings.hpp"
 #include "database/globaldata.hpp"
+#include "database/params.hpp"
 
 #include "proto/tournament_result.pb.h"
 
@@ -198,6 +199,9 @@ PXLogic::InitialiseState (xaya::SQLiteDatabase& db)
 
   GlobalData gd(dbObj);
   gd.InitialiseDatabase ();
+
+  GameParams gp(dbObj);
+  gp.InitialiseDatabase ();
 
   /* The initialisation uses up some auto IDs, namely for placed buildings.
      We start "regular" IDs at a later value to avoid shifting them always

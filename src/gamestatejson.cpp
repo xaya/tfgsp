@@ -22,6 +22,8 @@
 #include "database/fighter.hpp"
 #include "database/recipe.hpp"
 #include "database/globaldata.hpp"
+#include "database/params.hpp"
+#include "database/battlelosses.hpp"
 #include "database/reward.hpp"
 #include "database/ongoings.hpp"
 
@@ -630,8 +632,27 @@ GameStateJson::User(const std::string& userName)
   res["vanillaurl"] = gd.GetUrl();
   res["multiplier"] = IntToJson(gd.GetChiMultiplier());
 
+  /* Change C: the loser's "you lost a treat" records (destroyed/captured in a
+     tournament).  Bumped alongside a rewards_serial advance so the client's
+     serial-driven reveal surfaces them exactly once. */
+  BattleLossesTable lossesTbl(db);
+  auto lossRes = lossesTbl.QueryForOwner (userName);
+  Json::Value lossesArr(Json::arrayValue);
+  while (lossRes.Step ())
+    {
+      Json::Value o(Json::objectValue);
+      o["id"] = IntToJson (lossRes.Get<BattleLossResult::id> ());
+      o["fighterid"] = IntToJson (lossRes.Get<BattleLossResult::fighterid> ());
+      o["name"] = lossRes.Get<BattleLossResult::name> ();
+      o["outcome"] = IntToJson (lossRes.Get<BattleLossResult::outcome> ());
+      o["opponent"] = lossRes.Get<BattleLossResult::opponent> ();
+      o["tournamentid"] = IntToJson (lossRes.Get<BattleLossResult::tournamentid> ());
+      lossesArr.append (o);
+    }
+  res["battlelosses"] = lossesArr;
+
   return res;
-} 
+}
 
 Json::Value
 GameStateJson::UserTournaments(const std::string& userName)

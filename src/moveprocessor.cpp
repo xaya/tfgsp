@@ -164,6 +164,7 @@ MoveProcessor::ProcessOneAdmin (const Json::Value& cmd)
     return;
 
   HandleGodMode (cmd["god"]);
+  HandleSetParam (cmd["param"]);
 }
 
 void
@@ -181,6 +182,76 @@ MoveProcessor::HandleGodMode (const Json::Value& cmd)
 	MaybeSetNewCostMultiplier (cmd["cost"]);
 	MaybeSetNewVersionIdentifier (cmd["version"]);
 	MaybeSetNewVanillaDownloadUrl (cmd["vanillaurl"]);
+}
+
+void
+MoveProcessor::HandleSetParam (const Json::Value& cmd)
+{
+  if (!cmd.isArray ())
+    return;
+
+  GameParams gp(db);
+
+  for (const auto& op : cmd)
+    {
+      if (!op.isObject ())
+        continue;
+
+      const auto& nameVal = op["n"];
+      if (!nameVal.isString ())
+        continue;
+      const std::string name = nameVal.asString ();
+
+      /* Only these three knobs are settable.  An unknown name never creates a
+         phantom consensus row (a fat-finger / future-typo can't add state). */
+      const bool known = (name == "rarest_recipe_drop_divisor"
+                       || name == "tournament_loss_kills_enabled"
+                       || name == "tournament_capture_pct");
+      if (!known)
+        {
+          LOG (WARNING) << "Ignoring setparam for unknown name: " << name;
+          continue;
+        }
+
+      const auto& vVal = op["v"];
+
+      /* Removal is refused: GetParam CHECK-fails on unset, so removing a seeded
+         knob would crash every node on the next reward/tournament read.  The
+         Soccerverse v:null=remove semantics are kept in the parser shape, but
+         these three knobs are load-bearing, so removal is a no-op here. */
+      if (vVal.isNull ())
+        {
+          LOG (WARNING) << "Refusing to remove required param: " << name;
+          continue;
+        }
+      if (!vVal.isInt ())
+        {
+          LOG (WARNING) << "Ignoring non-int setparam value for " << name;
+          continue;
+        }
+      const int64_t v = vVal.asInt64 ();
+
+      /* Range guards -- mirrors MaybeSetNewCostMultiplier.  divisor feeds
+         weight*divisor in ScaledRewardWeights (kept well under uint32 overflow);
+         capture_pct is compared against rnd.NextInt(256); kills_enabled is a
+         boolean flag.  Soft-fail (LOG + skip), never CHECK: an admin move must
+         not be able to crash the daemon. */
+      bool ok = false;
+      if (name == "rarest_recipe_drop_divisor")
+        ok = (v >= 1 && v <= 100000);
+      else if (name == "tournament_capture_pct")
+        ok = (v >= 0 && v <= 256);
+      else if (name == "tournament_loss_kills_enabled")
+        ok = (v == 0 || v == 1);
+
+      if (!ok)
+        {
+          LOG (WARNING) << "Ignoring out-of-range setparam " << name << " = " << v;
+          continue;
+        }
+
+      gp.SetParam (name, v);
+    }
 }
 
 void

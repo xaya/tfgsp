@@ -71,6 +71,18 @@ CREATE TABLE IF NOT EXISTS `globaldata` (
   `queuedata` TEXT NOT NULL
 );
 
+-- Runtime-tunable game parameters (Soccerverse `parameters` pattern): a small
+-- KV table set live via a g/tf admin `param` move, so the balance knobs can be
+-- retuned without a rebuild/re-pin.  Seeded at genesis (GameParams::
+-- InitialiseDatabase); GameParams::GetParam CHECK-fails on an unset name so the
+-- value is always the on-chain seeded/admin value (never a drifting C++ literal
+-- / silent hard fork).  Added the additive `IF NOT EXISTS` way, same as
+-- ongoing_operations, so it perturbs no existing table's bytes.
+CREATE TABLE IF NOT EXISTS `parameters` (
+  `name` TEXT PRIMARY KEY,
+  `value` INTEGER NOT NULL
+);
+
 -- Data for the recipe instances in the game.
 CREATE TABLE IF NOT EXISTS `recepies` (
 
@@ -112,6 +124,24 @@ CREATE TABLE IF NOT EXISTS `rewards` (
 -- generation (mirrors the ongoing_operations_by_owner pattern).
 CREATE INDEX IF NOT EXISTS `rewards_by_owner`
   ON `rewards` (`owner`);
+
+-- Change C: a client-visible record of every fighter lost in a tournament
+-- (destroyed or captured), so the loser gets a "you lost a treat" reveal.  One
+-- row per loss; surfaced in getuser; the loser's rewards_serial is bumped
+-- alongside so the existing serial-driven reveal fires.  Flat columns (no proto)
+-- since the shape is small and fixed.  Added the additive IF NOT EXISTS way.
+CREATE TABLE IF NOT EXISTS `battle_losses` (
+  `id` INTEGER PRIMARY KEY,
+  `owner` TEXT NOT NULL,
+  `fighterid` INTEGER NOT NULL,
+  `name` TEXT NOT NULL,
+  `outcome` INTEGER NOT NULL,   -- 0 = destroyed, 1 = captured
+  `opponent` TEXT NOT NULL,     -- the tournament winner's Xaya name
+  `tournamentid` INTEGER NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS `battle_losses_by_owner`
+  ON `battle_losses` (`owner`);
 
 -- Data for the fighters in the game.
 CREATE TABLE IF NOT EXISTS `fighters` (

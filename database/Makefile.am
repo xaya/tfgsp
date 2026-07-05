@@ -16,6 +16,8 @@ libdatabase_la_SOURCES = \
   schema.cpp \
   reward.cpp \
   globaldata.cpp \
+  params.cpp \
+  battlelosses.cpp \
   xayaplayer.cpp \
   tournament.cpp \
   recipe.cpp \
@@ -35,6 +37,8 @@ noinst_HEADERS = \
   fighter.hpp fighter.tpp\
   xayaplayer.hpp \
   globaldata.hpp \
+  params.hpp \
+  battlelosses.hpp \
   uniquehandles.hpp uniquehandles.tpp
 
 check_LTLIBRARIES = libdbtest.la
@@ -72,7 +76,9 @@ tests_SOURCES = \
   fighter_tests.cpp \
   uniquehandles_tests.cpp \
   lazyproto_tests.cpp \
-  inventory_tests.cpp
+  inventory_tests.cpp \
+  params_tests.cpp \
+  battlelosses_tests.cpp
 
 schema.cpp: schema_head.cpp schema.sql schema_tail.cpp
 	cat $^ >$@

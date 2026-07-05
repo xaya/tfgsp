@@ -205,6 +205,43 @@ TEST_F (MoveProcessorTests, AllAdminDataAccepted)
     }
 }
 
+/* Change 0: the non-god-gated `param` admin verb (live balance tuning via g/tf). */
+TEST_F (MoveProcessorTests, SetParamAdminUpdatesValue)
+{
+  ProcessAdmin (R"([{"cmd": {"param": [{"n": "rarest_recipe_drop_divisor", "v": 8}]}}])");
+  EXPECT_EQ (GameParams (db).GetParam ("rarest_recipe_drop_divisor"), 8);
+}
+
+TEST_F (MoveProcessorTests, SetParamRejectsUnknownName)
+{
+  ProcessAdmin (R"([{"cmd": {"param": [{"n": "bogus_param", "v": 5}]}}])");
+  EXPECT_FALSE (GameParams (db).HasParam ("bogus_param"));
+}
+
+TEST_F (MoveProcessorTests, SetParamRejectsOutOfRange)
+{
+  ProcessAdmin (R"([{"cmd": {"param": [{"n": "tournament_capture_pct", "v": 300}]}}])");
+  EXPECT_EQ (GameParams (db).GetParam ("tournament_capture_pct"), 128);   // unchanged
+  ProcessAdmin (R"([{"cmd": {"param": [{"n": "rarest_recipe_drop_divisor", "v": 0}]}}])");
+  EXPECT_EQ (GameParams (db).GetParam ("rarest_recipe_drop_divisor"), 4); // unchanged
+  ProcessAdmin (R"([{"cmd": {"param": [{"n": "tournament_loss_kills_enabled", "v": 2}]}}])");
+  EXPECT_EQ (GameParams (db).GetParam ("tournament_loss_kills_enabled"), 1); // unchanged
+}
+
+TEST_F (MoveProcessorTests, SetParamRefusesRemovalOfRequired)
+{
+  ProcessAdmin (R"([{"cmd": {"param": [{"n": "tournament_capture_pct", "v": null}]}}])");
+  EXPECT_TRUE (GameParams (db).HasParam ("tournament_capture_pct"));   // still present
+}
+
+TEST_F (MoveProcessorTests, SetParamAtBoundaries)
+{
+  ProcessAdmin (R"([{"cmd": {"param": [{"n": "tournament_capture_pct", "v": 256}]}}])");
+  EXPECT_EQ (GameParams (db).GetParam ("tournament_capture_pct"), 256);   // at max -> accepted
+  ProcessAdmin (R"([{"cmd": {"param": [{"n": "tournament_capture_pct", "v": 0}]}}])");
+  EXPECT_EQ (GameParams (db).GetParam ("tournament_capture_pct"), 0);     // at min -> accepted
+}
+
 /* ************************************************************************** */
 
 using XayaPlayersUpdateTests = MoveProcessorTests;

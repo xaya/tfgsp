@@ -19,6 +19,7 @@
 #include "dbtest.hpp"
 
 #include "globaldata.hpp"
+#include "params.hpp"
 
 #include "schema.hpp"
 
@@ -52,6 +53,9 @@ DBTestWithSchema::DBTestWithSchema ()
 
   GlobalData gd(db);
   gd.InitialiseDatabase ();
+
+  GameParams gp(db);
+  gp.InitialiseDatabase ();
 }
 
 TemporaryDatabaseChanges::TemporaryDatabaseChanges (Database& d,
