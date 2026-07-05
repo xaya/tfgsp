@@ -118,17 +118,28 @@ CREATE TABLE IF NOT EXISTS `fighters` (
 
   -- The fighter ID, which is assigned based on libxayagame's AutoIds.
   `id` INTEGER PRIMARY KEY,
-  
+
  -- The Xaya name that owns this fighter (and is thus allowed to send
   -- moves for it).
-  `owner` TEXT NOT NULL,  
+  `owner` TEXT NOT NULL,
 
   -- Additional data encoded as a Fighter protocol buffer.
   `proto` BLOB NOT NULL,
-  
+
   -- The status (as integer corresponding to the FighterStatus enum in C++).
   -- Is always Available on start, when fresh fighter is created.
-  `status` INTEGER NULL    
+  `status` INTEGER NULL,
+
+  -- Denormalised projections of proto fields, re-bound from the proto on EVERY
+  -- INSERT OR REPLACE (database/fighter.cpp ~FighterInstance) so they can never
+  -- drift from the blob. They exist purely to make the marketplace query
+  -- (getexchange) and the per-block listing-expiry maintenance index-driven
+  -- instead of full scans. (SQLite generated columns can't parse a protobuf, so
+  -- these are explicit columns bound in C++.)
+  `price` INTEGER NOT NULL DEFAULT 0,
+  `expire` INTEGER NOT NULL DEFAULT 0,
+  `quality` INTEGER NOT NULL DEFAULT 0,
+  `sweetness` INTEGER NOT NULL DEFAULT 0
 );
 
 -- "Which fighters need a per-block status flip" -- the two per-block maintenance
@@ -144,6 +155,19 @@ CREATE INDEX IF NOT EXISTS `fighters_by_status`
 -- full-scan the unbounded `fighters` table each time (mirrors rewards_by_owner).
 CREATE INDEX IF NOT EXISTS `fighters_by_owner`
   ON `fighters` (`owner`);
+
+-- Marketplace query + event-driven listing expiry: each sort/filter column is
+-- indexed with a leading `status` so getexchange (WHERE status=Exchange ORDER BY
+-- <col>) and CheckFightersForSale (WHERE status=Exchange AND expire<height) are
+-- index-driven and O(page)/O(expiring), never O(all listings).
+CREATE INDEX IF NOT EXISTS `fighters_exchange_price`
+  ON `fighters` (`status`, `price`);
+CREATE INDEX IF NOT EXISTS `fighters_exchange_quality`
+  ON `fighters` (`status`, `quality`);
+CREATE INDEX IF NOT EXISTS `fighters_exchange_sweetness`
+  ON `fighters` (`status`, `sweetness`);
+CREATE INDEX IF NOT EXISTS `fighters_exchange_expire`
+  ON `fighters` (`status`, `expire`);
 
 -- Data stored for the Xaya players (names) themselves.
 CREATE TABLE IF NOT EXISTS `xayaplayers` (

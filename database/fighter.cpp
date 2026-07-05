@@ -413,17 +413,22 @@ FighterInstance::~FighterInstance ()
           << " has been modified including proto data, updating DB";
       auto stmt = db.Prepare (R"(
         INSERT OR REPLACE INTO `fighters`
-          (`id`,`owner`, `proto`, `status`)
+          (`id`,`owner`, `proto`, `status`, `price`, `expire`, `quality`, `sweetness`)
           VALUES
-          (?1,
-           ?2,
-           ?3,
-           ?4)
+          (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
       )");
 
-      BindFieldValues (stmt);
-      stmt.BindProto (3, data);
-      BindStatusParameter (stmt, 4, status);
+      BindFieldValues (stmt);                 // ?1 id, ?2 owner
+      stmt.BindProto (3, data);               // ?3 proto (the single source of truth)
+      BindStatusParameter (stmt, 4, status);  // ?4 status
+      /* ?5..?8: pure projections of the proto, so the marketplace query + expiry
+         maintenance can be index-driven. Re-derived here on every flush → cannot
+         drift from the blob. */
+      const auto& pb = data.Get ();
+      stmt.Bind (5, static_cast<int64_t> (pb.exchangeprice ()));
+      stmt.Bind (6, static_cast<int64_t> (pb.exchangeexpire ()));
+      stmt.Bind (7, static_cast<int64_t> (pb.quality ()));
+      stmt.Bind (8, static_cast<int64_t> (pb.sweetness ()));
       stmt.Execute ();
 
       return;

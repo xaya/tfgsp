@@ -113,5 +113,53 @@ TEST_F (FighterTests, FormulaChecks)
     EXPECT_EQ (f1->GetProto().sweetness(), 1);
 }
 
+/* The exchange/quality columns are pure projections of the proto, re-bound on every flush; read them
+   back with a raw SELECT to prove they cannot drift from the blob. */
+struct ExchangeColsResult : public Database::ResultType
+{
+  RESULT_COLUMN (int64_t, price, 1);
+  RESULT_COLUMN (int64_t, expire, 2);
+  RESULT_COLUMN (int64_t, quality, 3);
+  RESULT_COLUMN (int64_t, sweetness, 4);
+};
+
+TEST_F (FighterTests, ExchangeColumnsProjectProto)
+{
+  auto r0 = tbl2.CreateNew ("orvald", "5864a19b-c8c0-2d34-eaef-9455af0baf2c", *cfg);
+  const auto rid = r0->GetId ();
+  r0.reset ();
+
+  auto f = tbl.CreateNew ("orvald", rid, *cfg, rnd);
+  const auto fid = f->GetId ();
+  f->SetStatus (pxd::FighterStatus::Exchange);
+  f->MutableProto ().set_exchangeprice (500);
+  f->MutableProto ().set_exchangeexpire (12345);
+  f->MutableProto ().set_quality (4);
+  f->MutableProto ().set_sweetness (7);
+  f.reset (); // destructor flushes the row
+
+  auto stmt = db.Prepare (
+      "SELECT `price`,`expire`,`quality`,`sweetness` FROM `fighters` WHERE `id` = ?1");
+  stmt.Bind (1, fid);
+  auto res = stmt.Query<ExchangeColsResult> ();
+  ASSERT_TRUE (res.Step ());
+  EXPECT_EQ (res.Get<ExchangeColsResult::price> (), 500);
+  EXPECT_EQ (res.Get<ExchangeColsResult::expire> (), 12345);
+  EXPECT_EQ (res.Get<ExchangeColsResult::quality> (), 4);
+  EXPECT_EQ (res.Get<ExchangeColsResult::sweetness> (), 7);
+
+  /* Re-flip to Available (a sale/expiry) and lower price: the column must follow the proto. */
+  auto f2 = tbl.GetById (fid, *cfg);
+  f2->SetStatus (pxd::FighterStatus::Available);
+  f2->MutableProto ().set_exchangeprice (0);
+  f2.reset ();
+
+  auto stmt2 = db.Prepare ("SELECT `price` FROM `fighters` WHERE `id` = ?1");
+  stmt2.Bind (1, fid);
+  auto res2 = stmt2.Query<ExchangeColsResult> ();
+  ASSERT_TRUE (res2.Step ());
+  EXPECT_EQ (res2.Get<ExchangeColsResult::price> (), 0);
+}
+
 } // anonymous namespace
 } // namespace pxd
