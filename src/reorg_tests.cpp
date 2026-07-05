@@ -82,8 +82,11 @@
 #include "testutils.hpp"
 
 #include "database/dbtest.hpp"
+#include "database/battlelosses.hpp"
 #include "database/fighter.hpp"
+#include "database/params.hpp"
 #include "database/recipe.hpp"
+#include "database/tournament.hpp"
 #include "database/xayaplayer.hpp"
 
 #include <glog/logging.h>
@@ -167,6 +170,7 @@ protected:
   XayaPlayersTable xayaplayers;
   RecipeInstanceTable tbl2;
   FighterTable tbl3;
+  TournamentTable tbl5;
 
   /** Fighter ids set up for the "building" actors (see SetupActors).  */
   struct Actors
@@ -175,7 +179,7 @@ protected:
   };
 
   ReorgTests ()
-    : xayaplayers(db), tbl2(db), tbl3(db)
+    : xayaplayers(db), tbl2(db), tbl3(db), tbl5(db)
   {
     /* Production chain, started just past the relaunch genesis -- see the file
        header for why REGTEST is unsuitable here.  */
@@ -352,6 +356,154 @@ protected:
   OngoingsOf (const std::string& name)
   {
     return xayaplayers.GetByName (name, ctx.RoConfig ())->GetOngoingsSize ();
+  }
+
+  /* ----- tournament permadeath setup (for the permadeath reorg tests) --- */
+
+  /** The two teams' entered fighter ids + the tournament instance id, left one
+      block short of resolution by SetupTournamentAtBrink().  */
+  struct TournamentSetup
+  {
+    uint32_t tid = 0;
+    uint32_t d1 = 0, d2 = 0;   /* domob's entered fighters */
+    uint32_t a1 = 0, a2 = 0;   /* andy's entered fighters  */
+  };
+
+  /** Winner/loser (+ the loser's entered ids) read from a resolved tournament. */
+  struct Resolved
+  {
+    std::string winner, loser;
+    std::vector<uint32_t> loserFighters;
+  };
+
+  /**
+   * Gives every fighter in teamA a single move of one type and every fighter in
+   * teamB a single move of a DIFFERENT type.  Combat is move-type RPS, so every
+   * cross-team pairing then resolves the same, non-draw way -> the tournament
+   * always produces a decisive winner, independent of the per-block RNG (which
+   * only shuffles move ORDER).  This removes the sole flakiness -- a tied score,
+   * which fires no permadeath -- from an otherwise fully real resolution.
+   */
+  void
+  AssignDistinctMoveTypes (const std::vector<uint32_t>& teamA,
+                           const std::vector<uint32_t>& teamB)
+  {
+    std::string moveA, moveB;
+    int typeA = -1;
+    for (const auto& mb : ctx.RoConfig ()->fightermoveblueprints ())
+      {
+        const int ty = static_cast<int32_t> (mb.second.movetype ());
+        if (moveA.empty ())
+          { moveA = mb.second.authoredid (); typeA = ty; }
+        else if (ty != typeA)
+          { moveB = mb.second.authoredid (); break; }
+      }
+    CHECK (!moveA.empty () && !moveB.empty ())
+        << "roconfig lacks two distinct fighter-move types";
+
+    const auto setMove = [&] (const std::vector<uint32_t>& team,
+                              const std::string& mv)
+    {
+      for (const uint32_t fid : team)
+        {
+          auto f = tbl3.GetById (fid, ctx.RoConfig ());
+          f->MutableProto ().clear_moves ();
+          f->MutableProto ().add_moves (mv);
+          f.reset ();
+        }
+    };
+    setMove (teamA, moveA);
+    setMove (teamB, moveB);
+  }
+
+  /** Enters `who`'s two fighters into tournament `tid` via the real move
+      processor (no block tick).  */
+  void
+  JoinTournament (const std::string& who, const uint32_t tid,
+                  const uint32_t a, const uint32_t b)
+  {
+    std::ostringstream m;
+    m << R"([{"name":")" << who << R"(","move":{"tm":{"e":{"tid":)" << tid
+      << R"(,"fc":[)" << a << "," << b << R"(]}}}}])";
+    Process (m.str ());
+  }
+
+  /**
+   * Creates domob + andy, two non-account-bound fighters each, enters both full
+   * teams into the rank-1 tournament, and ticks it to Running with exactly one
+   * block left -- so the NEXT block resolves it (and fires permadeath).  The
+   * outcome is forced decisive via AssignDistinctMoveTypes.
+   */
+  TournamentSetup
+  SetupTournamentAtBrink ()
+  {
+    /* The Rank-1 entry tournament (2x2, sweetness 1-3, joincost 0, duration 15).
+       NOT the FTUE tutorial tournament -- that one is hard-blocked from being
+       joined off REGTEST (moveprocessor_activity.cpp), whereas this is the real
+       entry-level PvP tournament a fresh sweetness-1 fighter can actually enter. */
+    const std::string RANK1 = "e694d5f8-e454-7774-ca76-fc2637a9407f";
+
+    const auto mkFighter = [&] (const std::string& owner) -> uint32_t
+    {
+      auto f = tbl3.CreateNew (owner, 1, ctx.RoConfig (), rnd);
+      const uint32_t id = f->GetId ();
+      f->MutableProto ().set_isaccountbound (false);
+      f.reset ();
+      return id;
+    };
+
+    xayaplayers.CreateNew ("domob", ctx.RoConfig (), rnd).reset ();
+    xayaplayers.CreateNew ("andy",  ctx.RoConfig (), rnd).reset ();
+
+    TournamentSetup s;
+    s.d1 = mkFighter ("domob");
+    s.d2 = mkFighter ("domob");
+    s.a1 = mkFighter ("andy");
+    s.a2 = mkFighter ("andy");
+    AssignDistinctMoveTypes ({s.d1, s.d2}, {s.a1, s.a2});
+
+    /* One tick creates the tournament instance (ReopenMissingTournaments). */
+    AdvanceBlocks (1);
+    auto tut = tbl5.GetByAuthIdName (RANK1, ctx.RoConfig ());
+    CHECK (tut != nullptr) << "rank-1 tournament instance not auto-created";
+    s.tid = tut->GetId ();
+    tut.reset ();
+
+    JoinTournament ("domob", s.tid, s.d1, s.d2);
+    JoinTournament ("andy",  s.tid, s.a1, s.a2);
+
+    /* Advance until Running with exactly one block remaining. */
+    for (int guard = 0; guard < 64; ++guard)
+      {
+        auto trn = tbl5.GetById (s.tid, ctx.RoConfig ());
+        const auto st = static_cast<pxd::TournamentState> (
+            static_cast<int32_t> (trn->GetInstance ().state ()));
+        const int bl = static_cast<int32_t> (trn->GetInstance ().blocksleft ());
+        trn.reset ();
+        if (st == pxd::TournamentState::Running && bl == 1)
+          return s;
+        CHECK (st != pxd::TournamentState::Completed)
+            << "tournament resolved before it could be isolated for reorg";
+        AdvanceBlocks (1);
+      }
+    ADD_FAILURE () << "tournament never reached the brink of resolution";
+    return s;
+  }
+
+  /** Reads winner/loser + the loser's entered fighter ids from the resolved
+      tournament.  The caller must first assert a decisive (non-empty) winner. */
+  Resolved
+  IdentifyResult (const TournamentSetup& s)
+  {
+    auto trn = tbl5.GetById (s.tid, ctx.RoConfig ());
+    Resolved r;
+    r.winner = trn->GetInstance ().winnerid ();
+    trn.reset ();
+    r.loser = (r.winner == "domob") ? "andy" : "domob";
+    r.loserFighters = (r.winner == "domob")
+        ? std::vector<uint32_t> {s.a1, s.a2}
+        : std::vector<uint32_t> {s.d1, s.d2};
+    return r;
   }
 
   /* ----- the reorg primitives ------------------------------------------ */
@@ -856,6 +1008,153 @@ TEST_F (ReorgTests, TradeReorgRestoresStateExactly)
       << "buyer balance not reverted by undo";
   EXPECT_EQ (xayaplayers.GetByName ("seller", ctx.RoConfig ())->GetBalance (), 1000)
       << "seller balance not reverted by undo";
+}
+
+/**
+ * Tournament permadeath -- DESTROY branch (Change A/C).  Resolving a tournament
+ * with capture disabled DELETES one of the losing team's entered fighters,
+ * writes a battle_losses row, and bumps the loser's rewards_serial.  Reorging
+ * that resolution block out must restore the deleted fighter row byte-for-byte,
+ * drop the loss record, revert the serial -- i.e. the whole database returns
+ * exactly to the pre-resolution snapshot.  A row DELETE round-trip is the case
+ * the trade test (an ownership UPDATE) does not exercise.
+ */
+TEST_F (ReorgTests, TournamentDestroyReorgRestoresStateExactly)
+{
+  GameParams (db).SetParam ("tournament_loss_kills_enabled", 1);
+  GameParams (db).SetParam ("tournament_capture_pct", 0);      /* always destroy */
+
+  const auto s = SetupTournamentAtBrink ();
+
+  /* Snapshot the exact pre-resolution state + the id counter (the resolution
+     block mints rewards and reopens a tournament, both allocating ids). */
+  const auto b0 = WholeDbHashes ();
+  const IdT idAtB0 = PeekNextId ();
+  const unsigned hBrink = ctx.Height ();     /* resolution runs at hBrink+1 */
+
+  /* The resolution block: the tournament resolves and permadeath fires. */
+  const auto cs = RunBlockCapture ("[]");
+  const auto bResolved = WholeDbHashes ();
+
+  const auto r = IdentifyResult (s);
+  ASSERT_NE (r.winner, "") << "tournament drew -- no permadeath to test";
+
+  /* Exactly one of the losing team was destroyed; the loss was recorded. */
+  int alive = 0;
+  for (const uint32_t fid : r.loserFighters)
+    if (tbl3.GetById (fid, ctx.RoConfig ()) != nullptr) ++alive;
+  EXPECT_EQ (alive, 1) << "exactly one of the losing team should be destroyed";
+  {
+    BattleLossesTable bl(db);
+    auto lr = bl.QueryForOwner (r.loser);
+    ASSERT_TRUE (lr.Step ()) << "no battle_losses row written";
+    EXPECT_EQ (lr.Get<BattleLossResult::outcome> (), 0) << "not marked destroyed";
+    EXPECT_EQ (lr.Get<BattleLossResult::opponent> (), r.winner);
+  }
+
+  /* Reorg the resolution out: the deleted fighter row, the loss record, the
+     serial bump and everything else must round-trip exactly. */
+  ApplyInverse (cs);
+  RestoreNextId (idAtB0);
+  ExpectStateEq (WholeDbHashes (), b0, "undo tournament destroy -> pre-resolution");
+
+  for (const uint32_t fid : r.loserFighters)
+    {
+      auto f = tbl3.GetById (fid, ctx.RoConfig ());
+      ASSERT_NE (f, nullptr) << "destroyed fighter not restored by undo";
+      EXPECT_EQ (f->GetOwner (), r.loser) << "restored fighter has wrong owner";
+    }
+  {
+    BattleLossesTable bl(db);
+    EXPECT_FALSE (bl.QueryForOwner (r.loser).Step ())
+        << "battle_losses row not reverted by undo";
+  }
+
+  /* Re-attach: replay the identical resolution block (same height -> same
+     block-hash-seeded RNG).  The RNG-SELECTED permadeath outcome -- which
+     fighter is the victim (rnd.NextInt(roster.size())) and destroy-vs-capture
+     (rnd.NextInt(256)) -- must reproduce EXACTLY, so both the resolved state and
+     the block's changeset come out byte-identical (a reorg-and-back is a true
+     no-op on disk).  The sibling build/resolve test proves this for the
+     cook/deconstruct RNG; this extends it to the permadeath draws.  (Cross-
+     machine determinism is covered separately by golden replay / WASM==native.) */
+  RestoreNextId (idAtB0);
+  SetHeight (hBrink);
+  const auto cs2 = RunBlockCapture ("[]");
+  ExpectStateEq (WholeDbHashes (), bResolved,
+                 "re-apply tournament destroy is deterministic");
+  EXPECT_EQ (cs, cs2)
+      << "re-applied resolution changeset differs (nondeterministic permadeath)";
+}
+
+/**
+ * Tournament permadeath -- CAPTURE branch (Change A/C).  With capture forced on,
+ * one of the losing team's fighters transfers to the winner (SetOwner) instead
+ * of being destroyed.  Reorging the block must return ownership to the loser and
+ * drop the loss record -- the whole database back to the pre-resolution
+ * snapshot.  This is the tournament-path analogue of the trade reorg test.
+ */
+TEST_F (ReorgTests, TournamentCaptureReorgRestoresStateExactly)
+{
+  GameParams (db).SetParam ("tournament_loss_kills_enabled", 1);
+  GameParams (db).SetParam ("tournament_capture_pct", 256);    /* always capture */
+
+  const auto s = SetupTournamentAtBrink ();
+
+  const auto b0 = WholeDbHashes ();
+  const IdT idAtB0 = PeekNextId ();
+  const unsigned hBrink = ctx.Height ();     /* resolution runs at hBrink+1 */
+
+  const auto cs = RunBlockCapture ("[]");
+  const auto bResolved = WholeDbHashes ();
+
+  const auto r = IdentifyResult (s);
+  ASSERT_NE (r.winner, "") << "tournament drew -- no permadeath to test";
+
+  /* Exactly one losing fighter captured to the winner; both still exist. */
+  int captured = 0;
+  for (const uint32_t fid : r.loserFighters)
+    {
+      auto f = tbl3.GetById (fid, ctx.RoConfig ());
+      ASSERT_NE (f, nullptr) << "capture must not destroy the fighter";
+      if (f->GetOwner () == r.winner) ++captured;
+    }
+  EXPECT_EQ (captured, 1) << "exactly one of the losing team should be captured";
+  {
+    BattleLossesTable bl(db);
+    auto lr = bl.QueryForOwner (r.loser);
+    ASSERT_TRUE (lr.Step ()) << "no battle_losses row written";
+    EXPECT_EQ (lr.Get<BattleLossResult::outcome> (), 1) << "not marked captured";
+    EXPECT_EQ (lr.Get<BattleLossResult::opponent> (), r.winner);
+  }
+
+  /* Reorg the resolution out: ownership reverts, loss record gone, state exact. */
+  ApplyInverse (cs);
+  RestoreNextId (idAtB0);
+  ExpectStateEq (WholeDbHashes (), b0, "undo tournament capture -> pre-resolution");
+
+  for (const uint32_t fid : r.loserFighters)
+    {
+      auto f = tbl3.GetById (fid, ctx.RoConfig ());
+      ASSERT_NE (f, nullptr);
+      EXPECT_EQ (f->GetOwner (), r.loser) << "captured fighter's owner not reverted";
+    }
+  {
+    BattleLossesTable bl(db);
+    EXPECT_FALSE (bl.QueryForOwner (r.loser).Step ())
+        << "battle_losses row not reverted by undo";
+  }
+
+  /* Re-attach: replay the identical resolution block; the RNG-selected victim +
+     capture draws must reproduce exactly, so the resolved state and the block
+     changeset are byte-identical.  (See the destroy test for the full rationale.) */
+  RestoreNextId (idAtB0);
+  SetHeight (hBrink);
+  const auto cs2 = RunBlockCapture ("[]");
+  ExpectStateEq (WholeDbHashes (), bResolved,
+                 "re-apply tournament capture is deterministic");
+  EXPECT_EQ (cs, cs2)
+      << "re-applied resolution changeset differs (nondeterministic permadeath)";
 }
 
 /* ************************************************************************** */
