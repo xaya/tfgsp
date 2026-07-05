@@ -372,6 +372,13 @@ public:
   Database::Result<FighterResult> QueryForStatus (FighterStatus status);
 
   /**
+   * On-exchange listings whose window has closed (`expire` < height), ordered by id. Backed by the
+   * `(status, expire)` index so an idle block with nothing expiring is a single empty index probe,
+   * not a scan of the live-listing set.
+   */
+  Database::Result<FighterResult> QueryExpiredListings (unsigned height);
+
+  /**
    * One page of on-exchange listings matching `q`, index-backed via the
    * fighters_exchange_* composite indexes (touches only status=Exchange rows).
    */

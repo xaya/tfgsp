@@ -251,5 +251,24 @@ TEST_F (FighterTests, QueryExchangeMultiFilterLockstep)
   EXPECT_FALSE (res2.Step ());
 }
 
+TEST_F (FighterTests, QueryExpiredListingsSeeksOnlyExpired)
+{
+  const auto soon = MakeListing (tbl, tbl2, *cfg, rnd, "alice", 100, /*expire*/ 50, 3);
+  const auto late = MakeListing (tbl, tbl2, *cfg, rnd, "bob",   100, /*expire*/ 500, 3);
+  (void) late;
+
+  // At height 100: only `soon` (expire 50 < 100) is returned; strict `<` preserves the flip semantics.
+  std::vector<Database::IdT> got;
+  auto res = tbl.QueryExpiredListings (100);
+  while (res.Step ()) got.push_back (tbl.GetFromResult (res, *cfg)->GetId ());
+  EXPECT_EQ (got, (std::vector<Database::IdT>{soon}));
+
+  // At height 50: nothing (50 < 50 is false).
+  std::vector<Database::IdT> none;
+  auto res2 = tbl.QueryExpiredListings (50);
+  while (res2.Step ()) none.push_back (tbl.GetFromResult (res2, *cfg)->GetId ());
+  EXPECT_TRUE (none.empty ());
+}
+
 } // anonymous namespace
 } // namespace pxd

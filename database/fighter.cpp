@@ -515,6 +515,17 @@ FighterTable::QueryForStatus (FighterStatus status)
   return stmt.Query<FighterResult> ();
 }
 
+Database::Result<FighterResult>
+FighterTable::QueryExpiredListings (unsigned height)
+{
+  auto stmt = db.Prepare (
+      "SELECT * FROM `fighters` WHERE `status` = "
+      + std::to_string (static_cast<int> (FighterStatus::Exchange))
+      + " AND `expire` < ?1 ORDER BY `id`");
+  stmt.Bind (1, static_cast<int64_t> (height));
+  return stmt.Query<FighterResult> ();
+}
+
 namespace
 {
 

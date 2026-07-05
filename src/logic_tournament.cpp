@@ -336,20 +336,14 @@ void PXLogic::CheckFightersForSale(Database& db, const Context& ctx)
 {
     FighterTable fighters(db);
 
-    /* DEF2: only Exchange fighters can have an expired listing, so the
-       `fighters_by_status` index lets us touch just those rows instead of
-       scanning the whole table every block.  Collect the expired ids first, then
-       flip them -- never mutate the `status` column while the status-keyed cursor
-       is still open.  */
+    /* Event-driven expiry (exchange-scale): the (status, expire) index returns ONLY the listings whose
+       window has closed, so an idle block does ~zero work here — no scan of the live-listing set.
+       Collect ids first, then flip -- never mutate `status` while the status-keyed cursor is open. */
     std::vector<Database::IdT> expired;
     {
-      auto res = fighters.QueryForStatus (pxd::FighterStatus::Exchange);
+      auto res = fighters.QueryExpiredListings (ctx.Height ());
       while (res.Step ())
-      {
-        auto fighterDb = fighters.GetFromResult (res, ctx.RoConfig ());
-        if (fighterDb->GetProto ().exchangeexpire () < ctx.Height ())
-          expired.push_back (fighterDb->GetId ());
-      }
+        expired.push_back (fighters.GetFromResult (res, ctx.RoConfig ())->GetId ());
     }
 
     for (const auto id : expired)
