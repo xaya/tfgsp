@@ -25,6 +25,8 @@
 #include "database/recipe.hpp"
 #include "database/ongoings.hpp"
 #include "database/globaldata.hpp"
+#include "database/params.hpp"
+#include "database/battlelosses.hpp"
 
 #include "proto/tournament_result.pb.h"
 
@@ -176,6 +178,10 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
               //Rewards creation goes now
               XayaPlayersTable xayaplayers(db);
 
+              // Change B (Epic 4x): divisor read once for the whole resolution.
+              const uint32_t divisor
+                  = (uint32_t) GameParams (db).GetParam ("rarest_recipe_drop_divisor");
+
               for(const auto& participant: participatingPlayerTotalScore)
               {
                   std::string rewardTableId = tnm->GetProto().baserewardstableid();
@@ -214,37 +220,11 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
                       continue;
                   }
                                         									
-                  uint32_t totalWeight = 0;
-                  for(auto& rw: rewardTableDb.rewards())
-                  {
-                     totalWeight += (uint32_t)rw.weight();
-                  }
-
                   for(uint32_t roll = 0; roll < rollCount; ++roll)
                   {
-                      int32_t rolCurNum = 0;
-
-                      if(totalWeight != 0)
-                      {
-                        rolCurNum = rnd.NextInt((int32_t)totalWeight);
-                      }
-
-                      VLOG (1) << "rolCurNum: " << rolCurNum;
-
-                      int32_t accumulatedWeight = 0;
-                      int32_t posInTableList = 0;
-                      for(auto& rw: rewardTableDb.rewards())
-                      {
-                          accumulatedWeight += rw.weight();
-
-                          if(rolCurNum < accumulatedWeight)
-                          {
-                             GenerateActivityReward(0, "", tnm->GetId(), rw, ctx, db, a, rnd, posInTableList, rewardTableId, "");
-                             break;
-                          }
-
-                          posInTableList++;
-                      }
+                      const int32_t idx = PickWeightedRewardIndex (rewardTableDb, divisor, rnd);
+                      if(idx >= 0)
+                        GenerateActivityReward(0, "", tnm->GetId(), rewardTableDb.rewards(idx), ctx, db, a, rnd, (uint32_t)idx, rewardTableId, "");
                   }
                   
                   a->MutableProto().set_tournamentscompleted(a->GetProto().tournamentscompleted() + 1);
@@ -254,8 +234,95 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
 					a->MutableProto().set_tournamentswon(a->GetProto().tournamentswon() + 1);
 				  }
 
-                  a->CalculatePrestige(ctx.RoConfig());              
+                  a->CalculatePrestige(ctx.RoConfig());
                   a.reset();
+              }
+
+              /* Change A + C: tournament permadeath + 50/50 capture.  Runs only
+                 when enabled and there is a winner.  Each NON-winning team (in
+                 ascending owner-name order via the std::map `teams`) loses exactly
+                 ONE randomly-picked entered fighter: an account-bound starter is
+                 immune (and takes no capture draw); otherwise a capture_pct/256
+                 coin-flip either transfers it to the winner (if the winner has a
+                 free roster slot) or destroys it.  A battle_losses row is written
+                 and the loser's rewards_serial bumped so the client reveals it.
+                 The survivor-reset loop below then flips the surviving (and any
+                 captured) fighters back to Available; destroyed ids simply return
+                 null there and are skipped.  Determinism: teams is ordered by
+                 owner name; the victim draw precedes the capture draw; the capture
+                 draw is skipped only for account-bound victims (a consensus-state
+                 predicate).  Bumps/writes consume no rnd. */
+              {
+                GameParams gp(db);
+                if (gp.GetParam ("tournament_loss_kills_enabled") == 1
+                    && winnerName != "")
+                  {
+                    const uint32_t capturePct
+                        = (uint32_t) gp.GetParam ("tournament_capture_pct");
+                    const uint32_t maxInv
+                        = ctx.RoConfig ()->params ().max_fighter_inventory_amount ();
+                    BattleLossesTable battleLosses(db);
+
+                    for (const auto& team : teams)
+                      {
+                        if (team.first == winnerName)
+                          continue;   /* the winner's team loses no one */
+                        const auto& roster = team.second;
+                        if (roster.empty ())
+                          continue;
+
+                        /* One victim draw per losing team (always taken). */
+                        const uint32_t victimId
+                            = roster[rnd.NextInt (roster.size ())];
+                        auto victim = fighters.GetById (victimId, ctx.RoConfig ());
+                        if (victim == nullptr)
+                          continue;
+
+                        /* Starter protection: nothing happens, and NO capture
+                           draw is taken (keeps the RNG stream deterministic). */
+                        if (victim->GetProto ().isaccountbound ())
+                          {
+                            victim.reset ();
+                            continue;
+                          }
+
+                        const uint32_t roll = rnd.NextInt (256);
+                        const bool capture
+                            = (roll < capturePct)
+                           && (fighters.CountForOwner (winnerName) < maxInv);
+
+                        const std::string victimName = victim->GetProto ().name ();
+                        battleLosses.Add (team.first, victimId, victimName,
+                                          capture ? 1 : 0, winnerName, tnm->GetId ());
+
+                        if (capture)
+                          {
+                            victim->SetOwner (winnerName);   /* keeps all stats/armor */
+                            victim.reset ();                 /* flush owner change */
+                            auto wp = xayaplayers.GetByName (winnerName,
+                                                             ctx.RoConfig ());
+                            if (wp != nullptr)
+                              {
+                                wp->CalculatePrestige (ctx.RoConfig ());
+                                wp.reset ();
+                              }
+                          }
+                        else
+                          {
+                            victim.reset ();                 /* release before delete */
+                            fighters.DeleteById (victimId);
+                          }
+
+                        auto lp = xayaplayers.GetByName (team.first, ctx.RoConfig ());
+                        if (lp != nullptr)
+                          {
+                            lp->MutableProto ().set_rewards_serial (
+                                lp->GetProto ().rewards_serial () + 1);
+                            lp->CalculatePrestige (ctx.RoConfig ());
+                            lp.reset ();
+                          }
+                      }
+                  }
               }
 
               for(auto participantFighter : tnm->GetInstance().fighters())

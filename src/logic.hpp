@@ -36,6 +36,8 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <vector>
+#include <cstdint>
 
 #include <fpm/fixed.hpp>
 #include <fpm/math.hpp>
@@ -118,6 +120,20 @@ public:
   std::unique_ptr<XayaPlayer>& a, xaya::Random& rnd, const uint32_t posInTableList,
   const std::string& basedRewardsTableAuthId, const std::string& sweetenerAuthID,
   const uint32_t recursionDepth = 0);
+
+  /** Change B (Epic 4x): scales every reward entry's weight by `divisor`, EXCEPT
+      an Epic generated recipe (type==GeneratedRecipe && quality==Epic) which keeps
+      its authored weight -- so Epic's relative odds become ~1/divisor.  Pure, so
+      it is unit-testable directly.  With divisor==1 it returns the raw weights. */
+  static std::vector<uint32_t> ScaledRewardWeights (
+      const pxd::proto::ActivityReward& table, uint32_t divisor);
+
+  /** One weighted draw over the scaled distribution.  Returns the chosen index
+      into table.rewards(), or -1 if the scaled total is 0 (no reward -- matches
+      the legacy totalWeight==0 no-draw path).  Consumes exactly one rnd.NextInt
+      when the scaled total is > 0. */
+  static int32_t PickWeightedRewardIndex (
+      const pxd::proto::ActivityReward& table, uint32_t divisor, xaya::Random& rnd);
 
   /** Credits one rolled leaf reward directly into player/fighter state at resolve.
       Candy/move/armor/animation credit unconditionally (move/armor/anim drop if

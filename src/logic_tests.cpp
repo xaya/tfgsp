@@ -26,6 +26,10 @@
 #include "database/dbtest.hpp"
 #include "database/xayaplayer.hpp"
 #include "database/reward.hpp"
+#include "database/params.hpp"
+#include "database/battlelosses.hpp"
+
+#include "proto/activity_rewards.pb.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -184,6 +188,79 @@ protected:
     PXLogic::ValidateStateSlow (db, ctx);
   }
 
+  /** Outcome of running the 2v2 tutorial tournament to resolution.  */
+  struct TwoPlayerTournament
+  {
+    std::string winner;                  // the resolved winnerid
+    std::string loser;                   // the other player
+    std::vector<uint32_t> loserEntered;  // the loser's two entered fighter ids
+  };
+
+  /**
+   * Creates two players ("domob", "andy"), each entering two fighters (made
+   * account-bound iff `accountBound`) into the tutorial tournament, ticks it to
+   * resolution, and reports the resolved winner/loser + the loser's entered ids.
+   * Mirrors TournamentResolvedTest's join/resolve sequence.  Callers set the
+   * permadeath knobs via GameParams before this returns has resolved (this sets
+   * none itself, so seeded defaults apply unless the caller overrode them).
+   */
+  TwoPlayerTournament
+  RunTwoPlayerTournament (bool accountBound = false)
+  {
+    const std::string TUT = "cbd2e78a-37ce-b864-793d-8dd27788a774";
+
+    auto mkFighter = [&] (const std::string& owner) -> uint32_t
+    {
+      auto f = tbl3.CreateNew (owner, 1, ctx.RoConfig (), rnd);
+      const uint32_t id = f->GetId ();
+      f->MutableProto ().set_isaccountbound (accountBound);
+      f.reset ();
+      return id;
+    };
+
+    xayaplayers.CreateNew ("domob", ctx.RoConfig (), rnd).reset ();
+    const uint32_t d1 = mkFighter ("domob");
+    const uint32_t d2 = mkFighter ("domob");
+
+    UpdateState ("[]");
+
+    auto tut = tbl5.GetByAuthIdName (TUT, ctx.RoConfig ());
+    const uint32_t TID = tut->GetId ();
+    tut.reset ();
+
+    const auto joinMove = [&] (const std::string& who, uint32_t a, uint32_t b)
+    {
+      std::ostringstream m;
+      m << R"([{"name": ")" << who << R"(", "move": {"tm": {"e": {"tid": )"
+        << TID << R"(, "fc": [)" << a << "," << b << "]}}}}]";
+      Process (m.str ());
+    };
+
+    joinMove ("domob", d1, d2);
+
+    xayaplayers.CreateNew ("andy", ctx.RoConfig (), rnd).reset ();
+    const uint32_t a1 = mkFighter ("andy");
+    const uint32_t a2 = mkFighter ("andy");
+
+    UpdateState ("[]");
+    joinMove ("andy", a1, a2);
+
+    for (unsigned i = 0; i < 3; ++i)
+      UpdateState ("[]");
+
+    auto trn = tbl5.GetById (TID, ctx.RoConfig ());
+    const std::string winner = trn->GetInstance ().winnerid ();
+    trn.reset ();
+
+    TwoPlayerTournament out;
+    out.winner = winner;
+    out.loser = (winner == "domob") ? "andy" : "domob";
+    out.loserEntered = (winner == "domob")
+        ? std::vector<uint32_t> {a1, a2}
+        : std::vector<uint32_t> {d1, d2};
+    return out;
+  }
+
 };
 
 namespace
@@ -192,6 +269,107 @@ namespace
 /* ************************************************************************** */
 
 using ValidateStateTests = PXLogicTests;
+
+/* Change B (Epic 4x): the divisor spares only the Epic (q4) generated recipe;
+   every other entry (incl. Rare q3) is scaled up, quartering Epic's share. */
+TEST_F (ValidateStateTests, EpicDivisorSparesOnlyEpicRecipe)
+{
+  pxd::proto::ActivityReward table;
+
+  auto* candy = table.add_rewards ();
+  candy->set_type ((uint32_t) pxd::RewardType::Candy);
+  candy->set_weight (10);
+
+  auto* epic = table.add_rewards ();
+  epic->set_type ((uint32_t) pxd::RewardType::GeneratedRecipe);
+  epic->set_generatedrecipequality ((uint32_t) pxd::Quality::Epic);
+  epic->set_weight (2);
+
+  auto* rare = table.add_rewards ();
+  rare->set_type ((uint32_t) pxd::RewardType::GeneratedRecipe);
+  rare->set_generatedrecipequality ((uint32_t) pxd::Quality::Rare);
+  rare->set_weight (5);
+
+  // divisor 1 -> unchanged (byte-identical to legacy behaviour).
+  EXPECT_EQ (PXLogic::ScaledRewardWeights (table, 1),
+             (std::vector<uint32_t> {10, 2, 5}));
+
+  // divisor 4 -> every NON-Epic entry x4 (candy AND Rare q3), Epic q4 spared.
+  // Epic share 2/17 (11.8%) -> 2/62 (3.2%) ~ quartered.
+  EXPECT_EQ (PXLogic::ScaledRewardWeights (table, 4),
+             (std::vector<uint32_t> {40, 2, 20}));
+}
+
+/* Change A + C: tournament permadeath + 50/50 capture, forced via the
+   capture_pct knob so the outcome is deterministic without controlling combat. */
+TEST_F (ValidateStateTests, TournamentPermadeathAlwaysCaptures)
+{
+  GameParams (db).SetParam ("tournament_capture_pct", 256);        // always capture
+  GameParams (db).SetParam ("tournament_loss_kills_enabled", 1);
+
+  const auto t = RunTwoPlayerTournament ();
+
+  int transferred = 0;
+  for (const uint32_t fid : t.loserEntered)
+    {
+      auto f = tbl3.GetById (fid, ctx.RoConfig ());
+      if (f != nullptr && f->GetOwner () == t.winner) ++transferred;
+    }
+  EXPECT_EQ (transferred, 1);                 // exactly one captured to the winner
+
+  BattleLossesTable losses(db);
+  auto lr = losses.QueryForOwner (t.loser);
+  ASSERT_TRUE (lr.Step ());
+  EXPECT_EQ (lr.Get<BattleLossResult::outcome> (), 1);   // captured
+  EXPECT_EQ (lr.Get<BattleLossResult::opponent> (), t.winner);
+}
+
+TEST_F (ValidateStateTests, TournamentPermadeathAlwaysDestroys)
+{
+  GameParams (db).SetParam ("tournament_capture_pct", 0);          // always destroy
+  GameParams (db).SetParam ("tournament_loss_kills_enabled", 1);
+
+  const auto t = RunTwoPlayerTournament ();
+
+  int alive = 0;
+  for (const uint32_t fid : t.loserEntered)
+    if (tbl3.GetById (fid, ctx.RoConfig ()) != nullptr) ++alive;
+  EXPECT_EQ (alive, 1);                        // exactly one of the two destroyed
+
+  BattleLossesTable losses(db);
+  auto lr = losses.QueryForOwner (t.loser);
+  ASSERT_TRUE (lr.Step ());
+  EXPECT_EQ (lr.Get<BattleLossResult::outcome> (), 0);   // destroyed
+}
+
+TEST_F (ValidateStateTests, TournamentPermadeathDisabledKeepsEveryone)
+{
+  GameParams (db).SetParam ("tournament_loss_kills_enabled", 0);   // disabled
+
+  const auto t = RunTwoPlayerTournament ();
+
+  for (const uint32_t fid : t.loserEntered)
+    EXPECT_NE (tbl3.GetById (fid, ctx.RoConfig ()), nullptr);      // all survive
+  BattleLossesTable losses(db);
+  EXPECT_FALSE (losses.QueryForOwner (t.loser).Step ());           // no loss recorded
+}
+
+TEST_F (ValidateStateTests, TournamentPermadeathProtectsStarters)
+{
+  GameParams (db).SetParam ("tournament_capture_pct", 256);        // would always capture
+  GameParams (db).SetParam ("tournament_loss_kills_enabled", 1);
+
+  const auto t = RunTwoPlayerTournament (/*accountBound=*/true);
+
+  for (const uint32_t fid : t.loserEntered)
+    {
+      auto f = tbl3.GetById (fid, ctx.RoConfig ());
+      ASSERT_NE (f, nullptr);                  // not destroyed
+      EXPECT_EQ (f->GetOwner (), t.loser);     // not captured
+    }
+  BattleLossesTable losses(db);
+  EXPECT_FALSE (losses.QueryForOwner (t.loser).Step ());   // starter loss not recorded
+}
 
 TEST_F (ValidateStateTests, RecepieInstanceFullCycleTest)
 {
@@ -611,6 +789,11 @@ TEST_F (ValidateStateTests, RecepieInstanceFailWithMissingIngridients)
 
 TEST_F (ValidateStateTests, SweetenerRandomRewardConsistency)
 {
+  /* Predates the Epic-4x change; pin the divisor to 1 so this keeps validating
+     the legacy sweetener reward-roll RNG fingerprint (divisor 1 = byte-identical
+     weighted pick). */
+  GameParams (db).SetParam ("rarest_recipe_drop_divisor", 1);
+
   /* This test validates deterministic sweetener reward RNG.  Rewards now
      auto-credit at resolve; raise the recipe cap so recipe rewards always credit
      (never overflow into the held queue), keeping the credited-reward count a
@@ -1485,6 +1668,12 @@ TEST_F (ValidateStateTests, TournamentInstanceVeryHighDemandExtraInstanceAreCrea
 
 TEST_F (ValidateStateTests, TournamentResolvedTest)
 {
+  /* This test predates the balance change; pin the two knobs to their no-op
+     values so it keeps asserting pure reward auto-credit (divisor 1 = legacy
+     reward outcomes; kills disabled = no permadeath serial bump / fighter loss). */
+  GameParams (db).SetParam ("rarest_recipe_drop_divisor", 1);
+  GameParams (db).SetParam ("tournament_loss_kills_enabled", 0);
+
   auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
   auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
   int ftA1idx = ft->GetId();
@@ -1628,6 +1817,11 @@ TEST_F (ValidateStateTests, FighterSacrifice)
 
 TEST_F (ValidateStateTests, RatingSweetnessUpgrades)
 {
+  /* Predates permadeath; this test drives many tournaments to climb rating ->
+     sweetness, so disable permadeath here to keep the tracked fighters alive
+     across rounds (the mechanic is covered by the TournamentPermadeath* tests). */
+  GameParams (db).SetParam ("tournament_loss_kills_enabled", 0);
+
   auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
   xp->AddBalance(100);
   auto ft = tbl3.CreateNew ("domob", 2, ctx.RoConfig(), rnd);

@@ -25,6 +25,7 @@
 #include "database/recipe.hpp"
 #include "database/ongoings.hpp"
 #include "database/globaldata.hpp"
+#include "database/params.hpp"
 
 #include "proto/tournament_result.pb.h"
 
@@ -45,6 +46,48 @@
 
 namespace pxd
 {
+
+std::vector<uint32_t>
+PXLogic::ScaledRewardWeights (const pxd::proto::ActivityReward& table,
+                             const uint32_t divisor)
+{
+  std::vector<uint32_t> weights;
+  weights.reserve (table.rewards_size ());
+  for (const auto& rw : table.rewards ())
+    {
+      const bool isEpicRecipe =
+          (RewardType) (int32_t) rw.type () == RewardType::GeneratedRecipe
+          && (pxd::Quality) (int32_t) rw.generatedrecipequality () == pxd::Quality::Epic;
+      weights.push_back (isEpicRecipe ? (uint32_t) rw.weight ()
+                                      : (uint32_t) rw.weight () * divisor);
+    }
+  return weights;
+}
+
+int32_t
+PXLogic::PickWeightedRewardIndex (const pxd::proto::ActivityReward& table,
+                                  const uint32_t divisor, xaya::Random& rnd)
+{
+  const std::vector<uint32_t> weights = ScaledRewardWeights (table, divisor);
+
+  uint32_t totalWeight = 0;
+  for (const uint32_t w : weights)
+    totalWeight += w;
+
+  if (totalWeight == 0)
+    return -1;
+
+  const uint32_t rolCurNum = rnd.NextInt (totalWeight);
+
+  uint32_t accumulatedWeight = 0;
+  for (int32_t i = 0; i < (int32_t) weights.size (); ++i)
+    {
+      accumulatedWeight += weights[i];
+      if (rolCurNum < accumulatedWeight)
+        return i;
+    }
+  return -1;  /* unreachable when totalWeight == sum(weights) > 0 */
+}
 
 void PXLogic::GenerateActivityReward(const uint32_t fighterID, const std::string& blueprintAuthID, const uint32_t tournamentID, const pxd::proto::AuthoredActivityReward& rw, const Context& ctx, Database& db, std::unique_ptr<XayaPlayer>& a, xaya::Random& rnd, const uint32_t posInTableList, const std::string& basedRewardsTableAuthId, const std::string& sweetenerAuthID, const uint32_t recursionDepth)
 {
@@ -346,38 +389,16 @@ void PXLogic::ResolveSweetener(std::unique_ptr<XayaPlayer>& a, std::string sweet
         return;            
     }    
 
-    uint32_t totalWeight = 0;
-    for(auto& rw: rewardTableDb.rewards())
-    {
-       totalWeight += (uint32_t)rw.weight();
-    }
-
+    // Change B (Epic 4x): scale every non-Epic weight by the divisor via the
+    // shared helper; Epic (q4 generated recipe) keeps its authored weight.
+    const uint32_t divisor
+        = (uint32_t) GameParams (db).GetParam ("rarest_recipe_drop_divisor");
     for(int32_t roll = 0; roll < (int32_t)sweetenerBlueprint.rewardchoices(rewardID).baserollcount(); ++roll)
     {
-        int32_t rolCurNum = 0;
-        
-        if(totalWeight != 0)
-        {
-          rolCurNum = rnd.NextInt(totalWeight);
-        }
-		
-		VLOG (1) << "rolCurNum: " << rolCurNum;
-        
-        int32_t accumulatedWeight = 0;
-        int32_t posInTableList = 0;
-        for(auto& rw: rewardTableDb.rewards())
-        {
-            accumulatedWeight += rw.weight();
-
-            if(rolCurNum < accumulatedWeight)
-            {
-               GenerateActivityReward(fighterID, "", 0, rw, ctx, db, a, rnd, posInTableList, sweetenerBlueprint.rewardchoices(rewardID).rewardstableid(), sweetenerAuthID);
-               break;
-            }
-            
-            posInTableList++;
-        }
-    }       
+        const int32_t idx = PickWeightedRewardIndex (rewardTableDb, divisor, rnd);
+        if(idx >= 0)
+          GenerateActivityReward(fighterID, "", 0, rewardTableDb.rewards(idx), ctx, db, a, rnd, (uint32_t)idx, sweetenerBlueprint.rewardchoices(rewardID).rewardstableid(), sweetenerAuthID);
+    }
   }
   
   // moves rewards
@@ -405,41 +426,18 @@ void PXLogic::ResolveSweetener(std::unique_ptr<XayaPlayer>& a, std::string sweet
         return;            
     }    
 
-    uint32_t totalWeight = 0;
-    for(auto& rw: rewardTableDb.rewards())
-    {
-       totalWeight += (uint32_t)rw.weight();
-    }
+    const uint32_t divisor
+        = (uint32_t) GameParams (db).GetParam ("rarest_recipe_drop_divisor");
 
     VLOG (1) << "Rolling for total possible moves: " << sweetenerBlueprint.rewardchoices(rewardID).moverollcount();
-    
+
     for(int32_t roll = 0; roll < (int32_t)sweetenerBlueprint.rewardchoices(rewardID).moverollcount(); ++roll)
     {
-        int32_t rolCurNum = 0;
-        
-        if(totalWeight != 0)
-        {
-          rolCurNum = rnd.NextInt(totalWeight);
-        }
-        
-		VLOG (1) << "rolCurNum: " << rolCurNum;
-		
-        int32_t accumulatedWeight = 0;
-        int32_t posInTableList = 0;
-        for(auto& rw: rewardTableDb.rewards())
-        {
-            accumulatedWeight += rw.weight();
-            
-            if(rolCurNum < accumulatedWeight)
-            {
-               GenerateActivityReward(fighterID, "", 0, rw, ctx, db, a, rnd, posInTableList, sweetenerBlueprint.rewardchoices(rewardID).moverewardstableid(), sweetenerAuthID);
-               break;
-            }
-            
-            posInTableList++;
-        }
-    }       
-  }  
+        const int32_t idx = PickWeightedRewardIndex (rewardTableDb, divisor, rnd);
+        if(idx >= 0)
+          GenerateActivityReward(fighterID, "", 0, rewardTableDb.rewards(idx), ctx, db, a, rnd, (uint32_t)idx, sweetenerBlueprint.rewardchoices(rewardID).moverewardstableid(), sweetenerAuthID);
+    }
+  }
   
   // armor rewards
   
@@ -466,39 +464,15 @@ void PXLogic::ResolveSweetener(std::unique_ptr<XayaPlayer>& a, std::string sweet
         return;            
     }    
 
-    uint32_t totalWeight = 0;
-    for(auto& rw: rewardTableDb.rewards())
-    {
-       totalWeight += (uint32_t)rw.weight();
-    }
-
+    const uint32_t divisor
+        = (uint32_t) GameParams (db).GetParam ("rarest_recipe_drop_divisor");
     for(int32_t roll = 0; roll < (int32_t)sweetenerBlueprint.rewardchoices(rewardID).armorrollcount(); ++roll)
     {
-        int32_t rolCurNum = 0;
-        
-        if(totalWeight != 0)
-        {
-          rolCurNum = rnd.NextInt(totalWeight);
-        }
-        
-		VLOG (1) << "rolCurNum: " << rolCurNum;
-		
-        int32_t accumulatedWeight = 0;
-        int32_t posInTableList = 0;
-        for(auto& rw: rewardTableDb.rewards())
-        {
-            accumulatedWeight += rw.weight();
-            
-            if(rolCurNum < accumulatedWeight)
-            {
-               GenerateActivityReward(fighterID, "", 0, rw, ctx, db, a, rnd, posInTableList, sweetenerBlueprint.rewardchoices(rewardID).armorrewardstableid(), sweetenerAuthID);
-               break;
-            }
-            
-            posInTableList++;
-        }
-    }       
-  }    
+        const int32_t idx = PickWeightedRewardIndex (rewardTableDb, divisor, rnd);
+        if(idx >= 0)
+          GenerateActivityReward(fighterID, "", 0, rewardTableDb.rewards(idx), ctx, db, a, rnd, (uint32_t)idx, sweetenerBlueprint.rewardchoices(rewardID).armorrewardstableid(), sweetenerAuthID);
+    }
+  }
 
 
   a->CalculatePrestige(ctx.RoConfig());  
@@ -647,37 +621,14 @@ void PXLogic::ResolveExpedition(std::unique_ptr<XayaPlayer>& a, const std::strin
        so the RNG stream is untouched.  Mirrors ResolveSweetener's pattern.  */
     fighter.reset();
 
-    uint32_t totalWeight = 0;
-    for(auto& rw: rewardTableDb.rewards())
-    {
-       totalWeight += (uint32_t)rw.weight();
-    }
-
+    // Change B (Epic 4x): shared divisor-scaled weighted pick.
+    const uint32_t divisor
+        = (uint32_t) GameParams (db).GetParam ("rarest_recipe_drop_divisor");
     for(int32_t roll = 0; roll < rollCount; ++roll)
     {
-        int32_t rolCurNum = 0;
-
-        if(totalWeight != 0)
-        {
-          rolCurNum = rnd.NextInt((int32_t)totalWeight);
-        }
-
-        VLOG (1) << "rolCurNum: " << rolCurNum;
-
-        int32_t accumulatedWeight = 0;
-        int32_t posInTableList = 0;
-        for(auto& rw: rewardTableDb.rewards())
-        {
-            accumulatedWeight += rw.weight();
-
-            if(rolCurNum < accumulatedWeight)
-            {
-              GenerateActivityReward(fighterID, blueprintAuthID, 0, rw, ctx, db, a, rnd, posInTableList, basedRewardsTableAuthId, "");
-              break;
-            }
-
-            posInTableList++;
-        }
+        const int32_t idx = PickWeightedRewardIndex (rewardTableDb, divisor, rnd);
+        if(idx >= 0)
+          GenerateActivityReward(fighterID, blueprintAuthID, 0, rewardTableDb.rewards(idx), ctx, db, a, rnd, (uint32_t)idx, basedRewardsTableAuthId, "");
     }
 }
 
