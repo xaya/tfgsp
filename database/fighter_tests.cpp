@@ -222,5 +222,34 @@ TEST_F (FighterTests, QueryExchangeSortsFiltersPagesAndCounts)
   }
 }
 
+/* The marketplace WHERE is built by two lockstep helpers (append placeholders / bind values); a
+   single-filter test never binds past ?1, so this activates three filters at once (int, int, string)
+   — any append/bind order divergence changes the result set or mis-binds a type. */
+TEST_F (FighterTests, QueryExchangeMultiFilterLockstep)
+{
+  const auto excluded = MakeListing (tbl, tbl2, *cfg, rnd, "alice", 100, 1000, 5); // owner excluded
+  const auto keep     = MakeListing (tbl, tbl2, *cfg, rnd, "bob",   200, 1000, 5); // matches all 3
+  const auto tooDear  = MakeListing (tbl, tbl2, *cfg, rnd, "bob",   300, 1000, 5); // price > maxPrice
+  const auto tooLowQ  = MakeListing (tbl, tbl2, *cfg, rnd, "bob",   150, 1000, 2); // quality < minQuality
+  (void) excluded; (void) tooDear; (void) tooLowQ;
+
+  ExchangeQuery q;
+  q.sort = ExchangeSort::Price; q.ascending = true;
+  q.minQuality = 4;          // ?1
+  q.maxPrice = 250;          // ?2
+  q.excludeOwner = "alice";  // ?3 (string — a transposition with an int filter would mis-bind)
+
+  std::vector<Database::IdT> got;
+  auto res = tbl.QueryExchange (q);
+  while (res.Step ()) got.push_back (tbl.GetFromResult (res, *cfg)->GetId ());
+  EXPECT_EQ (got, (std::vector<Database::IdT>{keep}));
+  EXPECT_EQ (tbl.CountExchange (q), 1);
+
+  // Offset past the end returns an empty page, no crash (same filters still bound correctly).
+  q.limit = 50; q.offset = 50;
+  auto res2 = tbl.QueryExchange (q);
+  EXPECT_FALSE (res2.Step ());
+}
+
 } // anonymous namespace
 } // namespace pxd
