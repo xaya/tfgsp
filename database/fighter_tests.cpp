@@ -161,5 +161,66 @@ TEST_F (FighterTests, ExchangeColumnsProjectProto)
   EXPECT_EQ (res2.Get<ExchangeColsResult::price> (), 0);
 }
 
+/* Lists a freshly-cooked fighter for `owner` at `price`/`expire`/`quality`, returns its id. */
+static Database::IdT
+MakeListing (FighterTable& tbl, RecipeInstanceTable& tbl2, pxd::RoConfig& cfg,
+             xaya::Random& rnd, const std::string& owner,
+             int price, int expire, int quality)
+{
+  auto r0 = tbl2.CreateNew (owner, "5864a19b-c8c0-2d34-eaef-9455af0baf2c", cfg);
+  const auto rid = r0->GetId ();
+  r0.reset ();
+  auto f = tbl.CreateNew (owner, rid, cfg, rnd);
+  const auto fid = f->GetId ();
+  f->SetStatus (pxd::FighterStatus::Exchange);
+  f->MutableProto ().set_exchangeprice (price);
+  f->MutableProto ().set_exchangeexpire (expire);
+  f->MutableProto ().set_quality (quality);
+  f.reset ();
+  return fid;
+}
+
+TEST_F (FighterTests, QueryExchangeSortsFiltersPagesAndCounts)
+{
+  const auto a = MakeListing (tbl, tbl2, *cfg, rnd, "alice", 300, 1000, 3);
+  const auto b = MakeListing (tbl, tbl2, *cfg, rnd, "alice", 100, 1000, 5);
+  const auto c = MakeListing (tbl, tbl2, *cfg, rnd, "bob",   200, 1000, 4);
+  // A listed-then-delisted fighter must never appear. (AutoIds are global across recipes+fighters, so
+  // never guess ids — use MakeListing's returned fighter id.)
+  const auto gone = MakeListing (tbl, tbl2, *cfg, rnd, "bob", 999, 1000, 9);
+  { auto x = tbl.GetById (gone, *cfg); x->SetStatus (pxd::FighterStatus::Available); x.reset (); }
+
+  // price ascending: b(100) < c(200) < a(300)
+  {
+    ExchangeQuery q; q.sort = ExchangeSort::Price; q.ascending = true;
+    std::vector<Database::IdT> got;
+    auto res = tbl.QueryExchange (q);
+    while (res.Step ()) got.push_back (tbl.GetFromResult (res, *cfg)->GetId ());
+    EXPECT_EQ (got, (std::vector<Database::IdT>{b, c, a}));
+    EXPECT_EQ (tbl.CountExchange (q), 3);
+  }
+
+  // quality descending, exclude bob: b(q5) then a(q3); c is bob's.
+  {
+    ExchangeQuery q; q.sort = ExchangeSort::Quality; q.ascending = false; q.excludeOwner = "bob";
+    std::vector<Database::IdT> got;
+    auto res = tbl.QueryExchange (q);
+    while (res.Step ()) got.push_back (tbl.GetFromResult (res, *cfg)->GetId ());
+    EXPECT_EQ (got, (std::vector<Database::IdT>{b, a}));
+    EXPECT_EQ (tbl.CountExchange (q), 2);
+  }
+
+  // price filter maxPrice=200 → b, c ; total counts filter, not the page.
+  {
+    ExchangeQuery q; q.sort = ExchangeSort::Price; q.ascending = true; q.maxPrice = 200;
+    EXPECT_EQ (tbl.CountExchange (q), 2);
+    q.limit = 1; q.offset = 0;
+    std::vector<Database::IdT> got;
+    auto res = tbl.QueryExchange (q);
+    while (res.Step ()) got.push_back (tbl.GetFromResult (res, *cfg)->GetId ());
+    EXPECT_EQ (got, (std::vector<Database::IdT>{b})); // page 1 of 2
+  }
+}
+
 } // anonymous namespace
 } // namespace pxd

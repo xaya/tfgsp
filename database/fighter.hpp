@@ -130,6 +130,21 @@ struct FighterResult : public Database::ResultType
   RESULT_COLUMN (int64_t, status, 4);
 };
 
+/** Sort key for the marketplace query; each maps to an indexed `fighters` column. */
+enum class ExchangeSort { Price, Quality, Sweetness, Expire };
+
+/** A validated marketplace query. Numeric filters use -1 = "unset"; excludeOwner "" = no exclusion. */
+struct ExchangeQuery
+{
+  ExchangeSort sort = ExchangeSort::Price;
+  bool ascending = true;
+  int64_t minQuality = -1, maxQuality = -1;
+  int64_t minPrice = -1, maxPrice = -1;
+  int64_t maxAffordable = -1;   // price <= this (the "affordable only" filter)
+  std::string excludeOwner;     // e.g. the caller — hide their own listings from the market
+  int64_t limit = 50, offset = 0;
+};
+
 /**
  * Retrieves a fighter status from a database column.  This function verifies that
  * the database value represents a valid status.  Otherwise it crashes the
@@ -355,10 +370,22 @@ public:
    * only the actionable rows instead of the whole table.
    */
   Database::Result<FighterResult> QueryForStatus (FighterStatus status);
-  
+
+  /**
+   * One page of on-exchange listings matching `q`, index-backed via the
+   * fighters_exchange_* composite indexes (touches only status=Exchange rows).
+   */
+  Database::Result<FighterResult> QueryExchange (const ExchangeQuery& q);
+
+  /**
+   * Count of on-exchange listings matching `q`'s FILTERS (ignores limit/offset) —
+   * for the marketplace page total. Uses the same WHERE as QueryExchange.
+   */
+  int64_t CountExchange (const ExchangeQuery& q);
+
   /**
    * Counts for all fighters with a given owner
-   */  
+   */
   unsigned CountForOwner (const std::string& owner);
 
   /**

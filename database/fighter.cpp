@@ -518,12 +518,95 @@ FighterTable::QueryForStatus (FighterStatus status)
 namespace
 {
 
+/** Whitelisted column name for a sort key (identifiers can't be bound, so map — never interpolate
+ *  RPC input into SQL). */
+const char*
+ExchangeSortColumn (ExchangeSort s)
+{
+  switch (s)
+    {
+    case ExchangeSort::Price:     return "price";
+    case ExchangeSort::Quality:   return "quality";
+    case ExchangeSort::Sweetness: return "sweetness";
+    case ExchangeSort::Expire:    return "expire";
+    }
+  LOG (FATAL) << "unknown ExchangeSort";
+}
+
+/** Appends "WHERE status=Exchange [AND filters]" to `sql`, numbering placeholders from `nextParam`
+ *  upward (advancing it). BindExchangeWhere binds the same values in the same order. */
+void
+AppendExchangeWhere (const ExchangeQuery& q, std::string& sql, int& nextParam)
+{
+  sql += " WHERE `status` = "
+       + std::to_string (static_cast<int> (pxd::FighterStatus::Exchange));
+  if (q.minQuality >= 0)        sql += " AND `quality` >= ?" + std::to_string (nextParam++);
+  if (q.maxQuality >= 0)        sql += " AND `quality` <= ?" + std::to_string (nextParam++);
+  if (q.minPrice >= 0)          sql += " AND `price` >= ?"   + std::to_string (nextParam++);
+  if (q.maxPrice >= 0)          sql += " AND `price` <= ?"   + std::to_string (nextParam++);
+  if (q.maxAffordable >= 0)     sql += " AND `price` <= ?"   + std::to_string (nextParam++);
+  if (!q.excludeOwner.empty ()) sql += " AND `owner` != ?"   + std::to_string (nextParam++);
+}
+
+/** Binds the WHERE params in the SAME order AppendExchangeWhere emits them, starting at ?1. Returns
+ *  the next free placeholder index. */
+int
+BindExchangeWhere (Database::Statement& stmt, const ExchangeQuery& q)
+{
+  int p = 1;
+  if (q.minQuality >= 0)        stmt.Bind (p++, q.minQuality);
+  if (q.maxQuality >= 0)        stmt.Bind (p++, q.maxQuality);
+  if (q.minPrice >= 0)          stmt.Bind (p++, q.minPrice);
+  if (q.maxPrice >= 0)          stmt.Bind (p++, q.maxPrice);
+  if (q.maxAffordable >= 0)     stmt.Bind (p++, q.maxAffordable);
+  if (!q.excludeOwner.empty ()) stmt.Bind (p++, q.excludeOwner);
+  return p;
+}
+
+} // anonymous namespace
+
+Database::Result<FighterResult>
+FighterTable::QueryExchange (const ExchangeQuery& q)
+{
+  std::string sql = "SELECT * FROM `fighters`";
+  int n = 1;
+  AppendExchangeWhere (q, sql, n);
+  sql += std::string (" ORDER BY `") + ExchangeSortColumn (q.sort) + "` "
+       + (q.ascending ? "ASC" : "DESC") + ", `id` ASC";
+  const int limitParam = n++;
+  const int offsetParam = n++;
+  sql += " LIMIT ?" + std::to_string (limitParam)
+       + " OFFSET ?" + std::to_string (offsetParam);
+
+  auto stmt = db.Prepare (sql);
+  int p = BindExchangeWhere (stmt, q);
+  stmt.Bind (p++, q.limit);
+  stmt.Bind (p++, q.offset);
+  return stmt.Query<FighterResult> ();
+}
+
+namespace
+{
+
 struct CountResult : public Database::ResultType
 {
   RESULT_COLUMN (int64_t, cnt, 1);
 };
 
 } // anonymous namespace
+
+int64_t
+FighterTable::CountExchange (const ExchangeQuery& q)
+{
+  std::string sql = "SELECT COUNT(*) AS `cnt` FROM `fighters`";
+  int n = 1;
+  AppendExchangeWhere (q, sql, n);
+  auto stmt = db.Prepare (sql);
+  BindExchangeWhere (stmt, q);
+  auto res = stmt.Query<CountResult> ();   // CountResult already defined for CountForOwner
+  CHECK (res.Step ());
+  return res.Get<CountResult::cnt> ();
+}
 
 unsigned
 FighterTable::CountForOwner (const std::string& owner)
