@@ -142,10 +142,11 @@ CREATE TABLE IF NOT EXISTS `fighters` (
   `sweetness` INTEGER NOT NULL DEFAULT 0
 );
 
--- "Which fighters need a per-block status flip" -- the two per-block maintenance
--- scans (free Transfiguring fighters back to Available; expire for-sale listings)
--- act only on Exchange/Transfiguring rows, so this index lets them seek just those
--- instead of scanning the whole (unbounded) fighters table every block (DEF2).
+-- "Which fighters need a per-block status flip" -- the Transfiguring->Available
+-- maintenance scan (SetFreeTransfiguringFighters) acts only on Transfiguring
+-- rows, so this index lets it seek just those instead of scanning the whole
+-- (unbounded) fighters table every block (DEF2). (Listing expiry uses the
+-- `fighters_exchange_expire` index below instead.)
 CREATE INDEX IF NOT EXISTS `fighters_by_status`
   ON `fighters` (`status`);
 

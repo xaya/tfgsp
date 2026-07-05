@@ -116,6 +116,21 @@ protected:
       cfg = std::make_unique<pxd::RoConfig> (xaya::Chain::REGTEST);
   }
 
+  /* Lists a freshly-cooked fighter for `owner` at `price` (expire far in the future); returns its id. */
+  int
+  MakeListingJson (const std::string& owner, int price)
+  {
+    auto r0 = tbl3.CreateNew (owner, "5864a19b-c8c0-2d34-eaef-9455af0baf2c", *cfg);
+    const auto rid = r0->GetId (); r0.reset ();
+    auto f = tbl2.CreateNew (owner, rid, *cfg, rnd);
+    const int fid = f->GetId ();
+    f->SetStatus (pxd::FighterStatus::Exchange);
+    f->MutableProto ().set_exchangeprice (price);
+    f->MutableProto ().set_exchangeexpire (99999);
+    f.reset ();
+    return fid;
+  }
+
 };
 
 TEST_F (XayaPlayersJsonTests, KillsAndFame)
@@ -705,21 +720,9 @@ TEST_F (XayaPlayersJsonTests, TournamentInstance)
 
 TEST_F (XayaPlayersJsonTests, ExchangePagesSortsAndExcludesOwner)
 {
-  auto mk = [&] (const std::string& owner, int price) -> int
-  {
-    auto r0 = tbl3.CreateNew (owner, "5864a19b-c8c0-2d34-eaef-9455af0baf2c", *cfg);
-    const auto rid = r0->GetId (); r0.reset ();
-    auto f = tbl2.CreateNew (owner, rid, *cfg, rnd);
-    const int fid = f->GetId ();
-    f->SetStatus (pxd::FighterStatus::Exchange);
-    f->MutableProto ().set_exchangeprice (price);
-    f->MutableProto ().set_exchangeexpire (99999);
-    f.reset ();
-    return fid;
-  };
-  const int cheap = mk ("alice", 100);
-  const int mid   = mk ("bob",   200);
-  const int dear  = mk ("alice", 300);
+  const int cheap = MakeListingJson ("alice", 100);
+  const int mid   = MakeListingJson ("bob",   200);
+  const int dear  = MakeListingJson ("alice", 300);
 
   ctx.SetHeight (10);
 
@@ -746,21 +749,9 @@ TEST_F (XayaPlayersJsonTests, ExchangePagesSortsAndExcludesOwner)
    apply defaults without crashing — both were previously only inspection-verified. */
 TEST_F (XayaPlayersJsonTests, ExchangeClampsLimitAndDefaultsOnNonObject)
 {
-  auto mk = [&] (const std::string& owner, int price) -> int
-  {
-    auto r0 = tbl3.CreateNew (owner, "5864a19b-c8c0-2d34-eaef-9455af0baf2c", *cfg);
-    const auto rid = r0->GetId (); r0.reset ();
-    auto f = tbl2.CreateNew (owner, rid, *cfg, rnd);
-    const int fid = f->GetId ();
-    f->SetStatus (pxd::FighterStatus::Exchange);
-    f->MutableProto ().set_exchangeprice (price);
-    f->MutableProto ().set_exchangeexpire (99999);
-    f.reset ();
-    return fid;
-  };
-  const int cheap = mk ("alice", 100);
-  const int mid   = mk ("bob",   200);
-  const int dear  = mk ("alice", 300);
+  const int cheap = MakeListingJson ("alice", 100);
+  const int mid   = MakeListingJson ("bob",   200);
+  const int dear  = MakeListingJson ("alice", 300);
   (void) dear;
   ctx.SetHeight (10);
 
@@ -795,6 +786,25 @@ TEST_F (XayaPlayersJsonTests, ExchangeClampsLimitAndDefaultsOnNonObject)
     ASSERT_EQ (page["fighters"].size (), 1u);
     EXPECT_EQ (page["fighters"][0]["id"].asInt (), mid);
   }
+}
+
+/* affordablefor filters listings to price <= the caller's crystal budget — a headline UI feature
+   (the "affordable only" toggle) that otherwise had no coverage. */
+TEST_F (XayaPlayersJsonTests, ExchangeAffordableForFiltersByPrice)
+{
+  const int cheap = MakeListingJson ("alice", 100);
+  const int mid   = MakeListingJson ("bob",   250);
+  const int dear  = MakeListingJson ("alice", 400);
+  (void) dear;
+  ctx.SetHeight (10);
+
+  Json::Value req (Json::objectValue);
+  req["sort"] = "price"; req["order"] = "asc"; req["affordablefor"] = 250;
+  const Json::Value page = converter.Exchange (req);
+  ASSERT_EQ (page["fighters"].size (), 2u);              // cheap(100)+mid(250), NOT dear(400)
+  EXPECT_EQ (page["fighters"][0]["id"].asInt (), cheap);
+  EXPECT_EQ (page["fighters"][1]["id"].asInt (), mid);
+  EXPECT_EQ (page["total"].asInt (), 2);
 }
 
 /* ************************************************************************** */

@@ -251,6 +251,41 @@ TEST_F (FighterTests, QueryExchangeMultiFilterLockstep)
   EXPECT_FALSE (res2.Step ());
 }
 
+/* maxQuality / minPrice filters and the Sweetness sort column had no coverage (the multi-filter test
+   used minQuality/maxPrice/excludeOwner). MakeListing doesn't set sweetness, so set it via a reopen. */
+TEST_F (FighterTests, QueryExchangeMaxQualityMinPriceAndSweetnessSort)
+{
+  const auto a = MakeListing (tbl, tbl2, *cfg, rnd, "alice", 100, 1000, 5); // q5 p100
+  const auto b = MakeListing (tbl, tbl2, *cfg, rnd, "bob",   200, 1000, 2); // q2 p200
+  const auto c = MakeListing (tbl, tbl2, *cfg, rnd, "carol", 300, 1000, 4); // q4 p300
+  auto setSweet = [&] (Database::IdT id, int s)
+    { auto f = tbl.GetById (id, *cfg); f->MutableProto ().set_sweetness (s); f.reset (); };
+  setSweet (a, 3); setSweet (b, 9); setSweet (c, 1);
+
+  // maxQuality = 4 excludes a(q5); price-asc → b(p200), c(p300).
+  {
+    ExchangeQuery q; q.sort = ExchangeSort::Price; q.ascending = true; q.maxQuality = 4;
+    std::vector<Database::IdT> got; auto res = tbl.QueryExchange (q);
+    while (res.Step ()) got.push_back (tbl.GetFromResult (res, *cfg)->GetId ());
+    EXPECT_EQ (got, (std::vector<Database::IdT>{b, c}));
+    EXPECT_EQ (tbl.CountExchange (q), 2);
+  }
+  // minPrice = 200 excludes a(p100); price-asc → b, c.
+  {
+    ExchangeQuery q; q.sort = ExchangeSort::Price; q.ascending = true; q.minPrice = 200;
+    std::vector<Database::IdT> got; auto res = tbl.QueryExchange (q);
+    while (res.Step ()) got.push_back (tbl.GetFromResult (res, *cfg)->GetId ());
+    EXPECT_EQ (got, (std::vector<Database::IdT>{b, c}));
+  }
+  // Sweetness DESC: b(9) > a(3) > c(1).
+  {
+    ExchangeQuery q; q.sort = ExchangeSort::Sweetness; q.ascending = false;
+    std::vector<Database::IdT> got; auto res = tbl.QueryExchange (q);
+    while (res.Step ()) got.push_back (tbl.GetFromResult (res, *cfg)->GetId ());
+    EXPECT_EQ (got, (std::vector<Database::IdT>{b, a, c}));
+  }
+}
+
 TEST_F (FighterTests, QueryExpiredListingsSeeksOnlyExpired)
 {
   const auto soon = MakeListing (tbl, tbl2, *cfg, rnd, "alice", 100, /*expire*/ 50, 3);
