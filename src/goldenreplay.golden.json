@@ -698,7 +698,7 @@
         "recipeid" : 1,
         "saleshistory" : [],
         "secondnamerarity" : 1000,
-        "status" : 7,
+        "status" : 0,
         "sweetness" : 1,
         "tournamentinstanceid" : 0
       }
@@ -1179,7 +1179,7 @@
         [
           5
         ],
-        "rewardsserial" : 0,
+        "rewardsserial" : 1,
         "tournamentperformance" : 1,
         "valuecommon" : 476,
         "valueepic" : 0,

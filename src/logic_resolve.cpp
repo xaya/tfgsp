@@ -688,8 +688,17 @@ void PXLogic::ResolveCookingRecepie(std::unique_ptr<XayaPlayer>& a, const uint32
     from the previously running instances*/
     FighterTable fighters(db);
     RecipeInstanceTable recipeTbl(db);
-    
-    uint32_t slots = fighters.CountForOwner(a->GetName());   
+
+    /* Bump the player's append-only rewards serial so the client's existing
+       serial-driven auto-pop reveals this cook's outcome with NO claim tx
+       (mirrors CreditActivityReward's bumpSerial).  Pure bookkeeping -- it
+       consumes no rnd, so the RNG stream stays byte-identical. */
+    const auto bumpSerial = [&a] ()
+    {
+      a->MutableProto ().set_rewards_serial (a->GetProto ().rewards_serial () + 1);
+    };
+
+    uint32_t slots = fighters.CountForOwner(a->GetName());
   
     if(slots >= ctx.RoConfig()->params().max_fighter_inventory_amount())
     {
@@ -729,6 +738,7 @@ void PXLogic::ResolveCookingRecepie(std::unique_ptr<XayaPlayer>& a, const uint32
         a->AddBalance(cookCost);
 
         recepie->SetOwner(a->GetName());
+        bumpSerial ();
     }
     else
     {
@@ -737,9 +747,12 @@ void PXLogic::ResolveCookingRecepie(std::unique_ptr<XayaPlayer>& a, const uint32
 		
         a->CalculatePrestige(ctx.RoConfig());
         
-        newFighter->SetStatus(FighterStatus::Cooked);
-        
-        LOG (WARNING) << "Cooked new fighter with id: " << newFighter->GetId();
+        /* Auto-collect: the finished cook lands directly usable -- no second
+           "collect" tx.  The client reveals it from the bumpSerial() below. */
+        newFighter->SetStatus(FighterStatus::Available);
+        bumpSerial ();
+
+        LOG (INFO) << "Auto-collected cooked fighter with id: " << newFighter->GetId();
 
         /* The recipe row is intentionally kept (not deleted): the cooked
            fighter references its recipe id (e.g. the sweetener-cauldron

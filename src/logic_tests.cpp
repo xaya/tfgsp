@@ -224,17 +224,25 @@ TEST_F (ValidateStateTests, RecepieInstanceFullCycleTest)
   a = xayaplayers.GetByName ("domob", ctx.RoConfig());
   EXPECT_EQ (a->GetOngoingsSize (), 0);
   EXPECT_EQ (a->CollectInventoryFighters(ctx.RoConfig()).size(), 3);
-  
+
+  /* Auto-collect: a finished cook lands as a usable Available fighter -- no
+     second "collect" tx -- and every fighter domob owns is Available. */
+  for (const auto& f : a->CollectInventoryFighters (ctx.RoConfig ()))
+    EXPECT_EQ (f->GetStatus (), pxd::FighterStatus::Available);
+  /* The cook credits the append-only auto-collect serial (mirrors reward
+     auto-credit) so the client can reveal the new fighter with no claim tx. */
+  EXPECT_EQ (a->GetProto ().rewards_serial (), 1u);
+
   EXPECT_EQ (a->GetBalance (), 85 + cfg.params().starting_crystals());
-  
-  auto r = tbl2.GetById(1); 
+
+  auto r = tbl2.GetById(1);
   EXPECT_EQ (r->GetProto().name(), "First Recipe");
   EXPECT_EQ (r->GetOwner(), "");
-  
+
   EXPECT_EQ (a->GetInventory().GetFungibleCount("Common_Gumdrop"), 0);
   EXPECT_EQ (a->GetInventory().GetFungibleCount("Common_Icing"), 0);
-  
-}   
+
+}
 
 TEST_F (ValidateStateTests, DebugRecipeNamesTest)
 {
@@ -452,14 +460,19 @@ TEST_F (ValidateStateTests, RecepieInstanceRevertIfFullRoster)
   EXPECT_EQ (a->CollectInventoryFighters(ctx.RoConfig()).size(), 2);
   
   EXPECT_EQ (a->GetBalance (), 100 + cfg.params().starting_crystals());
-  
-  auto r0 = tbl2.GetById(1); 
+
+  /* A full-roster refund still notifies the client via the same serial the
+     success path bumps, so the FE always surfaces the outcome ("roster full --
+     cook refunded"), never a silent items-came-back diff. */
+  EXPECT_EQ (a->GetProto ().rewards_serial (), 1u);
+
+  auto r0 = tbl2.GetById(1);
   EXPECT_EQ (r0->GetProto().name(), "First Recipe");
   EXPECT_EQ (r0->GetOwner(), "domob");
-  
+
   EXPECT_EQ (a->GetInventory().GetFungibleCount("Common_Gumdrop"), 1);
   EXPECT_EQ (a->GetInventory().GetFungibleCount("Common_Icing"), 1);
-} 
+}
 
 TEST_F (ValidateStateTests, UnitTestExpeditionFailsOnMainNet)
 {  
