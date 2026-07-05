@@ -103,7 +103,7 @@ public:
   /**
    * Fighters exclusive to any exchange operations
    */
-  Json::Value Exchange();    
+  Json::Value Exchange (const Json::Value& request);
   
   /**
    * Returns the full game state JSON for the given Database handle.  The full

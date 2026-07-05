@@ -703,6 +703,45 @@ TEST_F (XayaPlayersJsonTests, TournamentInstance)
 
 /* ************************************************************************** */
 
+TEST_F (XayaPlayersJsonTests, ExchangePagesSortsAndExcludesOwner)
+{
+  auto mk = [&] (const std::string& owner, int price) -> int
+  {
+    auto r0 = tbl3.CreateNew (owner, "5864a19b-c8c0-2d34-eaef-9455af0baf2c", *cfg);
+    const auto rid = r0->GetId (); r0.reset ();
+    auto f = tbl2.CreateNew (owner, rid, *cfg, rnd);
+    const int fid = f->GetId ();
+    f->SetStatus (pxd::FighterStatus::Exchange);
+    f->MutableProto ().set_exchangeprice (price);
+    f->MutableProto ().set_exchangeexpire (99999);
+    f.reset ();
+    return fid;
+  };
+  const int cheap = mk ("alice", 100);
+  const int mid   = mk ("bob",   200);
+  const int dear  = mk ("alice", 300);
+
+  ctx.SetHeight (10);
+
+  Json::Value req (Json::objectValue);
+  req["sort"] = "price"; req["order"] = "asc"; req["limit"] = 2; req["offset"] = 0;
+  req["excludeowner"] = "carol"; // excludes nobody here
+  const Json::Value page = converter.Exchange (req);
+
+  ASSERT_EQ (page["fighters"].size (), 2u);            // limit honoured
+  EXPECT_EQ (page["fighters"][0]["id"].asInt (), cheap); // price asc
+  EXPECT_EQ (page["fighters"][1]["id"].asInt (), mid);
+  EXPECT_EQ (page["total"].asInt (), 3);              // total counts ALL matches, not the page
+  (void) dear;
+
+  // excludeowner=alice → only bob's listing remains.
+  req["excludeowner"] = "alice"; req["limit"] = 10;
+  const Json::Value page2 = converter.Exchange (req);
+  ASSERT_EQ (page2["fighters"].size (), 1u);
+  EXPECT_EQ (page2["fighters"][0]["id"].asInt (), mid);
+  EXPECT_EQ (page2["total"].asInt (), 1);
+}
+
 /* ************************************************************************** */
 
 } // anonymous namespace

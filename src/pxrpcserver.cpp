@@ -142,7 +142,9 @@ PXRpcServer::getexchange ()
   return logic.GetCustomStateData (game,
     [] (GameStateJson& gsj)
       {
-        return gsj.Exchange ();
+        /* TODO(exchange-scale Task 4): thread the RPC request object through
+           once tf-rpc.json/PXRpcServer take a params object for getexchange.  */
+        return gsj.Exchange (Json::Value (Json::objectValue));
       });
 }
 

@@ -793,32 +793,65 @@ GameStateJson::UserTournaments(const std::string& userName)
   return res;
 } 
 
-Json::Value
-GameStateJson::Exchange()
+namespace
 {
-  Json::Value res(Json::objectValue);
-  Json::Value fghtrarr(Json::arrayValue);
-  // We identify fighters listed on exchange based on their status
-  
-  FighterTable tbl2(db);
-  
-  auto res2 = tbl2.QueryAll ();
-  
-  while (res2.Step ())
-  {
-     auto h = tbl2.GetFromResult (res2, ctx.RoConfig ()); 
 
-     // we also want to include anyone who ever participated, to make sure it appears in sales history
-     if(h->GetStatus() == FighterStatus::Exchange || h->GetProto().salehistory_size() > 0)
-	 {
-          fghtrarr.append (Convert<FighterInstance> (*h));				 
-	 }
-	 
-	 h.reset();
-  }  
-   
-  res["fighters"] = fghtrarr;     
-  return res;
+ExchangeSort
+ParseExchangeSort (const Json::Value& v)
+{
+  const std::string s = v.isString () ? v.asString () : "";
+  if (s == "quality")   return ExchangeSort::Quality;
+  if (s == "sweetness") return ExchangeSort::Sweetness;
+  if (s == "expire")    return ExchangeSort::Expire;
+  return ExchangeSort::Price;   // default + unknown
+}
+
+int64_t
+OptInt (const Json::Value& r, const char* key, int64_t dflt)
+{
+  return (r.isMember (key) && r[key].isInt ()) ? r[key].asInt64 () : dflt;
+}
+
+} // anonymous namespace
+
+Json::Value
+GameStateJson::Exchange (const Json::Value& request)
+{
+  const Json::Value r = request.isObject () ? request : Json::Value (Json::objectValue);
+
+  ExchangeQuery q;
+  q.sort = ParseExchangeSort (r["sort"]);
+  q.ascending = !(r.isMember ("order") && r["order"].isString ()
+                  && r["order"].asString () == "desc");
+  q.minQuality    = OptInt (r, "minquality", -1);
+  q.maxQuality    = OptInt (r, "maxquality", -1);
+  q.minPrice      = OptInt (r, "minprice", -1);
+  q.maxPrice      = OptInt (r, "maxprice", -1);
+  q.maxAffordable = OptInt (r, "affordablefor", -1);
+  if (r.isMember ("excludeowner") && r["excludeowner"].isString ())
+    q.excludeOwner = r["excludeowner"].asString ();
+
+  int64_t limit = OptInt (r, "limit", 50);
+  q.limit = limit < 1 ? 1 : (limit > 100 ? 100 : limit);   // server-side hard cap
+  const int64_t offset = OptInt (r, "offset", 0);
+  q.offset = offset < 0 ? 0 : offset;
+
+  FighterTable tbl (db);
+  Json::Value fghtrarr (Json::arrayValue);
+  {
+    auto res = tbl.QueryExchange (q);
+    while (res.Step ())
+      {
+        auto h = tbl.GetFromResult (res, ctx.RoConfig ());
+        fghtrarr.append (Convert<FighterInstance> (*h));
+        h.reset ();
+      }
+  } // close the page cursor before the COUNT statement
+
+  Json::Value out (Json::objectValue);
+  out["fighters"] = fghtrarr;
+  out["total"]    = IntToJson (tbl.CountExchange (q));
+  return out;
 }
  
 Json::Value
