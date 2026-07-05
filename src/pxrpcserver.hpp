@@ -140,7 +140,7 @@ explicit PXRpcServer (xaya::Game& g, PXLogic& l, xaya::SQLiteHasher* h,
   Json::Value getuser (const std::string& userName) override;
   Json::Value gettournaments (const std::string& userName) override;
   Json::Value getfueldata (const Json::Value& candiesNew, const Json::Value& candiesSubmited, const Json::Value& candylist, const Json::Value& fighterData, const Json::Value& fightersNew, const Json::Value& fightersSubmited, const Json::Value& recipeData, const Json::Value& recipesNew, const Json::Value& recipesSubmited) override;
-  Json::Value getexchange () override;
+  Json::Value getexchange (const Json::Value& request) override;
 
   Json::Value hashcurrentstate () override;
   Json::Value getstatehash (const std::string& block) override;

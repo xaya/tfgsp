@@ -136,15 +136,13 @@ PXRpcServer::gettournaments (const std::string& userName)
 }
 
 Json::Value
-PXRpcServer::getexchange ()
+PXRpcServer::getexchange (const Json::Value& request)
 {
   LOG (INFO) << "RPC method called: getexchange";
   return logic.GetCustomStateData (game,
-    [] (GameStateJson& gsj)
+    [request] (GameStateJson& gsj)
       {
-        /* TODO(exchange-scale Task 4): thread the RPC request object through
-           once tf-rpc.json/PXRpcServer take a params object for getexchange.  */
-        return gsj.Exchange (Json::Value (Json::objectValue));
+        return gsj.Exchange (request);
       });
 }
 

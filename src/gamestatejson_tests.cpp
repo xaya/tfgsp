@@ -742,6 +742,61 @@ TEST_F (XayaPlayersJsonTests, ExchangePagesSortsAndExcludesOwner)
   EXPECT_EQ (page2["total"].asInt (), 1);
 }
 
+/* The [1,100] limit clamp is getexchange's server-side page guard, and a non-object request must
+   apply defaults without crashing — both were previously only inspection-verified. */
+TEST_F (XayaPlayersJsonTests, ExchangeClampsLimitAndDefaultsOnNonObject)
+{
+  auto mk = [&] (const std::string& owner, int price) -> int
+  {
+    auto r0 = tbl3.CreateNew (owner, "5864a19b-c8c0-2d34-eaef-9455af0baf2c", *cfg);
+    const auto rid = r0->GetId (); r0.reset ();
+    auto f = tbl2.CreateNew (owner, rid, *cfg, rnd);
+    const int fid = f->GetId ();
+    f->SetStatus (pxd::FighterStatus::Exchange);
+    f->MutableProto ().set_exchangeprice (price);
+    f->MutableProto ().set_exchangeexpire (99999);
+    f.reset ();
+    return fid;
+  };
+  const int cheap = mk ("alice", 100);
+  const int mid   = mk ("bob",   200);
+  const int dear  = mk ("alice", 300);
+  (void) dear;
+  ctx.SetHeight (10);
+
+  // limit=0 clamps up to 1 → exactly the cheapest row (price asc); total still counts all 3.
+  {
+    Json::Value req (Json::objectValue);
+    req["sort"] = "price"; req["order"] = "asc"; req["limit"] = 0;
+    const Json::Value page = converter.Exchange (req);
+    ASSERT_EQ (page["fighters"].size (), 1u);
+    EXPECT_EQ (page["fighters"][0]["id"].asInt (), cheap);
+    EXPECT_EQ (page["total"].asInt (), 3);
+  }
+  // limit far above the cap returns all rows (cap path does not error).
+  {
+    Json::Value req (Json::objectValue);
+    req["limit"] = 1000;
+    const Json::Value page = converter.Exchange (req);
+    EXPECT_EQ (page["fighters"].size (), 3u);
+    EXPECT_EQ (page["total"].asInt (), 3);
+  }
+  // A non-object request applies defaults (limit 50, price asc) and does not crash.
+  {
+    const Json::Value page = converter.Exchange (Json::Value ());
+    EXPECT_EQ (page["fighters"].size (), 3u);
+    EXPECT_EQ (page["total"].asInt (), 3);
+  }
+  // offset skips the first page row.
+  {
+    Json::Value req (Json::objectValue);
+    req["sort"] = "price"; req["order"] = "asc"; req["limit"] = 1; req["offset"] = 1;
+    const Json::Value page = converter.Exchange (req);
+    ASSERT_EQ (page["fighters"].size (), 1u);
+    EXPECT_EQ (page["fighters"][0]["id"].asInt (), mid);
+  }
+}
+
 /* ************************************************************************** */
 
 } // anonymous namespace
