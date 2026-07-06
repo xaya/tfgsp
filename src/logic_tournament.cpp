@@ -352,32 +352,68 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
                           continue;
 
                         const uint32_t roll = rnd.NextInt (256);
-                        const bool capture
-                            = (roll < capturePct)
-                           && (fighters.CountForOwner (winnerName) < maxInv)
-                           && (capturedByWinner < maxCaptures);
+                        const bool rollWon = roll < capturePct;
+                        const bool slotFree
+                            = fighters.CountForOwner (winnerName) < maxInv;
+                        const bool underCap = capturedByWinner < maxCaptures;
+                        const bool capture = rollWon && slotFree && underCap;
 
                         const std::string victimName = victim->GetProto ().name ();
+
+                        /* Loser-side record (outcome 0=destroyed, 1=captured). */
                         battleLosses.Add (team.first, victimId, victimName,
                                           capture ? 1 : 0, winnerName, tnm->GetId ());
+
+                        /* Winner-side notification code (owner = winner) so the
+                           winner can reveal what became of the fighter it defeated:
+                             2 = captured it;
+                             3 = it was DESTROYED because the winner's roster was full;
+                             4 = it was DESTROYED because the per-tournament capture
+                                 cap (tournament_max_captures) was already reached.
+                           The two "miss" codes fire ONLY when a capture was rolled
+                           (roll < capture_pct) but blocked -- a plain lost coin-flip
+                           is just a destroy the winner is not notified about.  0 =
+                           nothing to tell the winner.  When BOTH block, the CAP wins:
+                           tournament_max_captures is the binding per-tournament limit
+                           (freeing a roster slot would not help), so it is the more
+                           accurate reason to surface.  No RNG is consumed here. */
+                        uint32_t winnerOutcome = 0;
+                        if (capture)                    winnerOutcome = 2;
+                        else if (rollWon && !underCap)  winnerOutcome = 4;  /* cap reached */
+                        else if (rollWon)               winnerOutcome = 3;  /* under cap, roster full */
+                        if (winnerOutcome != 0)
+                          battleLosses.Add (winnerName, victimId, victimName,
+                                            winnerOutcome, team.first, tnm->GetId ());
 
                         if (capture)
                           {
                             victim->SetOwner (winnerName);   /* keeps all stats/armor */
                             victim.reset ();                 /* flush owner change */
-                            auto wp = xayaplayers.GetByName (winnerName,
-                                                             ctx.RoConfig ());
-                            if (wp != nullptr)
-                              {
-                                wp->CalculatePrestige (ctx.RoConfig ());
-                                wp.reset ();
-                              }
                             ++capturedByWinner;              /* against the cap */
                           }
                         else
                           {
                             victim.reset ();                 /* release before delete */
                             fighters.DeleteById (victimId);
+                          }
+
+                        /* Winner-side aggregate update (mirrors the loser bump below):
+                           recompute prestige when the roster changed (capture) and
+                           bump the winner's reveal serial once if we notified them, so
+                           the client surfaces the capture/miss independently of any
+                           tournament reward the winner also drew. */
+                        if (winnerOutcome != 0)
+                          {
+                            auto wp = xayaplayers.GetByName (winnerName,
+                                                             ctx.RoConfig ());
+                            if (wp != nullptr)
+                              {
+                                if (capture)
+                                  wp->CalculatePrestige (ctx.RoConfig ());
+                                wp->MutableProto ().set_rewards_serial (
+                                    wp->GetProto ().rewards_serial () + 1);
+                                wp.reset ();
+                              }
                           }
 
                         auto lp = xayaplayers.GetByName (team.first, ctx.RoConfig ());

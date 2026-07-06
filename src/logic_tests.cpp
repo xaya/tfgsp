@@ -436,6 +436,44 @@ protected:
     return net;
   }
 
+  /** How many battle_losses rows `owner` has with the given `outcome` code. */
+  int
+  CountLossOutcome (const std::string& owner, const int outcome)
+  {
+    BattleLossesTable losses(db);
+    int n = 0;
+    auto r = losses.QueryForOwner (owner);
+    while (r.Step ())
+      if (static_cast<int> (r.Get<BattleLossResult::outcome> ()) == outcome)
+        ++n;
+    return n;
+  }
+
+  /** The player's append-only reveal serial (0 if the player is absent). */
+  uint64_t
+  PlayerSerial (const std::string& name)
+  {
+    auto p = xayaplayers.GetByName (name, ctx.RoConfig ());
+    const uint64_t s = (p != nullptr) ? p->GetProto ().rewards_serial () : 0;
+    p.reset ();
+    return s;
+  }
+
+  /** True iff `owner` has a battle_losses row matching (outcome, fighterid, opponent). */
+  bool
+  HasLossRow (const std::string& owner, const int outcome,
+              const uint32_t fid, const std::string& opponent)
+  {
+    BattleLossesTable losses(db);
+    auto r = losses.QueryForOwner (owner);
+    while (r.Step ())
+      if (static_cast<int> (r.Get<BattleLossResult::outcome> ()) == outcome
+          && static_cast<uint32_t> (r.Get<BattleLossResult::fighterid> ()) == fid
+          && r.Get<BattleLossResult::opponent> () == opponent)
+        return true;
+    return false;
+  }
+
 };
 
 namespace
@@ -497,6 +535,11 @@ TEST_F (ValidateStateTests, TournamentPermadeathAlwaysCaptures)
   ASSERT_TRUE (lr.Step ());
   EXPECT_EQ (lr.Get<BattleLossResult::outcome> (), 1);   // captured
   EXPECT_EQ (lr.Get<BattleLossResult::opponent> (), t.winner);
+
+  // Winner-side reveal (Change C phase 2): exactly one capture record (outcome 2),
+  // naming the loser; no missed-capture warnings.
+  EXPECT_EQ (CountLossOutcome (t.winner, 2), 1);
+  EXPECT_EQ (CountLossOutcome (t.winner, 3) + CountLossOutcome (t.winner, 4), 0);
 }
 
 TEST_F (ValidateStateTests, TournamentPermadeathAlwaysDestroys)
@@ -515,6 +558,11 @@ TEST_F (ValidateStateTests, TournamentPermadeathAlwaysDestroys)
   auto lr = losses.QueryForOwner (t.loser);
   ASSERT_TRUE (lr.Step ());
   EXPECT_EQ (lr.Get<BattleLossResult::outcome> (), 0);   // destroyed
+
+  // A plain coin-flip destroy (capture was NOT rolled) gives the winner NO record.
+  EXPECT_EQ (CountLossOutcome (t.winner, 2)
+             + CountLossOutcome (t.winner, 3)
+             + CountLossOutcome (t.winner, 4), 0);
 }
 
 TEST_F (ValidateStateTests, TournamentPermadeathDisabledKeepsEveryone)
@@ -674,6 +722,7 @@ TEST_F (ValidateStateTests, TournamentCaptureCapLimitsWinnerGains)
 
   const auto s = SetupThreeTeamAtBrink (WorstAtB3 ());
   const unsigned winnerBefore = tbl3.CountForOwner ("winner");
+  const uint64_t winnerSerial0 = PlayerSerial ("winner");
   UpdateState ("[]");                                             // resolve + permadeath
 
   auto trn = tbl5.GetById (s.tid, ctx.RoConfig ());
@@ -682,6 +731,10 @@ TEST_F (ValidateStateTests, TournamentCaptureCapLimitsWinnerGains)
 
   // The winner gained exactly one fighter (the cap), never two.
   EXPECT_EQ (tbl3.CountForOwner ("winner"), winnerBefore + 1);
+
+  // The winner's reveal serial advanced by >= its two battle records (1 capture +
+  // 1 over-cap miss), so the client surfaces them regardless of reward rolls.
+  EXPECT_GE (PlayerSerial ("winner") - winnerSerial0, 2u);
 
   // bob's victim (b3, the worst performer) was CAPTURED -> now owned by winner.
   auto captured = tbl3.GetById (s.bob[2], ctx.RoConfig ());
@@ -704,6 +757,13 @@ TEST_F (ValidateStateTests, TournamentCaptureCapLimitsWinnerGains)
   auto carlLoss = losses.QueryForOwner ("carl");
   ASSERT_TRUE (carlLoss.Step ());
   EXPECT_EQ (carlLoss.Get<BattleLossResult::outcome> (), 0);       // destroyed (over cap)
+
+  // Winner-side reveal: captured bob's b3 (outcome 2) + an over-cap miss for carl
+  // (outcome 4); no roster-full misses.
+  EXPECT_TRUE (HasLossRow ("winner", 2, s.bob[2], "bob"));
+  EXPECT_EQ (CountLossOutcome ("winner", 2), 1);
+  EXPECT_EQ (CountLossOutcome ("winner", 4), 1);
+  EXPECT_EQ (CountLossOutcome ("winner", 3), 0);
 }
 
 /* Change C: tournament_max_captures = 0 disables capture entirely -- even at
@@ -730,6 +790,12 @@ TEST_F (ValidateStateTests, TournamentCaptureCapZeroDestroysAll)
   auto bobLoss = losses.QueryForOwner ("bob");
   ASSERT_TRUE (bobLoss.Step ());
   EXPECT_EQ (bobLoss.Get<BattleLossResult::outcome> (), 0);        // destroyed, not captured
+
+  // Winner-side reveal: both victims were rolled-but-capped -> two over-cap misses
+  // (outcome 4), no captures.
+  EXPECT_EQ (CountLossOutcome ("winner", 2), 0);
+  EXPECT_EQ (CountLossOutcome ("winner", 4), 2);
+  EXPECT_TRUE (HasLossRow ("winner", 4, s.bob[2], "bob"));
 }
 
 /* Change C: when the winner's roster is FULL, a rolled capture downgrades to a
@@ -767,6 +833,43 @@ TEST_F (ValidateStateTests, TournamentCaptureRosterFullDestroys)
   auto lr = losses.QueryForOwner ("bob");
   ASSERT_TRUE (lr.Step ());
   EXPECT_EQ (lr.Get<BattleLossResult::outcome> (), 0);            // destroyed (roster full)
+
+  // Winner-side reveal: both victims were rolled-but-roster-full -> two roster-full
+  // misses (outcome 3), no captures, no over-cap misses.
+  EXPECT_EQ (CountLossOutcome ("winner", 2), 0);
+  EXPECT_EQ (CountLossOutcome ("winner", 3), 2);
+  EXPECT_EQ (CountLossOutcome ("winner", 4), 0);
+  EXPECT_TRUE (HasLossRow ("winner", 3, s.bob[2], "bob"));
+}
+
+/* Change C: when a rolled capture is blocked by BOTH a full roster AND the capture
+   cap, the CAP reason (outcome 4) is surfaced -- it is the binding per-tournament
+   limit that freeing a roster slot would not lift. */
+TEST_F (ValidateStateTests, TournamentCaptureBothBlockedPrefersCap)
+{
+  GameParams (db).SetParam ("tournament_capture_pct", 256);      // would always capture
+  GameParams (db).SetParam ("tournament_loss_kills_enabled", 1);
+  GameParams (db).SetParam ("tournament_max_captures", 0);       // cap blocks...
+
+  const auto s = SetupThreeTeamAtBrink (WorstAtB3 ());
+
+  auto& cfg = const_cast<proto::ConfigData&> (*ctx.RoConfig ());
+  const uint32_t savedMax = cfg.params ().max_fighter_inventory_amount ();
+  cfg.mutable_params ()->set_max_fighter_inventory_amount (
+      tbl3.CountForOwner ("winner"));                            // ...and the roster is ALSO full
+
+  UpdateState ("[]");
+  cfg.mutable_params ()->set_max_fighter_inventory_amount (savedMax);
+
+  auto trn = tbl5.GetById (s.tid, ctx.RoConfig ());
+  ASSERT_EQ (trn->GetInstance ().winnerid (), "winner");
+  trn.reset ();
+
+  // Both blockers active -> the cap (4) is reported, never roster-full (3).
+  EXPECT_GT (CountLossOutcome ("winner", 4), 0);
+  EXPECT_EQ (CountLossOutcome ("winner", 3), 0);
+  EXPECT_TRUE (HasLossRow ("winner", 4, s.bob[2], "bob"));
+  EXPECT_EQ (tbl3.GetById (s.bob[2], ctx.RoConfig ()), nullptr); // destroyed, not captured
 }
 
 TEST_F (ValidateStateTests, RecepieInstanceFullCycleTest)

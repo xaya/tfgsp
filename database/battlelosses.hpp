@@ -40,9 +40,10 @@ struct BattleLossResult : public Database::ResultType
 };
 
 /**
- * Access to the battle_losses table (Change C): append a client-visible loss
+ * Access to the battle_losses table (Change C): append a client-visible battle
  * record when a fighter is destroyed/captured in a tournament, and read a
- * player's losses for getuser.
+ * player's records for getuser.  Rows are per-perspective, keyed by `owner` = the
+ * player who should SEE the record; `opponent` is the other party.
  */
 class BattleLossesTable
 {
@@ -55,7 +56,16 @@ public:
 
   explicit BattleLossesTable (Database& d) : db(d) {}
 
-  /** Appends one loss row (id auto-assigned).  outcome: 0=destroyed, 1=captured.  */
+  /** Appends one record (id auto-assigned).  `outcome` is perspective-tagged:
+   *    LOSER's view (owner = the losing player):
+   *      0 = your fighter was destroyed,
+   *      1 = your fighter was captured by `opponent`;
+   *    WINNER's view (owner = the tournament winner):
+   *      2 = you captured `opponent`'s fighter,
+   *      3 = you defeated it but your roster was full -> it was destroyed,
+   *      4 = you defeated it but hit the capture cap -> it was destroyed.
+   *  When a capture is blocked by BOTH a full roster and the cap, code 4 (cap) is
+   *  written -- the cap is the binding per-tournament limit.  */
   void Add (const std::string& owner, uint32_t fighterId, const std::string& name,
             uint32_t outcome, const std::string& opponent, uint32_t tournamentId);
 

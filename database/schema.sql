@@ -125,18 +125,22 @@ CREATE TABLE IF NOT EXISTS `rewards` (
 CREATE INDEX IF NOT EXISTS `rewards_by_owner`
   ON `rewards` (`owner`);
 
--- Change C: a client-visible record of every fighter lost in a tournament
--- (destroyed or captured), so the loser gets a "you lost a treat" reveal.  One
--- row per loss; surfaced in getuser; the loser's rewards_serial is bumped
--- alongside so the existing serial-driven reveal fires.  Flat columns (no proto)
--- since the shape is small and fixed.  Added the additive IF NOT EXISTS way.
+-- Change C: a client-visible, per-PERSPECTIVE record of what happened to a fighter
+-- in a tournament, so the affected player gets a reveal.  `owner` is the player who
+-- SEES the row; `opponent` is the other party.  One row per event; surfaced in
+-- getuser; that owner's rewards_serial is bumped alongside so the existing
+-- serial-driven reveal fires.  Flat columns (no proto) since the shape is small and
+-- fixed.  Added the additive IF NOT EXISTS way.
 CREATE TABLE IF NOT EXISTS `battle_losses` (
   `id` INTEGER PRIMARY KEY,
   `owner` TEXT NOT NULL,
   `fighterid` INTEGER NOT NULL,
   `name` TEXT NOT NULL,
-  `outcome` INTEGER NOT NULL,   -- 0 = destroyed, 1 = captured
-  `opponent` TEXT NOT NULL,     -- the tournament winner's Xaya name
+  -- LOSER's view (owner = loser):  0 = your fighter destroyed, 1 = captured by opponent.
+  -- WINNER's view (owner = winner): 2 = you captured it, 3 = roster-full miss (destroyed),
+  --                                 4 = capture-cap miss (destroyed).
+  `outcome` INTEGER NOT NULL,
+  `opponent` TEXT NOT NULL,     -- the OTHER party (winner's name on 0|1, loser's name on 2|3|4)
   `tournamentid` INTEGER NOT NULL
 );
 
