@@ -39,6 +39,7 @@ TEST_F (GameParamsTests, SeededDefaultsPresent)
   EXPECT_EQ (gp.GetParam ("rarest_recipe_drop_divisor"), 4);
   EXPECT_EQ (gp.GetParam ("tournament_loss_kills_enabled"), 1);
   EXPECT_EQ (gp.GetParam ("tournament_capture_pct"), 128);
+  EXPECT_EQ (gp.GetParam ("tournament_max_captures"), 3);
 }
 
 TEST_F (GameParamsTests, SetUpdatesValue)

@@ -238,20 +238,26 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
                   a.reset();
               }
 
-              /* Change A + C: tournament permadeath + 50/50 capture.  Runs only
-                 when enabled and there is a winner.  Each NON-winning team (in
-                 ascending owner-name order via the std::map `teams`) loses exactly
-                 ONE randomly-picked entered fighter: an account-bound starter is
-                 immune (and takes no capture draw); otherwise a capture_pct/256
-                 coin-flip either transfers it to the winner (if the winner has a
-                 free roster slot) or destroys it.  A battle_losses row is written
-                 and the loser's rewards_serial bumped so the client reveals it.
-                 The survivor-reset loop below then flips the surviving (and any
-                 captured) fighters back to Available; destroyed ids simply return
-                 null there and are skipped.  Determinism: teams is ordered by
-                 owner name; the victim draw precedes the capture draw; the capture
-                 draw is skipped only for account-bound victims (a consensus-state
-                 predicate).  Bumps/writes consume no rnd. */
+              /* Change A + C: tournament permadeath + capture (worst-performer,
+                 shielded-strongest, capped captures).  Runs only when enabled and
+                 there is a winner.  Each NON-winning team (ascending owner-name
+                 order via the std::map `teams`) loses exactly ONE fighter -- but
+                 NEVER its strongest.  The team's single highest-RATING loseable
+                 fighter is shielded; among the rest the victim is the WORST
+                 performer this tournament (fewest net wins = wins-losses, from
+                 fighterResults), ties broken by ONE random draw.  A lone loseable
+                 fighter is still lost.  Account-bound starters are immune and
+                 excluded up front; a team of only starters loses no one.  The
+                 victim is then a capture_pct/256 coin-flip: transferred to the
+                 winner if the winner has a free roster slot AND has captured fewer
+                 than tournament_max_captures this tournament, else destroyed.  A
+                 battle_losses row is written and the loser's rewards_serial bumped
+                 so the client reveals it.  The survivor-reset loop below flips the
+                 surviving (and captured) fighters back to Available; destroyed ids
+                 return null there and are skipped.  Determinism: teams is owner-name
+                 ordered; loseable set, shield (max rating, lowest-id tiebreak) and
+                 worst-net set are pure functions of consensus state; one victim
+                 tiebreak draw then the capture draw; bumps/writes consume no rnd. */
               {
                 GameParams gp(db);
                 if (gp.GetParam ("tournament_loss_kills_enabled") == 1
@@ -259,37 +265,97 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
                   {
                     const uint32_t capturePct
                         = (uint32_t) gp.GetParam ("tournament_capture_pct");
+                    const uint32_t maxCaptures
+                        = (uint32_t) gp.GetParam ("tournament_max_captures");
                     const uint32_t maxInv
                         = ctx.RoConfig ()->params ().max_fighter_inventory_amount ();
                     BattleLossesTable battleLosses(db);
+
+                    /* How many fighters the single winner has captured THIS
+                       tournament -- capped at tournament_max_captures; further
+                       victims are destroyed instead of captured. */
+                    uint32_t capturedByWinner = 0;
 
                     for (const auto& team : teams)
                       {
                         if (team.first == winnerName)
                           continue;   /* the winner's team loses no one */
-                        const auto& roster = team.second;
-                        if (roster.empty ())
-                          continue;
 
-                        /* One victim draw per losing team (always taken). */
-                        const uint32_t victimId
-                            = roster[rnd.NextInt (roster.size ())];
+                        /* Loseable set = entered fighters that are NOT account-bound
+                           starters, in deterministic roster order; track the single
+                           highest-rating one to shield (ties -> lowest id). */
+                        std::vector<uint32_t> loseable;
+                        uint32_t shieldId = 0;
+                        int64_t shieldRating = -1;
+                        for (const uint32_t fid : team.second)
+                          {
+                            auto f = fighters.GetById (fid, ctx.RoConfig ());
+                            if (f == nullptr)
+                              continue;
+                            const bool bound = f->GetProto ().isaccountbound ();
+                            const int64_t rating
+                                = (int64_t) f->GetProto ().rating ();
+                            f.reset ();
+                            if (bound)
+                              continue;                 /* starter: immune */
+                            loseable.push_back (fid);
+                            if (rating > shieldRating
+                                || (rating == shieldRating && fid < shieldId))
+                              {
+                                shieldRating = rating;
+                                shieldId = fid;
+                              }
+                          }
+
+                        if (loseable.empty ())
+                          continue;   /* only immune starters -> team loses none */
+
+                        /* Candidate victims = loseable minus the shielded (top-
+                           rated) fighter -- unless it is the ONLY loseable fighter
+                           (then it is still lost). */
+                        std::vector<uint32_t> candidates;
+                        candidates.reserve (loseable.size ());
+                        for (const uint32_t fid : loseable)
+                          if (loseable.size () == 1 || fid != shieldId)
+                            candidates.push_back (fid);
+
+                        /* The victim is the WORST performer this tournament among
+                           the candidates: fewest net wins (wins - losses), read
+                           from fighterResults (populated above by
+                           ProcessFighterPair).  Net is computed once per candidate
+                           (DRY: one source for the threshold and the tie set), then
+                           ties for worst are broken by ONE random draw (constant
+                           count -> deterministic RNG stream). */
+                        std::vector<std::pair<uint32_t, int32_t>> scored;
+                        scored.reserve (candidates.size ());
+                        int32_t worstNet = 0;
+                        for (const uint32_t fid : candidates)
+                          {
+                            const auto it = fighterResults.find (fid);
+                            const int32_t net = (it != fighterResults.end ())
+                                ? (int32_t) it->second->wins ()
+                                    - (int32_t) it->second->losses ()
+                                : 0;
+                            if (scored.empty () || net < worstNet)
+                              worstNet = net;
+                            scored.emplace_back (fid, net);
+                          }
+                        std::vector<uint32_t> worst;
+                        worst.reserve (scored.size ());
+                        for (const auto& sc : scored)
+                          if (sc.second == worstNet)
+                            worst.push_back (sc.first);
+
+                        const uint32_t victimId = worst[rnd.NextInt (worst.size ())];
                         auto victim = fighters.GetById (victimId, ctx.RoConfig ());
                         if (victim == nullptr)
                           continue;
 
-                        /* Starter protection: nothing happens, and NO capture
-                           draw is taken (keeps the RNG stream deterministic). */
-                        if (victim->GetProto ().isaccountbound ())
-                          {
-                            victim.reset ();
-                            continue;
-                          }
-
                         const uint32_t roll = rnd.NextInt (256);
                         const bool capture
                             = (roll < capturePct)
-                           && (fighters.CountForOwner (winnerName) < maxInv);
+                           && (fighters.CountForOwner (winnerName) < maxInv)
+                           && (capturedByWinner < maxCaptures);
 
                         const std::string victimName = victim->GetProto ().name ();
                         battleLosses.Add (team.first, victimId, victimName,
@@ -306,6 +372,7 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
                                 wp->CalculatePrestige (ctx.RoConfig ());
                                 wp.reset ();
                               }
+                            ++capturedByWinner;              /* against the cap */
                           }
                         else
                           {

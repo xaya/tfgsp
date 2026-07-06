@@ -202,11 +202,12 @@ MoveProcessor::HandleSetParam (const Json::Value& cmd)
         continue;
       const std::string name = nameVal.asString ();
 
-      /* Only these three knobs are settable.  An unknown name never creates a
+      /* Only these knobs are settable.  An unknown name never creates a
          phantom consensus row (a fat-finger / future-typo can't add state). */
       const bool known = (name == "rarest_recipe_drop_divisor"
                        || name == "tournament_loss_kills_enabled"
-                       || name == "tournament_capture_pct");
+                       || name == "tournament_capture_pct"
+                       || name == "tournament_max_captures");
       if (!known)
         {
           LOG (WARNING) << "Ignoring setparam for unknown name: " << name;
@@ -218,7 +219,8 @@ MoveProcessor::HandleSetParam (const Json::Value& cmd)
       /* Removal is refused: GetParam CHECK-fails on unset, so removing a seeded
          knob would crash every node on the next reward/tournament read.  The
          Soccerverse v:null=remove semantics are kept in the parser shape, but
-         these three knobs are load-bearing, so removal is a no-op here. */
+         all four known knobs are load-bearing (seeded at genesis), so removal is
+         a no-op here. */
       if (vVal.isNull ())
         {
           LOG (WARNING) << "Refusing to remove required param: " << name;
@@ -243,6 +245,8 @@ MoveProcessor::HandleSetParam (const Json::Value& cmd)
         ok = (v >= 0 && v <= 256);
       else if (name == "tournament_loss_kills_enabled")
         ok = (v == 0 || v == 1);
+      else if (name == "tournament_max_captures")
+        ok = (v >= 0 && v <= 1000);   /* 0 = capture none (all destroyed) */
 
       if (!ok)
         {

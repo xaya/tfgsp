@@ -77,6 +77,7 @@ game-state config table):
   - `rarest_recipe_drop_divisor = 4`
   - `tournament_loss_kills_enabled = 1`
   - `tournament_capture_pct = 128`   (fixed_8: 128/256 = 0.5 = the 50/50 split)
+  - `tournament_max_captures = 3`     (max fighters the single winner may capture per tournament)
 - **Admin verb:** extend `ProcessOneAdmin` (`moveprocessor.cpp:161`) with a **non-god-gated**
   `HandleSetParam(cmd["param"])`, parsing exactly like Soccerverse's `TryAdminSetParam`: an array of
   `{n:string, v:int|null}`; `v:null` → `RemoveParam`, int → `SetParam`. Keep `HandleGodMode(cmd["god"])`
@@ -85,7 +86,8 @@ game-state config table):
   name owner, so whoever controls `g/tf` is the admin — no in-code address gate. (`dev_address` is a
   payment-recipient field only; it is NOT wired to admin auth, and we don't add it.) **Guard rails:**
   reject unknown param names and out-of-range values (divisor `>= 1`; `tournament_capture_pct` in
-  `[0,256]`; `tournament_loss_kills_enabled` in `{0,1}`) so a fat-finger can't brick consensus (mirrors
+  `[0,256]`; `tournament_loss_kills_enabled` in `{0,1}`; `tournament_max_captures` in `[0,1000]`) so a
+  fat-finger can't brick consensus (mirrors
   the existing `MaybeSetNewCostMultiplier` range guard, `moveprocessor.cpp:194-204`).
 - **Reads:** `GameParams gp(db); gp.GetParam("...")` at the point of use each block. `db` is already in
   scope at every relevant call site (tournament resolution and `RecipeInstance::Generate`, which already
@@ -108,24 +110,42 @@ For each **non-winning team** (every participating owner whose team is not `winn
 **ascending owner-name order** (a fixed, deterministic sequence — not the RNG or map-iteration order),
 in a single fixed RNG sequence:
 
-1. **Pick a victim:** `victimIdx = rnd.NextInt(enteredCount)` over that team's entered fighter ids
-   (the `fc` roster, `TeamSize` long). One draw per losing team.
-2. **Starter protection:** if the picked fighter is **account-bound** (`isaccountbound`/`IsAccountBound`),
-   nothing happens for this team — no destroy, no capture, and **no capture draw is taken** (keeps the
-   RNG stream deterministic and simple). A team of only starters is fully immune.
-3. **Destroy-or-capture:** otherwise draw `roll = rnd.NextInt(256)`. If
-   `roll < tournament_capture_pct` **and** the tournament winner's roster has a free slot
-   (`fighters.CountForOwner(winnerName) < max_fighter_inventory_amount`), **capture**: reassign the
-   fighter's owner to `winnerName` (keep all stats/rating/sweetness/moves/armor unchanged; clear any
-   transient status back to `Available`; recompute affected value/prestige aggregates for both the
-   loser and the winner). Otherwise **destroy**: delete the fighter (`fighters.DeleteById`), and free
-   any references (it is not on the exchange — it was in a tournament — and not mid-cook).
+1. **Build the loseable set:** the team's entered fighter ids (the `fc` roster, `TeamSize` long) that
+   are **not account-bound** (`isaccountbound`/`IsAccountBound`) starters, walked in deterministic
+   roster order. Starters are immune and excluded up front; **a team of only starters loses no one.**
+2. **Shield the strongest, then take the worst performer:** identify the single **highest-`rating`**
+   loseable fighter (ties broken by **lowest fighter id** → consensus-stable) and shield it — the
+   `candidates` are the loseable set **minus the shielded fighter** (*unless* there is only one loseable
+   fighter, in which case it is the victim). Among the `candidates`, the victim is the **worst performer
+   this tournament**: the fewest **net wins** (`wins - losses`, read from the per-fighter
+   `TournamentResult` rows just populated by `ProcessFighterPair`). Ties for worst are broken by **one**
+   `rnd.NextInt(worst.size())` draw (a constant-count draw → deterministic RNG stream).
+   **You always lose exactly one fighter when you have anything loseable, but never your strongest, and
+   the one you lose is the one that did worst.** (The `rating` read here is post-combat:
+   `ProcessFighterPair` updates ratings earlier in the same resolution, before this block.)
+3. **Destroy-or-capture (capped):** draw `roll = rnd.NextInt(256)`. **Capture** — reassign the fighter's
+   owner to `winnerName` (keep all stats/rating/sweetness/moves/armor unchanged; clear any transient
+   status back to `Available`; recompute affected value/prestige aggregates for both the loser and the
+   winner) — iff **all three** hold: `roll < tournament_capture_pct`, the winner's roster has a free slot
+   (`fighters.CountForOwner(winnerName) < max_fighter_inventory_amount`), **and** the winner has captured
+   fewer than `tournament_max_captures` this tournament. Otherwise **destroy**: delete the fighter
+   (`fighters.DeleteById`), and free any references (it is not on the exchange — it was in a tournament —
+   and not mid-cook). Each successful capture increments the winner's per-tournament capture counter.
 
 **Edge cases (explicit):**
+- **Shield is exactly one (never zero, never two):** with ≥2 loseable fighters the single highest-rated
+  is shielded and the victim is the **worst performer** among the rest; with exactly one loseable
+  fighter nothing is shielded and that one is the victim (you still lose one). Ties at the top rating
+  shield only the lowest-id fighter — the other tied fighters remain eligible victims.
 - **Draw / no winner:** if the tournament has no `winnerid`, no deaths occur (nobody "lost").
 - **Winner roster full (48):** capture is impossible → falls back to destroy (still a loss).
+- **Capture cap (`tournament_max_captures`):** across all losing teams in one tournament, the single
+  winner captures at most `tournament_max_captures` fighters; every victim past the cap is destroyed
+  instead. Because losing teams are processed in ascending owner-name order, the cap is filled by the
+  alphabetically-first teams and later teams' victims are destroyed.
 - **Multi-team tournaments (TeamCount > 2):** every non-winning team loses one fighter as above; the
-  single winner may capture several (subject to the 48 cap re-checked as each capture fills a slot).
+  single winner may capture several — bounded by both the 48-slot roster cap (re-checked as each capture
+  fills a slot) and `tournament_max_captures`.
 - **Account-bound fighters are never captured** (they are non-transferable by definition — consistent
   with starter protection; no special case needed beyond step 2).
 - **Value/prestige & sweetness aggregates:** on capture/destroy, recompute the owner-level derived
@@ -133,10 +153,14 @@ in a single fixed RNG sequence:
 - **The victim fighter's own status:** it was `Tournament`; on destroy it's deleted, on capture it
   becomes `Available` under the new owner. (Surviving fighters flip back to `Available` as today.)
 
-**RNG determinism:** the added draws (`NextInt(enteredCount)`, `NextInt(256)`) extend the existing
-tournament-resolution RNG stream in a fixed order. Because this is a fresh-genesis change, the golden
-replay is regenerated wholesale; the requirement is only that the order is fully specified and stable
-(losing-team order fixed; victim draw before capture draw; capture draw skipped when protected).
+**RNG determinism:** the added draws (`NextInt(worst.size())` for the worst-performer tiebreak, then
+`NextInt(256)` for the capture roll) extend the existing tournament-resolution RNG stream in a fixed
+order. The loseable set, the shield (max `rating`, lowest-id tiebreak) and the worst-net set are all
+pure functions of consensus state, so every node picks the same `worst` set, the same victim, and the
+same capture outcome; the capture-cap check and the `battle_losses`/`rewards_serial` writes consume no
+RNG. Because this is a fresh-genesis change, the golden replay is regenerated wholesale if the scenario
+exercises a permadeath; the requirement is only that the order is fully specified and stable
+(losing-team order fixed; loseable/shield/worst-net deterministic; tiebreak draw before capture draw).
 
 ---
 
@@ -199,6 +223,23 @@ New/extended C++ unit + golden tests (`src/*_tests.cpp`, `database/*_tests.cpp`)
   transfers, stats intact) when `roll < capture_pct` and winner has room; capture→destroy fallback when
   winner roster is full; **account-bound starter never dies/transfers**; draw → no deaths;
   `tournament_loss_kills_enabled = 0` disables the whole mechanic; multi-team: each loser loses one.
+- **Shield the strongest:** the highest-`rating` loseable fighter survives while a weaker one dies —
+  with the strongest deliberately given the **higher id** so the test proves the shield keys on rating,
+  not id order (`TournamentPermadeathShieldsStrongest`).
+- **Worst performer goes:** in a 3v3v3 with single move types so combat is deterministic, the losing
+  team's **unique fewest-net-wins** fighter is the victim — armed as the **highest-id / last candidate**
+  so an id/roster-order rule would wrongly pick the first candidate; the shielded top-rated (middle-id)
+  and a better-performing teammate survive (`TournamentPermadeathTakesWorstPerformer`). Every non-winning
+  team loses exactly one.
+- **Shield overrides worst:** when the shielded top-rated fighter is *also* the unique worst performer,
+  it still survives (a net-0 teammate dies) — removing the shield would kill it, so the test
+  deterministically proves the shield exists (`TournamentPermadeathShieldOverridesWorst`).
+- **Capture cap:** with `tournament_max_captures = 1` and always-capture, the first losing team's victim
+  is captured and the next losing team's victim is destroyed — the winner gains exactly one
+  (`TournamentCaptureCapLimitsWinnerGains`); with `= 0` every victim is destroyed and the winner gains
+  nothing (`TournamentCaptureCapZeroDestroysAll`).
+- **Roster-full fallback:** with the winner's roster full, a rolled capture downgrades to a destroy via
+  the 48-slot check (distinct from the cap path) (`TournamentCaptureRosterFullDestroys`).
 - **Loss notification (Change C):** a death/capture writes a `battle_losses` record
   (`{fighterid,name,outcome,opponent,tournamentid}`) for the loser and bumps their `rewards_serial`;
   `getuser` surfaces it; FE `rewardDelta` computes `lostFighters` and the loss modal fires exactly once

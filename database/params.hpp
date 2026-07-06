@@ -31,7 +31,7 @@ namespace pxd
  * Runtime-tunable game parameters, held in the `parameters` KV table
  * (name TEXT PRIMARY KEY -> value INTEGER).  Mirrors Soccerverse's params table
  * so the balance knobs (rarest_recipe_drop_divisor / tournament_loss_kills_enabled
- * / tournament_capture_pct) can be retuned live via a g/tf admin `param` move
+ * / tournament_capture_pct / tournament_max_captures) can be retuned live via a g/tf admin `param` move
  * with no rebuild.  Every knob is seeded at genesis (InitialiseDatabase), so
  * GetParam CHECK-fails on an unset name -- the authoritative value is always the
  * on-chain seeded/admin value, never a drifting C++ literal (no silent hard fork).

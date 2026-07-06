@@ -28,6 +28,7 @@
 #include "database/reward.hpp"
 #include "database/params.hpp"
 #include "database/battlelosses.hpp"
+#include "database/tournament.hpp"
 
 #include "proto/activity_rewards.pb.h"
 
@@ -205,7 +206,8 @@ protected:
    * none itself, so seeded defaults apply unless the caller overrode them).
    */
   TwoPlayerTournament
-  RunTwoPlayerTournament (bool accountBound = false)
+  RunTwoPlayerTournament (bool accountBound = false,
+                          bool distinctRatings = false)
   {
     const std::string TUT = "cbd2e78a-37ce-b864-793d-8dd27788a774";
 
@@ -245,6 +247,21 @@ protected:
     UpdateState ("[]");
     joinMove ("andy", a1, a2);
 
+    if (distinctRatings)
+      {
+        /* Give each team one clearly stronger (2000) and one weaker (1000)
+           fighter so the permadeath shield has an unambiguous highest-rated to
+           protect.  The stronger one is the SECOND-created (HIGHER-id) fighter --
+           loserEntered[1] -- so a rating-based shield and a (hypothetical) lowest-
+           id shield would protect DIFFERENT fighters; this makes the test actually
+           prove the shield keys on rating, not on id order.  The 1000-point gap
+           dwarfs any ELO delta combat applies before the shield reads the rating. */
+        for (const uint32_t hi : {d2, a2})
+          tbl3.GetById (hi, ctx.RoConfig ())->MutableProto ().set_rating (2000);
+        for (const uint32_t lo : {d1, a1})
+          tbl3.GetById (lo, ctx.RoConfig ())->MutableProto ().set_rating (1000);
+      }
+
     for (unsigned i = 0; i < 3; ++i)
       UpdateState ("[]");
 
@@ -259,6 +276,164 @@ protected:
         ? std::vector<uint32_t> {a1, a2}
         : std::vector<uint32_t> {d1, d2};
     return out;
+  }
+
+  /* ---- 3-team (3v3v3) permadeath fixtures -------------------------------- */
+
+  /** The three teams' entered fighter ids + the instance id, left one block
+      short of resolution by SetupThreeTeamAtBrink().  "winner" sweeps; "bob" and
+      "carl" are the two losing teams (ascending map order: bob < carl).  winner
+      is always 3x Speedy and carl 3x Heavy; bob's move types + ratings are
+      caller-supplied (the `bobArms` passed to SetupThreeTeamAtBrink). */
+  struct ThreeTeam
+  {
+    uint32_t tid = 0;
+    std::vector<uint32_t> winner;   // 3x Speedy -> effectively beats every Heavy/Blocking opponent
+    std::vector<uint32_t> bob;      // caller-armed (see bobArms) -- the primary losing team under test
+    std::vector<uint32_t> carl;     // 3x Heavy (all net -5, a 3-way tie) -- the second losing team
+  };
+
+  /** Returns any fighter-move blueprint authoredid whose movetype == `type`. */
+  std::string
+  MoveOfType (const int type)
+  {
+    for (const auto& mb : ctx.RoConfig ()->fightermoveblueprints ())
+      if (static_cast<int32_t> (mb.second.movetype ()) == type)
+        return mb.second.authoredid ();
+    CHECK (false) << "no fighter-move blueprint of type " << type;
+    return "";
+  }
+
+  /** Arms `fid` with a SINGLE move of the given movetype (so combat is pure
+      type-RPS, independent of the per-pair move-shuffle RNG), sweetness 4 (to
+      clear the 3v3 tournament's 4-6 gate), the given rating, and clears
+      account-binding so it is a loseable, tournament-eligible fighter. */
+  void
+  ArmFighter (const uint32_t fid, const int moveType, const uint32_t rating)
+  {
+    auto f = tbl3.GetById (fid, ctx.RoConfig ());
+    f->MutableProto ().clear_moves ();
+    f->MutableProto ().add_moves (MoveOfType (moveType));
+    f->MutableProto ().set_sweetness (4);
+    f->MutableProto ().set_rating (rating);
+    f->MutableProto ().set_isaccountbound (false);
+    f.reset ();
+  }
+
+  /** Enters `who`'s three fighters into tournament `tid` via the real move
+      processor (no block tick). */
+  void
+  JoinThree (const std::string& who, const uint32_t tid,
+             const std::vector<uint32_t>& team)
+  {
+    std::ostringstream m;
+    m << R"([{"name":")" << who << R"(","move":{"tm":{"e":{"tid":)" << tid
+      << R"(,"fc":[)" << team[0] << "," << team[1] << "," << team[2]
+      << R"(]}}}}])";
+    Process (m.str ());
+  }
+
+  /** Bob armed so the UNIQUE worst performer is b3 (the HIGHEST-id / last
+      candidate), de-aliasing worst-performance from id/roster order:
+        - b1 Blocking (net 0), b2 Blocking rating 3000 (net 0, the SHIELDED
+          top-rated fighter, a MIDDLE id), b3 Heavy (net -3, the unique worst).
+      candidates after shielding b2 = {b1, b3}; only worst-performance picks b3 --
+      an id/roster-order rule would wrongly pick b1 (candidates[0]).
+      (Effective combat edges under the RPS-loser-wins scorer: Speedy beats
+      Heavy+Blocking; Blocking beats Heavy+Tricky; Heavy beats Tricky+Distance.
+      Move types: Heavy=0, Speedy=1, Blocking=4.) */
+  std::vector<std::pair<int, uint32_t>>
+  WorstAtB3 ()
+  {
+    return { {4, 1000}, {4, 3000}, {0, 1000} };
+  }
+
+  /**
+   * Builds a 3v3v3 permadeath scenario and ticks it to the brink of resolution
+   * (Running, exactly one block left), so the caller sets the permadeath params
+   * then does ONE UpdateState to resolve + fire permadeath.
+   *
+   * A single move per fighter makes combat a pure, RNG-independent function of
+   * move type.  IMPORTANT: the combat scorer (ProcessFighterPair) credits the
+   * RPS-LOSING move with the win -- a fighter is scored a WIN when its move type
+   * is BEATEN by the opponent's.  All types below are chosen with that inversion
+   * in mind (EFFECTIVE edges: Speedy beats Heavy+Blocking; Blocking beats
+   * Heavy+Tricky; Heavy beats Tricky+Distance):
+   *   - "winner": 3x Speedy -> effectively beats all six Heavy/Blocking opponents
+   *     -> total 18, the unique max -> the decisive winner (fixed).
+   *   - "carl":   3x Heavy (each loses to winner's Speedy and to bob's Blocking,
+   *     draws bob's Heavy -> all net -5, a 3-way tie) -- the second losing team (fixed).
+   *   - "bob":    caller-supplied via `bobArms` = three {moveType, rating} pairs,
+   *     in roster order b1,b2,b3 (ascending ids) -- the primary team under test.
+   */
+  ThreeTeam
+  SetupThreeTeamAtBrink (const std::vector<std::pair<int, uint32_t>>& bobArms)
+  {
+    CHECK_EQ (bobArms.size (), 3u) << "bob needs exactly TeamSize (3) fighters";
+    const std::string T3 = "99258908-ce4f-50e4-2880-99f0027b8d2b";
+
+    xayaplayers.CreateNew ("winner", ctx.RoConfig (), rnd).reset ();
+    xayaplayers.CreateNew ("bob",    ctx.RoConfig (), rnd).reset ();
+    xayaplayers.CreateNew ("carl",   ctx.RoConfig (), rnd).reset ();
+
+    const auto mk = [&] (const std::string& owner) -> uint32_t
+    {
+      return tbl3.CreateNew (owner, 1, ctx.RoConfig (), rnd)->GetId ();
+    };
+
+    ThreeTeam s;
+    for (int i = 0; i < 3; ++i)
+      { const uint32_t id = mk ("winner"); ArmFighter (id, 1, 1000); s.winner.push_back (id); }  // Speedy
+
+    for (const auto& arm : bobArms)
+      { const uint32_t id = mk ("bob"); ArmFighter (id, arm.first, arm.second); s.bob.push_back (id); }
+
+    for (int i = 0; i < 3; ++i)
+      { const uint32_t id = mk ("carl"); ArmFighter (id, 0, 1000); s.carl.push_back (id); }  // Heavy
+
+    /* One tick auto-creates the sole Listed instance (ReopenMissingTournaments);
+       capture its id NOW, before the joins fill it and a fresh Listed instance
+       for the same blueprint is spun up. */
+    UpdateState ("[]");
+    auto tt = tbl5.GetByAuthIdName (T3, ctx.RoConfig ());
+    CHECK (tt != nullptr) << "3v3 tournament instance not auto-created";
+    s.tid = tt->GetId ();
+    tt.reset ();
+
+    JoinThree ("winner", s.tid, s.winner);
+    JoinThree ("bob",    s.tid, s.bob);
+    JoinThree ("carl",   s.tid, s.carl);
+
+    /* Advance until Running with exactly one block left (duration is 60). */
+    for (int guard = 0; guard < 128; ++guard)
+      {
+        auto trn = tbl5.GetById (s.tid, ctx.RoConfig ());
+        const auto st = static_cast<pxd::TournamentState> (
+            static_cast<int32_t> (trn->GetInstance ().state ()));
+        const int bl = static_cast<int32_t> (trn->GetInstance ().blocksleft ());
+        trn.reset ();
+        if (st == pxd::TournamentState::Running && bl == 1)
+          return s;
+        CHECK (st != pxd::TournamentState::Completed)
+            << "3v3 tournament resolved before it could be isolated";
+        UpdateState ("[]");
+      }
+    ADD_FAILURE () << "3v3 tournament never reached the brink of resolution";
+    return s;
+  }
+
+  /** Net wins (wins - losses) recorded for `fid` in the resolved tournament's
+      results, or 0 if the fighter has no result row. */
+  int32_t
+  NetWinsOf (const uint32_t tid, const uint32_t fid)
+  {
+    auto trn = tbl5.GetById (tid, ctx.RoConfig ());
+    int32_t net = 0;
+    for (const auto& r : trn->GetInstance ().results ())
+      if (static_cast<uint32_t> (r.fighterid ()) == fid)
+        { net = static_cast<int32_t> (r.wins ()) - static_cast<int32_t> (r.losses ()); break; }
+    trn.reset ();
+    return net;
   }
 
 };
@@ -369,6 +544,229 @@ TEST_F (ValidateStateTests, TournamentPermadeathProtectsStarters)
     }
   BattleLossesTable losses(db);
   EXPECT_FALSE (losses.QueryForOwner (t.loser).Step ());   // starter loss not recorded
+}
+
+/* Change A/C refinement: the permadeath victim is NEVER the team's strongest.
+   Each team is given one clearly higher-rated fighter (the HIGHER-id
+   loserEntered[1]) and one weaker (loserEntered[0]); whoever loses must lose the
+   WEAKER one -- the stronger is shielded by RATING (not by id order). */
+TEST_F (ValidateStateTests, TournamentPermadeathShieldsStrongest)
+{
+  GameParams (db).SetParam ("tournament_capture_pct", 0);          // always destroy
+  GameParams (db).SetParam ("tournament_loss_kills_enabled", 1);
+
+  const auto t = RunTwoPlayerTournament (/*accountBound=*/false,
+                                         /*distinctRatings=*/true);
+
+  const uint32_t strongest = t.loserEntered[1];   // higher id, rating 2000 -> shielded
+  const uint32_t weakest   = t.loserEntered[0];   // lower id, rating 1000 -> victim
+
+  EXPECT_NE (tbl3.GetById (strongest, ctx.RoConfig ()), nullptr)
+      << "the strongest fighter must be shielded, not lost";
+  EXPECT_EQ (tbl3.GetById (weakest, ctx.RoConfig ()), nullptr)
+      << "the weakest fighter should be the destroyed victim";
+
+  BattleLossesTable losses(db);
+  auto lr = losses.QueryForOwner (t.loser);
+  ASSERT_TRUE (lr.Step ());
+  EXPECT_EQ (lr.Get<BattleLossResult::fighterid> (), (int64_t) weakest)
+      << "battle_losses must record the weakest fighter as the victim";
+}
+
+/* Change A/C refinement: with 3+ loseable fighters, the victim is the WORST
+   performer (fewest net wins) among the NON-shielded candidates -- not the
+   shielded top-rated fighter, and NOT chosen by id/roster order.  bob is armed so
+   the unique worst (b3, net -3) is the HIGHEST-id / last candidate: an id-order
+   rule would wrongly pick b1 (candidates[0]), so this test fails unless the code
+   really selects by worst performance. */
+TEST_F (ValidateStateTests, TournamentPermadeathTakesWorstPerformer)
+{
+  GameParams (db).SetParam ("tournament_capture_pct", 0);          // always destroy
+  GameParams (db).SetParam ("tournament_loss_kills_enabled", 1);
+
+  const auto s = SetupThreeTeamAtBrink (WorstAtB3 ());
+  UpdateState ("[]");                                              // resolve + permadeath
+
+  auto trn = tbl5.GetById (s.tid, ctx.RoConfig ());
+  ASSERT_EQ (trn->GetInstance ().winnerid (), "winner");          // decisive winner
+  trn.reset ();
+
+  /* Non-vacuity: b3 must really be the UNIQUE worst performer on bob's team, and
+     it is the HIGHEST id -- so only worst-performance (not id order) selects it. */
+  EXPECT_LT (NetWinsOf (s.tid, s.bob[2]), NetWinsOf (s.tid, s.bob[0]));
+  EXPECT_LT (NetWinsOf (s.tid, s.bob[2]), NetWinsOf (s.tid, s.bob[1]));
+  EXPECT_GT (s.bob[2], s.bob[0]) << "victim must be the higher-id candidate";
+
+  // b3 (worst) destroyed; b1 (better performer) and b2 (shielded top-rated) survive.
+  EXPECT_EQ (tbl3.GetById (s.bob[2], ctx.RoConfig ()), nullptr)
+      << "the worst performer must be the victim";
+  EXPECT_NE (tbl3.GetById (s.bob[0], ctx.RoConfig ()), nullptr)
+      << "a better-performing lower-id fighter must survive";
+  EXPECT_NE (tbl3.GetById (s.bob[1], ctx.RoConfig ()), nullptr)
+      << "the shielded top-rated fighter must survive";
+
+  BattleLossesTable losses(db);
+  auto lr = losses.QueryForOwner ("bob");
+  ASSERT_TRUE (lr.Step ());
+  EXPECT_EQ (lr.Get<BattleLossResult::fighterid> (), (int64_t) s.bob[2]);
+  EXPECT_EQ (lr.Get<BattleLossResult::outcome> (), 0);            // destroyed
+
+  // Every non-winning team loses exactly one: carl also lost exactly one fighter.
+  int carlAlive = 0;
+  for (const uint32_t fid : s.carl)
+    if (tbl3.GetById (fid, ctx.RoConfig ()) != nullptr) ++carlAlive;
+  EXPECT_EQ (carlAlive, 2) << "each non-winning team loses exactly one fighter";
+}
+
+/* Change A/C refinement: the shield OVERRIDES worst-performance.  bob's top-rated
+   fighter (b1, rating 3000) is armed to ALSO be the unique WORST performer
+   (net -3); the shield must still protect it, so the victim is one of the net-0
+   teammates.  Remove the shield and b1 (the unique worst) would die -> this test
+   deterministically fails, proving the shield exists. */
+TEST_F (ValidateStateTests, TournamentPermadeathShieldOverridesWorst)
+{
+  GameParams (db).SetParam ("tournament_capture_pct", 0);          // always destroy
+  GameParams (db).SetParam ("tournament_loss_kills_enabled", 1);
+
+  // b1 Heavy rating 3000 (net -3, top-rated AND worst); b2,b3 Blocking (net 0).
+  const auto s = SetupThreeTeamAtBrink ({ {0, 3000}, {4, 1000}, {4, 1000} });
+  UpdateState ("[]");                                              // resolve + permadeath
+
+  auto trn = tbl5.GetById (s.tid, ctx.RoConfig ());
+  ASSERT_EQ (trn->GetInstance ().winnerid (), "winner");
+  trn.reset ();
+
+  /* Non-vacuity: b1 must really be the UNIQUE worst -- so its survival can only be
+     the shield overriding worst-performance, nothing else. */
+  EXPECT_LT (NetWinsOf (s.tid, s.bob[0]), NetWinsOf (s.tid, s.bob[1]));
+  EXPECT_LT (NetWinsOf (s.tid, s.bob[0]), NetWinsOf (s.tid, s.bob[2]));
+
+  // The shielded top-rated fighter survives despite being the worst performer.
+  auto shielded = tbl3.GetById (s.bob[0], ctx.RoConfig ());
+  ASSERT_NE (shielded, nullptr) << "the shield must protect the top-rated fighter even when it is worst";
+  EXPECT_EQ (shielded->GetOwner (), "bob");
+  shielded.reset ();
+
+  // The team still loses exactly one -- one of the two net-0 teammates.
+  int bobAlive = 0;
+  for (const uint32_t fid : s.bob)
+    if (tbl3.GetById (fid, ctx.RoConfig ()) != nullptr) ++bobAlive;
+  EXPECT_EQ (bobAlive, 2) << "bob still loses exactly one fighter";
+
+  BattleLossesTable losses(db);
+  auto lr = losses.QueryForOwner ("bob");
+  ASSERT_TRUE (lr.Step ());
+  const int64_t victim = lr.Get<BattleLossResult::fighterid> ();
+  EXPECT_TRUE (victim == (int64_t) s.bob[1] || victim == (int64_t) s.bob[2])
+      << "the victim must be a net-0 teammate, never the shielded worst performer";
+}
+
+/* Change C: tournament_max_captures caps how many fighters the single winner may
+   capture across ALL losing teams in one tournament; victims past the cap are
+   destroyed instead.  With cap 1 and always-capture, the winner takes the
+   first-processed losing team's victim (ascending owner order -> "bob") and the
+   next losing team's victim ("carl") is destroyed. */
+TEST_F (ValidateStateTests, TournamentCaptureCapLimitsWinnerGains)
+{
+  GameParams (db).SetParam ("tournament_capture_pct", 256);       // always capture (when allowed)
+  GameParams (db).SetParam ("tournament_loss_kills_enabled", 1);
+  GameParams (db).SetParam ("tournament_max_captures", 1);        // winner may take at most one
+
+  const auto s = SetupThreeTeamAtBrink (WorstAtB3 ());
+  const unsigned winnerBefore = tbl3.CountForOwner ("winner");
+  UpdateState ("[]");                                             // resolve + permadeath
+
+  auto trn = tbl5.GetById (s.tid, ctx.RoConfig ());
+  ASSERT_EQ (trn->GetInstance ().winnerid (), "winner");
+  trn.reset ();
+
+  // The winner gained exactly one fighter (the cap), never two.
+  EXPECT_EQ (tbl3.CountForOwner ("winner"), winnerBefore + 1);
+
+  // bob's victim (b3, the worst performer) was CAPTURED -> now owned by winner.
+  auto captured = tbl3.GetById (s.bob[2], ctx.RoConfig ());
+  ASSERT_NE (captured, nullptr) << "captured fighter must still exist";
+  EXPECT_EQ (captured->GetOwner (), "winner");
+  captured.reset ();
+
+  // carl (processed after the cap was hit) lost exactly one fighter -- DESTROYED.
+  int carlAlive = 0;
+  for (const uint32_t fid : s.carl)
+    if (tbl3.GetById (fid, ctx.RoConfig ()) != nullptr) ++carlAlive;
+  EXPECT_EQ (carlAlive, 2) << "carl's over-cap victim must be destroyed, not captured";
+
+  BattleLossesTable losses(db);
+  auto bobLoss = losses.QueryForOwner ("bob");
+  ASSERT_TRUE (bobLoss.Step ());
+  EXPECT_EQ (bobLoss.Get<BattleLossResult::outcome> (), 1);        // captured
+  EXPECT_EQ (bobLoss.Get<BattleLossResult::opponent> (), "winner");
+
+  auto carlLoss = losses.QueryForOwner ("carl");
+  ASSERT_TRUE (carlLoss.Step ());
+  EXPECT_EQ (carlLoss.Get<BattleLossResult::outcome> (), 0);       // destroyed (over cap)
+}
+
+/* Change C: tournament_max_captures = 0 disables capture entirely -- even at
+   capture_pct 256 every victim across all losing teams is destroyed and the winner
+   gains nothing. */
+TEST_F (ValidateStateTests, TournamentCaptureCapZeroDestroysAll)
+{
+  GameParams (db).SetParam ("tournament_capture_pct", 256);       // would always capture
+  GameParams (db).SetParam ("tournament_loss_kills_enabled", 1);
+  GameParams (db).SetParam ("tournament_max_captures", 0);        // ...but the cap forbids it
+
+  const auto s = SetupThreeTeamAtBrink (WorstAtB3 ());
+  const unsigned winnerBefore = tbl3.CountForOwner ("winner");
+  UpdateState ("[]");
+
+  auto trn = tbl5.GetById (s.tid, ctx.RoConfig ());
+  ASSERT_EQ (trn->GetInstance ().winnerid (), "winner");
+  trn.reset ();
+
+  EXPECT_EQ (tbl3.CountForOwner ("winner"), winnerBefore);        // no captures at all
+  EXPECT_EQ (tbl3.GetById (s.bob[2], ctx.RoConfig ()), nullptr);  // bob's victim destroyed
+
+  BattleLossesTable losses(db);
+  auto bobLoss = losses.QueryForOwner ("bob");
+  ASSERT_TRUE (bobLoss.Step ());
+  EXPECT_EQ (bobLoss.Get<BattleLossResult::outcome> (), 0);        // destroyed, not captured
+}
+
+/* Change C: when the winner's roster is FULL, a rolled capture downgrades to a
+   destroy (distinct from the cap path: here it is the 48-slot check that blocks
+   the transfer, not tournament_max_captures). */
+TEST_F (ValidateStateTests, TournamentCaptureRosterFullDestroys)
+{
+  GameParams (db).SetParam ("tournament_capture_pct", 256);       // would always capture
+  GameParams (db).SetParam ("tournament_loss_kills_enabled", 1);
+  GameParams (db).SetParam ("tournament_max_captures", 3);        // cap is NOT the blocker here
+
+  const auto s = SetupThreeTeamAtBrink (WorstAtB3 ());
+
+  /* Make the winner's roster full: pin max_fighter_inventory_amount to its CURRENT
+     owned count (which includes the account-bound starters CreateNew grants, not
+     just s.winner) so there is no free slot. Save/restore the process-global. */
+  auto& cfg = const_cast<proto::ConfigData&> (*ctx.RoConfig ());
+  const uint32_t savedMax = cfg.params ().max_fighter_inventory_amount ();
+  const unsigned winnerBefore = tbl3.CountForOwner ("winner");
+  cfg.mutable_params ()->set_max_fighter_inventory_amount (winnerBefore);
+
+  UpdateState ("[]");                                             // resolve under a full roster
+  cfg.mutable_params ()->set_max_fighter_inventory_amount (savedMax);   // restore before asserts
+
+  auto trn = tbl5.GetById (s.tid, ctx.RoConfig ());
+  ASSERT_EQ (trn->GetInstance ().winnerid (), "winner");
+  trn.reset ();
+
+  // No room -> the rolled capture became a destroy; the winner gained nothing.
+  EXPECT_EQ (tbl3.GetById (s.bob[2], ctx.RoConfig ()), nullptr)
+      << "roster full -> victim destroyed, not captured";
+  EXPECT_EQ (tbl3.CountForOwner ("winner"), winnerBefore) << "no capture -> roster unchanged";
+
+  BattleLossesTable losses(db);
+  auto lr = losses.QueryForOwner ("bob");
+  ASSERT_TRUE (lr.Step ());
+  EXPECT_EQ (lr.Get<BattleLossResult::outcome> (), 0);            // destroyed (roster full)
 }
 
 TEST_F (ValidateStateTests, RecepieInstanceFullCycleTest)

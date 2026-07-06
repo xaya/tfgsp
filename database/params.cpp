@@ -89,6 +89,7 @@ GameParams::InitialiseDatabase ()
   SetParam ("rarest_recipe_drop_divisor", 4);
   SetParam ("tournament_loss_kills_enabled", 1);
   SetParam ("tournament_capture_pct", 128);
+  SetParam ("tournament_max_captures", 3);
 }
 
 } // namespace pxd
