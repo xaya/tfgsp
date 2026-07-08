@@ -220,7 +220,7 @@ MoveProcessor::HandleSetParam (const Json::Value& cmd)
       /* Removal is refused: GetParam CHECK-fails on unset, so removing a seeded
          knob would crash every node on the next reward/tournament read.  The
          Soccerverse v:null=remove semantics are kept in the parser shape, but
-         all four known knobs are load-bearing (seeded at genesis), so removal is
+         all known knobs are load-bearing (seeded at genesis), so removal is
          a no-op here. */
       if (vVal.isNull ())
         {

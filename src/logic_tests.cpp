@@ -2010,7 +2010,7 @@ TEST_F (ValidateStateTests, ExpeditionScaledBySweetnessTier)
 
   auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
   EXPECT_EQ (ft->GetStatus(), FighterStatus::Available);
-  ft->MutableProto ().set_sweetness ((int) pxd::Sweetness::Bittersweet); // = 2, passes [2,10] gate
+  ft->MutableProto ().set_sweetness ((int) pxd::Sweetness::Salty_Sweet); // = 5 (in [2,10] gate), deliberately != Fizzy Swamp MinSweetness(2): a regression keying on fighter sweetness would give 113 and fail the 40/42 straddle
   const int fid = ft->GetId ();
   ft.reset ();
 

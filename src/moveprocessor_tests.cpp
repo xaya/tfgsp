@@ -242,6 +242,23 @@ TEST_F (MoveProcessorTests, SetParamAtBoundaries)
   EXPECT_EQ (GameParams (db).GetParam ("tournament_capture_pct"), 0);     // at min -> accepted
 }
 
+TEST_F (MoveProcessorTests, SetParamDurationScalePct)
+{
+  /* The duration-scaling knob must be reachable + range-guarded [1,1000] through
+     the admin verb.  Locks both the allow-list (a dropped name would leave the
+     seeded 100) and the guard (a broken bound would let 0/1001 through). */
+  ProcessAdmin (R"([{"cmd": {"param": [{"n": "duration_scale_pct", "v": 30}]}}])");
+  EXPECT_EQ (GameParams (db).GetParam ("duration_scale_pct"), 30);       // in range -> accepted
+  ProcessAdmin (R"([{"cmd": {"param": [{"n": "duration_scale_pct", "v": 0}]}}])");
+  EXPECT_EQ (GameParams (db).GetParam ("duration_scale_pct"), 30);       // 0 < 1 -> refused (unchanged)
+  ProcessAdmin (R"([{"cmd": {"param": [{"n": "duration_scale_pct", "v": 1001}]}}])");
+  EXPECT_EQ (GameParams (db).GetParam ("duration_scale_pct"), 30);       // > 1000 -> refused (unchanged)
+  ProcessAdmin (R"([{"cmd": {"param": [{"n": "duration_scale_pct", "v": 1}]}}])");
+  EXPECT_EQ (GameParams (db).GetParam ("duration_scale_pct"), 1);        // at min -> accepted
+  ProcessAdmin (R"([{"cmd": {"param": [{"n": "duration_scale_pct", "v": 1000}]}}])");
+  EXPECT_EQ (GameParams (db).GetParam ("duration_scale_pct"), 1000);     // at max -> accepted
+}
+
 /* ************************************************************************** */
 
 using XayaPlayersUpdateTests = MoveProcessorTests;

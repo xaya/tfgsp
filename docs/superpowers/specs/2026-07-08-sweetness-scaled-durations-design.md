@@ -55,8 +55,12 @@ Applied at the point each activity's `duration` is finalized from its blueprint:
 - **Cooks** — `moveprocessor.cpp ParseCookRecepie`: cooks have no sweetness gate, so map recipe
   **quality → sweetness**: Common(1)→1, Uncommon(2)→4, Rare(3)→7, Epic(4)→10. (Epic cook 120→~2400
   blocks ≈ 1h.) Encoded as a tiny fixed map beside the helper.
-- **Tournaments** — `src/logic_tournament.cpp`: key on the tier blueprint's `MaxSweetness`, applied when
+- **Tournaments** — `src/logic_tournament.cpp`: key on the tier blueprint's `MinSweetness`, applied when
   a tournament instance's resolve/duration is set. (Exact call site pinned in the plan.)
+  **[Errata 2026-07-08: implemented as `MinSweetness`, NOT `MaxSweetness`. Keying on MaxSweetness would
+  20×-slow the Min1/Max10 FTUE tutorial tournament (Dur2 → 40 blocks), violating this design's own
+  "newbie pacing unchanged" goal; MinSweetness matches the expedition keying and preserves the endgame
+  curve (Golden Ribbon Min10: 2800 → 56000 ≈ 23.3h). Verified: all 12 tutorial-tier tests stay green.]**
 
 ## 3. When it applies
 
