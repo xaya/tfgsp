@@ -219,9 +219,15 @@ byte-identical):
   identical results today and **tournament resolution has no golden scenario**, so a bit-identical
   extraction can't be fully regression-verified. Add tournament/purchase golden coverage FIRST
   (see next), then extract.
-- **Golden coverage gap:** `goldenreplay_tests` exercises cook/expedition/deconstruct/sweetener/
-  exchange but NOT tournament join+resolve, `pc`/purchase, transfigure, or `nr`. Extend before the
-  reward-roll DRY and before mainnet.
+- **Golden coverage gap:** ✅ **CLOSED (2026-07-08, `665d2f2`).** `goldenreplay_tests` now also drives
+  a tournament join+resolve with permadeath in BOTH branches (capture via `capture_pct=256` on the
+  tutorial `cbd2e78a` tier + destroy via `capture_pct=0` on Chocolate Chip `e694d5f8`), plus `pc`
+  (WCHI crystal buy), `nr` (WCHI name reroll), and `transfigure` (fighter/candy/recipe sacrifice).
+  Every added move is EXPECT-guarded so a silent rejection can't pin false coverage; golden regenerated
+  (deterministic byte-for-byte compare + reorg/reorg_game green). Fable-reviewed clean. Remaining
+  golden-uncovered (non-blocking, unit-tested): transfigure options 0/1/2 + the o:3 success roll, and
+  the capture-cap (outcome 4) / roster-full (outcome 3) permadeath sub-branches. Reward-roll DRY can
+  now proceed on this pinned base.
 - The fighter-inventory cap `>` at cook/buy parse is **intentional** (speculative cook reverts with
   a full refund at resolve — `RecepieInstanceRevertIfFullRoster`), NOT an off-by-one.
 - **Frontend serving scale — SSE block-signal fanout (web client, not GSP).** Every browser today
