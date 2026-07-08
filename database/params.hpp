@@ -69,6 +69,17 @@ public:
 
 };
 
+/**
+ * Geometric per-sweetness duration multiplier. base * (DURATION_MULT[clamp(sweetness,1,10)] * pct)
+ * / 25600, in 64-bit, floored, min 1. Deterministic (no float): the geometric shape is a baked
+ * integer table (256 == 1.0x, sw10 == 20.0x). `pct` is the duration_scale_pct param (100 = default).
+ * A non-positive base passes through unchanged.
+ */
+int32_t ScaleDuration (int32_t base, uint32_t sweetness, int64_t pct);
+
+/** Cook recipes have no sweetness gate; map recipe Quality (0..4) to a representative sweetness tier. */
+uint32_t CookQualityToSweetness (uint32_t quality);
+
 } // namespace pxd
 
 #endif // DATABASE_PARAMS_HPP
