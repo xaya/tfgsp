@@ -1520,7 +1520,7 @@ TEST_F (ValidateStateTests, SweetenerScaledByRequiredSweetness)
   auto ft = tbl3.GetById(4, ctx.RoConfig());
   ASSERT_TRUE (ft != nullptr);
   ft->MutableProto().set_rating(1210);
-  ft->MutableProto().set_sweetness((int)pxd::Sweetness::Bittersweet);
+  ft->MutableProto().set_sweetness((int)pxd::Sweetness::Semi_Sweet); // 3, deliberately != R2 requiredsweetness(2): a regression keying the scale on fighter sweetness would give 38 and fail the 26/28 straddle
   ft.reset();
 
   tbl2.GetById(1)->SetOwner("domob");
