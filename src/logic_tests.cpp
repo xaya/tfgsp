@@ -1890,6 +1890,54 @@ TEST_F (ValidateStateTests, ExpeditionWithWrongTyprApplicableGoodieTest)
 
 }
 
+TEST_F (ValidateStateTests, ExpeditionScaledBySweetnessTier)
+{
+  /* A MinSweetness-2 expedition (Fizzy Swamp, base Duration 30) must resolve in the SCALED
+     number of blocks: ScaledDuration(30, 2) = 30*357*100/25600 = 41, NOT the unscaled 30.
+     This locks the scale keying to the blueprint's minsweetness() (a constant-key regression
+     would leave it at 30 and fail the "still Expedition at 40" assertion below). */
+  auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
+  xp.reset ();
+
+  auto ft = tbl3.CreateNew ("domob", 1, ctx.RoConfig(), rnd);
+  EXPECT_EQ (ft->GetStatus(), FighterStatus::Available);
+  ft->MutableProto ().set_sweetness ((int) pxd::Sweetness::Bittersweet); // = 2, passes [2,10] gate
+  const int fid = ft->GetId ();
+  ft.reset ();
+
+  auto a0 = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  EXPECT_EQ (a0->CollectInventoryFighters(ctx.RoConfig()).size(), 3);
+  a0.reset ();
+
+  Process (R"([
+    {"name": "domob", "move": {"exp": {"f": {"eid": "35052272-b4bc-75c4-0ad0-fe122f54b508", "fid": )"
+      + std::to_string (fid) + R"(}}}}
+  ])");
+
+  auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  ASSERT_TRUE (a != nullptr);
+  EXPECT_EQ (a->GetOngoingsSize (), 1);   // the expedition actually started (gate passed)
+  a.reset ();
+
+  ft = tbl3.GetById (fid, ctx.RoConfig());
+  EXPECT_EQ (ft->GetStatus(), FighterStatus::Expedition);
+  ft.reset ();
+
+  // 40 blocks: still running (scaled duration is 41; unscaled/no-op-bug would be 30 -> already done).
+  for (unsigned i = 0; i < 40; ++i)
+    UpdateState ("[]");
+  ft = tbl3.GetById (fid, ctx.RoConfig());
+  EXPECT_EQ (ft->GetStatus(), FighterStatus::Expedition);
+  ft.reset ();
+
+  // 2 more (42 total >= 41): resolved.
+  UpdateState ("[]");
+  UpdateState ("[]");
+  ft = tbl3.GetById (fid, ctx.RoConfig());
+  EXPECT_EQ (ft->GetStatus(), FighterStatus::Available);
+  ft.reset ();
+}
+
 TEST_F (ValidateStateTests, TournamentInstanceSheduleTest)
 {
   auto xp = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
