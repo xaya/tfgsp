@@ -131,7 +131,9 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
         if((int32_t)tnm->GetProto().teamcount() * (int32_t)tnm->GetProto().teamsize() == tnm->GetInstance().fighters_size())
         {
           tnm->MutableInstance().set_state((int32_t)pxd::TournamentState::Running);
-          tnm->MutableInstance().set_blocksleft(tnm->GetProto().duration());
+          tnm->MutableInstance ().set_blocksleft (
+              GameParams (db).ScaledDuration (tnm->GetProto ().duration (),
+                                              tnm->GetProto ().minsweetness ()));
         }
       }
       else if((pxd::TournamentState)(int32_t)tnm->GetInstance().state() == pxd::TournamentState::Running)

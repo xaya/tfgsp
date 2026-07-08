@@ -404,8 +404,11 @@ protected:
     JoinThree ("bob",    s.tid, s.bob);
     JoinThree ("carl",   s.tid, s.carl);
 
-    /* Advance until Running with exactly one block left (duration is 60). */
-    for (int guard = 0; guard < 128; ++guard)
+    /* Advance until Running with exactly one block left. Duration is 60, but
+       tier 99258908 has MinSweetness 4, so the Listed->Running transition now
+       scales it to 60*DURATION_MULT[4]/256 = 60*695/256 = 162 blocksleft;
+       256 gives safe margin above 162 plus the join/setup ticks. */
+    for (int guard = 0; guard < 256; ++guard)
       {
         auto trn = tbl5.GetById (s.tid, ctx.RoConfig ());
         const auto st = static_cast<pxd::TournamentState> (
@@ -2042,6 +2045,68 @@ TEST_F (ValidateStateTests, ExpeditionScaledBySweetnessTier)
   ft = tbl3.GetById (fid, ctx.RoConfig());
   EXPECT_EQ (ft->GetStatus(), FighterStatus::Available);
   ft.reset ();
+}
+
+TEST_F (ValidateStateTests, TournamentScaledByMinSweetness)
+{
+  /* Locks the Listed->Running blocksleft scaling to the tournament blueprint's
+     MinSweetness (deliberately NOT MaxSweetness -- see dur-task-5-brief.md).
+     Tier eedb6522 (Jelly Bean Quickie): MinSweetness 3, MaxSweetness 5,
+     Duration 60, TeamCount 2 x TeamSize 2.  Scaled = 60*DURATION_MULT[3]/256
+     = 60*498/256 = 116.  The fighters are set to sweetness 4 (Sweet_and_Sour,
+     inside [3,5] so the join gate passes) -- this is deliberately DIFFERENT
+     from both MinSweetness(3) and MaxSweetness(5), so the assert below
+     discriminates every wrong keying: MinSweetness3 -> 116 (correct);
+     MaxSweetness5 -> 60*969/256=227; fighter-sweetness4 -> 60*695/256=162;
+     constant-1/unscaled -> 60. Only MinSweetness keying reads 116. */
+  const std::string TIER = "eedb6522-2311-3ef4-c999-d3ec275ea496";
+
+  auto mkFighter = [&] (const std::string& owner) -> uint32_t
+  {
+    auto f = tbl3.CreateNew (owner, 1, ctx.RoConfig (), rnd);
+    const uint32_t id = f->GetId ();
+    f->MutableProto ().set_sweetness ((int) pxd::Sweetness::Sweet_and_Sour);
+    f.reset ();
+    return id;
+  };
+
+  xayaplayers.CreateNew ("domob", ctx.RoConfig (), rnd).reset ();
+  const uint32_t d1 = mkFighter ("domob");
+  const uint32_t d2 = mkFighter ("domob");
+
+  UpdateState ("[]");
+
+  auto trm = tbl5.GetByAuthIdName (TIER, ctx.RoConfig ());
+  ASSERT_TRUE (trm != nullptr);
+  const uint32_t TID = trm->GetId ();
+  trm.reset ();
+
+  const auto joinMove = [&] (const std::string& who, uint32_t a, uint32_t b)
+  {
+    std::ostringstream m;
+    m << R"([{"name": ")" << who << R"(", "move": {"tm": {"e": {"tid": )"
+      << TID << R"(, "fc": [)" << a << "," << b << "]}}}}]";
+    Process (m.str ());
+  };
+
+  joinMove ("domob", d1, d2);
+
+  xayaplayers.CreateNew ("andy", ctx.RoConfig (), rnd).reset ();
+  const uint32_t a1 = mkFighter ("andy");
+  const uint32_t a2 = mkFighter ("andy");
+
+  UpdateState ("[]");
+  joinMove ("andy", a1, a2);
+
+  /* One tick to trigger Listed->Running; the transition tick sets blocksleft
+     and does NOT decrement on that same tick (an if Listed ... else if
+     Running chain), so blocksleft is exactly the freshly-scaled value. */
+  UpdateState ("[]");
+
+  auto trn = tbl5.GetById (TID, ctx.RoConfig ());
+  EXPECT_EQ (trn->GetInstance ().state (), (int32_t) pxd::TournamentState::Running);
+  EXPECT_EQ (trn->GetInstance ().blocksleft (), 116);   // 60 * DURATION_MULT[3]/256, keyed on MinSweetness
+  trn.reset ();
 }
 
 TEST_F (ValidateStateTests, TournamentInstanceSheduleTest)
