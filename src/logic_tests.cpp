@@ -1038,10 +1038,65 @@ TEST_F (ValidateStateTests, RecepieInstanceGeneratedFullCycleTest)
   EXPECT_EQ (a->CollectInventoryFighters(ctx.RoConfig()).size(), 3);
   a.reset();
 
-  r = tbl2.GetById(rcpID); 
+  r = tbl2.GetById(rcpID);
   EXPECT_EQ (r->GetOwner(), "");
   r.reset();
-}   
+}
+
+TEST_F (ValidateStateTests, CookScaledByRarity)
+{
+  /* An Uncommon generated recipe (base Duration = uncommon_recipe_cook_cost = 30,
+     quality 2 -> CookQualityToSweetness(2) = 4 -> DURATION_MULT[4] = 695) must
+     resolve in the SCALED number of blocks: ScaledDuration(30, 4) = 30*695*100/25600 = 81,
+     NOT the unscaled 30.  This locks the scale keying to the cooked recipe's quality
+     (a constant-key/no-op regression would leave it at 30 and fail the "still
+     ongoing at 80" assertion below). */
+  xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (100);
+
+  auto rcpID = pxd::RecipeInstance::Generate (pxd::Quality::Uncommon, ctx.RoConfig(), rnd, db, "");
+  auto r = tbl2.GetById (rcpID);
+
+  EXPECT_EQ (r->GetProto ().duration (), ctx.RoConfig ()->params ().uncommon_recipe_cook_cost ());
+  EXPECT_EQ (r->GetProto ().quality (), 2);   // Uncommon -> CookQualityToSweetness = 4
+
+  auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  r->SetOwner (a->GetName ());
+
+  for (auto& rC : r->GetProto ().requiredcandy ())
+  {
+    a->GetInventory ().SetFungibleCount (BaseMoveProcessor::GetCandyKeyNameFromID (rC.candytype (), ctx), rC.amount ());
+  }
+
+  a.reset ();
+  r.reset ();
+
+  std::ostringstream s;
+  s << rcpID;
+  std::string converted (s.str ());
+
+  Process (R"([
+    {"name": "domob", "move": {"ca": {"r": {"rid": )"+converted+R"(, "fid": 0}}}}
+  ])");
+
+  a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  ASSERT_TRUE (a != nullptr);
+  EXPECT_EQ (a->GetOngoingsSize (), 1);   // the cook actually started (gate passed)
+  a.reset ();
+
+  // 80 blocks: still cooking (scaled duration is 81; unscaled/no-op-bug would be 30 -> already done).
+  for (unsigned i = 0; i < 80; ++i)
+    UpdateState ("[]");
+  a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  EXPECT_EQ (a->GetOngoingsSize (), 1);
+  a.reset ();
+
+  // 2 more (82 total >= 81): resolved.
+  UpdateState ("[]");
+  UpdateState ("[]");
+  a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  EXPECT_EQ (a->GetOngoingsSize (), 0);
+  a.reset ();
+}
 
 /*
 TEST_F (ValidateStateTests, RecepieInstanceGeneratedDifferentNamesTest)
@@ -1392,24 +1447,24 @@ TEST_F (ValidateStateTests, SweetenerCookAndProperRewardsClaimed)
   auto pl = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
   pl->AddBalance(100);
   pl->GetInventory().SetFungibleCount("Sweetener_R2", 1);
-  
+
   pl->GetInventory().SetFungibleCount("Common_Icing", 10);
   pl->GetInventory().SetFungibleCount("Common_Fruit Slice", 10);
 
   pl.reset();
-  
+
   auto ft = tbl3.GetById(4, ctx.RoConfig());
-  ASSERT_TRUE (ft != nullptr); 
-  ft->MutableProto().set_rating(1210); 
-  ft->MutableProto().set_sweetness((int)pxd::Sweetness::Bittersweet);  
+  ASSERT_TRUE (ft != nullptr);
+  ft->MutableProto().set_rating(1210);
+  ft->MutableProto().set_sweetness((int)pxd::Sweetness::Bittersweet);
   ft.reset();
-  
+
   tbl2.GetById(1)->SetOwner("domob");
-  
+
   Process (R"([
     {"name": "domob", "move": {"ca": {"s": {"sid": "d596403b-b76f-52c4-6956-4bfd55231de0", "fid": 4, "rid": 1}}}}
-  ])");  
-  
+  ])");
+
   pl = xayaplayers.GetByName ("domob", ctx.RoConfig());
   ASSERT_TRUE (pl != nullptr);
   EXPECT_EQ (pl->GetOngoingsSize (), 1);
@@ -1422,7 +1477,10 @@ TEST_F (ValidateStateTests, SweetenerCookAndProperRewardsClaimed)
   EXPECT_EQ(ft->GetProto().moves_size(), 2);   // 2 base moves before the cook resolves
   ft.reset();
 
-  for (unsigned i = 0; i < 22; ++i)
+  /* Sweetener_R2 (base Duration 20, RequiredSweetness 2) scales to
+     ScaledDuration(20, 2) = 20*357*100/25600 = 27 blocks (was unscaled 20).
+     29 = 27 + 2 slack, matching the original "duration + 2" pattern. */
+  for (unsigned i = 0; i < 29; ++i)
   {
     UpdateState ("[]");
   }
@@ -1441,6 +1499,54 @@ TEST_F (ValidateStateTests, SweetenerCookAndProperRewardsClaimed)
   ASSERT_TRUE (ft != nullptr);
   EXPECT_EQ(ft->GetProto().moves_size(), 3);    // sweetener move granted at resolve
   ft.reset();
+}
+
+TEST_F (ValidateStateTests, SweetenerScaledByRequiredSweetness)
+{
+  /* Sweetener_R2 (base Duration 20, RequiredSweetness 2 -> DURATION_MULT[2] = 357)
+     must resolve in the SCALED number of blocks: ScaledDuration(20, 2) = 20*357*100/25600 = 27,
+     NOT the unscaled 20.  This locks the scale keying to the blueprint's
+     requiredsweetness() (a constant-key/no-op regression would leave it at 20 and
+     fail the "still cooking at 26" assertion below). */
+  auto pl = xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd);
+  pl->AddBalance(100);
+  pl->GetInventory().SetFungibleCount("Sweetener_R2", 1);
+
+  pl->GetInventory().SetFungibleCount("Common_Icing", 10);
+  pl->GetInventory().SetFungibleCount("Common_Fruit Slice", 10);
+
+  pl.reset();
+
+  auto ft = tbl3.GetById(4, ctx.RoConfig());
+  ASSERT_TRUE (ft != nullptr);
+  ft->MutableProto().set_rating(1210);
+  ft->MutableProto().set_sweetness((int)pxd::Sweetness::Bittersweet);
+  ft.reset();
+
+  tbl2.GetById(1)->SetOwner("domob");
+
+  Process (R"([
+    {"name": "domob", "move": {"ca": {"s": {"sid": "d596403b-b76f-52c4-6956-4bfd55231de0", "fid": 4, "rid": 1}}}}
+  ])");
+
+  auto pl2 = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  ASSERT_TRUE (pl2 != nullptr);
+  EXPECT_EQ (pl2->GetOngoingsSize (), 1);   // the sweetener cook actually started (gate passed)
+  pl2.reset ();
+
+  // 26 blocks: still cooking (scaled duration is 27; unscaled/no-op-bug would be 20 -> already done).
+  for (unsigned i = 0; i < 26; ++i)
+    UpdateState ("[]");
+  pl2 = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  EXPECT_EQ (pl2->GetOngoingsSize (), 1);
+  pl2.reset ();
+
+  // 2 more (28 total >= 27): resolved.
+  UpdateState ("[]");
+  UpdateState ("[]");
+  pl2 = xayaplayers.GetByName ("domob", ctx.RoConfig());
+  EXPECT_EQ (pl2->GetOngoingsSize (), 0);
+  pl2.reset ();
 }
 
 TEST_F (ValidateStateTests, ExpeditionInstanceSolveTwiceTest)

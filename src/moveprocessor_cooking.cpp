@@ -20,6 +20,8 @@
 #include "moveprocessor_internal.hpp"
 #include "logic.hpp"   // PXLogic::DrainPendingRecipeRewards (recipe-slot-free drain)
 
+#include "database/params.hpp"
+
 #include "jsonutils.hpp"
 #include "proto/config.pb.h"
 
@@ -265,7 +267,8 @@ namespace pxd
      }
      
      cookCost = sweetenerBlueprint.cookcost();
-     duration = sweetenerBlueprint.duration();
+     duration = GameParams (db).ScaledDuration (
+         sweetenerBlueprint.duration (), sweetenerBlueprint.requiredsweetness ());
      
      bool playerHasEnoughIngridients = true;
 
@@ -445,7 +448,9 @@ namespace pxd
         effective_duration = effective_duration * reductionPercent;
     }    
 
-    duration = (int32_t)effective_duration;
+    duration = GameParams (db).ScaledDuration (
+        (int32_t) effective_duration,
+        CookQualityToSweetness (itemInventoryRecipe->GetProto ().quality ()));
 
     return true;    
   } 
