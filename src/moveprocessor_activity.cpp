@@ -19,6 +19,7 @@
 #include "moveprocessor.hpp"
 #include "moveprocessor_internal.hpp"
 
+#include "database/params.hpp"
 #include "jsonutils.hpp"
 #include "proto/config.pb.h"
 
@@ -464,7 +465,8 @@ namespace pxd
         effective_duration = effective_duration * reductionPercent;
     }    
     
-    duration = (int32_t)effective_duration;
+    duration = GameParams (db).ScaledDuration ((int32_t) effective_duration,
+                                               expeditionBlueprint.minsweetness ());
     
     return true;    
   }  
