@@ -53,6 +53,10 @@
 #include "database/reward.hpp"
 #include "database/tournament.hpp"
 #include "database/xayaplayer.hpp"
+#include "database/params.hpp"
+#include "database/battlelosses.hpp"
+
+#include <xayautil/jsonutils.hpp>
 
 #include <glog/logging.h>
 #include <gtest/gtest.h>
@@ -119,6 +123,20 @@ protected:
   {
     MoveProcessor mvProc(db, rnd, ctx);
     mvProc.ProcessAll (ParseJson (str));
+  }
+
+  /** Process moves with a WCHI dev-address payment attached (for the paid pc/nr
+   *  verbs), mirroring MoveProcessorTests::ProcessWithDevPayment.  */
+  void
+  ProcessWithDevPayment (const std::string& str, const Amount amount)
+  {
+    Json::Value val = ParseJson (str);
+    const std::string devAddr = ctx.RoConfig ()->params ().dev_address ();
+    for (auto& entry : val)
+      entry["out"][devAddr] = xaya::ChiAmountToJson (amount);
+
+    MoveProcessor mvProc(db, rnd, ctx);
+    mvProc.ProcessAll (val);
   }
 
   /** Builds block data (admin + moves + block meta) for UpdateState.  */
@@ -304,6 +322,164 @@ protected:
 
     /* One more block so the listing and all per-block bookkeeping settle.  */
     AdvanceBlocks (1);
+
+    /* ================================================================
+       Extended launch-regression coverage (2026-07-08): pin the high-risk
+       move types the golden never exercised — pc (WCHI crystal buy), nr (WCHI
+       name reroll), transfigure (fighter/candy/recipe sacrifice), and a
+       tournament RESOLVE WITH PERMADEATH in BOTH branches (capture + destroy).
+       Appended AFTER the existing ongoings so their earlier RNG/state is
+       unchanged; the extra blocks resolve the still-in-flight ongoings, so a
+       fresh expedition at the very end re-establishes the "active ongoing" pin.
+       Every added move is GUARDED (EXPECT) so a silent rejection can't pin
+       false coverage.  Helper to mint a non-account-bound (loseable/tradeable)
+       fighter is inlined per block. */
+
+    const std::string CANDY = "c2774273-0cd4-2494-fa02-76cffe1ef1ef";   // any real candy authoredid
+
+    /* ---- pc: buy a crystal bundle (WCHI-paid, resolves immediately) ---- */
+    {
+      auto a = xayaplayers.GetByName ("andy", ctx.RoConfig ());
+      const Amount balBefore = a->GetBalance ();
+      a.reset ();
+      ProcessWithDevPayment (R"([{"name":"andy","move":{"pc":"T1"}}])", 14000000);   // 0.14 COIN
+      a = xayaplayers.GetByName ("andy", ctx.RoConfig ());
+      EXPECT_GT (a->GetBalance (), balBefore);   // guard: crystals minted
+      a.reset ();
+    }
+
+    /* ---- nr: reroll a fighter's name (WCHI-paid) ---- */
+    {
+      auto ft = tbl3.GetById (andyFt, ctx.RoConfig ());
+      ft->MutableProto ().set_isnamererolled (false);
+      ft.reset ();
+      std::ostringstream m;
+      m << R"([{"name":"andy","move":{"nr":)" << andyFt << R"(}}])";
+      ProcessWithDevPayment (m.str (), 14000000);
+      ft = tbl3.GetById (andyFt, ctx.RoConfig ());
+      EXPECT_TRUE (ft->GetProto ().isnamererolled ());   // guard: reroll consumed
+      ft.reset ();
+    }
+
+    /* ---- transfigure: sacrifice a fighter + candy + recipe; target flips Transfiguring -> Available ---- */
+    {
+      xayaplayers.CreateNew ("erin", ctx.RoConfig (), rnd)->AddBalance (100);
+      const auto mkFree = [&] (const std::string& owner) -> uint32_t {
+        auto f = tbl3.CreateNew (owner, 1, ctx.RoConfig (), rnd);
+        f->MutableProto ().set_isaccountbound (false);
+        const uint32_t id = f->GetId ();
+        f.reset ();
+        return id;
+      };
+      const uint32_t tgt = mkFree ("erin");
+      const uint32_t sac = mkFree ("erin");
+      const uint32_t rec = tbl2.CreateNew ("erin",
+          "5864a19b-c8c0-2d34-eaef-9455af0baf2c", ctx.RoConfig ())->GetId ();   // First Recipe
+      {
+        auto e = xayaplayers.GetByName ("erin", ctx.RoConfig ());
+        e->GetInventory ().SetFungibleCount (
+            BaseMoveProcessor::GetCandyKeyNameFromID (CANDY, ctx), 50);
+        e.reset ();
+      }
+      std::ostringstream m;
+      m << R"([{"name":"erin","move":{"f":{"t":{"fid":)" << tgt
+        << R"(,"o":3,"if":[)" << sac << R"(],"ic":[{"a":10,"n":")" << CANDY
+        << R"("}],"ir":[)" << rec << R"(]}}}}])";
+      Process (m.str ());
+      /* These guards pin parse-accept + the fuel-cost DESTRUCTION (sacrifice fighter + candy +
+         recipe are consumed) + the Transfiguring->Available status cycle. An all-Common sacrifice
+         may land fuelPowerUnit<1, so the inner o:3 move-reroll ROLL itself is not asserted here
+         (that success path is covered by CoinOperationTests.TransfigureWrongValues). */
+      {
+        auto t = tbl3.GetById (tgt, ctx.RoConfig ());
+        EXPECT_EQ (t->GetStatus (), FighterStatus::Transfiguring);   // guard: accepted
+        t.reset ();
+      }
+      EXPECT_EQ (tbl3.GetById (sac, ctx.RoConfig ()), nullptr);      // guard: sacrifice deleted
+      AdvanceBlocks (1);                                             // Transfiguring -> Available
+    }
+
+    const auto mkLoseable = [&] (const std::string& owner) -> uint32_t {
+      auto f = tbl3.CreateNew (owner, 1, ctx.RoConfig (), rnd);
+      f->MutableProto ().set_isaccountbound (false);
+      const uint32_t id = f->GetId ();
+      f.reset ();
+      return id;
+    };
+    const auto joinTournament = [&] (const std::string& who, uint32_t tid,
+                                     uint32_t x, uint32_t y) {
+      std::ostringstream m;
+      m << R"([{"name":")" << who << R"(","move":{"tm":{"e":{"tid":)" << tid
+        << R"(,"fc":[)" << x << "," << y << R"(]}}}}])";
+      Process (m.str ());
+    };
+    const auto countLoss = [&] (const std::string& a, const std::string& b, int outcome) -> int {
+      BattleLossesTable losses (db);
+      int n = 0;
+      for (const std::string& owner : {a, b})
+        {
+          auto r = losses.QueryForOwner (owner);
+          while (r.Step ())
+            if (static_cast<int> (r.Get<BattleLossResult::outcome> ()) == outcome) ++n;
+        }
+      return n;
+    };
+
+    /* ---- Tournament permadeath, CAPTURE branch (capture_pct=256) on the 2x2 tutorial tier ---- */
+    {
+      GameParams (db).SetParam ("tournament_loss_kills_enabled", 1);
+      GameParams (db).SetParam ("tournament_capture_pct", 256);   // roll < 256 always -> capture
+      xayaplayers.CreateNew ("eve", ctx.RoConfig (), rnd).reset ();
+      const uint32_t e1 = mkLoseable ("eve"), e2 = mkLoseable ("eve");
+      xayaplayers.CreateNew ("finn", ctx.RoConfig (), rnd).reset ();
+      const uint32_t f1 = mkLoseable ("finn"), f2 = mkLoseable ("finn");
+      AdvanceBlocks (1);   // ReopenMissingTournaments ensures a Listed instance exists (may pre-date this block)
+      const uint32_t tid =
+          tbl5.GetByAuthIdName ("cbd2e78a-37ce-b864-793d-8dd27788a774", ctx.RoConfig ())->GetId ();
+      joinTournament ("eve", tid, e1, e2);
+      joinTournament ("finn", tid, f1, f2);
+      AdvanceBlocks (3);   // roster full -> Running (blocksleft 2, Min1 unscaled) -> resolves
+      EXPECT_EQ (countLoss ("eve", "finn", 1), 1);   // loser-side: exactly one captured (outcome 1)
+      EXPECT_EQ (countLoss ("eve", "finn", 2), 1);   // winner-side: one capture-gain record (outcome 2)
+    }
+
+    /* ---- Tournament permadeath, DESTROY branch (capture_pct=0) on the Chocolate Chip 2x2 tier ---- */
+    {
+      GameParams (db).SetParam ("tournament_capture_pct", 0);   // roll < 0 never -> destroy
+      xayaplayers.CreateNew ("gale", ctx.RoConfig (), rnd).reset ();
+      const uint32_t g1 = mkLoseable ("gale"), g2 = mkLoseable ("gale");
+      xayaplayers.CreateNew ("hana", ctx.RoConfig (), rnd).reset ();
+      const uint32_t h1 = mkLoseable ("hana"), h2 = mkLoseable ("hana");
+      AdvanceBlocks (1);
+      const uint32_t tid =
+          tbl5.GetByAuthIdName ("e694d5f8-e454-7774-ca76-fc2637a9407f", ctx.RoConfig ())->GetId ();
+      joinTournament ("gale", tid, g1, g2);
+      joinTournament ("hana", tid, h1, h2);
+      AdvanceBlocks (17);   // Chocolate Chip Duration 15 (Min1 unscaled) + slack -> resolves
+      EXPECT_EQ (countLoss ("gale", "hana", 0), 1);   // exactly one destroyed
+      GameParams (db).SetParam ("tournament_capture_pct", 128);   // restore seeded default
+    }
+
+    /* ---- Re-establish a fresh in-flight ongoing so the snapshot keeps the
+           "resolved + still-active" mix, decoupled from the block count above. ---- */
+    {
+      xayaplayers.CreateNew ("iris", ctx.RoConfig (), rnd).reset ();
+      /* Recipe instance 1 is deleted when bob's deconstruction resolves above (the extra blocks
+         push past its resolution height; ResolveDeconstruction deletes the fighter's source
+         recipe, logic_resolve.cpp:543), so build iris's fighter from a FRESH recipe instance as
+         the stat template — otherwise CreateNew can't resolve the template and yields a
+         sweetness-0 fighter that fails the expedition's MinSweetness gate. */
+      const int irisRec = tbl2.CreateNew ("iris",
+          "5864a19b-c8c0-2d34-eaef-9455af0baf2c", ctx.RoConfig ())->GetId ();
+      const uint32_t fid = tbl3.CreateNew ("iris", irisRec, ctx.RoConfig (), rnd)->GetId ();
+      std::ostringstream m;
+      m << R"([{"name":"iris","move":{"exp":{"f":{"eid":"93ad71bb-cd8f-dc24-7885-2c3fd0013245","fid":)"
+        << fid << R"(}}}}])";
+      Process (m.str ());
+      auto a = xayaplayers.GetByName ("iris", ctx.RoConfig ());
+      EXPECT_EQ (a->GetOngoingsSize (), 1);   // guard: active expedition pinned in the snapshot
+      a.reset ();
+    }
   }
 
 };

@@ -494,7 +494,7 @@
         "exchangeprice" : 0,
         "expeditioninstanceid" : "c064e7f7-acbf-4f74-fab8-cccd7b2d4004",
         "fightertypeid" : "c160f7ad-c775-8614-abe2-8ef74e54401f",
-        "firstnamerarity" : 1000,
+        "firstnamerarity" : 248,
         "highestappliedsweetener" : 1,
         "id" : 26,
         "isaccountbound" : true,
@@ -507,60 +507,14 @@
             "authoredid" : "0090580c-04ef-9d84-e883-32f52c977b98"
           }
         ],
-        "name" : "Sour Gummi Brawler",
+        "name" : "Marshmallow of Sugarville",
         "owner" : "andy",
         "quality" : 1,
         "rating" : 1000,
         "recipeid" : 1,
         "saleshistory" : [],
-        "secondnamerarity" : 1000,
+        "secondnamerarity" : 268,
         "status" : 0,
-        "sweetness" : 1,
-        "tournamentinstanceid" : 0
-      },
-      {
-        "animationid" : "27448f34-ca08-99b4-1b63-fd4b227e6af4",
-        "armorpieces" : 
-        [
-          {
-            "armortype" : 3,
-            "candy" : "934dae05-689f-30e4-5804-d497aee0b47c",
-            "rewardsource" : 0,
-            "rewardsourceid" : ""
-          },
-          {
-            "armortype" : 17,
-            "candy" : "c2774273-0cd4-2494-fa02-76cffe1ef1ef",
-            "rewardsource" : 0,
-            "rewardsourceid" : ""
-          }
-        ],
-        "blocksleft" : 6,
-        "exchangeexpire" : 0,
-        "exchangeprice" : 0,
-        "expeditioninstanceid" : "",
-        "fightertypeid" : "c160f7ad-c775-8614-abe2-8ef74e54401f",
-        "firstnamerarity" : 1000,
-        "highestappliedsweetener" : 1,
-        "id" : 27,
-        "isaccountbound" : true,
-        "moves" : 
-        [
-          {
-            "authoredid" : "86b323c2-b2fd-2494-ab5e-bc3514bc92d8"
-          },
-          {
-            "authoredid" : "0090580c-04ef-9d84-e883-32f52c977b98"
-          }
-        ],
-        "name" : "Sour Gummi Brawler",
-        "owner" : "bob",
-        "quality" : 1,
-        "rating" : 1000,
-        "recipeid" : 1,
-        "saleshistory" : [],
-        "secondnamerarity" : 1000,
-        "status" : 5,
         "sweetness" : 1,
         "tournamentinstanceid" : 0
       },
@@ -581,13 +535,13 @@
             "rewardsourceid" : ""
           }
         ],
-        "blocksleft" : 23,
+        "blocksleft" : 0,
         "exchangeexpire" : 0,
         "exchangeprice" : 0,
         "expeditioninstanceid" : "",
         "fightertypeid" : "c160f7ad-c775-8614-abe2-8ef74e54401f",
         "firstnamerarity" : 1000,
-        "highestappliedsweetener" : 1,
+        "highestappliedsweetener" : 2,
         "id" : 28,
         "isaccountbound" : true,
         "moves" : 
@@ -597,6 +551,9 @@
           },
           {
             "authoredid" : "0090580c-04ef-9d84-e883-32f52c977b98"
+          },
+          {
+            "authoredid" : "29d559bb-41a7-9f14-5bf8-605da8166943"
           }
         ],
         "name" : "Sour Gummi Brawler",
@@ -606,7 +563,7 @@
         "recipeid" : 1,
         "saleshistory" : [],
         "secondnamerarity" : 1000,
-        "status" : 4,
+        "status" : 0,
         "sweetness" : 2,
         "tournamentinstanceid" : 0
       },
@@ -627,7 +584,7 @@
             "rewardsourceid" : ""
           }
         ],
-        "blocksleft" : 11,
+        "blocksleft" : 0,
         "exchangeexpire" : 0,
         "exchangeprice" : 0,
         "expeditioninstanceid" : "93ad71bb-cd8f-dc24-7885-2c3fd0013245",
@@ -652,7 +609,7 @@
         "recipeid" : 1,
         "saleshistory" : [],
         "secondnamerarity" : 1000,
-        "status" : 1,
+        "status" : 0,
         "sweetness" : 1,
         "tournamentinstanceid" : 0
       },
@@ -701,16 +658,977 @@
         "status" : 0,
         "sweetness" : 1,
         "tournamentinstanceid" : 0
+      },
+      {
+        "animationid" : "05633498-ace9-de14-c939-9435a6343d0f",
+        "armorpieces" : 
+        [
+          {
+            "armortype" : 2,
+            "candy" : "934dae05-689f-30e4-5804-d497aee0b47c",
+            "rewardsource" : 0,
+            "rewardsourceid" : ""
+          },
+          {
+            "armortype" : 17,
+            "candy" : "c2774273-0cd4-2494-fa02-76cffe1ef1ef",
+            "rewardsource" : 0,
+            "rewardsourceid" : ""
+          }
+        ],
+        "blocksleft" : 0,
+        "exchangeexpire" : 0,
+        "exchangeprice" : 0,
+        "expeditioninstanceid" : "",
+        "fightertypeid" : "c160f7ad-c775-8614-abe2-8ef74e54401f",
+        "firstnamerarity" : 1000,
+        "highestappliedsweetener" : 1,
+        "id" : 60,
+        "isaccountbound" : true,
+        "moves" : 
+        [
+          {
+            "authoredid" : "86b323c2-b2fd-2494-ab5e-bc3514bc92d8"
+          },
+          {
+            "authoredid" : "0090580c-04ef-9d84-e883-32f52c977b98"
+          }
+        ],
+        "name" : "Sour Gummi Brawler",
+        "owner" : "erin",
+        "quality" : 1,
+        "rating" : 1000,
+        "recipeid" : 58,
+        "saleshistory" : [],
+        "secondnamerarity" : 1000,
+        "status" : 0,
+        "sweetness" : 1,
+        "tournamentinstanceid" : 0
+      },
+      {
+        "animationid" : "27448f34-ca08-99b4-1b63-fd4b227e6af4",
+        "armorpieces" : 
+        [
+          {
+            "armortype" : 13,
+            "candy" : "4e343f68-1aaa-0e84-7bab-eae458b68264",
+            "rewardsource" : 0,
+            "rewardsourceid" : ""
+          },
+          {
+            "armortype" : 14,
+            "candy" : "c2774273-0cd4-2494-fa02-76cffe1ef1ef",
+            "rewardsource" : 0,
+            "rewardsourceid" : ""
+          }
+        ],
+        "blocksleft" : 0,
+        "exchangeexpire" : 0,
+        "exchangeprice" : 0,
+        "expeditioninstanceid" : "",
+        "fightertypeid" : "85f361b8-e55d-0244-1a98-26bffa0a18a2",
+        "firstnamerarity" : 1000,
+        "highestappliedsweetener" : 1,
+        "id" : 61,
+        "isaccountbound" : true,
+        "moves" : 
+        [
+          {
+            "authoredid" : "2c555752-8a84-58f4-395e-6460b7864069"
+          },
+          {
+            "authoredid" : "0090580c-04ef-9d84-e883-32f52c977b98"
+          }
+        ],
+        "name" : "Caramel Kicker",
+        "owner" : "erin",
+        "quality" : 1,
+        "rating" : 1000,
+        "recipeid" : 59,
+        "saleshistory" : [],
+        "secondnamerarity" : 1000,
+        "status" : 0,
+        "sweetness" : 1,
+        "tournamentinstanceid" : 0
+      },
+      {
+        "animationid" : "938e1ab9-a85b-5444-7bd6-f8862ace8b16",
+        "armorpieces" : 
+        [
+          {
+            "armortype" : 2,
+            "candy" : "934dae05-689f-30e4-5804-d497aee0b47c",
+            "rewardsource" : 0,
+            "rewardsourceid" : ""
+          },
+          {
+            "armortype" : 17,
+            "candy" : "c2774273-0cd4-2494-fa02-76cffe1ef1ef",
+            "rewardsource" : 0,
+            "rewardsourceid" : ""
+          }
+        ],
+        "blocksleft" : 0,
+        "exchangeexpire" : 0,
+        "exchangeprice" : 0,
+        "expeditioninstanceid" : "",
+        "fightertypeid" : "c160f7ad-c775-8614-abe2-8ef74e54401f",
+        "firstnamerarity" : 1000,
+        "highestappliedsweetener" : 1,
+        "id" : 63,
+        "isaccountbound" : false,
+        "moves" : 
+        [
+          {
+            "authoredid" : "86b323c2-b2fd-2494-ab5e-bc3514bc92d8"
+          },
+          {
+            "authoredid" : "0090580c-04ef-9d84-e883-32f52c977b98"
+          }
+        ],
+        "name" : "Sour Gummi Brawler",
+        "owner" : "erin",
+        "quality" : 1,
+        "rating" : 1000,
+        "recipeid" : 1,
+        "saleshistory" : [],
+        "secondnamerarity" : 1000,
+        "status" : 0,
+        "sweetness" : 1,
+        "tournamentinstanceid" : 0
+      },
+      {
+        "animationid" : "97c2c3da-93c7-a0d4-1967-eeba13396cce",
+        "armorpieces" : 
+        [
+          {
+            "armortype" : 2,
+            "candy" : "934dae05-689f-30e4-5804-d497aee0b47c",
+            "rewardsource" : 0,
+            "rewardsourceid" : ""
+          },
+          {
+            "armortype" : 16,
+            "candy" : "c2774273-0cd4-2494-fa02-76cffe1ef1ef",
+            "rewardsource" : 0,
+            "rewardsourceid" : ""
+          }
+        ],
+        "blocksleft" : 0,
+        "exchangeexpire" : 0,
+        "exchangeprice" : 0,
+        "expeditioninstanceid" : "",
+        "fightertypeid" : "c160f7ad-c775-8614-abe2-8ef74e54401f",
+        "firstnamerarity" : 1000,
+        "highestappliedsweetener" : 1,
+        "id" : 68,
+        "isaccountbound" : true,
+        "moves" : 
+        [
+          {
+            "authoredid" : "86b323c2-b2fd-2494-ab5e-bc3514bc92d8"
+          },
+          {
+            "authoredid" : "0090580c-04ef-9d84-e883-32f52c977b98"
+          }
+        ],
+        "name" : "Sour Gummi Brawler",
+        "owner" : "eve",
+        "quality" : 1,
+        "rating" : 1000,
+        "recipeid" : 66,
+        "saleshistory" : [],
+        "secondnamerarity" : 1000,
+        "status" : 0,
+        "sweetness" : 1,
+        "tournamentinstanceid" : 0
+      },
+      {
+        "animationid" : "5fce85e9-51f9-d7b4-db81-ef141439db00",
+        "armorpieces" : 
+        [
+          {
+            "armortype" : 12,
+            "candy" : "4e343f68-1aaa-0e84-7bab-eae458b68264",
+            "rewardsource" : 0,
+            "rewardsourceid" : ""
+          },
+          {
+            "armortype" : 17,
+            "candy" : "c2774273-0cd4-2494-fa02-76cffe1ef1ef",
+            "rewardsource" : 0,
+            "rewardsourceid" : ""
+          }
+        ],
+        "blocksleft" : 0,
+        "exchangeexpire" : 0,
+        "exchangeprice" : 0,
+        "expeditioninstanceid" : "",
+        "fightertypeid" : "85f361b8-e55d-0244-1a98-26bffa0a18a2",
+        "firstnamerarity" : 1000,
+        "highestappliedsweetener" : 1,
+        "id" : 69,
+        "isaccountbound" : true,
+        "moves" : 
+        [
+          {
+            "authoredid" : "2c555752-8a84-58f4-395e-6460b7864069"
+          },
+          {
+            "authoredid" : "0090580c-04ef-9d84-e883-32f52c977b98"
+          }
+        ],
+        "name" : "Caramel Kicker",
+        "owner" : "eve",
+        "quality" : 1,
+        "rating" : 1000,
+        "recipeid" : 67,
+        "saleshistory" : [],
+        "secondnamerarity" : 1000,
+        "status" : 0,
+        "sweetness" : 1,
+        "tournamentinstanceid" : 0
+      },
+      {
+        "animationid" : "05633498-ace9-de14-c939-9435a6343d0f",
+        "armorpieces" : 
+        [
+          {
+            "armortype" : 2,
+            "candy" : "934dae05-689f-30e4-5804-d497aee0b47c",
+            "rewardsource" : 0,
+            "rewardsourceid" : ""
+          },
+          {
+            "armortype" : 14,
+            "candy" : "c2774273-0cd4-2494-fa02-76cffe1ef1ef",
+            "rewardsource" : 0,
+            "rewardsourceid" : ""
+          }
+        ],
+        "blocksleft" : 0,
+        "exchangeexpire" : 0,
+        "exchangeprice" : 0,
+        "expeditioninstanceid" : "",
+        "fightertypeid" : "c160f7ad-c775-8614-abe2-8ef74e54401f",
+        "firstnamerarity" : 1000,
+        "highestappliedsweetener" : 1,
+        "id" : 71,
+        "isaccountbound" : false,
+        "moves" : 
+        [
+          {
+            "authoredid" : "86b323c2-b2fd-2494-ab5e-bc3514bc92d8"
+          },
+          {
+            "authoredid" : "0090580c-04ef-9d84-e883-32f52c977b98"
+          }
+        ],
+        "name" : "Sour Gummi Brawler",
+        "owner" : "eve",
+        "quality" : 1,
+        "rating" : 1000,
+        "recipeid" : 1,
+        "saleshistory" : [],
+        "secondnamerarity" : 1000,
+        "status" : 0,
+        "sweetness" : 1,
+        "tournamentinstanceid" : 0
+      },
+      {
+        "animationid" : "5fce85e9-51f9-d7b4-db81-ef141439db00",
+        "armorpieces" : 
+        [
+          {
+            "armortype" : 1,
+            "candy" : "934dae05-689f-30e4-5804-d497aee0b47c",
+            "rewardsource" : 0,
+            "rewardsourceid" : ""
+          },
+          {
+            "armortype" : 14,
+            "candy" : "c2774273-0cd4-2494-fa02-76cffe1ef1ef",
+            "rewardsource" : 0,
+            "rewardsourceid" : ""
+          }
+        ],
+        "blocksleft" : 0,
+        "exchangeexpire" : 0,
+        "exchangeprice" : 0,
+        "expeditioninstanceid" : "",
+        "fightertypeid" : "c160f7ad-c775-8614-abe2-8ef74e54401f",
+        "firstnamerarity" : 1000,
+        "highestappliedsweetener" : 1,
+        "id" : 72,
+        "isaccountbound" : false,
+        "moves" : 
+        [
+          {
+            "authoredid" : "86b323c2-b2fd-2494-ab5e-bc3514bc92d8"
+          },
+          {
+            "authoredid" : "0090580c-04ef-9d84-e883-32f52c977b98"
+          }
+        ],
+        "name" : "Sour Gummi Brawler",
+        "owner" : "eve",
+        "quality" : 1,
+        "rating" : 1000,
+        "recipeid" : 1,
+        "saleshistory" : [],
+        "secondnamerarity" : 1000,
+        "status" : 0,
+        "sweetness" : 1,
+        "tournamentinstanceid" : 0
+      },
+      {
+        "animationid" : "a170f9f3-f97b-8eb4-49c0-c99a916e55d7",
+        "armorpieces" : 
+        [
+          {
+            "armortype" : 3,
+            "candy" : "934dae05-689f-30e4-5804-d497aee0b47c",
+            "rewardsource" : 0,
+            "rewardsourceid" : ""
+          },
+          {
+            "armortype" : 16,
+            "candy" : "c2774273-0cd4-2494-fa02-76cffe1ef1ef",
+            "rewardsource" : 0,
+            "rewardsourceid" : ""
+          }
+        ],
+        "blocksleft" : 0,
+        "exchangeexpire" : 0,
+        "exchangeprice" : 0,
+        "expeditioninstanceid" : "",
+        "fightertypeid" : "c160f7ad-c775-8614-abe2-8ef74e54401f",
+        "firstnamerarity" : 1000,
+        "highestappliedsweetener" : 1,
+        "id" : 75,
+        "isaccountbound" : true,
+        "moves" : 
+        [
+          {
+            "authoredid" : "86b323c2-b2fd-2494-ab5e-bc3514bc92d8"
+          },
+          {
+            "authoredid" : "0090580c-04ef-9d84-e883-32f52c977b98"
+          }
+        ],
+        "name" : "Sour Gummi Brawler",
+        "owner" : "finn",
+        "quality" : 1,
+        "rating" : 1000,
+        "recipeid" : 73,
+        "saleshistory" : [],
+        "secondnamerarity" : 1000,
+        "status" : 0,
+        "sweetness" : 1,
+        "tournamentinstanceid" : 0
+      },
+      {
+        "animationid" : "917e27ec-19ff-3d04-69f6-c596456816e6",
+        "armorpieces" : 
+        [
+          {
+            "armortype" : 12,
+            "candy" : "4e343f68-1aaa-0e84-7bab-eae458b68264",
+            "rewardsource" : 0,
+            "rewardsourceid" : ""
+          },
+          {
+            "armortype" : 17,
+            "candy" : "c2774273-0cd4-2494-fa02-76cffe1ef1ef",
+            "rewardsource" : 0,
+            "rewardsourceid" : ""
+          }
+        ],
+        "blocksleft" : 0,
+        "exchangeexpire" : 0,
+        "exchangeprice" : 0,
+        "expeditioninstanceid" : "",
+        "fightertypeid" : "85f361b8-e55d-0244-1a98-26bffa0a18a2",
+        "firstnamerarity" : 1000,
+        "highestappliedsweetener" : 1,
+        "id" : 76,
+        "isaccountbound" : true,
+        "moves" : 
+        [
+          {
+            "authoredid" : "2c555752-8a84-58f4-395e-6460b7864069"
+          },
+          {
+            "authoredid" : "0090580c-04ef-9d84-e883-32f52c977b98"
+          }
+        ],
+        "name" : "Caramel Kicker",
+        "owner" : "finn",
+        "quality" : 1,
+        "rating" : 1000,
+        "recipeid" : 74,
+        "saleshistory" : [],
+        "secondnamerarity" : 1000,
+        "status" : 0,
+        "sweetness" : 1,
+        "tournamentinstanceid" : 0
+      },
+      {
+        "animationid" : "5fce85e9-51f9-d7b4-db81-ef141439db00",
+        "armorpieces" : 
+        [
+          {
+            "armortype" : 2,
+            "candy" : "934dae05-689f-30e4-5804-d497aee0b47c",
+            "rewardsource" : 0,
+            "rewardsourceid" : ""
+          },
+          {
+            "armortype" : 16,
+            "candy" : "c2774273-0cd4-2494-fa02-76cffe1ef1ef",
+            "rewardsource" : 0,
+            "rewardsourceid" : ""
+          }
+        ],
+        "blocksleft" : 0,
+        "exchangeexpire" : 0,
+        "exchangeprice" : 0,
+        "expeditioninstanceid" : "",
+        "fightertypeid" : "c160f7ad-c775-8614-abe2-8ef74e54401f",
+        "firstnamerarity" : 1000,
+        "highestappliedsweetener" : 1,
+        "id" : 78,
+        "isaccountbound" : false,
+        "moves" : 
+        [
+          {
+            "authoredid" : "86b323c2-b2fd-2494-ab5e-bc3514bc92d8"
+          },
+          {
+            "authoredid" : "0090580c-04ef-9d84-e883-32f52c977b98"
+          }
+        ],
+        "name" : "Sour Gummi Brawler",
+        "owner" : "finn",
+        "quality" : 1,
+        "rating" : 1000,
+        "recipeid" : 1,
+        "saleshistory" : [],
+        "secondnamerarity" : 1000,
+        "status" : 0,
+        "sweetness" : 1,
+        "tournamentinstanceid" : 0
+      },
+      {
+        "animationid" : "97c2c3da-93c7-a0d4-1967-eeba13396cce",
+        "armorpieces" : 
+        [
+          {
+            "armortype" : 2,
+            "candy" : "934dae05-689f-30e4-5804-d497aee0b47c",
+            "rewardsource" : 0,
+            "rewardsourceid" : ""
+          },
+          {
+            "armortype" : 17,
+            "candy" : "c2774273-0cd4-2494-fa02-76cffe1ef1ef",
+            "rewardsource" : 0,
+            "rewardsourceid" : ""
+          }
+        ],
+        "blocksleft" : 0,
+        "exchangeexpire" : 0,
+        "exchangeprice" : 0,
+        "expeditioninstanceid" : "",
+        "fightertypeid" : "c160f7ad-c775-8614-abe2-8ef74e54401f",
+        "firstnamerarity" : 1000,
+        "highestappliedsweetener" : 1,
+        "id" : 79,
+        "isaccountbound" : false,
+        "moves" : 
+        [
+          {
+            "authoredid" : "86b323c2-b2fd-2494-ab5e-bc3514bc92d8"
+          },
+          {
+            "authoredid" : "0090580c-04ef-9d84-e883-32f52c977b98"
+          }
+        ],
+        "name" : "Sour Gummi Brawler",
+        "owner" : "eve",
+        "quality" : 1,
+        "rating" : 1000,
+        "recipeid" : 1,
+        "saleshistory" : [],
+        "secondnamerarity" : 1000,
+        "status" : 0,
+        "sweetness" : 1,
+        "tournamentinstanceid" : 0
+      },
+      {
+        "animationid" : "05633498-ace9-de14-c939-9435a6343d0f",
+        "armorpieces" : 
+        [
+          {
+            "armortype" : 3,
+            "candy" : "934dae05-689f-30e4-5804-d497aee0b47c",
+            "rewardsource" : 0,
+            "rewardsourceid" : ""
+          },
+          {
+            "armortype" : 16,
+            "candy" : "c2774273-0cd4-2494-fa02-76cffe1ef1ef",
+            "rewardsource" : 0,
+            "rewardsourceid" : ""
+          }
+        ],
+        "blocksleft" : 0,
+        "exchangeexpire" : 0,
+        "exchangeprice" : 0,
+        "expeditioninstanceid" : "",
+        "fightertypeid" : "c160f7ad-c775-8614-abe2-8ef74e54401f",
+        "firstnamerarity" : 1000,
+        "highestappliedsweetener" : 1,
+        "id" : 87,
+        "isaccountbound" : true,
+        "moves" : 
+        [
+          {
+            "authoredid" : "86b323c2-b2fd-2494-ab5e-bc3514bc92d8"
+          },
+          {
+            "authoredid" : "0090580c-04ef-9d84-e883-32f52c977b98"
+          }
+        ],
+        "name" : "Sour Gummi Brawler",
+        "owner" : "gale",
+        "quality" : 1,
+        "rating" : 1000,
+        "recipeid" : 85,
+        "saleshistory" : [],
+        "secondnamerarity" : 1000,
+        "status" : 0,
+        "sweetness" : 1,
+        "tournamentinstanceid" : 0
+      },
+      {
+        "animationid" : "917e27ec-19ff-3d04-69f6-c596456816e6",
+        "armorpieces" : 
+        [
+          {
+            "armortype" : 13,
+            "candy" : "4e343f68-1aaa-0e84-7bab-eae458b68264",
+            "rewardsource" : 0,
+            "rewardsourceid" : ""
+          },
+          {
+            "armortype" : 14,
+            "candy" : "c2774273-0cd4-2494-fa02-76cffe1ef1ef",
+            "rewardsource" : 0,
+            "rewardsourceid" : ""
+          }
+        ],
+        "blocksleft" : 0,
+        "exchangeexpire" : 0,
+        "exchangeprice" : 0,
+        "expeditioninstanceid" : "",
+        "fightertypeid" : "85f361b8-e55d-0244-1a98-26bffa0a18a2",
+        "firstnamerarity" : 1000,
+        "highestappliedsweetener" : 1,
+        "id" : 88,
+        "isaccountbound" : true,
+        "moves" : 
+        [
+          {
+            "authoredid" : "2c555752-8a84-58f4-395e-6460b7864069"
+          },
+          {
+            "authoredid" : "0090580c-04ef-9d84-e883-32f52c977b98"
+          }
+        ],
+        "name" : "Caramel Kicker",
+        "owner" : "gale",
+        "quality" : 1,
+        "rating" : 1000,
+        "recipeid" : 86,
+        "saleshistory" : [],
+        "secondnamerarity" : 1000,
+        "status" : 0,
+        "sweetness" : 1,
+        "tournamentinstanceid" : 0
+      },
+      {
+        "animationid" : "64732638-e355-d5c4-aa2d-e28c3db4aa72",
+        "armorpieces" : 
+        [
+          {
+            "armortype" : 3,
+            "candy" : "934dae05-689f-30e4-5804-d497aee0b47c",
+            "rewardsource" : 0,
+            "rewardsourceid" : ""
+          },
+          {
+            "armortype" : 16,
+            "candy" : "c2774273-0cd4-2494-fa02-76cffe1ef1ef",
+            "rewardsource" : 0,
+            "rewardsourceid" : ""
+          }
+        ],
+        "blocksleft" : 0,
+        "exchangeexpire" : 0,
+        "exchangeprice" : 0,
+        "expeditioninstanceid" : "",
+        "fightertypeid" : "c160f7ad-c775-8614-abe2-8ef74e54401f",
+        "firstnamerarity" : 1000,
+        "highestappliedsweetener" : 1,
+        "id" : 90,
+        "isaccountbound" : false,
+        "moves" : 
+        [
+          {
+            "authoredid" : "86b323c2-b2fd-2494-ab5e-bc3514bc92d8"
+          },
+          {
+            "authoredid" : "0090580c-04ef-9d84-e883-32f52c977b98"
+          }
+        ],
+        "name" : "Sour Gummi Brawler",
+        "owner" : "gale",
+        "quality" : 1,
+        "rating" : 1000,
+        "recipeid" : 1,
+        "saleshistory" : [],
+        "secondnamerarity" : 1000,
+        "status" : 0,
+        "sweetness" : 1,
+        "tournamentinstanceid" : 0
+      },
+      {
+        "animationid" : "27448f34-ca08-99b4-1b63-fd4b227e6af4",
+        "armorpieces" : 
+        [
+          {
+            "armortype" : 2,
+            "candy" : "934dae05-689f-30e4-5804-d497aee0b47c",
+            "rewardsource" : 0,
+            "rewardsourceid" : ""
+          },
+          {
+            "armortype" : 14,
+            "candy" : "c2774273-0cd4-2494-fa02-76cffe1ef1ef",
+            "rewardsource" : 0,
+            "rewardsourceid" : ""
+          }
+        ],
+        "blocksleft" : 0,
+        "exchangeexpire" : 0,
+        "exchangeprice" : 0,
+        "expeditioninstanceid" : "",
+        "fightertypeid" : "c160f7ad-c775-8614-abe2-8ef74e54401f",
+        "firstnamerarity" : 1000,
+        "highestappliedsweetener" : 1,
+        "id" : 91,
+        "isaccountbound" : false,
+        "moves" : 
+        [
+          {
+            "authoredid" : "86b323c2-b2fd-2494-ab5e-bc3514bc92d8"
+          },
+          {
+            "authoredid" : "0090580c-04ef-9d84-e883-32f52c977b98"
+          }
+        ],
+        "name" : "Sour Gummi Brawler",
+        "owner" : "gale",
+        "quality" : 1,
+        "rating" : 1000,
+        "recipeid" : 1,
+        "saleshistory" : [],
+        "secondnamerarity" : 1000,
+        "status" : 0,
+        "sweetness" : 1,
+        "tournamentinstanceid" : 0
+      },
+      {
+        "animationid" : "917e27ec-19ff-3d04-69f6-c596456816e6",
+        "armorpieces" : 
+        [
+          {
+            "armortype" : 3,
+            "candy" : "934dae05-689f-30e4-5804-d497aee0b47c",
+            "rewardsource" : 0,
+            "rewardsourceid" : ""
+          },
+          {
+            "armortype" : 16,
+            "candy" : "c2774273-0cd4-2494-fa02-76cffe1ef1ef",
+            "rewardsource" : 0,
+            "rewardsourceid" : ""
+          }
+        ],
+        "blocksleft" : 0,
+        "exchangeexpire" : 0,
+        "exchangeprice" : 0,
+        "expeditioninstanceid" : "",
+        "fightertypeid" : "c160f7ad-c775-8614-abe2-8ef74e54401f",
+        "firstnamerarity" : 1000,
+        "highestappliedsweetener" : 1,
+        "id" : 94,
+        "isaccountbound" : true,
+        "moves" : 
+        [
+          {
+            "authoredid" : "86b323c2-b2fd-2494-ab5e-bc3514bc92d8"
+          },
+          {
+            "authoredid" : "0090580c-04ef-9d84-e883-32f52c977b98"
+          }
+        ],
+        "name" : "Sour Gummi Brawler",
+        "owner" : "hana",
+        "quality" : 1,
+        "rating" : 1000,
+        "recipeid" : 92,
+        "saleshistory" : [],
+        "secondnamerarity" : 1000,
+        "status" : 0,
+        "sweetness" : 1,
+        "tournamentinstanceid" : 0
+      },
+      {
+        "animationid" : "05633498-ace9-de14-c939-9435a6343d0f",
+        "armorpieces" : 
+        [
+          {
+            "armortype" : 13,
+            "candy" : "4e343f68-1aaa-0e84-7bab-eae458b68264",
+            "rewardsource" : 0,
+            "rewardsourceid" : ""
+          },
+          {
+            "armortype" : 14,
+            "candy" : "c2774273-0cd4-2494-fa02-76cffe1ef1ef",
+            "rewardsource" : 0,
+            "rewardsourceid" : ""
+          }
+        ],
+        "blocksleft" : 0,
+        "exchangeexpire" : 0,
+        "exchangeprice" : 0,
+        "expeditioninstanceid" : "",
+        "fightertypeid" : "85f361b8-e55d-0244-1a98-26bffa0a18a2",
+        "firstnamerarity" : 1000,
+        "highestappliedsweetener" : 1,
+        "id" : 95,
+        "isaccountbound" : true,
+        "moves" : 
+        [
+          {
+            "authoredid" : "2c555752-8a84-58f4-395e-6460b7864069"
+          },
+          {
+            "authoredid" : "0090580c-04ef-9d84-e883-32f52c977b98"
+          }
+        ],
+        "name" : "Caramel Kicker",
+        "owner" : "hana",
+        "quality" : 1,
+        "rating" : 1000,
+        "recipeid" : 93,
+        "saleshistory" : [],
+        "secondnamerarity" : 1000,
+        "status" : 0,
+        "sweetness" : 1,
+        "tournamentinstanceid" : 0
+      },
+      {
+        "animationid" : "64732638-e355-d5c4-aa2d-e28c3db4aa72",
+        "armorpieces" : 
+        [
+          {
+            "armortype" : 3,
+            "candy" : "934dae05-689f-30e4-5804-d497aee0b47c",
+            "rewardsource" : 0,
+            "rewardsourceid" : ""
+          },
+          {
+            "armortype" : 17,
+            "candy" : "c2774273-0cd4-2494-fa02-76cffe1ef1ef",
+            "rewardsource" : 0,
+            "rewardsourceid" : ""
+          }
+        ],
+        "blocksleft" : 0,
+        "exchangeexpire" : 0,
+        "exchangeprice" : 0,
+        "expeditioninstanceid" : "",
+        "fightertypeid" : "c160f7ad-c775-8614-abe2-8ef74e54401f",
+        "firstnamerarity" : 1000,
+        "highestappliedsweetener" : 1,
+        "id" : 97,
+        "isaccountbound" : false,
+        "moves" : 
+        [
+          {
+            "authoredid" : "86b323c2-b2fd-2494-ab5e-bc3514bc92d8"
+          },
+          {
+            "authoredid" : "0090580c-04ef-9d84-e883-32f52c977b98"
+          }
+        ],
+        "name" : "Sour Gummi Brawler",
+        "owner" : "hana",
+        "quality" : 1,
+        "rating" : 1000,
+        "recipeid" : 1,
+        "saleshistory" : [],
+        "secondnamerarity" : 1000,
+        "status" : 0,
+        "sweetness" : 1,
+        "tournamentinstanceid" : 0
+      },
+      {
+        "animationid" : "64732638-e355-d5c4-aa2d-e28c3db4aa72",
+        "armorpieces" : 
+        [
+          {
+            "armortype" : 1,
+            "candy" : "934dae05-689f-30e4-5804-d497aee0b47c",
+            "rewardsource" : 0,
+            "rewardsourceid" : ""
+          },
+          {
+            "armortype" : 17,
+            "candy" : "c2774273-0cd4-2494-fa02-76cffe1ef1ef",
+            "rewardsource" : 0,
+            "rewardsourceid" : ""
+          }
+        ],
+        "blocksleft" : 0,
+        "exchangeexpire" : 0,
+        "exchangeprice" : 0,
+        "expeditioninstanceid" : "",
+        "fightertypeid" : "c160f7ad-c775-8614-abe2-8ef74e54401f",
+        "firstnamerarity" : 1000,
+        "highestappliedsweetener" : 1,
+        "id" : 103,
+        "isaccountbound" : true,
+        "moves" : 
+        [
+          {
+            "authoredid" : "86b323c2-b2fd-2494-ab5e-bc3514bc92d8"
+          },
+          {
+            "authoredid" : "0090580c-04ef-9d84-e883-32f52c977b98"
+          }
+        ],
+        "name" : "Sour Gummi Brawler",
+        "owner" : "iris",
+        "quality" : 1,
+        "rating" : 1000,
+        "recipeid" : 101,
+        "saleshistory" : [],
+        "secondnamerarity" : 1000,
+        "status" : 0,
+        "sweetness" : 1,
+        "tournamentinstanceid" : 0
+      },
+      {
+        "animationid" : "938e1ab9-a85b-5444-7bd6-f8862ace8b16",
+        "armorpieces" : 
+        [
+          {
+            "armortype" : 11,
+            "candy" : "4e343f68-1aaa-0e84-7bab-eae458b68264",
+            "rewardsource" : 0,
+            "rewardsourceid" : ""
+          },
+          {
+            "armortype" : 16,
+            "candy" : "c2774273-0cd4-2494-fa02-76cffe1ef1ef",
+            "rewardsource" : 0,
+            "rewardsourceid" : ""
+          }
+        ],
+        "blocksleft" : 0,
+        "exchangeexpire" : 0,
+        "exchangeprice" : 0,
+        "expeditioninstanceid" : "",
+        "fightertypeid" : "85f361b8-e55d-0244-1a98-26bffa0a18a2",
+        "firstnamerarity" : 1000,
+        "highestappliedsweetener" : 1,
+        "id" : 104,
+        "isaccountbound" : true,
+        "moves" : 
+        [
+          {
+            "authoredid" : "2c555752-8a84-58f4-395e-6460b7864069"
+          },
+          {
+            "authoredid" : "0090580c-04ef-9d84-e883-32f52c977b98"
+          }
+        ],
+        "name" : "Caramel Kicker",
+        "owner" : "iris",
+        "quality" : 1,
+        "rating" : 1000,
+        "recipeid" : 102,
+        "saleshistory" : [],
+        "secondnamerarity" : 1000,
+        "status" : 0,
+        "sweetness" : 1,
+        "tournamentinstanceid" : 0
+      },
+      {
+        "animationid" : "64732638-e355-d5c4-aa2d-e28c3db4aa72",
+        "armorpieces" : 
+        [
+          {
+            "armortype" : 1,
+            "candy" : "934dae05-689f-30e4-5804-d497aee0b47c",
+            "rewardsource" : 0,
+            "rewardsourceid" : ""
+          },
+          {
+            "armortype" : 14,
+            "candy" : "c2774273-0cd4-2494-fa02-76cffe1ef1ef",
+            "rewardsource" : 0,
+            "rewardsourceid" : ""
+          }
+        ],
+        "blocksleft" : 15,
+        "exchangeexpire" : 0,
+        "exchangeprice" : 0,
+        "expeditioninstanceid" : "93ad71bb-cd8f-dc24-7885-2c3fd0013245",
+        "fightertypeid" : "c160f7ad-c775-8614-abe2-8ef74e54401f",
+        "firstnamerarity" : 1000,
+        "highestappliedsweetener" : 1,
+        "id" : 107,
+        "isaccountbound" : true,
+        "moves" : 
+        [
+          {
+            "authoredid" : "86b323c2-b2fd-2494-ab5e-bc3514bc92d8"
+          },
+          {
+            "authoredid" : "0090580c-04ef-9d84-e883-32f52c977b98"
+          }
+        ],
+        "name" : "Sour Gummi Brawler",
+        "owner" : "iris",
+        "quality" : 1,
+        "rating" : 1000,
+        "recipeid" : 106,
+        "saleshistory" : [],
+        "secondnamerarity" : 1000,
+        "status" : 1,
+        "sweetness" : 1,
+        "tournamentinstanceid" : 0
       }
     ],
     "multiplier" : 1000,
     "recepies" : 
     [
-      {
-        "authoredid" : "5864a19b-c8c0-2d34-eaef-9455af0baf2c",
-        "did" : 1,
-        "owner" : ""
-      },
       {
         "authoredid" : "ba0121ba-e8a6-7e64-9bc1-71dfeca27daa",
         "did" : 2,
@@ -785,20 +1703,161 @@
         "authoredid" : "ba0121ba-e8a6-7e64-9bc1-71dfeca27daa",
         "did" : 57,
         "owner" : "andy"
+      },
+      {
+        "authoredid" : "5864a19b-c8c0-2d34-eaef-9455af0baf2c",
+        "did" : 58,
+        "owner" : ""
+      },
+      {
+        "authoredid" : "ba0121ba-e8a6-7e64-9bc1-71dfeca27daa",
+        "did" : 59,
+        "owner" : ""
+      },
+      {
+        "authoredid" : "1bbc7d99-7fce-24a4-c9a3-dfaf4b744efa",
+        "did" : 62,
+        "owner" : "erin"
+      },
+      {
+        "authoredid" : "5864a19b-c8c0-2d34-eaef-9455af0baf2c",
+        "did" : 66,
+        "owner" : ""
+      },
+      {
+        "authoredid" : "ba0121ba-e8a6-7e64-9bc1-71dfeca27daa",
+        "did" : 67,
+        "owner" : ""
+      },
+      {
+        "authoredid" : "1bbc7d99-7fce-24a4-c9a3-dfaf4b744efa",
+        "did" : 70,
+        "owner" : "eve"
+      },
+      {
+        "authoredid" : "5864a19b-c8c0-2d34-eaef-9455af0baf2c",
+        "did" : 73,
+        "owner" : ""
+      },
+      {
+        "authoredid" : "ba0121ba-e8a6-7e64-9bc1-71dfeca27daa",
+        "did" : 74,
+        "owner" : ""
+      },
+      {
+        "authoredid" : "1bbc7d99-7fce-24a4-c9a3-dfaf4b744efa",
+        "did" : 77,
+        "owner" : "finn"
+      },
+      {
+        "authoredid" : "1bbc7d99-7fce-24a4-c9a3-dfaf4b744efa",
+        "did" : 81,
+        "owner" : "eve"
+      },
+      {
+        "authoredid" : "1bbc7d99-7fce-24a4-c9a3-dfaf4b744efa",
+        "did" : 82,
+        "owner" : "finn"
+      },
+      {
+        "authoredid" : "5864a19b-c8c0-2d34-eaef-9455af0baf2c",
+        "did" : 85,
+        "owner" : ""
+      },
+      {
+        "authoredid" : "ba0121ba-e8a6-7e64-9bc1-71dfeca27daa",
+        "did" : 86,
+        "owner" : ""
+      },
+      {
+        "authoredid" : "1bbc7d99-7fce-24a4-c9a3-dfaf4b744efa",
+        "did" : 89,
+        "owner" : "gale"
+      },
+      {
+        "authoredid" : "5864a19b-c8c0-2d34-eaef-9455af0baf2c",
+        "did" : 92,
+        "owner" : ""
+      },
+      {
+        "authoredid" : "ba0121ba-e8a6-7e64-9bc1-71dfeca27daa",
+        "did" : 93,
+        "owner" : ""
+      },
+      {
+        "authoredid" : "1bbc7d99-7fce-24a4-c9a3-dfaf4b744efa",
+        "did" : 96,
+        "owner" : "hana"
+      },
+      {
+        "authoredid" : "5864a19b-c8c0-2d34-eaef-9455af0baf2c",
+        "did" : 101,
+        "owner" : ""
+      },
+      {
+        "authoredid" : "ba0121ba-e8a6-7e64-9bc1-71dfeca27daa",
+        "did" : 102,
+        "owner" : ""
+      },
+      {
+        "authoredid" : "1bbc7d99-7fce-24a4-c9a3-dfaf4b744efa",
+        "did" : 105,
+        "owner" : "iris"
+      },
+      {
+        "authoredid" : "5864a19b-c8c0-2d34-eaef-9455af0baf2c",
+        "did" : 106,
+        "owner" : "iris"
       }
     ],
     "rewards" : [],
     "tournaments" : 
     [
       {
-        "blocksleft" : 2,
+        "blocksleft" : 0,
         "blueprint" : "cbd2e78a-37ce-b864-793d-8dd27788a774",
-        "fighters" : [],
-        "results" : [],
-        "state" : 0,
-        "teamsjoined" : 0,
+        "fighters" : 
+        [
+          71,
+          72,
+          78,
+          79
+        ],
+        "results" : 
+        [
+          {
+            "draws" : 2,
+            "fighterid" : 71,
+            "losses" : 0,
+            "ratingdelta" : 0,
+            "wins" : 0
+          },
+          {
+            "draws" : 2,
+            "fighterid" : 72,
+            "losses" : 0,
+            "ratingdelta" : 0,
+            "wins" : 0
+          },
+          {
+            "draws" : 2,
+            "fighterid" : 78,
+            "losses" : 0,
+            "ratingdelta" : 0,
+            "wins" : 0
+          },
+          {
+            "draws" : 2,
+            "fighterid" : 79,
+            "losses" : 0,
+            "ratingdelta" : 0,
+            "wins" : 0
+          }
+        ],
+        "state" : 3,
+        "teamsjoined" : 2,
         "tid" : 35,
-        "winnerid" : ""
+        "winnerid" : "eve"
       },
       {
         "blocksleft" : 1400,
@@ -821,14 +1880,50 @@
         "winnerid" : ""
       },
       {
-        "blocksleft" : 15,
+        "blocksleft" : 0,
         "blueprint" : "e694d5f8-e454-7774-ca76-fc2637a9407f",
-        "fighters" : [],
-        "results" : [],
-        "state" : 0,
-        "teamsjoined" : 0,
+        "fighters" : 
+        [
+          90,
+          91,
+          97,
+          98
+        ],
+        "results" : 
+        [
+          {
+            "draws" : 2,
+            "fighterid" : 90,
+            "losses" : 0,
+            "ratingdelta" : 0,
+            "wins" : 0
+          },
+          {
+            "draws" : 2,
+            "fighterid" : 91,
+            "losses" : 0,
+            "ratingdelta" : 0,
+            "wins" : 0
+          },
+          {
+            "draws" : 2,
+            "fighterid" : 97,
+            "losses" : 0,
+            "ratingdelta" : 0,
+            "wins" : 0
+          },
+          {
+            "draws" : 2,
+            "fighterid" : 98,
+            "losses" : 0,
+            "ratingdelta" : 0,
+            "wins" : 0
+          }
+        ],
+        "state" : 3,
+        "teamsjoined" : 2,
         "tid" : 38,
-        "winnerid" : ""
+        "winnerid" : "gale"
       },
       {
         "blocksleft" : 30,
@@ -999,6 +2094,26 @@
         "teamsjoined" : 0,
         "tid" : 55,
         "winnerid" : ""
+      },
+      {
+        "blocksleft" : 2,
+        "blueprint" : "cbd2e78a-37ce-b864-793d-8dd27788a774",
+        "fighters" : [],
+        "results" : [],
+        "state" : 0,
+        "teamsjoined" : 0,
+        "tid" : 80,
+        "winnerid" : ""
+      },
+      {
+        "blocksleft" : 15,
+        "blueprint" : "e694d5f8-e454-7774-ca76-fc2637a9407f",
+        "fighters" : [],
+        "results" : [],
+        "state" : 0,
+        "teamsjoined" : 0,
+        "tid" : 99,
+        "winnerid" : ""
       }
     ],
     "vanillaurl" : "xaya.io",
@@ -1009,7 +2124,7 @@
         "address" : "",
         "balance" : 
         {
-          "available" : 1000
+          "available" : 1100
         },
         "fighteraverage" : 476,
         "inventory" : 
@@ -1057,13 +2172,7 @@
           }
         },
         "name" : "bob",
-        "ongoings" : 
-        [
-          {
-            "blocksleft" : 6,
-            "type" : 3
-          }
-        ],
+        "ongoings" : [],
         "prestige" : 1586,
         "recepies" : 
         [
@@ -1082,7 +2191,7 @@
         {
           "available" : 996
         },
-        "fighteraverage" : 476,
+        "fighteraverage" : 664,
         "inventory" : 
         {
           "fungible" : 
@@ -1094,23 +2203,15 @@
           }
         },
         "name" : "carol",
-        "ongoings" : 
-        [
-          {
-            "blocksleft" : 23,
-            "recipeid" : 1,
-            "type" : 4
-          }
-        ],
-        "prestige" : 1586,
+        "ongoings" : [],
+        "prestige" : 2107,
         "recepies" : 
         [
-          20,
-          1
+          20
         ],
-        "rewardsserial" : 0,
+        "rewardsserial" : 1,
         "tournamentperformance" : 1,
-        "valuecommon" : 476,
+        "valuecommon" : 601,
         "valueepic" : 0,
         "valuerare" : 0,
         "valueuncommon" : 0
@@ -1126,29 +2227,23 @@
         {
           "fungible" : 
           {
+            "Common_Candy Button" : 10,
             "Common_Candy Cane" : 9,
-            "Common_Chocolate Chip" : 20,
+            "Common_Chocolate Chip" : 30,
             "Common_Fizzy Powder" : 9,
+            "Common_Fruit Slice" : 10,
             "Common_Icing" : 20,
             "Common_Nonpareil" : 10
           }
         },
         "name" : "dave",
-        "ongoings" : 
-        [
-          {
-            "blocksleft" : 11,
-            "expeditionblueprintid" : "93ad71bb-cd8f-dc24-7885-2c3fd0013245",
-            "fighterdatabaseid" : 29,
-            "type" : 2
-          }
-        ],
+        "ongoings" : [],
         "prestige" : 1586,
         "recepies" : 
         [
           25
         ],
-        "rewardsserial" : 0,
+        "rewardsserial" : 3,
         "tournamentperformance" : 1,
         "valuecommon" : 476,
         "valueepic" : 0,
@@ -1180,6 +2275,215 @@
           5
         ],
         "rewardsserial" : 1,
+        "tournamentperformance" : 1,
+        "valuecommon" : 476,
+        "valueepic" : 0,
+        "valuerare" : 0,
+        "valueuncommon" : 0
+      },
+      {
+        "address" : "",
+        "balance" : 
+        {
+          "available" : 100
+        },
+        "fighteraverage" : 601,
+        "inventory" : 
+        {
+          "fungible" : 
+          {
+            "Common_Candy Cane" : 9,
+            "Common_Chocolate Chip" : 20,
+            "Common_Fizzy Powder" : 9,
+            "Common_Gumdrop" : 40,
+            "Common_Icing" : 20,
+            "Common_Nonpareil" : 10
+          }
+        },
+        "name" : "erin",
+        "ongoings" : [],
+        "prestige" : 2002,
+        "recepies" : 
+        [
+          62
+        ],
+        "rewardsserial" : 0,
+        "tournamentperformance" : 1,
+        "valuecommon" : 601,
+        "valueepic" : 0,
+        "valuerare" : 0,
+        "valueuncommon" : 0
+      },
+      {
+        "address" : "",
+        "balance" : 
+        {
+          "available" : 0
+        },
+        "fighteraverage" : 777,
+        "inventory" : 
+        {
+          "fungible" : 
+          {
+            "Common_Candy Cane" : 9,
+            "Common_Chocolate Chip" : 50,
+            "Common_Fizzy Powder" : 9,
+            "Common_Icing" : 40,
+            "Common_Nonpareil" : 30,
+            "Common_Sugar Glaze" : 20
+          }
+        },
+        "name" : "eve",
+        "ongoings" : [],
+        "prestige" : 2588,
+        "recepies" : 
+        [
+          70,
+          81
+        ],
+        "rewardsserial" : 11,
+        "tournamentperformance" : 2,
+        "valuecommon" : 777,
+        "valueepic" : 0,
+        "valuerare" : 0,
+        "valueuncommon" : 0
+      },
+      {
+        "address" : "",
+        "balance" : 
+        {
+          "available" : 0
+        },
+        "fighteraverage" : 601,
+        "inventory" : 
+        {
+          "fungible" : 
+          {
+            "Common_Candy Cane" : 9,
+            "Common_Chocolate Chip" : 40,
+            "Common_Fizzy Powder" : 9,
+            "Common_Icing" : 40,
+            "Common_Nonpareil" : 20,
+            "Common_Sugar Glaze" : 10
+          }
+        },
+        "name" : "finn",
+        "ongoings" : [],
+        "prestige" : 2002,
+        "recepies" : 
+        [
+          77,
+          82
+        ],
+        "rewardsserial" : 8,
+        "tournamentperformance" : 1,
+        "valuecommon" : 601,
+        "valueepic" : 0,
+        "valuerare" : 0,
+        "valueuncommon" : 0
+      },
+      {
+        "address" : "",
+        "balance" : 
+        {
+          "available" : 0
+        },
+        "fighteraverage" : 699,
+        "inventory" : 
+        {
+          "fungible" : 
+          {
+            "Common_Candy Button" : 5,
+            "Common_Candy Cane" : 9,
+            "Common_Chocolate Chip" : 20,
+            "Common_Fizzy Powder" : 14,
+            "Common_Gumball" : 5,
+            "Common_Icing" : 20,
+            "Common_Nonpareil" : 10
+          }
+        },
+        "name" : "gale",
+        "ongoings" : [],
+        "prestige" : 2328,
+        "recepies" : 
+        [
+          89
+        ],
+        "rewardsserial" : 3,
+        "tournamentperformance" : 2,
+        "valuecommon" : 699,
+        "valueepic" : 0,
+        "valuerare" : 0,
+        "valueuncommon" : 0
+      },
+      {
+        "address" : "",
+        "balance" : 
+        {
+          "available" : 0
+        },
+        "fighteraverage" : 601,
+        "inventory" : 
+        {
+          "fungible" : 
+          {
+            "Common_Candy Cane" : 9,
+            "Common_Chocolate Chip" : 25,
+            "Common_Fizzy Powder" : 9,
+            "Common_Fruit Slice" : 5,
+            "Common_Icing" : 20,
+            "Common_Nonpareil" : 10
+          }
+        },
+        "name" : "hana",
+        "ongoings" : [],
+        "prestige" : 2002,
+        "recepies" : 
+        [
+          96
+        ],
+        "rewardsserial" : 3,
+        "tournamentperformance" : 1,
+        "valuecommon" : 601,
+        "valueepic" : 0,
+        "valuerare" : 0,
+        "valueuncommon" : 0
+      },
+      {
+        "address" : "",
+        "balance" : 
+        {
+          "available" : 0
+        },
+        "fighteraverage" : 476,
+        "inventory" : 
+        {
+          "fungible" : 
+          {
+            "Common_Candy Cane" : 9,
+            "Common_Chocolate Chip" : 20,
+            "Common_Fizzy Powder" : 9,
+            "Common_Icing" : 20,
+            "Common_Nonpareil" : 10
+          }
+        },
+        "name" : "iris",
+        "ongoings" : 
+        [
+          {
+            "blocksleft" : 15,
+            "expeditionblueprintid" : "93ad71bb-cd8f-dc24-7885-2c3fd0013245",
+            "fighterdatabaseid" : 107,
+            "type" : 2
+          }
+        ],
+        "prestige" : 1586,
+        "recepies" : 
+        [
+          105,
+          106
+        ],
+        "rewardsserial" : 0,
         "tournamentperformance" : 1,
         "valuecommon" : 476,
         "valueepic" : 0,
