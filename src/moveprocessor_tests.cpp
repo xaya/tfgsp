@@ -705,7 +705,7 @@ TEST_F (CoinOperationTests, PutFighterForSaleAndThenBuy)
   ])");
   
   int secondsInOneDay = 24 * 60 * 60;
-  int blocksInOneDay = secondsInOneDay / 30;  
+  int blocksInOneDay = secondsInOneDay * 2 / 3;
   
   ft = tbl3.GetById(4, ctx.RoConfig());
   ASSERT_TRUE (ft != nullptr);
@@ -773,7 +773,7 @@ TEST_F (CoinOperationTests, PutFighterForSaleAndThenRemove)
   ])");
   
   int secondsInOneDay = 24 * 60 * 60;
-  int blocksInOneDay = secondsInOneDay / 30;  
+  int blocksInOneDay = secondsInOneDay * 2 / 3;
   ft = tbl3.GetById(4, ctx.RoConfig());
   ASSERT_TRUE (ft != nullptr);
 

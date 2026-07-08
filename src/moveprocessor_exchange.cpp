@@ -278,7 +278,7 @@ void MoveProcessor::MaybePutFighterForSale (const std::string& name, const Json:
     a->AddBalance(-listingfee);
     
     int32_t secondsInOneDay = 24 * 60 * 60;
-    int32_t blocksInOneDay = secondsInOneDay / 30;
+    int32_t blocksInOneDay = secondsInOneDay * 2 / 3;   /* ~1.5s Polygon blocks (was /30, a legacy 30s-block basis) */
     fighterDb->MutableProto().set_exchangeexpire(ctx.Height () + (duration * blocksInOneDay));
     fighterDb->MutableProto().set_exchangeprice(price);
     
