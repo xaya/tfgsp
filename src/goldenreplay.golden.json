@@ -76,7 +76,7 @@
           }
         ],
         "blocksleft" : 0,
-        "exchangeexpire" : 8685,
+        "exchangeexpire" : 172845,
         "exchangeprice" : 500,
         "expeditioninstanceid" : "",
         "fightertypeid" : "85f361b8-e55d-0244-1a98-26bffa0a18a2",
@@ -581,7 +581,7 @@
             "rewardsourceid" : ""
           }
         ],
-        "blocksleft" : 16,
+        "blocksleft" : 23,
         "exchangeexpire" : 0,
         "exchangeprice" : 0,
         "expeditioninstanceid" : "",
@@ -1097,7 +1097,7 @@
         "ongoings" : 
         [
           {
-            "blocksleft" : 16,
+            "blocksleft" : 23,
             "recipeid" : 1,
             "type" : 4
           }
