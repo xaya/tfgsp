@@ -91,6 +91,12 @@ GameParams::RemoveParam (const std::string& name)
   stmt.Execute ();
 }
 
+int32_t
+GameParams::ScaledDuration (int32_t base, uint32_t sweetness)
+{
+  return ScaleDuration (base, sweetness, GetParam ("duration_scale_pct"));
+}
+
 void
 GameParams::InitialiseDatabase ()
 {
@@ -98,6 +104,7 @@ GameParams::InitialiseDatabase ()
   SetParam ("tournament_loss_kills_enabled", 1);
   SetParam ("tournament_capture_pct", 128);
   SetParam ("tournament_max_captures", 3);
+  SetParam ("duration_scale_pct", 100);
 }
 
 int32_t

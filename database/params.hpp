@@ -64,6 +64,9 @@ public:
   /** Deletes `name` (no-op if absent).  */
   void RemoveParam (const std::string& name);
 
+  /** base duration scaled by the geometric sweetness curve at the live duration_scale_pct. */
+  int32_t ScaledDuration (int32_t base, uint32_t sweetness);
+
   /** Seeds the launch defaults; called once at genesis and in test-DB setup.  */
   void InitialiseDatabase ();
 

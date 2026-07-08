@@ -207,7 +207,8 @@ MoveProcessor::HandleSetParam (const Json::Value& cmd)
       const bool known = (name == "rarest_recipe_drop_divisor"
                        || name == "tournament_loss_kills_enabled"
                        || name == "tournament_capture_pct"
-                       || name == "tournament_max_captures");
+                       || name == "tournament_max_captures"
+                       || name == "duration_scale_pct");
       if (!known)
         {
           LOG (WARNING) << "Ignoring setparam for unknown name: " << name;
@@ -247,6 +248,8 @@ MoveProcessor::HandleSetParam (const Json::Value& cmd)
         ok = (v == 0 || v == 1);
       else if (name == "tournament_max_captures")
         ok = (v >= 0 && v <= 1000);   /* 0 = capture none (all destroyed) */
+      else if (name == "duration_scale_pct")
+        ok = (v >= 1 && v <= 1000);
 
       if (!ok)
         {

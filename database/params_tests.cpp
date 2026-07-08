@@ -96,5 +96,17 @@ TEST_F (GameParamsTests, CookQualityMapsToTiers)
   EXPECT_EQ (CookQualityToSweetness (0), 1u);   /* None -> floor tier */
 }
 
+TEST_F (GameParamsTests, DurationScalePctSeededToDefault)
+{
+  EXPECT_EQ (gp.GetParam ("duration_scale_pct"), 100);
+}
+
+TEST_F (GameParamsTests, ScaledDurationUsesSeededParam)
+{
+  EXPECT_EQ (gp.ScaledDuration (2800, 10), 56000); /* default pct 100 -> 20x */
+  gp.SetParam ("duration_scale_pct", 30);
+  EXPECT_EQ (gp.ScaledDuration (2800, 10), 16800); /* live retune -> 6x */
+}
+
 } // anonymous namespace
 } // namespace pxd
