@@ -9,8 +9,10 @@ launch-time) vs implementable now. Companion docs: `original-vs-rewrite.md` (per
 
 1. **Re-pin POLYGON genesis height** — `src/logic.cpp:160`. Still the placeholder tip
    `height = 89'246'000`, `hashHex = ""` (chosen ~2026-06-27). **Consensus-critical:** set to
-   the real Polygon tip at actual launch time; never change after. Owner gives tip → 1-line
-   edit + golden regen. (For the live-Polygon *test* gameid, bumping to the current tip is
+   the real Polygon tip at actual launch time; never change after. **Tooling ready
+   (2026-07-09): `contrib/repin-genesis.sh` — one command fetches tip+hash, edits, regenerates
+   the golden, runs full make check, commits; E2E-tested against live Polygon.** See
+   `docs/launch-runbook.md` step 4. (For the live-Polygon *test* gameid, bumping to the current tip is
    optional — only ~3 days / ~130k blocks of backfill from the current value.)
 
 2. **dev_address** — `proto/roconfig/params.pb.text:5`. Routes every WCHI bundle / dev
@@ -22,10 +24,17 @@ launch-time) vs implementable now. Companion docs: `original-vs-rewrite.md` (per
      roconfig blob; **golden byte-identical** (dev_address does not reach the golden replay
      state), full `make check` green. All tests read `dev_address` dynamically, so no test/
      fixture edits were needed. The **production** address remains TODO for the real gameid.
+     **Tooling ready (2026-07-09): `contrib/set-dev-address.sh 0xADDR` — checksum-validates,
+     edits BOTH repos in lockstep, regenerates + re-pins the roconfig blob hash, runs full GSP
+     make check + the frontend `dev-address-lockstep` vitest; E2E-tested.** Runbook step 3.
 
 3. **Live Polygon + XayaX end-to-end test** — `polygon-test/integration.py` only runs vs a
    FORKED (Anvil) Polygon, manually. Need a real-chain sync + move round-trip on live Polygon
    before sign-off. Owner: "we will make it live, just test it on live polygon anyway."
+   **Procedure written: `docs/launch-runbook.md` (claim g/tf FIRST → dev_address → genesis pin
+   → deploy → sync-verify → real-WCHI smoke test). Contract pins independently verified against
+   live Polygon 2026-07-09 (`tf-frontend/scripts/verify-contracts.mjs`: WCHI symbol/decimals ok,
+   XayaAccounts.wchiToken()==WCHI, + official xaya/wchi README match).**
 
 ## 🟡 Recommended hardening (implementable now)
 
