@@ -19,7 +19,7 @@ end-to-end tested against the fork/live RPC before launch day; the scripts live 
 ## 0. Preconditions (verify before starting)
 
 - [ ] `docs/launch-punchlist.md` shows no open 🔴 item other than the ones this runbook executes.
-- [ ] Both repos pushed + clean: `xaya/tf_polygon` (GSP) and `xaya/treatfighter_ui` (frontend).
+- [ ] Both repos pushed + clean: `xaya/tfgsp` branch `polygon-rewrite` (GSP — NEVER merge to main without the owner) and `xaya/treatfighter_ui` (frontend).
 - [ ] Contract pins verified against live Polygon (independent of our config):
       `cd tf-frontend && node scripts/verify-contracts.mjs`
       Expect: WCHI symbol/decimals ok, `XayaAccounts.wchiToken() == WCHI`, chainId 137.
