@@ -14,7 +14,7 @@
 - **Determinism / no float:** the geometric multiplier is a baked integer table (`DURATION_MULT`); runtime is integer/`uint64_t` math only. The float-ban lint must stay green.
 - **Build only in Docker:** the native host cannot build the GSP. Build + test via the `tf-builder:local` image, `--network none`, using `scratchpad/gspcheck.sh` (incremental `make` + full `make check`). Golden regen runs inside the container: `GOLDEN_REGEN=1 ./tests --gtest_filter='GoldenReplay*'`, then copy `src/goldenreplay.golden.json` back into the tree.
 - **Never rename** `recepie`/`recepies`/`ParseCookRecepie` (established misspelling).
-- **Commit author:** `snailbrainx <17693211+snailbrainx@users.noreply.github.com>`. NEVER add a Claude trailer.
+- **Commit author:** `snailbrainx <17693211+snailbrainx@users.noreply.github.com>`. NEVER add any co-author trailer.
 - **Branch:** `polygon-rewrite`.
 - **The multiplier table** `DURATION_MULT[1..10]` = `{256, 357, 498, 695, 969, 1352, 1886, 2630, 3669, 5120}` (fixed-point, `256 == 1.0×`; = `round(256 · 20^((sw-1)/9))`). Denominator `256 · 100 = 25600`.
 - **Cook rarity→sweetness map** `COOK_Q2S[0..4]` = `{1, 1, 4, 7, 10}` (index by `Quality`: None/Common→1, Uncommon→4, Rare→7, Epic→10).

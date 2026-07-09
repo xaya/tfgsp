@@ -193,9 +193,7 @@ CREATE INDEX IF NOT EXISTS `fighters_exchange_expire`
 ```bash
 cd /home/acoloss/treatfighter/tfgsp-polygon
 git add database/schema.sql database/fighter.cpp database/fighter_tests.cpp
-git commit -m "feat(gsp): denormalise exchange/quality fighter columns for indexed marketplace queries
-
-Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
+git commit -m "feat(gsp): denormalise exchange/quality fighter columns for indexed marketplace queries"
 ```
 
 ---
@@ -414,9 +412,7 @@ Note: `CountResult` is the anonymous-namespace struct already defined in `fighte
 
 ```bash
 git add database/fighter.hpp database/fighter.cpp database/fighter_tests.cpp
-git commit -m "feat(gsp): FighterTable::QueryExchange/CountExchange (paged, sorted, filtered marketplace query)
-
-Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
+git commit -m "feat(gsp): FighterTable::QueryExchange/CountExchange (paged, sorted, filtered marketplace query)"
 ```
 
 ---
@@ -556,9 +552,7 @@ Note: `Convert<FighterInstance>` is unchanged — its per-fighter `ongoings` sub
 
 ```bash
 git add src/gamestatejson.hpp src/gamestatejson.cpp src/gamestatejson_tests.cpp
-git commit -m "feat(gsp): getexchange serves one paged/sorted/filtered page + total (drops full-table scan + salehistory dump)
-
-Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
+git commit -m "feat(gsp): getexchange serves one paged/sorted/filtered page + total (drops full-table scan + salehistory dump)"
 ```
 
 ---
@@ -613,9 +607,7 @@ PXRpcServer::getexchange (const Json::Value& request)
 
 ```bash
 git add src/rpc-stubs/tf-rpc.json src/pxrpcserver.hpp src/pxrpcserver.cpp
-git commit -m "feat(gsp): getexchange RPC takes a query object (limit/offset/sort/filters)
-
-Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
+git commit -m "feat(gsp): getexchange RPC takes a query object (limit/offset/sort/filters)"
 ```
 
 ---
@@ -718,9 +710,7 @@ The set of fighters flipped, and the heights at which they flip, are **identical
 
 ```bash
 git add database/fighter.hpp database/fighter.cpp database/fighter_tests.cpp src/logic_tournament.cpp
-git commit -m "perf(gsp): event-driven listing expiry via (status,expire) index — idle blocks do ~zero work
-
-Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
+git commit -m "perf(gsp): event-driven listing expiry via (status,expire) index — idle blocks do ~zero work"
 ```
 
 ---
@@ -750,9 +740,7 @@ Confirm the diff is limited to hash/state fields and contains **no** change to f
 
 ```bash
 git add src/goldenreplay.golden.json
-git commit -m "chore(gsp): regenerate golden replay for the fighter exchange/quality columns (state-hash only)
-
-Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
+git commit -m "chore(gsp): regenerate golden replay for the fighter exchange/quality columns (state-hash only)"
 ```
 
 Note: the roconfig blob is unchanged (schema ≠ roconfig), so `RoConfigTests.LaunchConfigIsPinned` is unaffected and no roconfig re-pin is needed here. The launch-time genesis re-pin (`GetInitialStateBlock` Polygon height/hash) remains a separate, pre-existing launch blocker.
@@ -849,9 +837,7 @@ Add `Fighter` to the existing type import from `@/data/types` at the top of the 
 ```bash
 cd /home/acoloss/treatfighter/tf-frontend
 git add src/lib/chain/gsp-client.ts tests/data/gsp-exchange.test.ts
-git commit -m "feat(fe): GspClient.getExchange(query) returns one typed marketplace page
-
-Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
+git commit -m "feat(fe): GspClient.getExchange(query) returns one typed marketplace page"
 ```
 
 ---
@@ -976,9 +962,7 @@ export function clampPage(page: number, total: number, pageSize = EXCHANGE_PAGE_
 
 ```bash
 git add src/data/exchange-query.ts tests/data/exchange-query.test.ts
-git commit -m "feat(fe): marketplace query model + request encoder + pagination math (pure)
-
-Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
+git commit -m "feat(fe): marketplace query model + request encoder + pagination math (pure)"
 ```
 
 ---
@@ -1158,9 +1142,7 @@ Keep `import { useState } from 'react';` (already present). Remove `useSlice` im
 
 ```bash
 git add src/ui/exchange/useExchangeMarket.ts src/ui/exchange/ExchangeScreen.tsx app/global.css
-git commit -m "feat(fe): ExchangeScreen server-paginated market with sort/filter/paging via useExchangeMarket
-
-Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
+git commit -m "feat(fe): ExchangeScreen server-paginated market with sort/filter/paging via useExchangeMarket"
 ```
 
 ---
@@ -1203,9 +1185,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 
 ```bash
 git add src/data/slices.ts src/data/poller.ts tests/data/slices.test.ts tests/data/poller.test.ts tests/data/poller-live.test.ts
-git commit -m "refactor(fe): drop the per-block EXCHANGE poll slice — market is on-demand paged now
-
-Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
+git commit -m "refactor(fe): drop the per-block EXCHANGE poll slice — market is on-demand paged now"
 ```
 
 ---

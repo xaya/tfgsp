@@ -233,7 +233,7 @@ byte-identical):
   tutorial `cbd2e78a` tier + destroy via `capture_pct=0` on Chocolate Chip `e694d5f8`), plus `pc`
   (WCHI crystal buy), `nr` (WCHI name reroll), and `transfigure` (fighter/candy/recipe sacrifice).
   Every added move is EXPECT-guarded so a silent rejection can't pin false coverage; golden regenerated
-  (deterministic byte-for-byte compare + reorg/reorg_game green). Fable-reviewed clean. Remaining
+  (deterministic byte-for-byte compare + reorg/reorg_game green). Adversarially reviewed clean. Remaining
   golden-uncovered (non-blocking, unit-tested): transfigure options 0/1/2 + the o:3 success roll, and
   the capture-cap (outcome 4) / roster-full (outcome 3) permadeath sub-branches. Reward-roll DRY can
   now proceed on this pinned base.

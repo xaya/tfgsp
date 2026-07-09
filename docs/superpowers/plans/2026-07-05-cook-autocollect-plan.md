@@ -179,9 +179,7 @@ git commit -m "feat(gsp): cook auto-collects to Available + bumps rewards_serial
 A finished cook lands as a usable Available fighter (was Cooked) and bumps the
 player's append-only rewards_serial so the client reveals it with no claim tx;
 the full-roster refund bumps the serial too so the outcome is never silent. No
-rnd draw moves -- golden diff is exactly {status 7->0, domob rewardsserial 0->1}.
-
-Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
+rnd draw moves -- golden diff is exactly {status 7->0, domob rewardsserial 0->1}."
 ```
 
 ---
@@ -256,9 +254,7 @@ git commit -m "refactor(gsp): delete the ca.cl collect verb + the Cooked status
 Cooks auto-collect at resolve (prior commit), so the ca.cl verb, its parser, its
 Cooked-status gate, and all pending-state plumbing are dead -- removed wholesale,
 including the FighterStatus::Cooked enum value (nothing produces it now). A stale
-ca.cl move is a harmless no-op (CollectCookMoveIsInert). Golden byte-identical.
-
-Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
+ca.cl move is a harmless no-op (CollectCookMoveIsInert). Golden byte-identical."
 ```
 
 ---
@@ -377,9 +373,7 @@ git commit -m "feat(fe): reward-reveal diff detects auto-collected fighters + co
 
 snapshotInventory now records owned fighter ids + active cook-ongoing count;
 rewardDelta surfaces newFighters (a finished cook) and cookRefunded (a cook
-ongoing vanished with no new fighter — a full-roster refund).
-
-Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
+ongoing vanished with no new fighter — a full-roster refund)."
 ```
 
 ---
@@ -433,9 +427,7 @@ git commit -m "refactor(fe): remove the cook-collect button + all Cooked wording
 
 Cooks auto-collect on-chain, so the collectCook builder, the FighterDetail
 Collect button, and the FighterStatus.Cooked enum value + its labels/icons are
-dead — removed.
-
-Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
+dead — removed."
 ```
 
 ---
@@ -525,9 +517,7 @@ git commit -m "feat(fe): dramatic FighterRevealModal + cook-refund notice + rost
 A finished cook now auto-pops a dedicated 3D fighter reveal (serial-driven, no
 tx); a full-roster refund self-frames as 'roster full — cook refunded' listing
 what returned; the Pantry shows a proactive near-cap warning so a refund is
-never a surprise. RevealSwitch routes reward vs fighter vs refund from one place.
-
-Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
+never a surprise. RevealSwitch routes reward vs fighter vs refund from one place."
 ```
 
 ---
@@ -582,9 +572,7 @@ git commit -m "feat(fe): FTUE cook step raises the dramatic fighter reveal
 The sandbox cook now models the live auto-collect: on resolve it mints the
 fighter and raises the FighterRevealModal (via cookReveal → RevealSwitch);
 dismissing it advances to the roster step. Mirrors the expedition/tournament
-reveal-wait pattern.
-
-Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
+reveal-wait pattern."
 ```
 
 ---
