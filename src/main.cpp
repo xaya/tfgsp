@@ -21,7 +21,6 @@
 #include "logic.hpp"
 #include "pending.hpp"
 #include "pxrpcserver.hpp"
-#include "rest.hpp"
 
 #include <xayagame/defaultmain.hpp>
 #include <xayagame/game.hpp>
@@ -40,14 +39,6 @@
 
 #include <string>
 
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32) || defined(__MINGW32__) || defined(__MINGW64__)
-              // This is free and unencumbered software released into the public domain.
-#include <fcntl.h>
-#include <io.h>
-#include <windows.h>
-#endif               
-
-                                
 namespace
 {
 
@@ -61,9 +52,6 @@ DEFINE_int32 (game_rpc_port, 0,
               " (if non-zero)");
 DEFINE_bool (game_rpc_listen_locally, true,
              "whether the game's JSON-RPC server should listen locally");
-
-DEFINE_int32 (rest_port, 0,
-              "if non-zero, the port at which the REST interface should run");
 
 DEFINE_int32 (enable_pruning, -1,
               "if non-negative (including zero), old undo data will be pruned"
@@ -98,9 +86,6 @@ private:
    */
   pxd::PXLogic& rules;
 
-  /** The REST API port.  */
-  int restPort = 0;
-
   /** The game-state hasher, instantiated only if --statehash_interval > 0.  */
   std::unique_ptr<xaya::SQLiteHasher> hasher;
 
@@ -119,12 +104,6 @@ public:
       }
   }
 
-  void
-  EnableRest (const int p)
-  {
-    restPort = p;
-  }
-
   std::unique_ptr<xaya::RpcServerInterface>
   BuildRpcServer (xaya::Game& game,
                   jsonrpc::AbstractServerConnector& conn) override
@@ -141,32 +120,11 @@ public:
     return rpc;
   }
 
-  std::vector<std::unique_ptr<xaya::GameComponent>>
-  BuildGameComponents (xaya::Game& game) override
-  {
-    std::vector<std::unique_ptr<xaya::GameComponent>> res;
-
-    if (restPort != 0)
-      res.push_back (std::make_unique<pxd::RestApi> (game, rules, restPort));
-
-    return res;
-  }
 
 };
 
 } // anonymous namespace
 
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32) || defined(__MINGW32__) || defined(__MINGW64__)
-__attribute__((constructor))
-void
-winsane_init(void)
-{
-    _setmode(0, _O_BINARY);
-    _setmode(1, _O_BINARY);
-    SetConsoleCP(CP_UTF8);  // maybe will work someday
-    SetConsoleOutputCP(CP_UTF8);
-}
-#endif
 
 int
 main (int argc, char** argv)
@@ -236,8 +194,6 @@ main (int argc, char** argv)
   }  
   
   PXInstanceFactory instanceFact(rules);
-  if (FLAGS_rest_port != 0)
-    instanceFact.EnableRest (FLAGS_rest_port);
   config.InstanceFactory = &instanceFact;
 
   pxd::PendingMoves pending(rules);

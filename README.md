@@ -1,27 +1,53 @@
-This is the [GSP] (https://github.com/xaya/xaya_tutorials/wiki/The-Game-Processor) for Treat Fighter.
-It has been redeveloped from the great work by Tricky Fast but is now using the latest and complete Xaya SDK along with some extra features.
-To build you will first need to build [Libxayagame] (https://github.com/xaya/xaya_tutorials/wiki/How-to-Compile-libxayagame-in-Windows)
+# Treat Fighter — Game State Processor (Polygon)
 
-Then:
+The consensus daemon (`tfd`) for **Treat Fighter**, a candy-fighter strategy game on the
+Xaya platform running on **Polygon** via [XayaX](https://github.com/xaya/xayax). Players
+cook Treat Fighters from recipes and candy, send them on expeditions, sweeten them, and
+battle them in tournaments — all game state is deterministically derived from on-chain
+moves by this GSP.
 
-```
-./autogen.sh
-./configure
-make
-```
+Active development happens on the **`polygon-rewrite`** branch. `main` holds the old
+(pre-Polygon) game and is not merged to.
 
-On Windows, under Msys2 + Mingw64, it should properly finish all the unit tests:
+## Architecture
 
-```
-make check
-```
+- **Chain:** Polygon mainnet; moves are sent through the
+  [XayaAccounts](https://polygonscan.com/address/0x8C12253F71091b9582908C8a44F78870Ec6F304F)
+  contract and delivered to the GSP by a XayaX connector.
+- **This repo:** the game rules (C++17, libxayagame, SQLite state), a JSON-RPC server for
+  clients, and the read-only game configuration (`proto/roconfig`).
+- **Client:** a web frontend (Next.js) in a separate repo talks JSON-RPC to this daemon.
+- The daemon runs as a Linux Docker service only; there are no desktop/Windows builds.
 
-All the name_updates submited by wallet are verified and processed by [move processor] (https://github.com/xaya/tfgsp/blob/main/src/moveprocessor.hpp)
-Then any ongoing logic is processed inside core [logic class] (https://github.com/xaya/tfgsp/blob/main/src/logic.hpp)
-Client fetches the [gamestate](https://github.com/xaya/tfgsp/blob/main/src/gamestatejson.hpp) based on the current screen, only the data it needs.
+## Building & testing
 
-Finally, [pendings class](https://github.com/xaya/tfgsp/blob/main/src/pending.hpp) takes care of signaling the pending moves.
+The supported build is the Docker one (which also gates on the full test suite):
 
-The rest are the files utilizing [Xaya SDK] (https://github.com/xaya/xaya_tutorials/wiki/libxayagame-Component-Relationships) which automatically takes care of all low-level stuff, like ability to process coins or rewind blocks on forks.
+    docker build -f docker/Dockerfile -t tfd-polygon .
 
+`docker/docker-compose.yml` shows how `tfd` pairs with a XayaX Polygon connector.
 
+For local hacking, the classic autotools flow works inside an environment with
+libxayagame installed (e.g. the `xaya/libxayagame` image):
+
+    ./autogen.sh && ./configure && make && make check
+
+`make check` runs the unit suites, the golden-replay regression (byte-exact state
+pinning), both reorg suites, and the consensus-determinism lint.
+
+## Repository layout
+
+| Path | Contents |
+|---|---|
+| `src/` | game logic, move processing, RPC server, golden replay |
+| `database/` | SQLite-backed state objects (fighters, recipes, tournaments, …) |
+| `proto/`, `proto2/` | protocol buffers + the pinned read-only config blob |
+| `docker/` | production image + compose reference |
+| `contrib/` | launch tooling (genesis re-pin, dev-address swap, determinism lint) |
+| `polygon-test/` | live-chain integration test (against a forked-Polygon harness) |
+| `docs/` | design docs, audits, launch punch-list and runbook |
+
+## Launch
+
+See `docs/launch-runbook.md` for the ordered mainnet launch procedure and
+`docs/launch-punchlist.md` for what must be true before it runs.

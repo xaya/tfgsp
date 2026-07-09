@@ -50,3 +50,6 @@ Makefile.in
 .env.*
 *.key
 *.pem
+
+# agentic-workflow session scratch (task briefs/reports)
+.superpowers/

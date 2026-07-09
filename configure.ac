@@ -64,7 +64,6 @@ PKG_CHECK_MODULES([BENCHMARK], [benchmark])
 
 AC_CONFIG_FILES([
   Makefile \
-  libwinsane/Makefile \
   database/Makefile \
   proto/Makefile \
   proto2/Makefile \

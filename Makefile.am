@@ -1,9 +1,5 @@
 ACLOCAL_AMFLAGS = ${ACLOCAL_FLAGS} -Im4
- ifeq ($(OS),Windows_NT)
- SUBDIRS = proto proto2 database libwinsane src
- else
- SUBDIRS = proto proto2 database src
- endif
+SUBDIRS = proto proto2 database src
 
 # Determinism gate: forbid raw float/double in the consensus code (src/ +
 # database/), which would risk a 1-ULP cross-node divergence -> chain fork.
