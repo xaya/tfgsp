@@ -85,6 +85,13 @@ against reorgs of the pinned block.)
    rule — Docker's default 192.168.0.0/20 grab cuts server access).
 3. Start xayax → wait until it tracks the live tip. Start the GSP → it should sync from
    the pinned genesis to the tip in minutes (fresh chain, near-zero backfill).
+   **The GSP MUST run with `restart: unless-stopped` AND an RPC-liveness watchdog** that
+   restarts the container when `getnullstate` stops answering. Evidence (2026-07-09, fork):
+   libxayagame can abort on a benign RPC/block-commit race (`sqlitestorage.cpp:433`
+   `sqlite3_snapshot_open == SQLITE_BUSY` during a `getuser`) and the aborting process can
+   WEDGE half-dead — container Up, RPC gone — which no docker restart policy catches.
+   Recovery is clean (it resumes from committed state), so auto-restart fully mitigates.
+   The fork stack's `gsp-watchdog.sh` + compose healthcheck is the reference setup.
 4. Sync check: `getnullstate` returns `state: "up-to-date"` and the block hash matches a
    block explorer's hash for that height.
 5. Frontend production build + serve:
