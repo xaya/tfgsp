@@ -358,6 +358,9 @@ protected:
       ProcessWithDevPayment (m.str (), 14000000);
       ft = tbl3.GetById (andyFt, ctx.RoConfig ());
       EXPECT_TRUE (ft->GetProto ().isnamererolled ());   // guard: reroll consumed
+      /* Also pin it through the JSON serialization path (gamestatejson.cpp),
+         not just the proto -- that is what the web client actually reads. */
+      EXPECT_TRUE (converter.Convert (*ft)["isnamererolled"].asBool ());
       ft.reset ();
     }
 

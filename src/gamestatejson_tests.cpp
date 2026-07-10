@@ -255,6 +255,7 @@ TEST_F (XayaPlayersJsonTests, FighterInstance)
                         "fightertypeid" : "c160f7ad-c775-8614-abe2-8ef74e54401f",
                         "highestappliedsweetener" : 1,
                         "id" : 3,
+                        "isnamererolled" : false,
                         "moves" :
                         [
                                 {

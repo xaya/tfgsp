@@ -38,6 +38,7 @@
         "highestappliedsweetener" : 1,
         "id" : 3,
         "isaccountbound" : true,
+        "isnamererolled" : false,
         "moves" : 
         [
           {
@@ -84,6 +85,7 @@
         "highestappliedsweetener" : 1,
         "id" : 4,
         "isaccountbound" : false,
+        "isnamererolled" : false,
         "moves" : 
         [
           {
@@ -130,6 +132,7 @@
         "highestappliedsweetener" : 1,
         "id" : 8,
         "isaccountbound" : true,
+        "isnamererolled" : false,
         "moves" : 
         [
           {
@@ -176,6 +179,7 @@
         "highestappliedsweetener" : 1,
         "id" : 9,
         "isaccountbound" : true,
+        "isnamererolled" : false,
         "moves" : 
         [
           {
@@ -222,6 +226,7 @@
         "highestappliedsweetener" : 1,
         "id" : 13,
         "isaccountbound" : true,
+        "isnamererolled" : false,
         "moves" : 
         [
           {
@@ -268,6 +273,7 @@
         "highestappliedsweetener" : 1,
         "id" : 14,
         "isaccountbound" : true,
+        "isnamererolled" : false,
         "moves" : 
         [
           {
@@ -314,6 +320,7 @@
         "highestappliedsweetener" : 1,
         "id" : 18,
         "isaccountbound" : true,
+        "isnamererolled" : false,
         "moves" : 
         [
           {
@@ -360,6 +367,7 @@
         "highestappliedsweetener" : 1,
         "id" : 19,
         "isaccountbound" : true,
+        "isnamererolled" : false,
         "moves" : 
         [
           {
@@ -406,6 +414,7 @@
         "highestappliedsweetener" : 1,
         "id" : 23,
         "isaccountbound" : true,
+        "isnamererolled" : false,
         "moves" : 
         [
           {
@@ -452,6 +461,7 @@
         "highestappliedsweetener" : 1,
         "id" : 24,
         "isaccountbound" : true,
+        "isnamererolled" : false,
         "moves" : 
         [
           {
@@ -498,6 +508,7 @@
         "highestappliedsweetener" : 1,
         "id" : 26,
         "isaccountbound" : true,
+        "isnamererolled" : true,
         "moves" : 
         [
           {
@@ -544,6 +555,7 @@
         "highestappliedsweetener" : 2,
         "id" : 28,
         "isaccountbound" : true,
+        "isnamererolled" : false,
         "moves" : 
         [
           {
@@ -593,6 +605,7 @@
         "highestappliedsweetener" : 1,
         "id" : 29,
         "isaccountbound" : true,
+        "isnamererolled" : false,
         "moves" : 
         [
           {
@@ -639,6 +652,7 @@
         "highestappliedsweetener" : 1,
         "id" : 56,
         "isaccountbound" : true,
+        "isnamererolled" : false,
         "moves" : 
         [
           {
@@ -685,6 +699,7 @@
         "highestappliedsweetener" : 1,
         "id" : 60,
         "isaccountbound" : true,
+        "isnamererolled" : false,
         "moves" : 
         [
           {
@@ -731,6 +746,7 @@
         "highestappliedsweetener" : 1,
         "id" : 61,
         "isaccountbound" : true,
+        "isnamererolled" : false,
         "moves" : 
         [
           {
@@ -777,6 +793,7 @@
         "highestappliedsweetener" : 1,
         "id" : 63,
         "isaccountbound" : false,
+        "isnamererolled" : false,
         "moves" : 
         [
           {
@@ -823,6 +840,7 @@
         "highestappliedsweetener" : 1,
         "id" : 68,
         "isaccountbound" : true,
+        "isnamererolled" : false,
         "moves" : 
         [
           {
@@ -869,6 +887,7 @@
         "highestappliedsweetener" : 1,
         "id" : 69,
         "isaccountbound" : true,
+        "isnamererolled" : false,
         "moves" : 
         [
           {
@@ -915,6 +934,7 @@
         "highestappliedsweetener" : 1,
         "id" : 71,
         "isaccountbound" : false,
+        "isnamererolled" : false,
         "moves" : 
         [
           {
@@ -961,6 +981,7 @@
         "highestappliedsweetener" : 1,
         "id" : 72,
         "isaccountbound" : false,
+        "isnamererolled" : false,
         "moves" : 
         [
           {
@@ -1007,6 +1028,7 @@
         "highestappliedsweetener" : 1,
         "id" : 75,
         "isaccountbound" : true,
+        "isnamererolled" : false,
         "moves" : 
         [
           {
@@ -1053,6 +1075,7 @@
         "highestappliedsweetener" : 1,
         "id" : 76,
         "isaccountbound" : true,
+        "isnamererolled" : false,
         "moves" : 
         [
           {
@@ -1099,6 +1122,7 @@
         "highestappliedsweetener" : 1,
         "id" : 78,
         "isaccountbound" : false,
+        "isnamererolled" : false,
         "moves" : 
         [
           {
@@ -1145,6 +1169,7 @@
         "highestappliedsweetener" : 1,
         "id" : 79,
         "isaccountbound" : false,
+        "isnamererolled" : false,
         "moves" : 
         [
           {
@@ -1191,6 +1216,7 @@
         "highestappliedsweetener" : 1,
         "id" : 87,
         "isaccountbound" : true,
+        "isnamererolled" : false,
         "moves" : 
         [
           {
@@ -1237,6 +1263,7 @@
         "highestappliedsweetener" : 1,
         "id" : 88,
         "isaccountbound" : true,
+        "isnamererolled" : false,
         "moves" : 
         [
           {
@@ -1283,6 +1310,7 @@
         "highestappliedsweetener" : 1,
         "id" : 90,
         "isaccountbound" : false,
+        "isnamererolled" : false,
         "moves" : 
         [
           {
@@ -1329,6 +1357,7 @@
         "highestappliedsweetener" : 1,
         "id" : 91,
         "isaccountbound" : false,
+        "isnamererolled" : false,
         "moves" : 
         [
           {
@@ -1375,6 +1404,7 @@
         "highestappliedsweetener" : 1,
         "id" : 94,
         "isaccountbound" : true,
+        "isnamererolled" : false,
         "moves" : 
         [
           {
@@ -1421,6 +1451,7 @@
         "highestappliedsweetener" : 1,
         "id" : 95,
         "isaccountbound" : true,
+        "isnamererolled" : false,
         "moves" : 
         [
           {
@@ -1467,6 +1498,7 @@
         "highestappliedsweetener" : 1,
         "id" : 97,
         "isaccountbound" : false,
+        "isnamererolled" : false,
         "moves" : 
         [
           {
@@ -1513,6 +1545,7 @@
         "highestappliedsweetener" : 1,
         "id" : 103,
         "isaccountbound" : true,
+        "isnamererolled" : false,
         "moves" : 
         [
           {
@@ -1559,6 +1592,7 @@
         "highestappliedsweetener" : 1,
         "id" : 104,
         "isaccountbound" : true,
+        "isnamererolled" : false,
         "moves" : 
         [
           {
@@ -1605,6 +1639,7 @@
         "highestappliedsweetener" : 1,
         "id" : 107,
         "isaccountbound" : true,
+        "isnamererolled" : false,
         "moves" : 
         [
           {

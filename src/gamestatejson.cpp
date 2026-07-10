@@ -182,6 +182,7 @@ template <>
 
   res["firstnamerarity"] = IntToJson (pb.firstnamerarity());
   res["secondnamerarity"] = IntToJson (pb.secondnamerarity());
+  res["isnamererolled"] = pb.isnamererolled();
   
   Json::Value moves(Json::arrayValue);
   
