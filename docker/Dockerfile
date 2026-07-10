@@ -53,6 +53,9 @@ RUN chmod +x bin/entrypoint.sh
 
 # Construct final runtime image (must be glibc/Debian to match cpld'd libs).
 FROM debian:13-slim
+# curl is required by the docker-compose healthcheck (getnullstate probe).
+RUN apt-get update && apt-get -y install --no-install-recommends curl \
+  && rm -rf /var/lib/apt/lists/*
 COPY --from=build /jail /usr/local/
 ENV LD_LIBRARY_PATH="/usr/local/lib64"
 ENV XAYAGAME_DIR="/xayagame"

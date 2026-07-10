@@ -24,7 +24,7 @@ end-to-end tested against the fork/live RPC before launch day; the scripts live 
       `cd tf-frontend && node scripts/verify-contracts.mjs`
       Expect: WCHI symbol/decimals ok, `XayaAccounts.wchiToken() == WCHI`, chainId 137.
 - [ ] Product sign-offs recorded: permadeath ON/OFF at genesis (runtime-tunable later via
-      `g/tf` admin: `tournament_kills_enabled`, `tournament_capture_pct`, `tournament_max_captures`),
+      `g/tf` admin: `tournament_loss_kills_enabled`, `tournament_capture_pct`, `tournament_max_captures`),
       tournament JoinCost stays 0 at launch (raising it later = roconfig change + redeploy,
       NOT retunable at runtime — decide deliberately).
 - [ ] The `tf-builder:local` Docker image builds the GSP green: `contrib/` scripts depend on it.
@@ -32,18 +32,24 @@ end-to-end tested against the fork/live RPC before launch day; the scripts live 
 ## 1. Freeze
 
 No further merges to either repo after this point except the two config commits below
-(steps 2-3 produce them). Announce the freeze.
+(steps 3-4 produce them). Announce the freeze.
 
-## 2. Claim `g/tf` FIRST
+## 2. Secure `g/tf` custody FIRST
 
 The `g/tf` name is the game's admin channel (runtime balance retunes, emergency
 `duration_scale_pct`, permadeath knobs). **It must be owned by the custody wallet before
-the game is announced** — an attacker who registers it first owns your admin channel.
+the game is announced.** Context: an attacker who registers an unclaimed admin name
+first owns the admin channel — that race is already closed here, because `g/tf` is
+ALREADY registered on live Polygon (confirmed by the 2026-07-10 audit). The remaining
+risk is WHERE it sits, so this step is verify + transfer, not register:
 
-1. From the custody wallet, register the name `tf` in namespace `g` on the XayaAccounts
-   contract (`0x8C12253F71091b9582908C8a44F78870Ec6F304F`): approve WCHI for the
-   registration fee, then `register("g", "tf")`.
-2. Verify ownership: `XayaAccounts.ownerOf(tokenIdForName("g","tf"))` == custody address.
+1. Read the current owner on the XayaAccounts contract
+   (`0x8C12253F71091b9582908C8a44F78870Ec6F304F`):
+   `XayaAccounts.ownerOf(tokenIdForName("g","tf"))`.
+2. Confirm that address is the intended custody wallet (owner input #2). If it is
+   currently on a hot/dev wallet instead, transfer the name — it is a plain ERC-721:
+   `safeTransferFrom(currentOwner, custodyWallet, tokenIdForName("g","tf"))` — then
+   re-run the `ownerOf` check and confirm it now returns the custody wallet.
 
 Note: do NOT send the admin-path test move yet — the genesis is pinned LATER (step 4) at a
 height *after* this moment, so a move sent now would land before genesis and never reach the
@@ -85,13 +91,23 @@ against reorgs of the pinned block.)
    rule — Docker's default 192.168.0.0/20 grab cuts server access).
 3. Start xayax → wait until it tracks the live tip. Start the GSP → it should sync from
    the pinned genesis to the tip in minutes (fresh chain, near-zero backfill).
-   **The GSP MUST run with `restart: unless-stopped` AND an RPC-liveness watchdog** that
-   restarts the container when `getnullstate` stops answering. Evidence (2026-07-09, fork):
-   libxayagame can abort on a benign RPC/block-commit race (`sqlitestorage.cpp:433`
-   `sqlite3_snapshot_open == SQLITE_BUSY` during a `getuser`) and the aborting process can
-   WEDGE half-dead — container Up, RPC gone — which no docker restart policy catches.
-   Recovery is clean (it resumes from committed state), so auto-restart fully mitigates.
-   The fork stack's `gsp-watchdog.sh` + compose healthcheck is the reference setup.
+   **The GSP MUST run with `restart: unless-stopped` AND the shipped host-cron progress
+   watchdog `contrib/gsp-progress-watchdog.sh`** (cron every 2 min; config via
+   `GSP_URL`/`XAYAX_URL`/`CONTAINER`/`MAX_LAG`/`STATE_FILE` env or flags — see the script
+   header). It `docker restart`s the GSP on EITHER observed wedge:
+   - **half-dead RPC** (2026-07-09, fork): libxayagame can abort on a benign
+     RPC/block-commit race (`sqlitestorage.cpp:433` `sqlite3_snapshot_open == SQLITE_BUSY`
+     during a `getuser`) and the aborting process WEDGES — container Up, RPC gone — which
+     no docker restart policy catches;
+   - **responsive-but-stalled sync** (2026-07-10, live Polygon, audit P0-02): after missed
+     ZMQ notifications the GSP kept answering RPC while frozen `catching-up` ~716k blocks
+     behind a healthy XayaX for ~12 days. An RPC-liveness-only watchdog (the old fork
+     `gsp-watchdog.sh` pattern) is BLIND to this — hence the watchdog's height-progress
+     check and its bounded-lag check against XayaX `getblockchaininfo`.
+   Recovery is clean in both cases (the GSP resumes from committed state), so auto-restart
+   fully mitigates. The compose file also ships a `getnullstate` healthcheck on `tfd` for
+   `docker ps` visibility — remember Docker NEVER restarts a merely-unhealthy container;
+   the cron watchdog does the restarting.
 4. Sync check: `getnullstate` returns `state: "up-to-date"` and the block hash matches a
    block explorer's hash for that height.
 5. Frontend production build + serve:
@@ -119,10 +135,40 @@ From a throwaway wallet with a few WCHI + POL:
    dev_address** on a block explorer. This is the one check that catches a wrong
    dev_address with real consequences while stakes are still tiny.
 4. Enter + resolve the Choc Training tournament vs a second throwaway account.
-5. **Prove the admin path with the real custody keys**: from the custody wallet send the
-   no-op admin move `{"cmd":{"param":[{"n":"duration_scale_pct","v":100}]}}` on `g/tf`
-   (sets the default — changes nothing) and confirm the GSP log shows
-   `Processing 1 admin commands` for that block.
+5. **Prove the admin path with the real custody keys — EVERY emergency lever, once**:
+   from the custody wallet send one no-op admin move on `g/tf` that sets each lever to
+   its seeded default (changes nothing, but proves every accepted name end-to-end):
+
+   ```
+   {"cmd":{"param":[
+     {"n":"duration_scale_pct","v":100},
+     {"n":"rarest_recipe_drop_divisor","v":4},
+     {"n":"tournament_loss_kills_enabled","v":1},
+     {"n":"tournament_capture_pct","v":128},
+     {"n":"tournament_max_captures","v":3}]}}
+   ```
+
+   Then confirm ALL of:
+   - the GSP log shows `Processing 1 admin commands` for that block;
+   - the log shows NO `Ignoring setparam for unknown name` / `Ignoring out-of-range` /
+     `Refusing to remove` warning. An accepted lever logs nothing further; a typo'd name
+     is SILENTLY skipped apart from that warning — exactly how the wrong lever name
+     `tournament_kills_enabled` sat in this runbook as a documented-but-no-op kill switch
+     until the 2026-07-10 audit (P1-05). Never trust the move alone; check the log.
+   - the stored values. The levers live in the consensus `parameters` KV table, which is
+     NOT exposed through any public RPC, so read it from the data volume on the docker
+     host (read-only; safe while the daemon runs):
+
+     ```
+     sqlite3 -readonly "$(find "$(docker volume inspect -f '{{.Mountpoint}}' \
+         treatfighter_tfd-data)" -name '*.sqlite' | head -1)" \
+       'SELECT name, value FROM parameters ORDER BY name;'
+     ```
+
+     Expect exactly the five levers at their defaults
+     (`duration_scale_pct=100`, `rarest_recipe_drop_divisor=4`,
+     `tournament_capture_pct=128`, `tournament_loss_kills_enabled=1`,
+     `tournament_max_captures=3`).
 
 ## 7. Announce
 
@@ -130,8 +176,12 @@ From a throwaway wallet with a few WCHI + POL:
   immutable-by-policy.
 - Watch: GSP log (admin commands, warnings), dev_address balance, exchange listings.
 - Emergency levers (via `g/tf`, effective next block, no redeploy):
-  `duration_scale_pct` (1-1000), `rarest_recipe_drop_divisor`, `tournament_kills_enabled`,
-  `tournament_capture_pct` (0-256), `tournament_max_captures`.
+  `duration_scale_pct` (1-1000), `rarest_recipe_drop_divisor` (1-100000),
+  `tournament_loss_kills_enabled` (0/1), `tournament_capture_pct` (0-256),
+  `tournament_max_captures` (0-1000). These are the EXACT names accepted by
+  `HandleSetParam` (`src/moveprocessor.cpp`) — an unknown name is silently ignored
+  (a `LOG(WARNING)` is its only trace), which is how a wrong lever name survived in this
+  document until the 2026-07-10 audit (P1-05). All five are proven live in step 6.5.
 
 ## Rollback reality
 

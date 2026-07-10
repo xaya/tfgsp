@@ -237,16 +237,62 @@ byte-identical):
   golden-uncovered (non-blocking, unit-tested): transfigure options 0/1/2 + the o:3 success roll, and
   the capture-cap (outcome 4) / roster-full (outcome 3) permadeath sub-branches. Reward-roll DRY can
   now proceed on this pinned base.
-- The fighter-inventory cap `>` at cook/buy parse is **intentional** (speculative cook reverts with
-  a full refund at resolve — `RecepieInstanceRevertIfFullRoster`), NOT an off-by-one.
-- **Frontend serving scale — SSE block-signal fanout (web client, not GSP).** Every browser today
-  holds its own GSP `waitforchange` long-poll + per-block batched read → O(clients) load per block,
-  and the first ceiling to break at hundreds–thousands of clients is the **N parked `waitforchange`
-  connections** against libxayagame's bounded RPC thread pool. Fix = one server-side reader holds the
-  single `waitforchange` loop and pushes block signals to browsers over **SSE** (reuse taurionui
-  `fanout/{reader,server}.mjs`; `tf-frontend/poller.ts` is already modeled on it) — ~1–2 days.
-  Fine to soft-launch without it (≤ low-hundreds); **load-test the parked-connection ceiling before
-  scaling wide.** Full spec in `tf-frontend/BUILD_PLAN.md` §11 "Deferred — SSE block-signal fanout".
+- The fighter-inventory cap `>` at COOK parse is **intentional** (speculative cook reverts with
+  a full refund at resolve — `RecepieInstanceRevertIfFullRoster`), NOT an off-by-one. That rationale
+  does NOT extend to exchange buys: transfer is immediate with no resolve-time recheck, so the buy
+  parse uses `>=` (fixed 2026-07-10, audit P2-A — `>` allowed buying fighter cap+1 at exactly 48).
+- **Frontend serving scale — SSE block-signal fanout (web client, not GSP).** ✅ **DONE
+  (2026-07-10, tf-frontend `f633b09`/`089810e`).** One server-side reader holds the single GSP
+  `waitforchange` loop and fans block signals out to all browsers over `GET /events` (SSE) — the
+  per-tab GSP long-polls are gone, so upstream GSP cost is constant regardless of audience size.
+  Load-tested flat to 5000 concurrent streams (~9 KB/client). Ops notes live in
+  `docs/launch-runbook.md` step 5.5: **`TRUST_PROXY=1` is required behind a TLS proxy** (else the
+  per-IP cap of 8 acts as a global cap), plus the `SSE_MAX_CLIENTS`/`SSE_MAX_PER_IP` knobs.
+
+## 2026-07-10 audit follow-ups (external audit `CODEBASE_AUDIT_2026-07-10.md`, adversarially verified)
+
+Fixed this session (one working-tree batch, committed together after `make check`):
+
+- **P1-01 — `getfueldata` anonymous DoS.** The RPC is reachable unauthenticated through the web
+  proxy whitelist and did O(candidates × submitted-items) work with per-candidate deep copies.
+  Now bounded: `FuelRequestCapError` rejects oversized (well-formed) inputs with invalid-params
+  before any evaluation work.
+- **P1-03 — deleted fighters leaked their retained `owner=""` source-recipe row.** All fighter
+  deletion paths (deconstruct-resolve, permadeath destroy incl. roster-full/capture-cap overflow)
+  now go through `FighterTable::DeleteWithSourceRecipe`, which drops the recipe row with the
+  fighter; a capture keeps it (the transferred fighter still references it).
+- **P2-A — exchange buy at exactly the 48-fighter cap.** Buy parse now uses `>=` (see the
+  cook-vs-buy rationale above; fixed alongside a read-side market filter that hides listings whose
+  buy is already guaranteed to fail at the current height — no more wasted gas on
+  `expire == height` listings).
+- **P1-05 — the emergency control plane was mis-documented.** `docs/launch-runbook.md` named a
+  nonexistent `tournament_kills_enabled` (the accepted key is `tournament_loss_kills_enabled`;
+  unknown names are silently ignored) — the documented permadeath kill switch was a no-op. Both
+  occurrences fixed, ranges documented, and runbook step 6.5 now sends EVERY lever once (no-op
+  defaults) and verifies the log + the stored `parameters` rows.
+- **P0-01 residue — runbook step 2 rewritten.** `g/tf` is ALREADY registered on live Polygon, so
+  the step is now verify `ownerOf(tokenIdForName("g","tf"))` == custody wallet (+ ERC-721 transfer
+  off any hot wallet), not a fresh registration.
+- **P0-02 — responsive-but-stalled GSP had no watchdog.** The live GSP sat frozen `catching-up`
+  ~716k blocks behind a healthy XayaX for ~12 days; the only known watchdog pattern checked RPC
+  liveness and was blind to it. Shipped `contrib/gsp-progress-watchdog.sh` (host cron: RPC answers
+  + height progress + bounded lag vs XayaX `getblockchaininfo`, then `docker restart`), a
+  `getnullstate` compose healthcheck on `tfd` (visibility only — Docker never restarts unhealthy
+  containers; + `curl` in the runtime image for it), and runbook step 5.3 now mandates the shipped
+  watchdog. NOTE: the P0-02 verdict "do not launch on the current stalled stack" still stands —
+  the launch stack is rebuilt from the re-pinned genesis (🔴 #1) regardless.
+- **P2-20 — this punch-list reconciled** (SSE fanout marked DONE, the exchange-cap paragraph
+  corrected from "intentional" to fixed, this section added as the audit-fix ledger).
+
+Still open from the audit (tracked):
+
+- **Crystal-bundle price parity gate (P2-11).** `tf-frontend/src/data/crystal-bundles.ts`
+  hand-mirrors `proto/roconfig/crystalbundle.pb.text` (T1–T6 `CHICostSats`/`Quantity`) and its
+  header points at this punch-list, but no tracked item existed until now. Values manually
+  verified to match 2026-07-10 — that is a point-in-time check, not a gate. TODO: generate the
+  frontend table from the roconfig (or add a cross-repo parity test in the mold of
+  `dev-address-lockstep`) and run it as a mandatory launch/CI gate; a silent drift here misprices
+  real-WCHI purchases (overpay is unrefunded, underpay burns the WCHI and mints nothing).
 
 ## ✅ Confirmed clean (no action)
 

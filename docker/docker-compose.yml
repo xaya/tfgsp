@@ -48,6 +48,25 @@ services:
     command:
       - "tfd"
       - "--xaya_rpc_url=${XAYA_RPC_URL:-http://xayax:8000}"
+    # VISIBILITY ONLY: Docker never restarts a container for being unhealthy
+    # (restart policies fire on process exit, not on healthcheck state) — this
+    # just surfaces liveness in `docker ps` / `compose ps`.  The actual
+    # restarting is done by the host cron watchdog
+    # (contrib/gsp-progress-watchdog.sh), which additionally catches the
+    # responsive-but-stalled sync wedge (audit P0-02) that this in-container
+    # probe cannot see.
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          curl -sf --max-time 5 -X POST http://127.0.0.1:8600/
+          -H 'content-type: application/json'
+          -d '{"jsonrpc":"2.0","method":"getnullstate","params":[],"id":1}'
+          | grep -q '"state"'
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
 
 networks:
   tf-net:
