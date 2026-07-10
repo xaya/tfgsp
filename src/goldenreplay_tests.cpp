@@ -175,6 +175,26 @@ protected:
   }
 
   /**
+   * Mints an Available fighter for `owner` the way production cooking leaves
+   * one behind: referencing its OWN retained owner="" source recipe row (1:1,
+   * cf. ResolveCookingRecepie), with First Recipe as the stat template.
+   * `loseable` clears account-binding (tradeable / permadeath-eligible).
+   * Production-realistic per P1-03: minting several fighters from one shared
+   * template row would dangle every other fighter's source reference as soon
+   * as one of them is deleted together with the row.
+   */
+  uint32_t
+  MintFighter (const std::string& owner, const bool loseable = false)
+  {
+    const uint32_t rid = tbl2.CreateNew (
+        "", "5864a19b-c8c0-2d34-eaef-9455af0baf2c", ctx.RoConfig ())->GetId ();
+    auto f = tbl3.CreateNew (owner, rid, ctx.RoConfig (), rnd);
+    if (loseable)
+      f->MutableProto ().set_isaccountbound (false);
+    return f->GetId ();
+  }
+
+  /**
    * Captures the entire observable game state as canonical JSON.
    *
    * FullState() is the single full-state serializer (deterministic ORDER BY
@@ -230,13 +250,13 @@ protected:
     xayaplayers.CreateNew ("carol", ctx.RoConfig (), rnd)->AddBalance (1000);
     xayaplayers.CreateNew ("dave",  ctx.RoConfig (), rnd)->AddBalance (1000);
 
-    /* A known Available fighter for each non-domob player (recipe id 1 is used
-       only as the generation template -- it stays a valid row after domob
-       consumes its ownership by cooking).  */
-    const int andyFt  = tbl3.CreateNew ("andy",  1, ctx.RoConfig (), rnd)->GetId ();
-    const int bobFt   = tbl3.CreateNew ("bob",   1, ctx.RoConfig (), rnd)->GetId ();
-    const int carolFt = tbl3.CreateNew ("carol", 1, ctx.RoConfig (), rnd)->GetId ();
-    const int daveFt  = tbl3.CreateNew ("dave",  1, ctx.RoConfig (), rnd)->GetId ();
+    /* A known Available fighter for each non-domob player, each with its own
+       retained owner="" source recipe row as production cooking leaves it
+       (P1-03; bob's deconstruction below must find/delete HIS row only).  */
+    const int andyFt  = MintFighter ("andy");
+    const int bobFt   = MintFighter ("bob");
+    const int carolFt = MintFighter ("carol");
+    const int daveFt  = MintFighter ("dave");
 
     /* Give domob the candy for First Recipe and a payout address.  */
     {
@@ -367,15 +387,10 @@ protected:
     /* ---- transfigure: sacrifice a fighter + candy + recipe; target flips Transfiguring -> Available ---- */
     {
       xayaplayers.CreateNew ("erin", ctx.RoConfig (), rnd)->AddBalance (100);
-      const auto mkFree = [&] (const std::string& owner) -> uint32_t {
-        auto f = tbl3.CreateNew (owner, 1, ctx.RoConfig (), rnd);
-        f->MutableProto ().set_isaccountbound (false);
-        const uint32_t id = f->GetId ();
-        f.reset ();
-        return id;
-      };
-      const uint32_t tgt = mkFree ("erin");
-      const uint32_t sac = mkFree ("erin");
+      const uint32_t tgt = MintFighter ("erin", true);
+      const uint32_t sac = MintFighter ("erin", true);
+      const uint32_t sacRec
+          = tbl3.GetById (sac, ctx.RoConfig ())->GetProto ().recipeid ();
       const uint32_t rec = tbl2.CreateNew ("erin",
           "5864a19b-c8c0-2d34-eaef-9455af0baf2c", ctx.RoConfig ())->GetId ();   // First Recipe
       {
@@ -399,16 +414,10 @@ protected:
         t.reset ();
       }
       EXPECT_EQ (tbl3.GetById (sac, ctx.RoConfig ()), nullptr);      // guard: sacrifice deleted
+      EXPECT_EQ (tbl2.GetById (sacRec), nullptr);                    // guard: P1-03, its source recipe too
       AdvanceBlocks (1);                                             // Transfiguring -> Available
     }
 
-    const auto mkLoseable = [&] (const std::string& owner) -> uint32_t {
-      auto f = tbl3.CreateNew (owner, 1, ctx.RoConfig (), rnd);
-      f->MutableProto ().set_isaccountbound (false);
-      const uint32_t id = f->GetId ();
-      f.reset ();
-      return id;
-    };
     const auto joinTournament = [&] (const std::string& who, uint32_t tid,
                                      uint32_t x, uint32_t y) {
       std::ostringstream m;
@@ -433,9 +442,9 @@ protected:
       GameParams (db).SetParam ("tournament_loss_kills_enabled", 1);
       GameParams (db).SetParam ("tournament_capture_pct", 256);   // roll < 256 always -> capture
       xayaplayers.CreateNew ("eve", ctx.RoConfig (), rnd).reset ();
-      const uint32_t e1 = mkLoseable ("eve"), e2 = mkLoseable ("eve");
+      const uint32_t e1 = MintFighter ("eve", true), e2 = MintFighter ("eve", true);
       xayaplayers.CreateNew ("finn", ctx.RoConfig (), rnd).reset ();
-      const uint32_t f1 = mkLoseable ("finn"), f2 = mkLoseable ("finn");
+      const uint32_t f1 = MintFighter ("finn", true), f2 = MintFighter ("finn", true);
       AdvanceBlocks (1);   // ReopenMissingTournaments ensures a Listed instance exists (may pre-date this block)
       const uint32_t tid =
           tbl5.GetByAuthIdName ("cbd2e78a-37ce-b864-793d-8dd27788a774", ctx.RoConfig ())->GetId ();
@@ -450,9 +459,9 @@ protected:
     {
       GameParams (db).SetParam ("tournament_capture_pct", 0);   // roll < 0 never -> destroy
       xayaplayers.CreateNew ("gale", ctx.RoConfig (), rnd).reset ();
-      const uint32_t g1 = mkLoseable ("gale"), g2 = mkLoseable ("gale");
+      const uint32_t g1 = MintFighter ("gale", true), g2 = MintFighter ("gale", true);
       xayaplayers.CreateNew ("hana", ctx.RoConfig (), rnd).reset ();
-      const uint32_t h1 = mkLoseable ("hana"), h2 = mkLoseable ("hana");
+      const uint32_t h1 = MintFighter ("hana", true), h2 = MintFighter ("hana", true);
       AdvanceBlocks (1);
       const uint32_t tid =
           tbl5.GetByAuthIdName ("e694d5f8-e454-7774-ca76-fc2637a9407f", ctx.RoConfig ())->GetId ();
@@ -467,14 +476,7 @@ protected:
            "resolved + still-active" mix, decoupled from the block count above. ---- */
     {
       xayaplayers.CreateNew ("iris", ctx.RoConfig (), rnd).reset ();
-      /* Recipe instance 1 is deleted when bob's deconstruction resolves above (the extra blocks
-         push past its resolution height; ResolveDeconstruction deletes the fighter's source
-         recipe, logic_resolve.cpp:543), so build iris's fighter from a FRESH recipe instance as
-         the stat template — otherwise CreateNew can't resolve the template and yields a
-         sweetness-0 fighter that fails the expedition's MinSweetness gate. */
-      const int irisRec = tbl2.CreateNew ("iris",
-          "5864a19b-c8c0-2d34-eaef-9455af0baf2c", ctx.RoConfig ())->GetId ();
-      const uint32_t fid = tbl3.CreateNew ("iris", irisRec, ctx.RoConfig (), rnd)->GetId ();
+      const uint32_t fid = MintFighter ("iris");
       std::ostringstream m;
       m << R"([{"name":"iris","move":{"exp":{"f":{"eid":"93ad71bb-cd8f-dc24-7885-2c3fd0013245","fid":)"
         << fid << R"(}}}}])";

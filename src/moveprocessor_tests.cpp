@@ -692,11 +692,81 @@ TEST_F (CoinOperationTests, TransfigureWrongValues)
 
   Process (R"([
     {"name": "domob", "move": {"f": {"t": {"fid": 4, "o": 3, "if": [)"+sFc+R"(], "ic": [{"a":10, "n":")"+sCc+R"("}], "ir": [)"+sRc+R"(]}}}}
-  ])");    
-  
+  ])");
+
   ft = tbl3.GetById(4, ctx.RoConfig());
-  EXPECT_EQ (ft->GetStatus(), pxd::FighterStatus::Transfiguring); 
+  EXPECT_EQ (ft->GetStatus(), pxd::FighterStatus::Transfiguring);
   ft.reset();
+}
+
+/* P1-03: transfigure-sacrifice must delete each sacrificed fighter's retained
+   owner="" source recipe row (1:1 with the cooked fighter) -- including a
+   starter fighter's -- while a recipe row that still has an owner and a
+   dangling/absent recipeid are left alone (and crash nothing). */
+TEST_F (CoinOperationTests, TransfigureSacrificeDeletesSourceRecipes)
+{
+  /* domob's account creation mints starter fighters 3 & 4 with their retained
+     ownerless source recipes 1 & 2 (XayaPlayer ctor). */
+  xayaplayers.CreateNew ("domob", ctx.RoConfig (), rnd).reset ();
+
+  const auto mkRecipe = [&] (const std::string& owner) -> uint32_t
+  {
+    return tbl2.CreateNew (owner, "5864a19b-c8c0-2d34-eaef-9455af0baf2c",
+                           ctx.RoConfig ())->GetId ();
+  };
+
+  /* The transfigure target, itself a production-realistic cooked fighter. */
+  const uint32_t tgtRec = mkRecipe ("");
+  const uint32_t tgt
+      = tbl3.CreateNew ("domob", tgtRec, ctx.RoConfig (), rnd)->GetId ();
+
+  /* Sacrifice #1: cooked fighter with its retained owner="" source row. */
+  const uint32_t sac1Rec = mkRecipe ("");
+  const uint32_t sac1
+      = tbl3.CreateNew ("domob", sac1Rec, ctx.RoConfig (), rnd)->GetId ();
+
+  /* Sacrifice #2: its recipe row is still OWNED (an inventory recipe, not the
+     retained source) -- the row must survive. */
+  const uint32_t sac2Rec = mkRecipe ("domob");
+  const uint32_t sac2
+      = tbl3.CreateNew ("domob", sac2Rec, ctx.RoConfig (), rnd)->GetId ();
+
+  /* Sacrifice #3: dangling recipeid (no such row) -- must delete safely. */
+  const uint32_t sac3
+      = tbl3.CreateNew ("domob", 424242, ctx.RoConfig (), rnd)->GetId ();
+
+  /* Sacrifice #4: starter fighter 3 (source recipe id 1, owner ""). */
+  ASSERT_EQ (tbl3.GetById (3, ctx.RoConfig ())->GetProto ().recipeid (), 1u);
+  ASSERT_EQ (tbl2.GetById (1)->GetOwner (), "");
+
+  std::ostringstream m;
+  m << R"([{"name":"domob","move":{"f":{"t":{"fid":)" << tgt
+    << R"(,"o":3,"if":[)" << sac1 << "," << sac2 << "," << sac3
+    << R"(,3],"ic":[],"ir":[]}}}}])";
+  Process (m.str ());
+
+  /* The move went through: target flips Transfiguring, sacrifices are gone. */
+  auto t = tbl3.GetById (tgt, ctx.RoConfig ());
+  ASSERT_TRUE (t != nullptr);
+  EXPECT_EQ (t->GetStatus (), pxd::FighterStatus::Transfiguring);
+  t.reset ();
+  EXPECT_TRUE (tbl3.GetById (sac1, ctx.RoConfig ()) == nullptr);
+  EXPECT_TRUE (tbl3.GetById (sac2, ctx.RoConfig ()) == nullptr);
+  EXPECT_TRUE (tbl3.GetById (sac3, ctx.RoConfig ()) == nullptr);
+  EXPECT_TRUE (tbl3.GetById (3, ctx.RoConfig ()) == nullptr);
+
+  /* P1-03: the ownerless source rows died with their fighters ... */
+  EXPECT_TRUE (tbl2.GetById (sac1Rec) == nullptr);
+  EXPECT_TRUE (tbl2.GetById (1) == nullptr);
+  /* ... the owned row survives untouched ... */
+  auto r = tbl2.GetById (sac2Rec);
+  ASSERT_TRUE (r != nullptr);
+  EXPECT_EQ (r->GetOwner (), "domob");
+  r.reset ();
+  /* ... and the (alive) target keeps its source recipe, as does the other
+     starter fighter. */
+  EXPECT_TRUE (tbl2.GetById (tgtRec) != nullptr);
+  EXPECT_TRUE (tbl2.GetById (2) != nullptr);
 }
 
 TEST_F (CoinOperationTests, PutFighterForSaleAndThenBuy)
@@ -920,8 +990,10 @@ TEST_F (CoinOperationTests, HighPriceFighterSaleDoesNotOverflowOrHalt)
 }
 
 /* EXCH-6: a buy of an EXPIRED listing must be rejected -- the buyer keeps their
-   coins and the fighter stays with the seller.  ParseBuyData rejects once
-   ctx.Height() has passed the listing's exchangeexpire. */
+   coins and the fighter stays with the seller.  ParseBuyData rejects at
+   expire <= ctx.Height(), so the boundary block (expire == height) is already
+   unbuyable -- pinned here because the market view (getexchange) hides the
+   listing at exactly that block to match (P2-15). */
 TEST_F (CoinOperationTests, BuyOfExpiredListingIsRejected)
 {
   proto::ConfigData& cfg = const_cast <proto::ConfigData&>(*ctx.RoConfig());
@@ -958,22 +1030,27 @@ TEST_F (CoinOperationTests, BuyOfExpiredListingIsRejected)
     buyerBefore = a->GetBalance ();
   }
 
-  /* Jump past the listing's expiry, then attempt the buy. */
-  ctx.SetHeight (expireHeight + 1);
+  /* Attempt the buy at the exact expiry boundary and again one block past it:
+     both must be rejected with ownership unchanged and no coins moved. */
+  for (const uint64_t h : {expireHeight, expireHeight + 1})
+    {
+      ctx.SetHeight (h);
 
-  Process (R"([
-    {"name": "andy", "move": {"f": {"b": {"fid": 4}}}}
-  ])");
+      Process (R"([
+        {"name": "andy", "move": {"f": {"b": {"fid": 4}}}}
+      ])");
 
-  /* Rejected: ownership unchanged, no coins moved. */
-  ft = tbl3.GetById(4, ctx.RoConfig());
-  ASSERT_TRUE (ft != nullptr);
-  EXPECT_EQ (ft->GetOwner(), "domob") << "expired listing was still bought";
-  ft.reset();
-  {
-    auto a = xayaplayers.GetByName ("andy", ctx.RoConfig());
-    EXPECT_EQ (a->GetBalance (), buyerBefore) << "buyer was charged for an expired listing";
-  }
+      ft = tbl3.GetById(4, ctx.RoConfig());
+      ASSERT_TRUE (ft != nullptr);
+      EXPECT_EQ (ft->GetOwner(), "domob")
+          << "expired listing was still bought at height " << h;
+      ft.reset();
+      {
+        auto a = xayaplayers.GetByName ("andy", ctx.RoConfig());
+        EXPECT_EQ (a->GetBalance (), buyerBefore)
+            << "buyer was charged for an expired listing at height " << h;
+      }
+    }
 }
 
 /* EXCH-5: replaying a buy of the same listing within a single move must charge
@@ -1025,6 +1102,159 @@ TEST_F (CoinOperationTests, DoubleBuyOfSameListingChargesOnce)
     auto a = xayaplayers.GetByName ("andy", ctx.RoConfig());
     EXPECT_EQ (a->GetBalance (), buyerBefore - 500);
   }
+}
+
+/* P2-A regression fixture: exchange buys against a roster at or near
+   max_fighter_inventory_amount (48).  Unlike cooking, whose speculative
+   parse-time '>' is backstopped by a resolve-time '>=' recheck with a full
+   refund (RecepieInstanceRevertIfFullRoster), an exchange transfer is
+   immediate -- so ParseBuyData itself must reject once owned fighters plus
+   in-flight cooks leave no free slot. */
+class ExchangeBuyCapTests : public CoinOperationTests
+{
+
+protected:
+
+  OngoingsTable ongoings;
+
+  /** Recipe instance id used to mint filler fighters. */
+  uint32_t fillerRecipe;
+
+  ExchangeBuyCapTests ()
+    : ongoings(db)
+  {}
+
+  /**
+   * Sets up seller "domob" with fighter 4 listed for 500 crystals and a
+   * funded buyer "andy" whose roster is topped up to exactly the given
+   * number of owned fighters.  Returns andy's balance before the buy.
+   */
+  Amount
+  SetupListingAndRoster (const unsigned owned)
+  {
+    proto::ConfigData& cfg = const_cast <proto::ConfigData&>(*ctx.RoConfig());
+    xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (250 + cfg.params().starting_crystals());
+
+    Process (R"([
+      {"name": "domob", "move": {"a": {"x": 42, "init": {"address": "CGUpAcjsb6MDktSYg8yRDxDutr7FhWtdWC"}}}}
+    ])");
+    ctx.SetTimestamp(1000);
+    UpdateState ("[]");
+
+    auto ft = tbl3.GetById(4, ctx.RoConfig());
+    ft->MutableProto().set_isaccountbound(false);
+    ft.reset();
+
+    Process (R"([
+      {"name": "domob", "move": {"f": {"s": {"fid": 4, "d": 3, "p": 500}}}}
+    ])");
+
+    Process (R"([
+      {"name": "andy", "move": {"a": {"x": 42, "init": {"address": "psss"}}}}
+    ])");
+
+    fillerRecipe = tbl2.CreateNew ("", "5864a19b-c8c0-2d34-eaef-9455af0baf2c",
+                                   ctx.RoConfig ())->GetId ();
+    while (tbl3.CountForOwner ("andy") < owned)
+      tbl3.CreateNew ("andy", fillerRecipe, ctx.RoConfig (), rnd).reset ();
+    EXPECT_EQ (tbl3.CountForOwner ("andy"), owned);
+
+    auto a = xayaplayers.GetByName ("andy", ctx.RoConfig());
+    a->AddBalance (2000);
+    return a->GetBalance ();
+  }
+
+  /**
+   * Expects that the buy of fighter 4 was rejected outright: the listing is
+   * untouched and no crystals moved on either side.
+   */
+  void
+  ExpectBuyRejected (const Amount buyerBefore, const Amount sellerBefore)
+  {
+    auto ft = tbl3.GetById(4, ctx.RoConfig());
+    ASSERT_TRUE (ft != nullptr);
+    EXPECT_EQ (ft->GetOwner(), "domob") << "buy at the roster cap went through";
+    EXPECT_EQ (ft->GetStatus(), pxd::FighterStatus::Exchange);
+    EXPECT_EQ (ft->GetProto().exchangeprice(), 500);
+    ft.reset();
+    {
+      auto a = xayaplayers.GetByName ("andy", ctx.RoConfig());
+      EXPECT_EQ (a->GetBalance (), buyerBefore) << "buyer was charged for a rejected buy";
+    }
+    {
+      auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
+      EXPECT_EQ (a->GetBalance (), sellerBefore) << "seller was paid for a rejected buy";
+    }
+  }
+
+  Amount
+  SellerBalance ()
+  {
+    return xayaplayers.GetByName ("domob", ctx.RoConfig())->GetBalance ();
+  }
+};
+
+/* One free slot (47 owned of 48): the buy must succeed and fill the roster
+   to exactly the cap. */
+TEST_F (ExchangeBuyCapTests, BuyWithOneFreeSlotSucceeds)
+{
+  const uint32_t cap = ctx.RoConfig()->params().max_fighter_inventory_amount();
+  const Amount buyerBefore = SetupListingAndRoster (cap - 1);
+
+  Process (R"([
+    {"name": "andy", "move": {"f": {"b": {"fid": 4}}}}
+  ])");
+
+  auto ft = tbl3.GetById(4, ctx.RoConfig());
+  ASSERT_TRUE (ft != nullptr);
+  EXPECT_EQ (ft->GetOwner(), "andy");
+  EXPECT_EQ (ft->GetStatus(), pxd::FighterStatus::Available);
+  ft.reset();
+  EXPECT_EQ (tbl3.CountForOwner ("andy"), cap);
+  {
+    auto a = xayaplayers.GetByName ("andy", ctx.RoConfig());
+    EXPECT_EQ (a->GetBalance (), buyerBefore - 500);
+  }
+}
+
+/* P2-A regression proper: at EXACTLY the cap (48 owned) the buy must be
+   rejected -- the old '>' let it through and created fighter 49, with no
+   resolve-time recheck to catch it. */
+TEST_F (ExchangeBuyCapTests, BuyAtExactCapIsRejected)
+{
+  const uint32_t cap = ctx.RoConfig()->params().max_fighter_inventory_amount();
+  const Amount buyerBefore = SetupListingAndRoster (cap);
+  const Amount sellerBefore = SellerBalance ();
+
+  Process (R"([
+    {"name": "andy", "move": {"f": {"b": {"fid": 4}}}}
+  ])");
+
+  ExpectBuyRejected (buyerBefore, sellerBefore);
+  EXPECT_EQ (tbl3.CountForOwner ("andy"), cap);
+}
+
+/* An in-flight cook occupies a roster slot: 47 owned + 1 cooking == 48, so
+   the buy must be rejected just like at 48 owned. */
+TEST_F (ExchangeBuyCapTests, BuyWithCookInFlightAtCapIsRejected)
+{
+  const uint32_t cap = ctx.RoConfig()->params().max_fighter_inventory_amount();
+  const Amount buyerBefore = SetupListingAndRoster (cap - 1);
+  const Amount sellerBefore = SellerBalance ();
+
+  auto op = ongoings.CreateNew (ctx.Height ());
+  op->SetOwner ("andy");
+  op->SetHeight (ctx.Height () + 100);
+  op->MutableProto ().set_type ((uint32_t)pxd::OngoingType::COOK_RECIPE);
+  op->MutableProto ().set_recipeid (fillerRecipe);
+  op.reset ();
+
+  Process (R"([
+    {"name": "andy", "move": {"f": {"b": {"fid": 4}}}}
+  ])");
+
+  ExpectBuyRejected (buyerBefore, sellerBefore);
+  EXPECT_EQ (tbl3.CountForOwner ("andy"), cap - 1);
 }
 
 /* CRYS-1 regression: a sub-1000 cost multiplier must NOT make crystal bundles

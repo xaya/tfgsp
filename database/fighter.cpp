@@ -650,5 +650,27 @@ FighterTable::DeleteById (const Database::IdT id)
   stmt.Execute ();
 }
 
+void
+FighterTable::DeleteWithSourceRecipe (const Database::IdT id,
+                                      const RoConfig& cfg)
+{
+  auto fighter = GetById (id, cfg);
+  CHECK (fighter != nullptr) << "no fighter with ID " << id;
+  const Database::IdT recipeId = fighter->GetProto ().recipeid ();
+  fighter.reset ();
+
+  DeleteById (id);
+
+  if (recipeId == 0)
+    return;
+
+  RecipeInstanceTable recipes(db);
+  auto recipe = recipes.GetById (recipeId);
+  if (recipe == nullptr || recipe->GetOwner () != "")
+    return;
+  recipe.reset ();
+  recipes.DeleteById (recipeId);
+}
+
 
 } // namespace pxd

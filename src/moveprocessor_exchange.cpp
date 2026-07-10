@@ -241,7 +241,12 @@ namespace pxd
 
     slots += slots_already_cooking;
 
-    if(slots > ctx.RoConfig()->params().max_fighter_inventory_amount())
+    /* An exchange buy transfers the fighter IMMEDIATELY, so with no free slot
+       left (>=) it must be rejected right here.  This deliberately differs
+       from the speculative '>' at cook parse time, which is backstopped by a
+       resolve-time '>=' recheck with a full refund (logic_resolve.cpp) --
+       there is no such later guard on the buy path. */
+    if(slots >= ctx.RoConfig()->params().max_fighter_inventory_amount())
     {
         LOG (WARNING) << "Not enough slots to host a new fighter for " << fighterID;
         return false;

@@ -523,7 +523,6 @@ void PXLogic::ResolveDeconstruction(std::unique_ptr<XayaPlayer>& a, const uint32
     /* Account-bound fighters recover nothing (matches the old claim behaviour,
        which skipped the payout when isaccountbound). */
     const bool isAccountBound = fighter->GetProto().isaccountbound();
-    const uint32_t deconstructedRecipeId = fighter->GetProto().recipeid();
 
     recepie.reset();
     fighter.reset();
@@ -539,9 +538,9 @@ void PXLogic::ResolveDeconstruction(std::unique_ptr<XayaPlayer>& a, const uint32
       a->MutableProto().set_rewards_serial(a->GetProto().rewards_serial() + 1);
     }
 
-    fighters.DeleteById(fighterID);
-    if(deconstructedRecipeId > 0)
-      recipeTbl.DeleteById(deconstructedRecipeId);
+    /* P1-03: shared helper deletes the fighter + its retained owner="" source
+       recipe row (the row this resolver just read the candy list from). */
+    fighters.DeleteWithSourceRecipe(fighterID, ctx.RoConfig());
 
     a->CalculatePrestige(ctx.RoConfig());
 }
@@ -707,7 +706,9 @@ void PXLogic::ResolveCookingRecepie(std::unique_ptr<XayaPlayer>& a, const uint32
 
         /* The recipe row is intentionally kept (not deleted): the cooked
            fighter references its recipe id (e.g. the sweetener-cauldron
-           display reads it).  Cleared ownership marks it as used.  */
+           display reads it).  Cleared ownership marks it as used.  The row
+           dies WITH the fighter: every deletion path goes through
+           FighterTable::DeleteWithSourceRecipe (P1-03), so it cannot leak. */
     }
 }
 

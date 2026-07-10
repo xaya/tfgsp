@@ -393,6 +393,10 @@ namespace pxd
         
     uint32_t slots = fighters.CountForOwner(a.GetName());
 
+    /* Deliberately '>' (speculative): the fighter only materialises at resolve
+       time, which rechecks with '>=' and fully refunds on a full roster
+       (logic_resolve.cpp).  Exchange buys transfer immediately and thus use
+       '>=' at parse time instead (moveprocessor_exchange.cpp). */
     if(slots > ctx.RoConfig()->params().max_fighter_inventory_amount())
     {
         LOG (WARNING) << "Not enough slots to host a new fighter for " << recepieID;
@@ -497,7 +501,9 @@ namespace pxd
 	
     for(auto& ft : itemFighter)
 	{
-		fighters.DeleteById(ft.asInt());
+		/* P1-03: also removes the sacrificed fighter's retained owner=""
+		   source recipe row, which would otherwise leak forever. */
+		fighters.DeleteWithSourceRecipe(ft.asInt(), ctx.RoConfig());
 	}
 	
     for(auto& rc : itemRecipe)
@@ -642,14 +648,12 @@ namespace pxd
            && fighter->GetOwner() == name
            && (pxd::FighterStatus)(int32_t)fighter->GetStatus() == pxd::FighterStatus::Available)
         {
-          /* H4: the replaced fighter is consumed; delete its source recipe
-             (referenced only by this fighter) so it does not leak. */
-          const uint32_t consumedRecipeId = fighter->GetProto().recipeid();
-          fighters.DeleteById(fighter->GetId());
-          if(consumedRecipeId > 0)
-          {
-            recipeTbl.DeleteById(consumedRecipeId);
-          }
+          /* H4/P1-03: the replaced fighter is consumed together with its
+             retained owner="" source recipe row (shared helper; an owned row
+             is kept, so this can never delete the recipe being cooked). */
+          const Database::IdT consumedId = fighter->GetId();
+          fighter.reset();
+          fighters.DeleteWithSourceRecipe(consumedId, ctx.RoConfig());
 
           a->CalculatePrestige(ctx.RoConfig());
         }

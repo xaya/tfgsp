@@ -399,6 +399,19 @@ public:
    * Deletes the fighter with the given ID.
    */
   void DeleteById (Database::IdT id);
+
+  /**
+   * Deletes the fighter with the given ID together with its retained source
+   * recipe row.  Every cooked fighter keeps a 1:1 owner="" recipe row it
+   * references (see ResolveCookingRecepie), which becomes unreachable the
+   * moment the fighter is gone -- this is the ONE deletion path all
+   * fighter-destroying sites share so none of them leaks it (P1-03).  The
+   * recipe is deleted only when it is such a retained ownerless source:
+   * recipeid 0 or a missing row is skipped, and a row that still has an
+   * owner (a player inventory recipe) is left untouched.  The caller must
+   * not hold an open handle on the fighter.
+   */
+  void DeleteWithSourceRecipe (Database::IdT id, const RoConfig& cfg);
 };
 
 } // namespace pxd

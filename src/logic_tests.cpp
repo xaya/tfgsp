@@ -37,6 +37,7 @@
 
 #include <json/json.h>
 
+#include <map>
 #include <string>
 #include <vector>
 #include <sstream>
@@ -195,7 +196,28 @@ protected:
     std::string winner;                  // the resolved winnerid
     std::string loser;                   // the other player
     std::vector<uint32_t> loserEntered;  // the loser's two entered fighter ids
+    /** Entered fighter id -> its source recipe id (P1-03 recipe-row tests). */
+    std::map<uint32_t, uint32_t> recipeOf;
   };
+
+  /**
+   * Mints an Available fighter production-realistically: referencing its OWN
+   * retained owner="" source recipe row (1:1, as cooking leaves it -- P1-03),
+   * with First Recipe as the stat template.  Records the pairing in
+   * `recipeOf` so tests can check the row's fate after the fighter's.
+   */
+  uint32_t
+  MintFighter (const std::string& owner,
+               std::map<uint32_t, uint32_t>& recipeOf)
+  {
+    const uint32_t rid
+        = tbl2.CreateNew ("", "5864a19b-c8c0-2d34-eaef-9455af0baf2c",
+                          ctx.RoConfig ())->GetId ();
+    const uint32_t id
+        = tbl3.CreateNew (owner, rid, ctx.RoConfig (), rnd)->GetId ();
+    recipeOf[id] = rid;
+    return id;
+  }
 
   /**
    * Creates two players ("domob", "andy"), each entering two fighters (made
@@ -211,10 +233,12 @@ protected:
   {
     const std::string TUT = "cbd2e78a-37ce-b864-793d-8dd27788a774";
 
+    TwoPlayerTournament out;
+
     auto mkFighter = [&] (const std::string& owner) -> uint32_t
     {
-      auto f = tbl3.CreateNew (owner, 1, ctx.RoConfig (), rnd);
-      const uint32_t id = f->GetId ();
+      const uint32_t id = MintFighter (owner, out.recipeOf);
+      auto f = tbl3.GetById (id, ctx.RoConfig ());
       f->MutableProto ().set_isaccountbound (accountBound);
       f.reset ();
       return id;
@@ -269,7 +293,6 @@ protected:
     const std::string winner = trn->GetInstance ().winnerid ();
     trn.reset ();
 
-    TwoPlayerTournament out;
     out.winner = winner;
     out.loser = (winner == "domob") ? "andy" : "domob";
     out.loserEntered = (winner == "domob")
@@ -291,6 +314,8 @@ protected:
     std::vector<uint32_t> winner;   // 3x Speedy -> effectively beats every Heavy/Blocking opponent
     std::vector<uint32_t> bob;      // caller-armed (see bobArms) -- the primary losing team under test
     std::vector<uint32_t> carl;     // 3x Heavy (all net -5, a 3-way tie) -- the second losing team
+    /** Entered fighter id -> its source recipe id (P1-03 recipe-row tests). */
+    std::map<uint32_t, uint32_t> recipeOf;
   };
 
   /** Returns any fighter-move blueprint authoredid whose movetype == `type`. */
@@ -376,12 +401,12 @@ protected:
     xayaplayers.CreateNew ("bob",    ctx.RoConfig (), rnd).reset ();
     xayaplayers.CreateNew ("carl",   ctx.RoConfig (), rnd).reset ();
 
+    ThreeTeam s;
+
     const auto mk = [&] (const std::string& owner) -> uint32_t
     {
-      return tbl3.CreateNew (owner, 1, ctx.RoConfig (), rnd)->GetId ();
+      return MintFighter (owner, s.recipeOf);
     };
-
-    ThreeTeam s;
     for (int i = 0; i < 3; ++i)
       { const uint32_t id = mk ("winner"); ArmFighter (id, 1, 1000); s.winner.push_back (id); }  // Speedy
 
@@ -597,6 +622,49 @@ TEST_F (ValidateStateTests, TournamentPermadeathProtectsStarters)
   EXPECT_FALSE (losses.QueryForOwner (t.loser).Step ());   // starter loss not recorded
 }
 
+/* P1-03: a permadeath DESTROY must delete the victim's retained owner=""
+   source recipe row along with the fighter (1:1 -- nothing else references it);
+   the survivor keeps its row. */
+TEST_F (ValidateStateTests, TournamentPermadeathDestroyDeletesSourceRecipe)
+{
+  GameParams (db).SetParam ("tournament_capture_pct", 0);          // always destroy
+  GameParams (db).SetParam ("tournament_loss_kills_enabled", 1);
+
+  const auto t = RunTwoPlayerTournament ();
+
+  int destroyed = 0;
+  for (const uint32_t fid : t.loserEntered)
+    {
+      const uint32_t rid = t.recipeOf.at (fid);
+      if (tbl3.GetById (fid, ctx.RoConfig ()) == nullptr)
+        {
+          ++destroyed;
+          EXPECT_EQ (tbl2.GetById (rid), nullptr);   // source recipe gone too
+        }
+      else
+        EXPECT_NE (tbl2.GetById (rid), nullptr);     // survivor keeps its row
+    }
+  EXPECT_EQ (destroyed, 1);
+}
+
+/* P1-03: a permadeath CAPTURE transfers the fighter, which still references
+   its source recipe -- the row must be KEPT (and stay ownerless). */
+TEST_F (ValidateStateTests, TournamentPermadeathCaptureKeepsSourceRecipe)
+{
+  GameParams (db).SetParam ("tournament_capture_pct", 256);        // always capture
+  GameParams (db).SetParam ("tournament_loss_kills_enabled", 1);
+
+  const auto t = RunTwoPlayerTournament ();
+
+  for (const uint32_t fid : t.loserEntered)
+    {
+      ASSERT_NE (tbl3.GetById (fid, ctx.RoConfig ()), nullptr);    // never deleted
+      auto r = tbl2.GetById (t.recipeOf.at (fid));
+      ASSERT_NE (r, nullptr);                                      // recipe kept
+      EXPECT_EQ (r->GetOwner (), "");                              // still the retained source
+    }
+}
+
 /* Change A/C refinement: the permadeath victim is NEVER the team's strongest.
    Each team is given one clearly higher-rated fighter (the HIGHER-id
    loserEntered[1]) and one weaker (loserEntered[0]); whoever loses must lose the
@@ -744,6 +812,8 @@ TEST_F (ValidateStateTests, TournamentCaptureCapLimitsWinnerGains)
   ASSERT_NE (captured, nullptr) << "captured fighter must still exist";
   EXPECT_EQ (captured->GetOwner (), "winner");
   captured.reset ();
+  // P1-03: the transferred fighter still references its source recipe -> kept.
+  EXPECT_NE (tbl2.GetById (s.recipeOf.at (s.bob[2])), nullptr);
 
   // carl (processed after the cap was hit) lost exactly one fighter -- DESTROYED.
   int carlAlive = 0;
@@ -788,6 +858,8 @@ TEST_F (ValidateStateTests, TournamentCaptureCapZeroDestroysAll)
 
   EXPECT_EQ (tbl3.CountForOwner ("winner"), winnerBefore);        // no captures at all
   EXPECT_EQ (tbl3.GetById (s.bob[2], ctx.RoConfig ()), nullptr);  // bob's victim destroyed
+  // P1-03: the over-cap destroy also deletes the victim's source recipe row.
+  EXPECT_EQ (tbl2.GetById (s.recipeOf.at (s.bob[2])), nullptr);
 
   BattleLossesTable losses(db);
   auto bobLoss = losses.QueryForOwner ("bob");
@@ -831,6 +903,8 @@ TEST_F (ValidateStateTests, TournamentCaptureRosterFullDestroys)
   EXPECT_EQ (tbl3.GetById (s.bob[2], ctx.RoConfig ()), nullptr)
       << "roster full -> victim destroyed, not captured";
   EXPECT_EQ (tbl3.CountForOwner ("winner"), winnerBefore) << "no capture -> roster unchanged";
+  // P1-03: the roster-full destroy also deletes the victim's source recipe row.
+  EXPECT_EQ (tbl2.GetById (s.recipeOf.at (s.bob[2])), nullptr);
 
   BattleLossesTable losses(db);
   auto lr = losses.QueryForOwner ("bob");
@@ -1172,9 +1246,13 @@ TEST_F (ValidateStateTests, RecepieInstanceRevertIfFullRoster)
   proto::ConfigData& cfg = const_cast <proto::ConfigData&>(*ctx.RoConfig());
   
   xayaplayers.CreateNew ("domob", ctx.RoConfig(), rnd)->AddBalance (100);
-   
-  cfg.mutable_params()->set_max_fighter_inventory_amount(2); 
-  
+
+  /* RoConfig() is a process-global singleton: restore the cap afterwards or
+     the pinned 2 leaks into every later test in this binary (the exchange-buy
+     tests would then sit exactly AT the leaked cap and be rejected). */
+  const uint32_t savedMax = cfg.params ().max_fighter_inventory_amount ();
+  cfg.mutable_params()->set_max_fighter_inventory_amount(2);
+
   auto a = xayaplayers.GetByName ("domob", ctx.RoConfig());
   a->GetInventory().SetFungibleCount("Common_Gumdrop", 1);
   a->GetInventory().SetFungibleCount("Common_Icing", 1);
@@ -1209,6 +1287,8 @@ TEST_F (ValidateStateTests, RecepieInstanceRevertIfFullRoster)
 
   EXPECT_EQ (a->GetInventory().GetFungibleCount("Common_Gumdrop"), 1);
   EXPECT_EQ (a->GetInventory().GetFungibleCount("Common_Icing"), 1);
+
+  cfg.mutable_params ()->set_max_fighter_inventory_amount (savedMax);
 }
 
 TEST_F (ValidateStateTests, CollectCookMoveIsInert)

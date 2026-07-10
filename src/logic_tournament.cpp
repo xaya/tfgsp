@@ -396,7 +396,12 @@ void PXLogic::ProcessTournaments(Database& db, const Context& ctx, xaya::Random&
                         else
                           {
                             victim.reset ();                 /* release before delete */
-                            fighters.DeleteById (victimId);
+                            /* P1-03: a destroy (coin-flip loss, roster-full or
+                               capture-cap overflow alike) also drops the victim's
+                               retained owner="" source recipe row; a CAPTURE keeps
+                               it -- the transferred fighter still references it. */
+                            fighters.DeleteWithSourceRecipe (victimId,
+                                                             ctx.RoConfig ());
                           }
 
                         /* Winner-side aggregate update (mirrors the loser bump below):
