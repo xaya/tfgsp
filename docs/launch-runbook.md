@@ -99,6 +99,11 @@ against reorgs of the pinned block.)
    `NEXT_PUBLIC_DEV_WALLET=1` unless `TF_DEV_BUILD=1` acknowledges a fork TEST build, then
    scans the shipped bundle for burner keys afterwards).
    Serve with `npm run start` behind TLS; point it at the production GSP + RPC.
+   **Set `TRUST_PROXY=1`** whenever a reverse proxy / TLS terminator fronts server.mjs and sets
+   `X-Forwarded-For`: the SSE block-fanout's per-IP cap (`GET /events`) buckets on the proxy-set
+   client address then. Without the flag behind a proxy, every browser shares the proxy's socket
+   IP and the per-IP cap (8) silently acts as a GLOBAL cap; with the flag but NO trusted proxy,
+   spoofed XFF headers would bypass the cap. Direct-exposed serve → leave it unset.
 
 ## 6. Live smoke test (real chain, small money)
 
