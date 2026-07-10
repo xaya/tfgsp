@@ -142,6 +142,8 @@ struct ExchangeQuery
   int64_t minPrice = -1, maxPrice = -1;
   int64_t maxAffordable = -1;   // price <= this (the "affordable only" filter)
   std::string excludeOwner;     // e.g. the caller — hide their own listings from the market
+  int64_t buyableAtHeight = -1; // hide listings a buy would already reject as expired at this
+                                //  height (ParseBuyData rejects at expire <= height)
   int64_t limit = 50, offset = 0;
 };
 

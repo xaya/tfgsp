@@ -53,6 +53,29 @@ inline constexpr unsigned MAX_SUBMOVES = 100;
     rejects absurd attacker inputs.  Mirrors the EXCH-1 seller-payout fix. */
 inline constexpr int32_t MAX_TRANSFIGURE_CANDY = 1'000'000;
 
+/** P1-01: element caps on the anonymously reachable getfueldata RPC request,
+    enforced by BaseMoveProcessor::FuelRequestCapError BEFORE EvaluateFuelList
+    runs its O(candidates x submitted-items) estimation with per-candidate deep
+    copies.  RPC-only, non-consensus (nothing on the move path calls it).  Each
+    cap sits generously above the largest legitimate client request
+    (tf-frontend buildFuelRequest, src/data/transfigure.ts):
+      - fighters: fighter-id arrays are subsets of one roster, hard-capped at
+        48 by max_fighter_inventory_amount;
+      - recipes: recipe-id arrays are subsets of one recipe inventory,
+        hard-capped at 48 by max_recipe_inventory_amount (headroom for config
+        raises);
+      - candies: one entry per DISTINCT candy type held/offered, and the whole
+        candy catalog is 61 types;
+      - total: sum over every array and lookup object in the request (a maximal
+        legitimate request is ~420: 2x48 fighters + 2x48 recipes + 2x61 candies
+        + fighterData 48+4 cook-cost keys + recipeData 48); this also bounds
+        the fighterData/recipeData maps, whose only legitimate members are the
+        referenced ids.  */
+inline constexpr unsigned MAX_FUEL_FIGHTERS = 64;
+inline constexpr unsigned MAX_FUEL_RECIPES = 256;
+inline constexpr unsigned MAX_FUEL_CANDIES = 256;
+inline constexpr unsigned MAX_FUEL_TOTAL = 512;
+
 /* Dedups a vector in place (the same algorithm the move parsers used inline)
    and reports whether any duplicate was removed, so duplicate-id moves are
    rejected identically across every call site.  */

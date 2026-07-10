@@ -116,9 +116,10 @@ protected:
       cfg = std::make_unique<pxd::RoConfig> (xaya::Chain::REGTEST);
   }
 
-  /* Lists a freshly-cooked fighter for `owner` at `price` (expire far in the future); returns its id. */
+  /* Lists a freshly-cooked fighter for `owner` at `price` (expire defaults far
+     in the future); returns its id. */
   int
-  MakeListingJson (const std::string& owner, int price)
+  MakeListingJson (const std::string& owner, int price, int expire = 99999)
   {
     auto r0 = tbl3.CreateNew (owner, "5864a19b-c8c0-2d34-eaef-9455af0baf2c", *cfg);
     const auto rid = r0->GetId (); r0.reset ();
@@ -126,7 +127,7 @@ protected:
     const int fid = f->GetId ();
     f->SetStatus (pxd::FighterStatus::Exchange);
     f->MutableProto ().set_exchangeprice (price);
-    f->MutableProto ().set_exchangeexpire (99999);
+    f->MutableProto ().set_exchangeexpire (expire);
     f.reset ();
     return fid;
   }
@@ -806,6 +807,36 @@ TEST_F (XayaPlayersJsonTests, ExchangeAffordableForFiltersByPrice)
   EXPECT_EQ (page["fighters"][0]["id"].asInt (), cheap);
   EXPECT_EQ (page["fighters"][1]["id"].asInt (), mid);
   EXPECT_EQ (page["total"].asInt (), 2);
+}
+
+/* P2-15: ParseBuyData rejects a buy once expire <= height, but the consensus
+   sweep only unlists at expire < height (one block later).  The market view
+   must match the BUY predicate, so a listing disappears the very block it
+   becomes unbuyable instead of being shown for one block in which a buy is
+   guaranteed to fail (wasted gas for the buyer).  */
+TEST_F (XayaPlayersJsonTests, ExchangeHidesListingTheBlockItBecomesUnbuyable)
+{
+  const int live = MakeListingJson ("alice", 100, 120);
+  const int edge = MakeListingJson ("bob",   200, 100);
+
+  /* expire > height: both listings still buyable and both shown.  */
+  ctx.SetHeight (99);
+  {
+    const Json::Value page = converter.Exchange (Json::Value ());
+    ASSERT_EQ (page["fighters"].size (), 2u);
+    EXPECT_EQ (page["total"].asInt (), 2);
+  }
+
+  /* expire == height: a buy of `edge` would be rejected, so it must be
+     hidden already even though the expiry sweep has not unlisted it yet.  */
+  ctx.SetHeight (100);
+  {
+    const Json::Value page = converter.Exchange (Json::Value ());
+    ASSERT_EQ (page["fighters"].size (), 1u);
+    EXPECT_EQ (page["fighters"][0]["id"].asInt (), live);
+    EXPECT_EQ (page["total"].asInt (), 1);
+  }
+  (void) edge;
 }
 
 /* ************************************************************************** */

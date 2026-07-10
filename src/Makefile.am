@@ -46,7 +46,7 @@ libtfheaders = \
 tfd_CXXFLAGS = \
   -I$(top_srcdir) \
   $(XAYAGAME_CFLAGS) \
-  $(JSON_CFLAGS) $(MHD_CLFGAS) \
+  $(JSON_CFLAGS) $(MHD_CFLAGS) \
   $(GLOG_CFLAGS) $(GFLAGS_CFLAGS) $(PROTOBUF_CFLAGS)
   
 tfd_LDADD = \

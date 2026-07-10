@@ -852,6 +852,14 @@ GameStateJson::Exchange (const Json::Value& request)
   q.maxAffordable = OptInt (r, "affordablefor", -1);
   if (r.isMember ("excludeowner") && r["excludeowner"].isString ())
     q.excludeOwner = r["excludeowner"].asString ();
+  /* Display-side alignment with the buy predicate: ParseBuyData rejects a buy
+     once expire <= height, but the consensus expiry sweep only unlists at
+     expire < height (one block later).  Hide such listings here so the market
+     never shows one whose buy is guaranteed to fail (wasted gas).  This is
+     server-forced (not a client filter) and purely read-side -- the sweep and
+     the consensus state are untouched.  */
+  if (ctx.HasHeight ())
+    q.buyableAtHeight = static_cast<int64_t> (ctx.Height ());
 
   int64_t limit = OptInt (r, "limit", 50);
   q.limit = limit < 1 ? 1 : (limit > 100 ? 100 : limit);   // server-side hard cap

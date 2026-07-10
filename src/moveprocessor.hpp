@@ -275,6 +275,12 @@ public:
      so the two can never drift into an over/under-refund. */
   static Amount RecipeCookCostForQuality(int32_t quality, const RoConfig& cfg);
   static Json::Value EvaluateFuelList(const Json::Value& fightersSubmited, const Json::Value& recipesSubmited, const Json::Value& candiesSubmited, const Json::Value& fightersNew, const Json::Value& recipesNew, const Json::Value& candiesNew, const Json::Value wholeFightersData,  const Json::Value wholeRecipeData, const Json::Value& candylist);
+  /* P1-01 RPC DoS guard: "" when the getfueldata request is within the
+     MAX_FUEL_* element caps (moveprocessor_internal.hpp), else a description
+     of the violated cap.  pxrpcserver rejects with invalid-params BEFORE the
+     O(candidates x submitted-items) EvaluateFuelList work; parameters mirror
+     the RPC method's order.  RPC-only, non-consensus. */
+  static std::string FuelRequestCapError(const Json::Value& candiesNew, const Json::Value& candiesSubmited, const Json::Value& candylist, const Json::Value& fighterData, const Json::Value& fightersNew, const Json::Value& fightersSubmited, const Json::Value& recipeData, const Json::Value& recipesNew, const Json::Value& recipesSubmited);
 
   virtual ~BaseMoveProcessor () = default;
 

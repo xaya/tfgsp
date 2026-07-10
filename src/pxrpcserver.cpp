@@ -163,6 +163,20 @@ PXRpcServer::waitforchange (const std::string& knownBlock)
 Json::Value
 PXRpcServer::getfueldata (const Json::Value& candiesNew, const Json::Value& candiesSubmited, const Json::Value& candylist, const Json::Value& fighterData, const Json::Value& fightersNew, const Json::Value& fightersSubmited, const Json::Value& recipeData, const Json::Value& recipesNew, const Json::Value& recipesSubmited)
 {
+  /* P1-01 DoS guard: getfueldata is anonymously reachable through the web
+     proxy whitelist and EvaluateFuelList does O(candidates x submitted-items)
+     work with a per-candidate deep copy, so an oversized (but well-formed)
+     request burns CPU for free.  Reject anything over the MAX_FUEL_* element
+     caps (moveprocessor_internal.hpp; sized generously above legitimate client
+     requests) before any of that work happens. */
+  const std::string capError = BaseMoveProcessor::FuelRequestCapError (
+      candiesNew, candiesSubmited, candylist, fighterData, fightersNew,
+      fightersSubmited, recipeData, recipesNew, recipesSubmited);
+  if (!capError.empty ())
+    throw jsonrpc::JsonRpcException (
+        jsonrpc::Errors::ERROR_RPC_INVALID_PARAMS,
+        "oversized getfueldata input: " + capError);
+
   /* getfueldata is a pure client-side estimator fed entirely by untrusted RPC
      input.  EvaluateFuelList/CalculateFuelPower index those arrays with
      operator[]/asInt/asString without per-element type checks, so a malformed

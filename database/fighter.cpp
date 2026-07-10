@@ -557,6 +557,7 @@ AppendExchangeWhere (const ExchangeQuery& q, std::string& sql, int& nextParam)
   if (q.maxPrice >= 0)          sql += " AND `price` <= ?"   + std::to_string (nextParam++);
   if (q.maxAffordable >= 0)     sql += " AND `price` <= ?"   + std::to_string (nextParam++);
   if (!q.excludeOwner.empty ()) sql += " AND `owner` != ?"   + std::to_string (nextParam++);
+  if (q.buyableAtHeight >= 0)   sql += " AND `expire` > ?"   + std::to_string (nextParam++);
 }
 
 /** Binds the WHERE params in the SAME order AppendExchangeWhere emits them, starting at ?1. Returns
@@ -571,6 +572,7 @@ BindExchangeWhere (Database::Statement& stmt, const ExchangeQuery& q)
   if (q.maxPrice >= 0)          stmt.Bind (p++, q.maxPrice);
   if (q.maxAffordable >= 0)     stmt.Bind (p++, q.maxAffordable);
   if (!q.excludeOwner.empty ()) stmt.Bind (p++, q.excludeOwner);
+  if (q.buyableAtHeight >= 0)   stmt.Bind (p++, q.buyableAtHeight);
   return p;
 }
 

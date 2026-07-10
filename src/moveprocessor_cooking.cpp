@@ -79,6 +79,51 @@ namespace pxd
     }
   }
 
+  std::string
+  BaseMoveProcessor::FuelRequestCapError(const Json::Value& candiesNew, const Json::Value& candiesSubmited, const Json::Value& candylist, const Json::Value& fighterData, const Json::Value& fightersNew, const Json::Value& fightersSubmited, const Json::Value& recipeData, const Json::Value& recipesNew, const Json::Value& recipesSubmited)
+  {
+    /* See the MAX_FUEL_* comment in moveprocessor_internal.hpp for how each
+       cap was sized against legitimate client requests. */
+    const struct
+    {
+      const char* name;
+      const Json::Value& val;
+      unsigned cap;
+    } caps[] =
+      {
+        {"fightersSubmited", fightersSubmited, MAX_FUEL_FIGHTERS},
+        {"fightersNew", fightersNew, MAX_FUEL_FIGHTERS},
+        {"recipesSubmited", recipesSubmited, MAX_FUEL_RECIPES},
+        {"recipesNew", recipesNew, MAX_FUEL_RECIPES},
+        {"candiesSubmited", candiesSubmited, MAX_FUEL_CANDIES},
+        {"candiesNew", candiesNew, MAX_FUEL_CANDIES},
+        {"candylist", candylist, MAX_FUEL_CANDIES},
+        /* The lookup maps only need one member per referenced id, so the
+           total cap is their natural bound. */
+        {"fighterData", fighterData, MAX_FUEL_TOTAL},
+        {"recipeData", recipeData, MAX_FUEL_TOTAL},
+      };
+
+    unsigned total = 0;
+    for (const auto& c : caps)
+      {
+        /* size() counts array elements and object members alike and is 0 for
+           scalars/null -- wrong TYPES are the crash guard's job downstream,
+           only SIZE is judged here. */
+        const unsigned n = c.val.size ();
+        if (n > c.cap)
+          return std::string (c.name) + " has " + std::to_string (n)
+                    + " elements (cap " + std::to_string (c.cap) + ")";
+        total += n;
+      }
+    if (total > MAX_FUEL_TOTAL)
+      return "request has " + std::to_string (total)
+                + " total elements (cap " + std::to_string (MAX_FUEL_TOTAL)
+                + ")";
+
+    return "";
+  }
+
   Json::Value BaseMoveProcessor::EvaluateFuelList(const Json::Value& fightersSubmited, const Json::Value& recipesSubmited, const Json::Value& candiesSubmited, const Json::Value& fightersNew, const Json::Value& recipesNew, const Json::Value& candiesNew, const Json::Value wholeFightersData,  const Json::Value wholeRecipeData, const Json::Value& candylist)
   {
 	 Json::Value fighter(Json::objectValue);	 

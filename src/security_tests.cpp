@@ -24,6 +24,7 @@
 */
 
 #include "moveprocessor.hpp"
+#include "moveprocessor_internal.hpp"
 #include "logic.hpp"
 
 #include "jsonutils.hpp"
@@ -266,6 +267,81 @@ TEST_F (SecurityTests, OversizedMoveArraysAreCappedNotFatal)
       + R"(}}}}])"));
 
   EXPECT_TRUE (xayaplayers.GetByName ("atk", ctx.RoConfig ()) != nullptr);
+}
+
+/* P1-01: the anonymously reachable getfueldata RPC rejects oversized requests
+   (FuelRequestCapError, checked by pxrpcserver BEFORE EvaluateFuelList's
+   O(candidates x submitted-items) work) -- while an AT-CAP request passes the
+   caps and still evaluates.  Sibling of the getfueldata malformed-JSON crash
+   guard (also in pxrpcserver); both are RPC-only, non-consensus. */
+TEST_F (SecurityTests, GetFuelDataRequestCapped)
+{
+  const auto intArray = [] (const unsigned from, const unsigned count)
+  {
+    Json::Value arr(Json::arrayValue);
+    for (unsigned i = 0; i < count; ++i)
+      arr.append (static_cast<int> (from + i));
+    return arr;
+  };
+  const Json::Value none(Json::arrayValue);
+  const Json::Value noData(Json::objectValue);
+
+  /* An at-cap request: BOTH fighter arrays at MAX_FUEL_FIGHTERS, with the
+     lookup entries CalculateFuelPower reads for every referenced fighter
+     (the tf-frontend buildFuelRequest shape).  */
+  Json::Value fighterData(Json::objectValue);
+  fighterData["crcc"] = 15;
+  fighterData["urcc"] = 30;
+  fighterData["rrcc"] = 60;
+  fighterData["ercc"] = 120;
+  for (unsigned i = 1; i <= 2 * MAX_FUEL_FIGHTERS; ++i)
+    {
+      Json::Value f(Json::objectValue);
+      f["q"] = 1;
+      f["has"] = 1;
+      f["r"] = 1000 + static_cast<int> (i);
+      f["n"] = "Fuel Dummy " + std::to_string (i);
+      f["ap"] = Json::Value (Json::arrayValue);
+      fighterData[std::to_string (i)] = f;
+    }
+  const Json::Value submitted = intArray (1, MAX_FUEL_FIGHTERS);
+  const Json::Value candidates
+      = intArray (MAX_FUEL_FIGHTERS + 1, MAX_FUEL_FIGHTERS);
+
+  EXPECT_EQ (BaseMoveProcessor::FuelRequestCapError (
+                 none, none, none, fighterData, candidates, submitted,
+                 noData, none, none),
+             "");
+  Json::Value res;
+  ASSERT_NO_THROW (res = BaseMoveProcessor::EvaluateFuelList (
+      submitted, none, none, candidates, none, none,
+      fighterData, noData, none));
+  EXPECT_TRUE (res.isMember ("fp"));
+  EXPECT_EQ (res["if"].size (), MAX_FUEL_FIGHTERS)
+      << "at-cap request must still price every candidate";
+
+  /* One element over any per-kind cap errors cleanly (no work, no throw). */
+  EXPECT_NE (BaseMoveProcessor::FuelRequestCapError (
+                 none, none, none, noData,
+                 none, intArray (1, MAX_FUEL_FIGHTERS + 1), noData, none,
+                 none),
+             "");
+  EXPECT_NE (BaseMoveProcessor::FuelRequestCapError (
+                 none, none, none, noData, none, none, noData,
+                 intArray (1, MAX_FUEL_RECIPES + 1), none),
+             "");
+  EXPECT_NE (BaseMoveProcessor::FuelRequestCapError (
+                 none, intArray (1, MAX_FUEL_CANDIES + 1), none, noData,
+                 none, none, noData, none, none),
+             "");
+
+  /* Arrays each under their own per-kind cap must still respect the TOTAL
+     cap (the bound on the candidates x submitted amplification). */
+  EXPECT_NE (BaseMoveProcessor::FuelRequestCapError (
+                 intArray (1, MAX_FUEL_CANDIES - 6), none, none, noData,
+                 none, none, noData, intArray (1, MAX_FUEL_RECIPES - 6),
+                 intArray (1, MAX_FUEL_RECIPES - 6)),
+             "");
 }
 
 /* ************************************************************************** */

@@ -223,21 +223,23 @@ TEST_F (FighterTests, QueryExchangeSortsFiltersPagesAndCounts)
 }
 
 /* The marketplace WHERE is built by two lockstep helpers (append placeholders / bind values); a
-   single-filter test never binds past ?1, so this activates three filters at once (int, int, string)
-   — any append/bind order divergence changes the result set or mis-binds a type. */
+   single-filter test never binds past ?1, so this activates four filters at once (int, int, string,
+   int) — any append/bind order divergence changes the result set or mis-binds a type. */
 TEST_F (FighterTests, QueryExchangeMultiFilterLockstep)
 {
   const auto excluded = MakeListing (tbl, tbl2, *cfg, rnd, "alice", 100, 1000, 5); // owner excluded
-  const auto keep     = MakeListing (tbl, tbl2, *cfg, rnd, "bob",   200, 1000, 5); // matches all 3
+  const auto keep     = MakeListing (tbl, tbl2, *cfg, rnd, "bob",   200, 1000, 5); // matches all 4
   const auto tooDear  = MakeListing (tbl, tbl2, *cfg, rnd, "bob",   300, 1000, 5); // price > maxPrice
   const auto tooLowQ  = MakeListing (tbl, tbl2, *cfg, rnd, "bob",   150, 1000, 2); // quality < minQuality
-  (void) excluded; (void) tooDear; (void) tooLowQ;
+  const auto unbuyable = MakeListing (tbl, tbl2, *cfg, rnd, "bob",  220,  900, 5); // expire == height
+  (void) excluded; (void) tooDear; (void) tooLowQ; (void) unbuyable;
 
   ExchangeQuery q;
   q.sort = ExchangeSort::Price; q.ascending = true;
   q.minQuality = 4;          // ?1
   q.maxPrice = 250;          // ?2
   q.excludeOwner = "alice";  // ?3 (string — a transposition with an int filter would mis-bind)
+  q.buyableAtHeight = 900;   // ?4 (hides expire <= 900, i.e. `unbuyable` exactly at the boundary)
 
   std::vector<Database::IdT> got;
   auto res = tbl.QueryExchange (q);
