@@ -104,6 +104,10 @@ against reorgs of the pinned block.)
    client address then. Without the flag behind a proxy, every browser shares the proxy's socket
    IP and the per-IP cap (8) silently acts as a GLOBAL cap; with the flag but NO trusted proxy,
    spoofed XFF headers would bypass the cap. Direct-exposed serve → leave it unset.
+   SSE capacity knobs: `SSE_MAX_CLIENTS` (default 5000) bounds total concurrent `/events` streams,
+   `SSE_MAX_PER_IP` (default 8) bounds one client's share. Upstream GSP cost is constant regardless
+   (one shared `waitforchange`), so raising the cap only spends this process's memory (~9 KB per
+   client — 10000 ≈ 90 MB, load-tested flat to 5000). Raise for a larger expected audience.
 
 ## 6. Live smoke test (real chain, small money)
 
