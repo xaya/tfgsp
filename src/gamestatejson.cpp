@@ -31,6 +31,8 @@
 
 
 #include <algorithm>
+#include <map>
+#include <utility>
 
 namespace pxd
 {
@@ -565,43 +567,53 @@ GameStateJson::User(const std::string& userName)
 
 	  a.reset();
 	  
+	  /* P1-02d: gather this user's recipes WITHOUT the old full-table QueryAll
+	     scan (which ran on every getuser -- every client, every block).  The
+	     output set is exactly the user's OWN recipe rows PLUS the rows referenced
+	     by their in-progress cooks (an ONGOING_COOKING sets the recipe owner to
+	     "", so QueryForOwner misses those) and by their reward-generated recipes.
+	     Owned rows come from the owner-indexed QueryForOwner (recepies_by_owner);
+	     the referenced-but-not-owned rows are fetched by id.  Everything is keyed
+	     by id in an ordered map, so the emitted array stays in ascending-id order
+	     -- byte-identical to the old QueryAll (ORDER BY id) merge, but now
+	     O(this user's recipes) instead of O(all recipes globally). */
 	  RecipeInstanceTable tblRecipe(db);
-	  auto recipeAllResults =  tblRecipe.QueryAll ();
-	  while (recipeAllResults.Step ())
+	  std::map<Database::IdT, RecipeInstanceTable::Handle> selectedRecipes;
+	
 	  {
-		  auto h = tblRecipe.GetFromResult (recipeAllResults, ctx.RoConfig ());
-		  
-		  if(h->GetOwner() == userName)
-		  {
-			 arrAllPotentialRecipes.append (Convert (*h));
-		  }
-		  else
-		  {
-			  int ID = h->GetId();
-			  bool found = false;
-			  for (Json::ArrayIndex i = 0; i < recJsonObj.size(); i++) {
-				  if (recJsonObj[i].isInt() && recJsonObj[i].asInt() == ID) {
-					found = true;
-					break;
-				  }
-			  }		  
-			  
-			  if(found == false)
-			  {
-				   if (std::count(ourRecipesInRewards.begin(), ourRecipesInRewards.end(), ID))
-				   {
-					  found = true;
-				   }
-			  }
-			  
-			  if(found)
-			  {
-				 arrAllPotentialRecipes.append (Convert (*h)); 
-			  }
-		  }
-		  
-		  h.reset();
+	    auto ownedRes = tblRecipe.QueryForOwner (userName);
+	    while (ownedRes.Step ())
+	    {
+	      auto h = tblRecipe.GetFromResult (ownedRes, ctx.RoConfig ());
+	      const Database::IdT id = h->GetId ();
+	      selectedRecipes.emplace (id, std::move (h));
+	    }
 	  }
+	
+	  /* Referenced ids: in-progress cooks (recJsonObj) then reward recipes.  Skip
+	     any id already selected BEFORE fetching it, so we never hold two live
+	     handles to one row (UniqueHandles guard) nor double-append an owned row. */
+	  std::vector<Database::IdT> referencedRecipeIds;
+	  for (Json::ArrayIndex i = 0; i < recJsonObj.size (); i++)
+	    if (recJsonObj[i].isInt ())
+	      referencedRecipeIds.push_back (recJsonObj[i].asInt ());
+	  for (const int rewardRecipeId : ourRecipesInRewards)
+	    referencedRecipeIds.push_back (rewardRecipeId);
+	
+	  for (const Database::IdT id : referencedRecipeIds)
+	  {
+	    if (selectedRecipes.count (id) > 0)
+	      continue;                     // already have it (owned, or a repeated ref)
+	    auto h = tblRecipe.GetById (id);
+	    if (h == nullptr)
+	      continue;                     // dangling ref: the old scan saw no such row
+	    if (h->GetOwner () == userName)
+	      continue;                     // owned rows come only from QueryForOwner above
+	    selectedRecipes.emplace (id, std::move (h));
+	  }
+	
+	  for (auto& entry : selectedRecipes)
+	    arrAllPotentialRecipes.append (Convert (*entry.second));
   }
 
   res["recepies"] = arrAllPotentialRecipes;

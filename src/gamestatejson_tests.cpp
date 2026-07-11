@@ -33,6 +33,7 @@
 
 #include <json/json.h>
 
+#include <set>
 #include <string>
 
 namespace pxd
@@ -837,6 +838,76 @@ TEST_F (XayaPlayersJsonTests, ExchangeHidesListingTheBlockItBecomesUnbuyable)
     EXPECT_EQ (page["total"].asInt (), 1);
   }
   (void) edge;
+}
+
+/* ************************************************************************** */
+
+/* P1-02d: getuser's recipe list must be OWNER-SCOPED.  The (indexed)
+   QueryForOwner-based gather has to return exactly what the old full-table
+   scan did -- the caller's own recipes plus the ones referenced by their
+   in-progress cooks (owner "") and reward recipes -- and must NEVER leak an
+   unrelated player's recipe row. */
+TEST_F (XayaPlayersJsonTests, UserRecipesAreOwnerScoped)
+{
+  auto a = tbl.CreateNew ("foo", ctx.RoConfig (), rnd);
+  a.reset ();
+  auto b = tbl.CreateNew ("bar", ctx.RoConfig (), rnd);
+  b.reset ();
+
+  /* foo owns an extra recipe; bar owns one too -- a "foreign" row that the old
+     global scan had to iterate over and skip for foo. */
+  auto rFoo = tbl3.CreateNew ("foo", "5864a19b-c8c0-2d34-eaef-9455af0baf2c", *cfg);
+  const int fooRid = rFoo->GetId (); rFoo.reset ();
+  auto rBar = tbl3.CreateNew ("bar", "5864a19b-c8c0-2d34-eaef-9455af0baf2c", *cfg);
+  const int barRid = rBar->GetId (); rBar.reset ();
+
+  /* An ownerless recipe being cooked by foo: an ONGOING COOK_RECIPE sets the
+     recipe owner to "", so it is reachable ONLY through foo's ongoing (never
+     through QueryForOwner) -- it must still appear in foo's recipe list. */
+  auto rCook = tbl3.CreateNew ("", "5864a19b-c8c0-2d34-eaef-9455af0baf2c", *cfg);
+  const int cookRid = rCook->GetId (); rCook.reset ();
+  {
+    OngoingsTable ongoings (db);
+    auto op = ongoings.CreateNew (100);
+    op->SetOwner ("foo");
+    op->SetHeight (150);
+    op->MutableProto ().set_type (static_cast<uint32_t> (pxd::OngoingType::COOK_RECIPE));
+    op->MutableProto ().set_recipeid (cookRid);
+    op.reset ();
+  }
+
+  /* An ownerless reward-generated recipe referenced by one of foo's rewards. */
+  auto rReward = tbl3.CreateNew ("", "5864a19b-c8c0-2d34-eaef-9455af0baf2c", *cfg);
+  const int rewardRid = rReward->GetId (); rReward.reset ();
+  {
+    auto rw = tbl4.CreateNew ("foo");
+    rw->MutableProto ().set_generatedrecipeid (rewardRid);
+    rw.reset ();
+  }
+
+  ctx.SetHeight (10);
+
+  const auto recipeIds = [] (const Json::Value& user) {
+    std::set<int> ids;
+    for (const auto& r : user["recepies"])
+      ids.insert (r["did"].asInt ());
+    return ids;
+  };
+
+  /* foo sees its own extra recipe, its in-progress cook, and its reward recipe
+     -- but NEVER bar's recipe. */
+  const std::set<int> fooIds = recipeIds (converter.User ("foo"));
+  EXPECT_EQ (fooIds.count (fooRid),    1u);
+  EXPECT_EQ (fooIds.count (cookRid),   1u);
+  EXPECT_EQ (fooIds.count (rewardRid), 1u);
+  EXPECT_EQ (fooIds.count (barRid),    0u);   // foreign row must not leak
+
+  /* Symmetric: bar sees only its own recipe, none of foo's referenced rows. */
+  const std::set<int> barIds = recipeIds (converter.User ("bar"));
+  EXPECT_EQ (barIds.count (barRid),    1u);
+  EXPECT_EQ (barIds.count (fooRid),    0u);
+  EXPECT_EQ (barIds.count (cookRid),   0u);
+  EXPECT_EQ (barIds.count (rewardRid), 0u);
 }
 
 /* ************************************************************************** */
