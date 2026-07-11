@@ -14,22 +14,26 @@
 #
 # Checks, in order (a failing check => docker restart $CONTAINER + loud log):
 #   a) getnullstate answers within $CURL_TIMEOUT seconds;
-#   b) state == "up-to-date", OR the reported height has changed since the
-#      last recorded progress ($STATE_FILE).  A stall is only declared after
-#      $STALL_GRACE seconds without progress, so tight cron cadences never
-#      false-positive.
+#   b) the reported height (or the pregenesis no-height phase) has changed
+#      since the last recorded progress ($STATE_FILE).  A non-up-to-date node
+#      whose height is frozen is restarted after $STALL_GRACE seconds without
+#      progress, so tight cron cadences never false-positive.
 #   c) the GSP height is within $MAX_LAG blocks of XayaX's getblockchaininfo
-#      height.  XayaX unreachable => warn and skip (restarting the GSP cannot
-#      fix XayaX, and there is no lag figure to act on).
+#      height — but ONLY a node that is ALSO not advancing is restarted (a
+#      node grinding through a large backfill is healing, not wedged; lag
+#      restarts respect the same $STALL_GRACE).  This is what catches the
+#      missed-ZMQ wedge at the tip: state stays "up-to-date" with a frozen
+#      height while XayaX keeps advancing.  XayaX unreachable => warn and
+#      skip (restarting the GSP cannot fix XayaX, and there is no lag figure
+#      to act on).
 #
 # Restart-safety: the GSP resumes cleanly from committed state, so a spurious
 # restart costs seconds — the checks err toward restarting.
 #
-# CAVEAT (deliberate deep resync): while a node intentionally backfills far
-# more than $MAX_LAG blocks (e.g. a fresh volume long after launch), check (c)
-# would restart it every run even though it is advancing.  For that one
-# operation run with MAX_LAG=0 (disables the lag check; the progress check (b)
-# still guards against a wedge) and restore the bound afterwards.
+# CAVEAT: if XayaX ITSELF wedges (its "blocks" frozen vs the real chain), the
+# GSP sits "up-to-date" at the same stale height with zero lag and this script
+# logs OK — nothing here supervises XayaX progress.  Pair it with an
+# equivalent probe of XayaX against the base chain if that matters to you.
 #
 # Configuration — env vars, overridable by flags:
 #   GSP_URL      (default http://127.0.0.1:8610)  GSP JSON-RPC endpoint
@@ -118,26 +122,32 @@ height="$(json_int "$resp" height)"
 now="$(date +%s)"
 
 # --- (b) progress ----------------------------------------------------------
-if [ "$state" = "up-to-date" ]; then
-  [ -n "$height" ] && echo "$height $now" > "$STATE_FILE"
+# One shared progress record for checks (b) and (c).  A fresh volume reports
+# no height until the genesis block is stored ("pregenesis"); that phase gets
+# the same grace window instead of an instant restart, and any transition
+# (pregenesis -> first height, or any height CHANGE — a reorg or post-restart
+# replay may briefly lower it) counts as progress.
+mark="${height:-pregenesis}"
+last_mark=""
+last_change=""
+[ -f "$STATE_FILE" ] && read -r last_mark last_change < "$STATE_FILE"
+# Discard a corrupt timestamp (legacy/garbled state file).
+case "$last_change" in '' | *[!0-9]*) last_change="$now" ;; esac
+
+if [ -z "$last_mark" ] || [ "$mark" != "$last_mark" ]; then
+  progressed=1
+  last_change="$now"
+  echo "$mark $now" > "$STATE_FILE"
 else
-  [ -n "$height" ] || restart_gsp "state=$state with no height in getnullstate"
+  progressed=0
+fi
+stuck_for=$((now - last_change))
 
-  last_height=""
-  last_change=""
-  [ -f "$STATE_FILE" ] && read -r last_height last_change < "$STATE_FILE"
-  # Discard a corrupt/legacy state file.
-  case "$last_height" in '' | *[!0-9]*) last_height="" ;; esac
-  case "$last_change" in '' | *[!0-9]*) last_change="$now" ;; esac
-
-  if [ -z "$last_height" ] || [ "$height" -ne "$last_height" ]; then
-    # Any height CHANGE counts as progress (a reorg or post-restart replay may
-    # briefly lower it).
-    echo "$height $now" > "$STATE_FILE"
-  elif [ $((now - last_change)) -ge "$STALL_GRACE" ]; then
-    restart_gsp "state=$state, height stuck at $height for $((now - last_change))s (grace ${STALL_GRACE}s) — the P0-02 responsive-but-stalled wedge"
+if [ "$state" != "up-to-date" ] && [ "$progressed" -eq 0 ]; then
+  if [ "$stuck_for" -ge "$STALL_GRACE" ]; then
+    restart_gsp "state=$state, height stuck at $mark for ${stuck_for}s (grace ${STALL_GRACE}s) — the P0-02 responsive-but-stalled wedge"
   else
-    log "WARNING: state=$state, height $height unchanged for $((now - last_change))s (grace ${STALL_GRACE}s)"
+    log "WARNING: state=$state, height $mark unchanged for ${stuck_for}s (grace ${STALL_GRACE}s)"
   fi
 fi
 
@@ -153,9 +163,18 @@ if [ -z "$xheight" ]; then
   log "WARNING: XayaX getblockchaininfo unreachable at $XAYAX_URL — skipping the lag check (restarting the GSP would not fix XayaX)"
 elif [ -n "$height" ]; then
   lag=$((xheight - height))
-  [ "$lag" -le "$MAX_LAG" ] \
-    || restart_gsp "GSP height $height lags XayaX $xheight by $lag blocks (MAX_LAG=$MAX_LAG)"
-  log "OK: state=$state height=$height xayax=$xheight lag=$lag"
+  if [ "$lag" -le "$MAX_LAG" ]; then
+    log "OK: state=$state height=$height xayax=$xheight lag=$lag"
+  elif [ "$progressed" -eq 1 ]; then
+    # Advancing through a backlog is a node HEALING (e.g. recovering from the
+    # very wedge this script restarts) — restarting it now would thrash the
+    # recovery every cron run for the whole resync.
+    log "WARNING: lag $lag > MAX_LAG=$MAX_LAG but height is advancing ($height) — backfilling, not restarting"
+  elif [ "$stuck_for" -ge "$STALL_GRACE" ]; then
+    restart_gsp "GSP height $height frozen ${stuck_for}s while lagging XayaX $xheight by $lag blocks (MAX_LAG=$MAX_LAG) — the up-to-date missed-ZMQ wedge"
+  else
+    log "WARNING: lag $lag > MAX_LAG=$MAX_LAG with height $height unchanged for ${stuck_for}s (grace ${STALL_GRACE}s)"
+  fi
 else
   log "OK: state=$state (no height reported yet) xayax=$xheight"
 fi
