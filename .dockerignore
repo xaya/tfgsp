@@ -1,0 +1,57 @@
+# .dockerignore for the tfd (Treatfighter GSP) image build context.
+#
+# The Dockerfile ships the context with `COPY . .`, then runs
+# `make distclean || true` and `./autogen.sh && ./configure && make`, which
+# regenerates every autotools / libtool / protobuf artifact from scratch.  So
+# dropping generated files, VCS metadata, secrets and logs here can only shrink
+# the context -- it never changes the build output.  Everything the build needs
+# is deliberately KEPT: src/ proto/ proto2/ database/ contrib/ docs/, the *.am
+# templates, configure.ac, autogen.sh, config.{guess,sub}, config.h.in, and the
+# GNU-automake-required README / NEWS / AUTHORS / ChangeLog / COPYING.
+#
+# NOTE: build artifacts live in subdirectories (src/, database/, ...), so their
+# patterns need a leading `**/` -- a bare `*.o` would only match the root.
+
+# Version-control metadata (a git-worktree pointer file here) and repo config.
+.git
+.gitignore
+
+# Secrets -- never ship RPC / private keys into the build context.
+.env
+.env.*
+*.key
+*.pem
+
+# Agentic-workflow session scratch (task briefs / reports).
+.superpowers
+
+# Logs -- config.log, */test-suite.log, ... are regenerated inside the
+# container by `make` / `make check`.
+**/*.log
+
+# Python bytecode caches.
+**/__pycache__
+**/*.pyc
+
+# Autotools generated output + cache (rebuilt by autogen.sh / configure).
+autom4te.cache
+config.status
+**/Makefile
+
+# Libtool / compiler build artifacts (rebuilt by make).
+**/.deps
+**/.libs
+**/*.o
+**/*.lo
+**/*.la
+
+# Built binaries (rebuilt by make; `make distclean` removes them too).
+/src/tfd
+/src/tests
+/src/goldenreplay_tests
+/src/loadbench_tests
+/src/reorg_tests
+/src/reorg_game_tests
+
+# JS deps (not part of the C++ build; only present if a tool dropped them).
+**/node_modules

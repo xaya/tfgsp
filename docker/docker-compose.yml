@@ -32,6 +32,22 @@ services:
   tfd:
     image: tfd-polygon:latest
     restart: unless-stopped
+    # Container hardening (audit P2-23).  The image already runs as the
+    # unprivileged 'tfd' uid (10001); these caps bound the blast radius.
+    cap_drop:
+      - ALL            # tfd needs no Linux capabilities (unprivileged port 8600).
+    security_opt:
+      - no-new-privileges:true   # block setuid escalation (no suid binaries needed).
+    # Resource ceilings: a healthy GSP steady-states well under 2 GiB RSS;
+    # pids_limit guards against thread/fork runaway. Tune if the DB grows.
+    mem_limit: 2g
+    pids_limit: 512
+    # NOTE: read_only root fs is deliberately NOT set. It would additionally
+    # require a writable /tmp (tmpfs) for SQLite temp/sorter files and needs
+    # live verification that glog and libxayagame never write outside the
+    # /xayagame + /log volumes (e.g. to cwd '/'). The named volumes below are
+    # already writable regardless of a read_only root. Enable read_only only
+    # after a clean live startup is confirmed with `tmpfs: [/tmp]` added.
     networks:
       - tf-net
     ports:

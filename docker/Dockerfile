@@ -60,7 +60,22 @@ COPY --from=build /jail /usr/local/
 ENV LD_LIBRARY_PATH="/usr/local/lib64"
 ENV XAYAGAME_DIR="/xayagame"
 LABEL description="Treatfighter game-state processor (XayaX/Polygon)"
+# Git revision of the source that produced this image, passed by the build gate
+# (`docker build --build-arg GIT_REV=$(git rev-parse HEAD)`) and surfaced as the
+# standard OCI revision label for traceability.  Defaults to "unknown".
+ARG GIT_REV=unknown
+LABEL org.opencontainers.image.revision="${GIT_REV}"
 RUN mkdir -p /log /xayagame
+# Run the GSP as an unprivileged user (audit P2-23).  tfd needs no root
+# capabilities: it only binds an unprivileged port (8600) and writes its
+# SQLite datadir (/xayagame) and glog output (/log).  Both dirs are chowned
+# to this uid BEFORE the VOLUME declaration so that a freshly created named
+# volume inherits tfd ownership (Docker seeds an empty volume from the image
+# dir's contents + permissions).
+RUN groupadd -g 10001 tfd \
+  && useradd -u 10001 -g 10001 -M -s /usr/sbin/nologin tfd \
+  && chown -R tfd:tfd /log /xayagame
 VOLUME ["/log"]
 ENV GLOG_log_dir="/log"
+USER tfd
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
