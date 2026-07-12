@@ -3,8 +3,18 @@
 #
 # xaya/libxayagame is a Debian-based image with all Xaya libraries
 # (libxayagame, libxayautil, ...) and their dependencies pre-installed.
-
-FROM xaya/libxayagame AS build
+#
+# Pinned by DIGEST, not the mutable :latest tag, for reproducible/auditable
+# builds.  This is tag 6a6f0a2665... (pushed 2026-07-05).  It carries the
+# WAL-autocheckpoint disable — sqlite3_wal_autocheckpoint(db, 0) — that keeps
+# SQLITE_BUSY from ever reaching the fatal CHECK in sqlite3_snapshot_open()
+# (the crash we hit on the fork), plus the SnapshotGate locking-gap fix and the
+# getnullstate unblock.  NOTE: Docker Hub's :latest is stale (Mar 2026) and is a
+# pre-amend snapshot that SHIPS THAT CRASH WITHOUT THE GUARD — do not use it.
+# Bumping the base is deliberate: `make check` (golden replay) is the gate; if
+# the golden goes red after a bump, that is a real consensus change to
+# investigate — never GOLDEN_REGEN it away.
+FROM xaya/libxayagame@sha256:56f0b3b28ea58350966b4248f0c7d62aea22c533c000071795361ef1a99d8dc7 AS build
 
 RUN apt-get update && apt-get -y install \
   autoconf \

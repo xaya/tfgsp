@@ -294,6 +294,20 @@ Still open from the audit (tracked):
   `dev-address-lockstep`) and run it as a mandatory launch/CI gate; a silent drift here misprices
   real-WCHI purchases (overpay is unrefunded, underpay burns the WCHI and mints nothing).
 
+- **Base-image digest pin (P1-07 / phase2-storage-audit §"libxayagame pin").** ✅ **DONE
+  (2026-07-12).** `docker/Dockerfile` used untagged `FROM xaya/libxayagame` (= `:latest`), so a
+  build silently took whatever the local Docker cache held. Our cache held a **stale Mar-2026
+  pre-amend snapshot that ships the SQLITE_BUSY snapshot-open crash WITHOUT the autocheckpoint
+  guard** (Docker Hub's `:latest` is still that stale image). Pinned to
+  `xaya/libxayagame@sha256:56f0b3b2…` (published tag `6a6f0a2`, 2026-07-05) which carries
+  `sqlite3_wal_autocheckpoint(db,0)` + the SnapshotGate locking-gap fix + the `getnullstate`
+  unblock. `make check` (golden replay) is the gate on every bump — **golden byte-identical** ⇒
+  no consensus change. Two follow-ups NOT covered by this pin: (a) `xaya/xayax:latest` in
+  `docker-compose.yml` is still an unpinned **consensus input** (XayaX decodes Polygon logs into
+  moves; not touched by `make check`) — pin it by digest too before mainnet; (b) libxayagame
+  master's post-2026-07-05 `RollbackTransaction` savepoint/data-loss fix (#149) is NOT in any
+  published image — needs a source build of the lib, a separate pre-mainnet decision.
+
 ## ✅ Confirmed clean (no action)
 
 - Taurion fully stripped (only doc mentions remain).
