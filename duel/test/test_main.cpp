@@ -996,6 +996,37 @@ ApplyVec MakeVec_RecoverRejectCoolingMove() {
   return v;
 }
 
+// Case 6c, parameterized: side0/slot0 is KO'd (hp 0), everyone else alive
+// and Recovering; the KO'd treat's order carries (action, target). The
+// canonical encoding for a KO'd treat is exactly (0xFE, 0xFF) -- anything
+// else must reject. Decode-time bit-validation like this is precisely where
+// native/wasm codegen divergence would bite, hence golden coverage for both
+// non-canonical variants.
+ApplyVec MakeVec_KoOrder(const char* name, uint8_t action, uint8_t target) {
+  ApplyVec v{};
+  v.name = name;
+  duel::DuelState s = MakeState(2, 1);
+  const uint8_t m[] = {24}, c[] = {0};
+  SetTreat(s, 0, 0, 0, 110, 1, 1, 1, m, c);   // KO'd
+  SetTreat(s, 0, 1, 200, 200, 1, 1, 1, m, c); // alive
+  SetTreat(s, 1, 0, 200, 200, 1, 1, 1, m, c);
+  SetTreat(s, 1, 1, 200, 200, 1, 1, 1, m, c);
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdRecoverAll(v.ord, 2);
+  OrdSet(v.ord, 2, 0, 0, action, target);
+  v.ordLen = duel::wire::OrdersLen(2);
+  return v;
+}
+
+// KO'd treat ordered a real move (action != 0xFE).
+ApplyVec MakeVec_KoNoncanonicalAction() {
+  return MakeVec_KoOrder("ko_noncanonical_action", 0, duel::wire::kTargetNone);
+}
+// KO'd treat Recovering but with a real target (target != 0xFF).
+ApplyVec MakeVec_KoNoncanonicalTarget() {
+  return MakeVec_KoOrder("ko_noncanonical_target", duel::wire::kActionRecover, 0);
+}
+
 void test_apply_recover() {
   // (a) all-cooling treat may Recover
   {
@@ -1017,101 +1048,117 @@ void test_apply_recover() {
   }
   // (c) KO'd treat must carry the canonical 0xFE/0xFF encoding
   {
-    duel::DuelState s = MakeState(2, 1);
-    const uint8_t m[] = {24}, c[] = {0};
-    SetTreat(s, 0, 0, 0, 110, 1, 1, 1, m, c);   // KO'd
-    SetTreat(s, 0, 1, 200, 200, 1, 1, 1, m, c); // alive
-    SetTreat(s, 1, 0, 200, 200, 1, 1, 1, m, c);
-    SetTreat(s, 1, 1, 200, 200, 1, 1, 1, m, c);
-    uint8_t st[200];
-    const uint32_t stLen = duel::encode_state(s, st, sizeof(st));
-    {
-      uint8_t ord[32];
-      OrdRecoverAll(ord, 2);
-      OrdSet(ord, 2, 0, 0, 0, duel::wire::kTargetNone); // action != 0xFE
-      CHECK(duel_apply(st, stLen, ord, duel::wire::OrdersLen(2)) == -1);
-      CHECK(duel_out_len() == 0);
-    }
-    {
-      uint8_t ord[32];
-      OrdRecoverAll(ord, 2);
-      OrdSet(ord, 2, 0, 0, duel::wire::kActionRecover, 0); // target != 0xFF
-      CHECK(duel_apply(st, stLen, ord, duel::wire::OrdersLen(2)) == -1);
-      CHECK(duel_out_len() == 0);
-    }
+    ApplyVec v = MakeVec_KoNoncanonicalAction(); // action != 0xFE
+    CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == -1);
+    CHECK(duel_out_len() == 0);
+  }
+  {
+    ApplyVec v = MakeVec_KoNoncanonicalTarget(); // target != 0xFF
+    CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == -1);
+    CHECK(duel_out_len() == 0);
   }
 }
 
 // Case 7 — Cooldown cycle: a cd-2 move is unusable the next 2 rounds and usable
 // on the 3rd. Drive four applies, carrying the state forward.
-ApplyVec MakeVec_CooldownUse() {
+// Case 7 chain, parameterized: one builder is the single source of truth for
+// every round of the cooldown cycle. Side0's Vicious Jawbreaker (authored
+// cd 2) sits at cooldown `cd` in round `round`; side1 (Recover every round)
+// is at `hp1` of max 290 (290 fresh, 250 after round A's 40-dmg neutral
+// hit). `useMove` picks the order variant: the Jawbreaker (loadout index 0,
+// legal iff cd==0) or Recover. The test below cross-checks these hand-built
+// states against the REAL chained apply outputs with memcmp, so the builders
+// can't drift from what the engine actually produces.
+ApplyVec MakeVec_CooldownRound(const char* name, uint16_t round, uint8_t cd,
+                               uint16_t hp1, bool useMove) {
   ApplyVec v{};
-  v.name = "cooldown_use";
-  duel::DuelState s = MakeState(1, 1);
-  const uint8_t m0[] = {26}, c0[] = {0}; // Vicious Jawbreaker: authored cd = 2
+  v.name = name;
+  duel::DuelState s = MakeState(1, 1, round);
+  const uint8_t m0[] = {26}, c0[] = {cd}; // Vicious Jawbreaker: authored cd = 2
   const uint8_t m1[] = {24}, c1[] = {0};
   SetTreat(s, 0, 0, 250, 250, 3, 6, 1, m0, c0);
-  SetTreat(s, 1, 0, 290, 290, 4, 10, 1, m1, c1); // enough hp to survive
+  SetTreat(s, 1, 0, hp1, 290, 4, 10, 1, m1, c1); // enough hp to survive
   v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
   OrdInit(v.ord);
-  OrdSet(v.ord, 1, 0, 0, 0, 0);
+  if (useMove) {
+    OrdSet(v.ord, 1, 0, 0, 0, 0);
+  } else {
+    OrdSet(v.ord, 1, 0, 0, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  }
   OrdSet(v.ord, 1, 1, 0, duel::wire::kActionRecover, duel::wire::kTargetNone);
   v.ordLen = duel::wire::OrdersLen(1);
   return v;
 }
 
-void test_apply_cooldown_cycle() {
-  uint8_t st[200];
-  uint32_t stLen;
-  const uint32_t ordLen = duel::wire::OrdersLen(1);
+// Round A: fresh, use the move (sets cd 2, hits 290 -> 250).
+ApplyVec MakeVec_CooldownUse() {
+  return MakeVec_CooldownRound("cooldown_use", 0, 0, 290, true);
+}
+// Round B: cd 2 -- ordering the cooling move rejects...
+ApplyVec MakeVec_CooldownRejectCd2() {
+  return MakeVec_CooldownRound("cooldown_reject_cd2", 1, 2, 250, true);
+}
+// ...and Recover ticks it to 1.
+ApplyVec MakeVec_CooldownRecoverCd2() {
+  return MakeVec_CooldownRound("cooldown_recover_cd2", 1, 2, 250, false);
+}
+// Round C: cd 1 -- still rejected...
+ApplyVec MakeVec_CooldownRejectCd1() {
+  return MakeVec_CooldownRound("cooldown_reject_cd1", 2, 1, 250, true);
+}
+// ...and Recover ticks it to 0.
+ApplyVec MakeVec_CooldownRecoverCd1() {
+  return MakeVec_CooldownRound("cooldown_recover_cd1", 2, 1, 250, false);
+}
+// Round D: cd 0 -- the move is usable again.
+ApplyVec MakeVec_CooldownReuseReady() {
+  return MakeVec_CooldownRound("cooldown_reuse_ready", 3, 0, 250, true);
+}
 
-  // Round A: use the move → cooldown set to 2.
+// Asserts the engine's current output buffer byte-equals vector `v`'s input
+// state -- the chain <-> hand-built-state cross-check used below.
+void CheckOutMatchesVecState(const ApplyVec& v) {
+  CHECK(duel_out_len() == v.stLen);
+  CHECK(std::memcmp(duel_out_ptr(), v.st, v.stLen) == 0);
+}
+
+void test_apply_cooldown_cycle() {
+  // Round A: use the move → cooldown set to 2. The output must byte-match
+  // the hand-built round-B input state (builder/chain cross-check).
   {
     ApplyVec v = MakeVec_CooldownUse();
     CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
     duel::DuelState o{};
     CHECK(DecodeOut(&o));
     CHECK(o.treats[0][0].cooldowns[0] == 2);
-    stLen = duel_out_len();
-    for (uint32_t i = 0; i < stLen; ++i) st[i] = duel_out_ptr()[i];
+    CheckOutMatchesVecState(MakeVec_CooldownRejectCd2());
   }
   // Round B: cd 2 → move rejected; recover → cd 1.
   {
-    uint8_t ord[32];
-    OrdInit(ord);
-    OrdSet(ord, 1, 0, 0, 0, 0);
-    OrdSet(ord, 1, 1, 0, duel::wire::kActionRecover, duel::wire::kTargetNone);
-    CHECK(duel_apply(st, stLen, ord, ordLen) == -1);
-    OrdSet(ord, 1, 0, 0, duel::wire::kActionRecover, duel::wire::kTargetNone);
-    CHECK(duel_apply(st, stLen, ord, ordLen) == 0);
+    ApplyVec rej = MakeVec_CooldownRejectCd2();
+    CHECK(duel_apply(rej.st, rej.stLen, rej.ord, rej.ordLen) == -1);
+    ApplyVec rec = MakeVec_CooldownRecoverCd2();
+    CHECK(duel_apply(rec.st, rec.stLen, rec.ord, rec.ordLen) == 0);
     duel::DuelState o{};
     CHECK(DecodeOut(&o));
     CHECK(o.treats[0][0].cooldowns[0] == 1);
-    stLen = duel_out_len();
-    for (uint32_t i = 0; i < stLen; ++i) st[i] = duel_out_ptr()[i];
+    CheckOutMatchesVecState(MakeVec_CooldownRejectCd1());
   }
   // Round C: cd 1 → still rejected; recover → cd 0.
   {
-    uint8_t ord[32];
-    OrdInit(ord);
-    OrdSet(ord, 1, 0, 0, 0, 0);
-    OrdSet(ord, 1, 1, 0, duel::wire::kActionRecover, duel::wire::kTargetNone);
-    CHECK(duel_apply(st, stLen, ord, ordLen) == -1);
-    OrdSet(ord, 1, 0, 0, duel::wire::kActionRecover, duel::wire::kTargetNone);
-    CHECK(duel_apply(st, stLen, ord, ordLen) == 0);
+    ApplyVec rej = MakeVec_CooldownRejectCd1();
+    CHECK(duel_apply(rej.st, rej.stLen, rej.ord, rej.ordLen) == -1);
+    ApplyVec rec = MakeVec_CooldownRecoverCd1();
+    CHECK(duel_apply(rec.st, rec.stLen, rec.ord, rec.ordLen) == 0);
     duel::DuelState o{};
     CHECK(DecodeOut(&o));
     CHECK(o.treats[0][0].cooldowns[0] == 0);
-    stLen = duel_out_len();
-    for (uint32_t i = 0; i < stLen; ++i) st[i] = duel_out_ptr()[i];
+    CheckOutMatchesVecState(MakeVec_CooldownReuseReady());
   }
   // Round D: cd 0 → usable again.
   {
-    uint8_t ord[32];
-    OrdInit(ord);
-    OrdSet(ord, 1, 0, 0, 0, 0);
-    OrdSet(ord, 1, 1, 0, duel::wire::kActionRecover, duel::wire::kTargetNone);
-    CHECK(duel_apply(st, stLen, ord, ordLen) == 0);
+    ApplyVec v = MakeVec_CooldownReuseReady();
+    CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
   }
 }
 
@@ -1506,7 +1553,14 @@ void DumpGolden() {
   DumpApplyVector(MakeVec_Retarget());
   DumpApplyVector(MakeVec_RecoverA());
   DumpApplyVector(MakeVec_RecoverRejectCoolingMove());
+  DumpApplyVector(MakeVec_KoNoncanonicalAction());
+  DumpApplyVector(MakeVec_KoNoncanonicalTarget());
   DumpApplyVector(MakeVec_CooldownUse());
+  DumpApplyVector(MakeVec_CooldownRejectCd2());
+  DumpApplyVector(MakeVec_CooldownRecoverCd2());
+  DumpApplyVector(MakeVec_CooldownRejectCd1());
+  DumpApplyVector(MakeVec_CooldownRecoverCd1());
+  DumpApplyVector(MakeVec_CooldownReuseReady());
   DumpApplyVector(MakeVec_Win());
   DumpApplyVector(MakeVec_WinRejectAfter());
   DumpApplyVector(MakeVec_RoundCapUnequalFinal());
