@@ -28,6 +28,8 @@
 // separate static g_out/g_log buffers).
 
 #include "engine.h"
+#include "state.h"
+#include "stats_gen.h"
 #include "wire.h"
 
 #include <cstdint>
@@ -41,6 +43,8 @@
 #else
 #define DUEL_ABI(name) extern "C"
 #endif
+
+using namespace duel;
 
 namespace {
 
@@ -62,14 +66,245 @@ uint32_t g_outLen = 0;
 uint8_t g_log[kLogCap];
 uint32_t g_logLen = 0;
 
+// ---- Task 3: shared per-treat validation (config AND state decode use the
+// identical quality/sweetness/move_count/moves[] rules -- wire.h's config
+// and state formats deliberately share this sub-shape) ----
+
+bool ValidTeamShape(uint32_t teamSize, uint32_t loadoutSize) {
+  return teamSize >= wire::kMinTeamSize && teamSize <= wire::kMaxTeamSize &&
+         loadoutSize >= wire::kMinLoadoutSize &&
+         loadoutSize <= wire::kMaxLoadoutSize;
+}
+
+bool ValidTreatHeader(uint32_t quality, uint32_t sweetness, uint32_t moveCount,
+                      uint32_t loadoutSize) {
+  if (quality < wire::kMinQuality || quality > wire::kMaxQuality) {
+    return false;
+  }
+  if (sweetness < wire::kMinSweetness || sweetness > wire::kMaxSweetness) {
+    return false;
+  }
+  if (moveCount < 1 || moveCount > loadoutSize) {
+    return false;
+  }
+  return true;
+}
+
+// moves[0..loadoutSize) must satisfy: entries < moveCount are dense move
+// indices (< kMoveUniverse, unique within the treat); entries >= moveCount
+// are the 0xFF filler sentinel. moveCount must already be validated
+// (1..loadoutSize) by the caller.
+bool ValidTreatMoves(const uint8_t* moves, uint32_t loadoutSize,
+                     uint32_t moveCount) {
+  bool seen[wire::kMoveUniverse] = {};
+  for (uint32_t j = 0; j < loadoutSize; ++j) {
+    uint8_t mv = moves[j];
+    if (j < moveCount) {
+      if (mv >= wire::kMoveUniverse || seen[mv]) {
+        return false;
+      }
+      seen[mv] = true;
+    } else if (mv != wire::kMoveSlotEmpty) {
+      return false;
+    }
+  }
+  return true;
+}
+
+// Validates a config buffer (wire.h CFG_*) end to end and fills `out` with
+// team_size/loadout_size/phase=active/round=0 plus every treat's
+// quality/sweetness/move_count/moves (hp/max_hp computed from kTun,
+// cooldowns start at 0). Every read is bounds-checked against `len` before
+// use: the length-equality check happens before any per-treat byte is
+// touched, so every subsequent offset is guaranteed to be < len. Returns
+// false (and leaves *out partially written -- callers must not use it) on
+// any wire-contract violation.
+bool DecodeConfig(const uint8_t* cfg, uint32_t len, DuelState* out) {
+  if (cfg == nullptr || len < wire::kCfgHeaderLen) {
+    return false;
+  }
+  uint8_t version = cfg[wire::kCfgOffVersion];
+  uint32_t teamSize = cfg[wire::kCfgOffTeamSize];
+  uint32_t loadoutSize = cfg[wire::kCfgOffLoadoutSize];
+  if (version != wire::kVersion) {
+    return false;
+  }
+  if (!ValidTeamShape(teamSize, loadoutSize)) {
+    return false;
+  }
+  if (len != wire::CfgLen(teamSize, loadoutSize)) {
+    return false;
+  }
+
+  out->version = wire::kVersion;
+  out->team_size = static_cast<uint8_t>(teamSize);
+  out->loadout_size = static_cast<uint8_t>(loadoutSize);
+  out->phase = wire::kPhaseActive;
+  out->round = 0;
+
+  const uint32_t treatLen = wire::CfgTreatLen(loadoutSize);
+  const uint32_t sideLen = wire::CfgSideLen(teamSize, loadoutSize);
+  for (uint32_t side = 0; side < 2; ++side) {
+    for (uint32_t slot = 0; slot < teamSize; ++slot) {
+      const uint32_t base = wire::kCfgOffTeams + side * sideLen + slot * treatLen;
+      const uint32_t quality = cfg[base + wire::kCfgTreatOffQuality];
+      const uint32_t sweetness = cfg[base + wire::kCfgTreatOffSweetness];
+      const uint32_t moveCount = cfg[base + wire::kCfgTreatOffMoveCount];
+      if (!ValidTreatHeader(quality, sweetness, moveCount, loadoutSize)) {
+        return false;
+      }
+      const uint8_t* moves = cfg + base + wire::kCfgTreatOffMoves;
+      if (!ValidTreatMoves(moves, loadoutSize, moveCount)) {
+        return false;
+      }
+
+      TreatState& t = out->treats[side][slot];
+      t.quality = static_cast<uint8_t>(quality);
+      t.sweetness = static_cast<uint8_t>(sweetness);
+      t.move_count = static_cast<uint8_t>(moveCount);
+      for (uint32_t j = 0; j < loadoutSize; ++j) {
+        t.moves[j] = moves[j];
+        t.cooldowns[j] = 0;
+      }
+      const uint32_t maxHp = kTun.hp_base + (quality - 1) * kTun.hp_per_quality +
+                              sweetness * kTun.hp_per_sweetness;
+      t.hp = static_cast<uint16_t>(maxHp);
+      t.max_hp = static_cast<uint16_t>(maxHp);
+    }
+  }
+  return true;
+}
+
 } // namespace
+
+namespace duel {
+
+// ---- Task 3: state wire codec, reused by Task 4's duel_apply/duel_view ----
+
+uint32_t encode_state(const DuelState& s, uint8_t* out, uint32_t cap) {
+  const uint32_t total = wire::StateLen(s.team_size, s.loadout_size);
+  if (out == nullptr || cap < total) {
+    return 0; // no partial write
+  }
+  out[wire::kStateOffVersion] = s.version;
+  out[wire::kStateOffTeamSize] = s.team_size;
+  out[wire::kStateOffLoadoutSize] = s.loadout_size;
+  out[wire::kStateOffPhase] = s.phase;
+  out[wire::kStateOffRound] = static_cast<uint8_t>(s.round & 0xFFu);
+  out[wire::kStateOffRound + 1] = static_cast<uint8_t>((s.round >> 8) & 0xFFu);
+  out[wire::kStateOffReserved] = 0;
+  out[wire::kStateOffReserved + 1] = 0;
+
+  const uint32_t teamSize = s.team_size;
+  const uint32_t loadoutSize = s.loadout_size;
+  const uint32_t treatLen = wire::StateTreatLen(loadoutSize);
+  const uint32_t sideLen = wire::StateSideLen(teamSize, loadoutSize);
+  for (uint32_t side = 0; side < 2; ++side) {
+    for (uint32_t slot = 0; slot < teamSize; ++slot) {
+      const TreatState& t = s.treats[side][slot];
+      const uint32_t base = wire::kStateOffTeams + side * sideLen + slot * treatLen;
+      out[base + wire::kStateTreatOffHp] = static_cast<uint8_t>(t.hp & 0xFFu);
+      out[base + wire::kStateTreatOffHp + 1] =
+          static_cast<uint8_t>((t.hp >> 8) & 0xFFu);
+      out[base + wire::kStateTreatOffMaxHp] = static_cast<uint8_t>(t.max_hp & 0xFFu);
+      out[base + wire::kStateTreatOffMaxHp + 1] =
+          static_cast<uint8_t>((t.max_hp >> 8) & 0xFFu);
+      out[base + wire::kStateTreatOffQuality] = t.quality;
+      out[base + wire::kStateTreatOffSweetness] = t.sweetness;
+      out[base + wire::kStateTreatOffMoveCount] = t.move_count;
+      out[base + wire::kStateTreatOffPad] = 0;
+      const uint32_t movesOff = base + wire::kStateTreatOffMoves;
+      const uint32_t cdOff = base + wire::StateTreatOffCooldowns(loadoutSize);
+      for (uint32_t j = 0; j < loadoutSize; ++j) {
+        out[movesOff + j] = t.moves[j];
+        out[cdOff + j] = t.cooldowns[j];
+      }
+    }
+  }
+  return total;
+}
+
+bool decode_state(const uint8_t* buf, uint32_t len, DuelState* out) {
+  if (buf == nullptr || out == nullptr || len < wire::kStateHeaderLen) {
+    return false;
+  }
+  const uint8_t version = buf[wire::kStateOffVersion];
+  const uint32_t teamSize = buf[wire::kStateOffTeamSize];
+  const uint32_t loadoutSize = buf[wire::kStateOffLoadoutSize];
+  const uint8_t phase = buf[wire::kStateOffPhase];
+  if (version != wire::kVersion) {
+    return false;
+  }
+  if (!ValidTeamShape(teamSize, loadoutSize)) {
+    return false;
+  }
+  if (phase > wire::kPhaseDraw) {
+    return false;
+  }
+  if (len != wire::StateLen(teamSize, loadoutSize)) {
+    return false;
+  }
+
+  out->version = version;
+  out->team_size = static_cast<uint8_t>(teamSize);
+  out->loadout_size = static_cast<uint8_t>(loadoutSize);
+  out->phase = phase;
+  out->round = static_cast<uint16_t>(
+      buf[wire::kStateOffRound] |
+      (static_cast<uint16_t>(buf[wire::kStateOffRound + 1]) << 8));
+
+  const uint32_t treatLen = wire::StateTreatLen(loadoutSize);
+  const uint32_t sideLen = wire::StateSideLen(teamSize, loadoutSize);
+  for (uint32_t side = 0; side < 2; ++side) {
+    for (uint32_t slot = 0; slot < teamSize; ++slot) {
+      const uint32_t base = wire::kStateOffTeams + side * sideLen + slot * treatLen;
+      const uint32_t quality = buf[base + wire::kStateTreatOffQuality];
+      const uint32_t sweetness = buf[base + wire::kStateTreatOffSweetness];
+      const uint32_t moveCount = buf[base + wire::kStateTreatOffMoveCount];
+      if (!ValidTreatHeader(quality, sweetness, moveCount, loadoutSize)) {
+        return false;
+      }
+      const uint8_t* moves = buf + base + wire::kStateTreatOffMoves;
+      if (!ValidTreatMoves(moves, loadoutSize, moveCount)) {
+        return false;
+      }
+
+      TreatState& t = out->treats[side][slot];
+      t.hp = static_cast<uint16_t>(
+          buf[base + wire::kStateTreatOffHp] |
+          (static_cast<uint16_t>(buf[base + wire::kStateTreatOffHp + 1]) << 8));
+      t.max_hp = static_cast<uint16_t>(
+          buf[base + wire::kStateTreatOffMaxHp] |
+          (static_cast<uint16_t>(buf[base + wire::kStateTreatOffMaxHp + 1])
+           << 8));
+      t.quality = static_cast<uint8_t>(quality);
+      t.sweetness = static_cast<uint8_t>(sweetness);
+      t.move_count = static_cast<uint8_t>(moveCount);
+      const uint32_t cdOff = base + wire::StateTreatOffCooldowns(loadoutSize);
+      for (uint32_t j = 0; j < loadoutSize; ++j) {
+        t.moves[j] = moves[j];
+        t.cooldowns[j] = buf[cdOff + j];
+      }
+    }
+  }
+  return true;
+}
+
+} // namespace duel
 
 DUEL_ABI("duel_init")
 int32_t duel_init(const uint8_t* cfg, uint32_t len) {
-  (void)cfg;
-  (void)len;
   g_outLen = 0;
-  return -1;
+  DuelState state{};
+  if (!DecodeConfig(cfg, len, &state)) {
+    return -1;
+  }
+  const uint32_t written = encode_state(state, g_out, kOutCap);
+  if (written == 0) {
+    return -1;
+  }
+  g_outLen = written;
+  return 0;
 }
 
 DUEL_ABI("duel_apply")
