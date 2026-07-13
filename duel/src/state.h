@@ -10,8 +10,11 @@
 //
 // decode_state enforces the FULL wire contract for a state buffer (mirrors
 // duel_init's config validation): version, team_size/loadout_size bounds,
-// exact length for that shape, and per-treat quality/sweetness/move_count/
-// move-index/filler/uniqueness rules identical to the config's. It does NOT
+// exact length for that shape, canonical-zero reserved/pad bytes (non-zero
+// = reject -- these buffers get hashed/signed in game channels, so exactly
+// one byte encoding per logical state is the contract), and per-treat
+// quality/sweetness/move_count/move-index/filler/uniqueness rules identical
+// to the config's. It does NOT
 // enforce game-semantic invariants (e.g. hp <= max_hp, cooldown <= a move's
 // authored cooldown) — those are Task 4's resolve-time concern, not a wire-
 // format constraint; a structurally valid state with an out-of-range hp

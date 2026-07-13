@@ -22,11 +22,11 @@
 
 ## Wire formats (contract for Tasks 1–7)
 
-All integers little-endian. Dense move index = position of the move's AuthoredId in the ASCII-sorted list of all 39 GUIDs from `proto/roconfig/fightermoveblueprint.pb.text`.
+All integers little-endian. Dense move index = position of the move's AuthoredId in the ASCII-sorted list of all 39 GUIDs from `proto/roconfig/fightermoveblueprint.pb.text`. Canonical encoding: every `reserved`/`pad` field below MUST be 0 and decoders MUST reject non-zero values (these buffers get hashed/signed in game channels — exactly one byte encoding per logical state, no malleability).
 
 **Config (input to `duel_init`)** — `CFG_LEN = 4 + 2*team_size*(3+loadout_size)` (46 for 3v3/4):
 ```
-u8 version=1 | u8 team_size (1..5) | u8 loadout_size (1..4) | u8 reserved=0
+u8 version=1 | u8 team_size (1..5) | u8 loadout_size (1..4) | u8 reserved=0 (reject non-zero)
 per side s in 0,1: per slot t in 0..team_size-1:
   u8 quality (1..4) | u8 sweetness (1..10) | u8 move_count (1..loadout_size)
   u8 moves[loadout_size]   // dense indices, strictly: entries >= move_count MUST be 0xFF,
@@ -36,9 +36,9 @@ per side s in 0,1: per slot t in 0..team_size-1:
 **State (output of `duel_init`/`duel_apply`)** — `STATE_LEN = 8 + 2*team_size*(8+2*loadout_size)` (104 for 3v3/4):
 ```
 u8 version=1 | u8 team_size | u8 loadout_size | u8 phase (0 active,1 side0 won,2 side1 won,3 draw)
-u16 round (starts 0) | u16 reserved=0
+u16 round (starts 0) | u16 reserved=0 (reject non-zero)
 per side, per slot:
-  u16 hp | u16 max_hp | u8 quality | u8 sweetness | u8 move_count | u8 pad=0
+  u16 hp | u16 max_hp | u8 quality | u8 sweetness | u8 move_count | u8 pad=0 (reject non-zero)
   u8 moves[loadout_size] | u8 cooldowns[loadout_size]  // rounds until usable, 0=ready
 ```
 
@@ -129,7 +129,7 @@ Every exported ABI function in engine.cpp gets `__attribute__((export_name("duel
 
 **Interfaces:** Consumes wire formats + `kDuelMoves/kTun`. Produces working `duel_init` and internal `decode_state/encode_state` reused by Task 4. `max_hp = hp_base + (quality-1)*hp_per_quality + sweetness*hp_per_sweetness`.
 
-- [ ] **Step 1 (failing tests):** valid 3v3 config (six treats: q1sw1 with 3 common moves … q4sw10 with 4) → returns 0, out len == 104, phase 0, round 0, every hp==max_hp (assert exact values, e.g. q1sw1 → 110; q4sw10 → 290), cooldowns all 0, moves echoed. Reject cases (each -1, out len 0): bad version, team_size 0/6, loadout 0/5, len mismatch, quality 0/5, sweetness 0/11, move_count 0/>loadout, move idx ≥39, non-0xFF filler, duplicate move within a treat.
+- [ ] **Step 1 (failing tests):** valid 3v3 config (six treats: q1sw1 with 3 common moves … q4sw10 with 4) → returns 0, out len == 104, phase 0, round 0, every hp==max_hp (assert exact values, e.g. q1sw1 → 110; q4sw10 → 290), cooldowns all 0, moves echoed. Reject cases (each -1, out len 0): bad version, team_size 0/6, loadout 0/5, len mismatch, quality 0/5, sweetness 0/11, move_count 0/>loadout, move idx ≥39, non-0xFF filler, duplicate move within a treat, reserved/pad != 0 (canonical encoding).
 - [ ] **Step 2:** Implement; run `bash duel/build.sh test` green. Commit: `feat(duel): duel_init — config validation + initial state`.
 
 ### Task 4: `duel_apply` — full round resolve + log (the game)

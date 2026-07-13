@@ -403,6 +403,11 @@ void test_duel_init_rejects_invalid_configs() {
   cfg[treat0Moves + 1] = cfg[treat0Moves + 0]; // duplicate move index (0,0,2)
   CHECK(duel_init(cfg, kBaselineCfgLen) == -1);
   CHECK(duel_out_len() == 0);
+
+  MakeBaselineCfg(cfg);
+  cfg[duel::wire::kCfgOffReserved] = 0x01; // non-canonical reserved byte
+  CHECK(duel_init(cfg, kBaselineCfgLen) == -1);
+  CHECK(duel_out_len() == 0);
 }
 
 // ---- Task 3: state codec (encode_state/decode_state) reused by Task 4 ----
@@ -537,6 +542,18 @@ void test_state_codec_decode_rejects_bad_state() {
   reset();
   bad[treat0MovesOff + 3] = 5;
   CHECK(duel::decode_state(bad, 104, &decoded) == false); // filler != 0xFF
+
+  // Canonical encoding: non-zero reserved/pad bytes must be rejected -- a
+  // buffer that validates-but-hashes-differently from the canonical bytes
+  // would be a signature-malleability hazard once states are hashed/signed
+  // inside game channels.
+  reset();
+  bad[duel::wire::kStateOffReserved + 1] = 0x01; // header reserved u16 = 0x0100
+  CHECK(duel::decode_state(bad, 104, &decoded) == false);
+
+  reset();
+  bad[duel::wire::kStateOffTeams + duel::wire::kStateTreatOffPad] = 0xFF;
+  CHECK(duel::decode_state(bad, 104, &decoded) == false); // treat pad != 0
 }
 
 } // namespace

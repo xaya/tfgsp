@@ -44,7 +44,12 @@
 #define DUEL_ABI(name) extern "C"
 #endif
 
-using namespace duel;
+// Targeted aliases instead of a TU-scope `using namespace duel;` -- only
+// these names are needed outside the `namespace duel` block below.
+using duel::DuelState;
+using duel::TreatState;
+using duel::kTun;
+namespace wire = duel::wire;
 
 namespace {
 
@@ -127,6 +132,12 @@ bool DecodeConfig(const uint8_t* cfg, uint32_t len, DuelState* out) {
   uint32_t teamSize = cfg[wire::kCfgOffTeamSize];
   uint32_t loadoutSize = cfg[wire::kCfgOffLoadoutSize];
   if (version != wire::kVersion) {
+    return false;
+  }
+  // Canonical encoding: the reserved byte MUST be 0 (a validating buffer
+  // that differs only in ignored bytes would hash/sign differently from the
+  // canonical bytes inside a game channel -- malleability hazard).
+  if (cfg[wire::kCfgOffReserved] != 0) {
     return false;
   }
   if (!ValidTeamShape(teamSize, loadoutSize)) {
@@ -244,6 +255,11 @@ bool decode_state(const uint8_t* buf, uint32_t len, DuelState* out) {
   if (len != wire::StateLen(teamSize, loadoutSize)) {
     return false;
   }
+  // Canonical encoding: the reserved u16 MUST be 0 (see DecodeConfig -- the
+  // per-treat pad bytes get the same treatment in the loop below).
+  if (buf[wire::kStateOffReserved] != 0 || buf[wire::kStateOffReserved + 1] != 0) {
+    return false;
+  }
 
   out->version = version;
   out->team_size = static_cast<uint8_t>(teamSize);
@@ -263,6 +279,9 @@ bool decode_state(const uint8_t* buf, uint32_t len, DuelState* out) {
       const uint32_t moveCount = buf[base + wire::kStateTreatOffMoveCount];
       if (!ValidTreatHeader(quality, sweetness, moveCount, loadoutSize)) {
         return false;
+      }
+      if (buf[base + wire::kStateTreatOffPad] != 0) {
+        return false; // canonical encoding: pad byte MUST be 0
       }
       const uint8_t* moves = buf + base + wire::kStateTreatOffMoves;
       if (!ValidTreatMoves(moves, loadoutSize, moveCount)) {
@@ -299,7 +318,7 @@ int32_t duel_init(const uint8_t* cfg, uint32_t len) {
   if (!DecodeConfig(cfg, len, &state)) {
     return -1;
   }
-  const uint32_t written = encode_state(state, g_out, kOutCap);
+  const uint32_t written = duel::encode_state(state, g_out, kOutCap);
   if (written == 0) {
     return -1;
   }
