@@ -9,10 +9,12 @@
 // iff anything failed.
 
 #include "../src/engine.h"
+#include "../src/jsonout.h"
 #include "../src/wire.h"
 
 #include <cstdint>
 #include <cstdio>
+#include <cstring>
 
 namespace {
 
@@ -62,11 +64,48 @@ void test_duel_init_rejects_zeroed_config() {
   CHECK(duel_out_len() == 0);
 }
 
+// jsonout: all four helpers compose into exact expected bytes, filling a
+// 24-byte buffer to exactly its capacity.
+void test_jsonout_builds_exact_json() {
+  uint8_t buf[24];
+  duel::JsonBuf b{buf, sizeof(buf), 0};
+  duel::jb_raw(&b, "{\"a\":");
+  duel::jb_u32(&b, 42);
+  duel::jb_raw(&b, ",\"b\":", 5); // explicit-length overload
+  duel::jb_str(&b, "ok");
+  duel::jb_raw(&b, ",\"c\":");
+  duel::jb_i32(&b, -7);
+  duel::jb_raw(&b, "}");
+  const char expected[] = "{\"a\":42,\"b\":\"ok\",\"c\":-7}"; // 24 bytes
+  CHECK(b.len == sizeof(buf));
+  CHECK(b.len == sizeof(expected) - 1);
+  CHECK(std::memcmp(buf, expected, b.len) == 0);
+}
+
+// jsonout: appending past capacity truncates instead of overflowing —
+// jb_u32(12345) into a cap-4 buffer writes only 4 bytes, len stays == cap,
+// and guard bytes beyond cap are untouched.
+void test_jsonout_never_writes_past_cap() {
+  uint8_t buf[8];
+  std::memset(buf, 0xAB, sizeof(buf)); // guard pattern
+  duel::JsonBuf b{buf, 4, 0};
+  duel::jb_u32(&b, 12345);
+  CHECK(b.len == 4);
+  CHECK(std::memcmp(buf, "1234", 4) == 0); // most-significant digits first
+  for (uint32_t i = 4; i < sizeof(buf); ++i) {
+    CHECK(buf[i] == 0xAB); // no write past cap
+  }
+  duel::jb_raw(&b, "x"); // further appends on a full buffer are no-ops
+  CHECK(b.len == 4);
+}
+
 } // namespace
 
 int main() {
   RUN(test_duel_init_rejects_null_config);
   RUN(test_duel_init_rejects_zeroed_config);
+  RUN(test_jsonout_builds_exact_json);
+  RUN(test_jsonout_never_writes_past_cap);
 
   std::printf("---\n%d ran, %d failed\n", g_tests_run, g_tests_failed);
   return g_tests_failed == 0 ? 0 : 1;

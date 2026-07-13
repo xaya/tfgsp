@@ -7,14 +7,25 @@
 // plumbing everything else will sit on top of.
 //
 // Allocator scheme (duel_alloc/duel_free): a single static byte arena with
-// a bump pointer. `duel_alloc` hands out the next `n` bytes and advances the
-// pointer; `duel_free` is a permanent no-op. This is deliberate, not a
-// placeholder to revisit: inputs here are config/state/orders buffers on
-// the order of a few hundred bytes (wire.h's frozen shapes), a duel's
-// lifetime is one WASM instance's worth of calls, and there is no delete
-// path (or need for one) in this engine's usage pattern. A real
-// malloc/free would pull libc allocator machinery into the wasm build for
-// no benefit here.
+// a bump pointer that WRAPS TO THE START when a request no longer fits.
+// `duel_free` is a permanent no-op. This is deliberate, not a placeholder
+// to revisit: inputs here are config/state/orders buffers on the order of
+// a few hundred bytes (wire.h's frozen shapes; STATE_LEN maxes out at 168
+// bytes for team_size=5/loadout_size=4), so a 64 KiB arena holds hundreds
+// of calls' worth of inputs before wrapping, and a real malloc/free would
+// pull libc allocator machinery into the wasm build for no benefit.
+//
+// Why wrap-on-full is SAFE (and a hard reset at the start of each engine
+// call would NOT be): callers allocate the input buffer(s) for one call,
+// write into them, make the call, and never reuse an old allocation for a
+// later call — that usage pattern is the documented ABI contract (see
+// engine.h). Resetting the arena inside duel_init/duel_apply/duel_view
+// would invalidate exactly the buffers the caller just allocated and
+// passed INTO that call. Wrapping inside duel_alloc instead can only ever
+// clobber allocations from long-dead calls: by the time the bump pointer
+// has consumed all 64 KiB, the wrapped-over bytes belong to inputs whose
+// calls completed long ago (outputs never live here — they go to the
+// separate static g_out/g_log buffers).
 
 #include "engine.h"
 #include "wire.h"
@@ -34,9 +45,9 @@
 namespace {
 
 // ---- duel_alloc/duel_free scratch arena ----
-// Sized well above any single wire-format buffer (CFG/STATE/ORDERS_LEN are
-// all under 128 bytes even at the max team_size=5/loadout_size=4 shape) to
-// leave headroom for whatever a WASM host wants to stage across a call.
+// Sized well above any single wire-format buffer (at the max
+// team_size=5/loadout_size=4 shape: CFG_LEN 74, STATE_LEN 168,
+// ORDERS_LEN 21) to leave generous headroom before wrap-on-full kicks in.
 constexpr uint32_t kArenaCap = 1u << 16; // 64 KiB
 uint8_t g_arena[kArenaCap];
 uint32_t g_arenaUsed = 0;
@@ -103,8 +114,15 @@ uint32_t duel_log_len(void) {
 
 DUEL_ABI("duel_alloc")
 uint8_t* duel_alloc(uint32_t n) {
-  if (n == 0 || n > kArenaCap - g_arenaUsed) {
+  if (n == 0 || n > kArenaCap) {
     return nullptr;
+  }
+  if (n > kArenaCap - g_arenaUsed) {
+    // Wrap-on-full: recycle the arena from the start. Safe because callers
+    // allocate all inputs for a call together, make the call, and never
+    // reuse an allocation across calls (documented ABI contract, engine.h)
+    // — anything this overwrites belongs to calls that finished long ago.
+    g_arenaUsed = 0;
   }
   uint8_t* p = g_arena + g_arenaUsed;
   g_arenaUsed += n;
