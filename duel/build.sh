@@ -11,6 +11,18 @@ if [[ "$mode" == native || "$mode" == all || "$mode" == test ]]; then
   "$NAT" -O2 -std=c++17 -fno-exceptions -fno-rtti -Wall -Wextra -Werror \
     -I"$here/src" "$SRC" "$here/test/test_main.cpp" -o "$here/test/duel_tests"
 fi
+# sanitize: same native test binary under ASan+UBSan (abort on any UB), the
+# one-shot gate for Task 4's self-play soak + byte-flip/truncation fuzz. Uses a
+# host compiler that ships the sanitizer runtimes (emsdk clang doesn't), so
+# SAN_CXX defaults to g++ rather than NATIVE_CXX.
+SAN="${SAN_CXX:-g++}"
+if [[ "$mode" == sanitize ]]; then
+  "$SAN" -O1 -g -std=c++17 -fno-exceptions -fno-rtti \
+    -fsanitize=address,undefined -fno-sanitize-recover=all \
+    -Wall -Wextra -Werror \
+    -I"$here/src" "$SRC" "$here/test/test_main.cpp" -o "$here/test/duel_tests_san"
+  "$here/test/duel_tests_san"
+fi
 if [[ "$mode" == wasm || "$mode" == all ]]; then
   "$WASI/bin/clang++" -O2 -std=c++17 -fno-exceptions -fno-rtti -mexec-model=reactor \
     -I"$here/src" "$SRC" -o "$here/engine.wasm"

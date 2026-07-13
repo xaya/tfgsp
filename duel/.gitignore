@@ -2,3 +2,4 @@
 /engine.wasm
 /engine.wasm.sha256
 /test/duel_tests
+/test/duel_tests_san

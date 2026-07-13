@@ -28,6 +28,7 @@
 // separate static g_out/g_log buffers).
 
 #include "engine.h"
+#include "jsonout.h"
 #include "state.h"
 #include "stats_gen.h"
 #include "wire.h"
@@ -186,6 +187,84 @@ bool DecodeConfig(const uint8_t* cfg, uint32_t len, DuelState* out) {
   return true;
 }
 
+// ==================== Task 4: round resolve (duel_apply) ====================
+
+constexpr uint8_t kTypeBlocking = 4;   // MoveType Blocking (stats_gen.h enum)
+constexpr uint8_t kClashNeutral = 255; // sentinel: target has no move type
+
+// Pentagon advantage (verbatim from src/logic_combat.cpp): does move type `a`
+// beat move type `b`? Types: 0 Heavy,1 Speedy,2 Tricky,3 Distance,4 Blocking.
+bool TypeBeats(uint8_t a, uint8_t b) {
+  switch (a) {
+    case 0: return b == 1 || b == 4; // Heavy > Speedy, Blocking
+    case 1: return b == 2 || b == 3; // Speedy > Tricky, Distance
+    case 2: return b == 0 || b == 4; // Tricky > Heavy, Blocking
+    case 3: return b == 0 || b == 2; // Distance > Heavy, Tricky
+    case 4: return b == 1 || b == 3; // Blocking > Speedy, Distance
+    default: return false;
+  }
+}
+
+// 384 advantage / 170 disadvantage / 256 neutral (same type, unrelated, or the
+// target has no move type — Recover/skip).
+uint16_t ClashMult(uint8_t atkType, uint8_t tgtClashType) {
+  if (tgtClashType == kClashNeutral) {
+    return 256;
+  }
+  if (TypeBeats(atkType, tgtClashType)) {
+    return kTun.adv_mult_256;
+  }
+  if (TypeBeats(tgtClashType, atkType)) {
+    return kTun.dis_mult_256;
+  }
+  return 256;
+}
+
+const char* ClashLabel(uint16_t mult) {
+  if (mult == kTun.adv_mult_256) {
+    return "adv";
+  }
+  if (mult == kTun.dis_mult_256) {
+    return "dis";
+  }
+  return "neu";
+}
+
+// Append one round-log action entry (schema in the plan's "Log JSON"). `move`
+// and `target` carry wire::kMoveSlotEmpty/kTargetNone (255) when absent
+// (recover/skip). Bounds-checked writes drop silently past capacity.
+void WriteLogEntry(duel::JsonBuf* b, bool first, uint32_t side, uint32_t slot,
+                   const char* kind, uint32_t move, uint32_t target,
+                   bool retargeted, const char* clash, uint32_t dmg,
+                   bool blocked, uint32_t targetHp, bool ko) {
+  if (!first) {
+    duel::jb_raw(b, ",");
+  }
+  duel::jb_raw(b, "{\"side\":");
+  duel::jb_u32(b, side);
+  duel::jb_raw(b, ",\"slot\":");
+  duel::jb_u32(b, slot);
+  duel::jb_raw(b, ",\"kind\":");
+  duel::jb_str(b, kind);
+  duel::jb_raw(b, ",\"move\":");
+  duel::jb_u32(b, move);
+  duel::jb_raw(b, ",\"target\":");
+  duel::jb_u32(b, target);
+  duel::jb_raw(b, ",\"retargeted\":");
+  duel::jb_raw(b, retargeted ? "true" : "false");
+  duel::jb_raw(b, ",\"clash\":");
+  duel::jb_str(b, clash);
+  duel::jb_raw(b, ",\"dmg\":");
+  duel::jb_u32(b, dmg);
+  duel::jb_raw(b, ",\"blocked\":");
+  duel::jb_raw(b, blocked ? "true" : "false");
+  duel::jb_raw(b, ",\"targetHp\":");
+  duel::jb_u32(b, targetHp);
+  duel::jb_raw(b, ",\"ko\":");
+  duel::jb_raw(b, ko ? "true" : "false");
+  duel::jb_raw(b, "}");
+}
+
 } // namespace
 
 namespace duel {
@@ -329,13 +408,236 @@ int32_t duel_init(const uint8_t* cfg, uint32_t len) {
 DUEL_ABI("duel_apply")
 int32_t duel_apply(const uint8_t* st, uint32_t stLen, const uint8_t* ord,
                     uint32_t ordLen) {
-  (void)st;
-  (void)stLen;
-  (void)ord;
-  (void)ordLen;
   g_outLen = 0;
   g_logLen = 0;
-  return -1;
+
+  // ---- semantics 1: validate everything (reject leaves state unchanged) ----
+  DuelState s{};
+  if (!duel::decode_state(st, stLen, &s)) {
+    return -1;
+  }
+  if (s.phase != wire::kPhaseActive) {
+    return -1; // a finished duel takes no further rounds
+  }
+
+  const uint32_t teamSize = s.team_size;
+  const uint32_t loadoutSize = s.loadout_size;
+
+  if (ord == nullptr || ordLen != wire::OrdersLen(teamSize) ||
+      ord[wire::kOrdersOffVersion] != wire::kVersion) {
+    return -1;
+  }
+
+  uint8_t action[2][wire::kMaxTeamSize];
+  uint8_t target[2][wire::kMaxTeamSize];
+  for (uint32_t side = 0; side < 2; ++side) {
+    for (uint32_t slot = 0; slot < teamSize; ++slot) {
+      const uint32_t off = wire::kOrdersOffTeams +
+                           side * wire::OrdersSideLen(teamSize) +
+                           slot * wire::kOrdersTreatLen;
+      const uint8_t a = ord[off + wire::kOrdersTreatOffAction];
+      const uint8_t t = ord[off + wire::kOrdersTreatOffTarget];
+      const TreatState& tr = s.treats[side][slot];
+      if (tr.hp == 0) {
+        // KO'd treat: canonical Recover encoding only.
+        if (a != wire::kActionRecover || t != wire::kTargetNone) {
+          return -1;
+        }
+      } else if (a == wire::kActionRecover) {
+        if (t != wire::kTargetNone) {
+          return -1;
+        }
+      } else {
+        // A real move: a ready loadout index aimed at a real enemy slot.
+        if (a >= tr.move_count || tr.cooldowns[a] != 0 || t >= teamSize) {
+          return -1;
+        }
+      }
+      action[side][slot] = a;
+      target[side][slot] = t;
+    }
+  }
+
+  // ---- semantics 2: block stances (living treat whose action is a real
+  // Blocking move; fixed for the whole round -- a dead treat is never a valid
+  // hit target, so "ends if KO'd mid-round" falls out for free) ----
+  bool blockStance[2][wire::kMaxTeamSize] = {};
+  for (uint32_t side = 0; side < 2; ++side) {
+    for (uint32_t slot = 0; slot < teamSize; ++slot) {
+      const TreatState& tr = s.treats[side][slot];
+      if (tr.hp > 0 && action[side][slot] != wire::kActionRecover &&
+          duel::kDuelMoves[tr.moves[action[side][slot]]].type == kTypeBlocking) {
+        blockStance[side][slot] = true;
+      }
+    }
+  }
+
+  // ---- semantics 3: order actions by (speed DESC, side ASC, slot ASC).
+  // Recover / KO'd actions have speed 0. (side, slot) is unique so the order
+  // is total and deterministic. ----
+  uint8_t speed[2][wire::kMaxTeamSize];
+  const uint32_t nActions = 2 * teamSize;
+  uint8_t ordSide[2 * wire::kMaxTeamSize];
+  uint8_t ordSlot[2 * wire::kMaxTeamSize];
+  {
+    uint32_t idx = 0;
+    for (uint32_t side = 0; side < 2; ++side) {
+      for (uint32_t slot = 0; slot < teamSize; ++slot) {
+        const TreatState& tr = s.treats[side][slot];
+        uint8_t sp = 0;
+        if (tr.hp > 0 && action[side][slot] != wire::kActionRecover) {
+          sp = duel::kDuelMoves[tr.moves[action[side][slot]]].speed;
+        }
+        speed[side][slot] = sp;
+        ordSide[idx] = static_cast<uint8_t>(side);
+        ordSlot[idx] = static_cast<uint8_t>(slot);
+        ++idx;
+      }
+    }
+    // Insertion sort (n <= 10): deterministic, no libc.
+    for (uint32_t i = 1; i < nActions; ++i) {
+      const uint8_t cs = ordSide[i], cl = ordSlot[i];
+      const uint8_t csp = speed[cs][cl];
+      uint32_t j = i;
+      while (j > 0) {
+        const uint8_t ps = ordSide[j - 1], pl = ordSlot[j - 1];
+        const uint8_t psp = speed[ps][pl];
+        const bool prevBefore = (psp > csp) ||
+                                (psp == csp &&
+                                 (ps < cs || (ps == cs && pl < cl)));
+        if (prevBefore) {
+          break;
+        }
+        ordSide[j] = ps;
+        ordSlot[j] = pl;
+        --j;
+      }
+      ordSide[j] = cs;
+      ordSlot[j] = cl;
+    }
+  }
+
+  // ---- semantics 4: resolve each action in order, appending a log entry ----
+  const uint16_t playedRound = s.round;
+  duel::JsonBuf log{g_log, kLogCap, 0};
+  duel::jb_raw(&log, "{\"round\":");
+  duel::jb_u32(&log, playedRound);
+  duel::jb_raw(&log, ",\"actions\":[");
+
+  for (uint32_t i = 0; i < nActions; ++i) {
+    const uint32_t aS = ordSide[i];
+    const uint32_t aL = ordSlot[i];
+    const bool first = (i == 0);
+    TreatState& actor = s.treats[aS][aL];
+    const uint8_t act = action[aS][aL];
+
+    if (actor.hp == 0) {
+      const uint32_t mv = (act == wire::kActionRecover) ? wire::kMoveSlotEmpty
+                                                        : actor.moves[act];
+      WriteLogEntry(&log, first, aS, aL, "skip", mv, wire::kTargetNone, false,
+                    "neu", 0, false, 0, false);
+      continue;
+    }
+    if (act == wire::kActionRecover) {
+      WriteLogEntry(&log, first, aS, aL, "recover", wire::kMoveSlotEmpty,
+                    wire::kTargetNone, false, "neu", 0, false, 0, false);
+      continue;
+    }
+
+    const uint8_t mvIdx = actor.moves[act];
+    const uint32_t enemy = 1u - aS;
+    uint32_t tgtSlot = target[aS][aL];
+    bool retargeted = false;
+    if (s.treats[enemy][tgtSlot].hp == 0) {
+      // Retarget to the living enemy with lowest hp (tie: lowest slot).
+      int best = -1;
+      for (uint32_t k = 0; k < teamSize; ++k) {
+        if (s.treats[enemy][k].hp > 0 &&
+            (best < 0 ||
+             s.treats[enemy][k].hp < s.treats[enemy][best].hp)) {
+          best = static_cast<int>(k);
+        }
+      }
+      if (best < 0) {
+        // No living enemy: the move whiffs.
+        WriteLogEntry(&log, first, aS, aL, "skip", mvIdx, wire::kTargetNone,
+                      false, "neu", 0, false, 0, false);
+        continue;
+      }
+      retargeted = (static_cast<uint32_t>(best) != tgtSlot);
+      tgtSlot = static_cast<uint32_t>(best);
+    }
+
+    TreatState& tgt = s.treats[enemy][tgtSlot];
+    const uint8_t atkType = duel::kDuelMoves[mvIdx].type;
+    uint8_t tgtClash = kClashNeutral;
+    const uint8_t tgtAct = action[enemy][tgtSlot];
+    if (tgtAct != wire::kActionRecover) {
+      tgtClash = duel::kDuelMoves[tgt.moves[tgtAct]].type;
+    }
+    const uint16_t mult = ClashMult(atkType, tgtClash);
+    uint32_t dmg = (static_cast<uint32_t>(duel::kDuelMoves[mvIdx].power) * mult) >> 8;
+    const bool blocked = blockStance[enemy][tgtSlot];
+    if (blocked) {
+      dmg = (dmg * (256u - kTun.block_pct_256)) >> 8;
+    }
+    const uint16_t newHp =
+        (tgt.hp > dmg) ? static_cast<uint16_t>(tgt.hp - dmg) : 0;
+    tgt.hp = newHp;
+    const bool ko = (newHp == 0);
+    WriteLogEntry(&log, first, aS, aL, "hit", mvIdx, tgtSlot, retargeted,
+                  ClashLabel(mult), dmg, blocked, newHp, ko);
+  }
+
+  // ---- semantics 5: end-of-round cooldowns (living treats only) ----
+  for (uint32_t side = 0; side < 2; ++side) {
+    for (uint32_t slot = 0; slot < teamSize; ++slot) {
+      TreatState& tr = s.treats[side][slot];
+      if (tr.hp == 0) {
+        continue; // KO'd treats are out -- cooldowns untouched
+      }
+      const uint8_t act = action[side][slot];
+      for (uint32_t j = 0; j < loadoutSize; ++j) {
+        if (act != wire::kActionRecover && j == act) {
+          tr.cooldowns[j] = duel::kDuelMoves[tr.moves[act]].cooldown;
+        } else if (tr.cooldowns[j] > 0) {
+          tr.cooldowns[j] = static_cast<uint8_t>(tr.cooldowns[j] - 1);
+        }
+      }
+    }
+  }
+
+  // ---- semantics 6: advance round, decide winner ----
+  s.round = static_cast<uint16_t>(s.round + 1);
+  bool side0Dead = true, side1Dead = true;
+  uint32_t sum0 = 0, sum1 = 0;
+  for (uint32_t slot = 0; slot < teamSize; ++slot) {
+    if (s.treats[0][slot].hp > 0) side0Dead = false;
+    if (s.treats[1][slot].hp > 0) side1Dead = false;
+    sum0 += s.treats[0][slot].hp;
+    sum1 += s.treats[1][slot].hp;
+  }
+  if (side1Dead) {
+    s.phase = wire::kPhaseSide0Won; // enemy of side0 is all dead
+  } else if (side0Dead) {
+    s.phase = wire::kPhaseSide1Won;
+  } else if (s.round >= kTun.round_cap) {
+    s.phase = (sum0 > sum1)   ? wire::kPhaseSide0Won
+              : (sum1 > sum0) ? wire::kPhaseSide1Won
+                              : wire::kPhaseDraw;
+  }
+
+  duel::jb_raw(&log, "],\"phase\":");
+  duel::jb_u32(&log, s.phase);
+  duel::jb_raw(&log, "}");
+
+  const uint32_t written = duel::encode_state(s, g_out, kOutCap);
+  if (written == 0) {
+    return -1; // unreachable for a decoded (valid-shape) state; stay safe
+  }
+  g_outLen = written;
+  g_logLen = log.len;
+  return 0;
 }
 
 DUEL_ABI("duel_view")

@@ -14,6 +14,7 @@
 #include "../src/stats_gen.h"
 #include "../src/wire.h"
 
+#include <climits>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
@@ -556,6 +557,703 @@ void test_state_codec_decode_rejects_bad_state() {
   CHECK(duel::decode_state(bad, 104, &decoded) == false); // treat pad != 0
 }
 
+// ---- Task 4: duel_apply (round resolve + log) shared helpers ----
+
+// Build a fresh active DuelState header (treats zero-filled; caller sets them).
+duel::DuelState MakeState(uint8_t teamSize, uint8_t loadoutSize,
+                          uint16_t round = 0) {
+  duel::DuelState s{};
+  s.version = duel::wire::kVersion;
+  s.team_size = teamSize;
+  s.loadout_size = loadoutSize;
+  s.phase = duel::wire::kPhaseActive;
+  s.round = round;
+  return s;
+}
+
+// Fill one treat: the first `mc` loadout slots take realMoves/realCds; the rest
+// get the 0xFF filler + cooldown 0 (canonical, so encode/decode round-trips).
+void SetTreat(duel::DuelState& s, int side, int slot, uint16_t hp, uint16_t maxhp,
+              uint8_t q, uint8_t sw, uint8_t mc, const uint8_t* realMoves,
+              const uint8_t* realCds) {
+  duel::TreatState& t = s.treats[side][slot];
+  t.hp = hp;
+  t.max_hp = maxhp;
+  t.quality = q;
+  t.sweetness = sw;
+  t.move_count = mc;
+  for (int j = 0; j < s.loadout_size; ++j) {
+    if (j < mc) {
+      t.moves[j] = realMoves[j];
+      t.cooldowns[j] = realCds[j];
+    } else {
+      t.moves[j] = duel::wire::kMoveSlotEmpty;
+      t.cooldowns[j] = 0;
+    }
+  }
+}
+
+void OrdInit(uint8_t* ord) { ord[duel::wire::kOrdersOffVersion] = duel::wire::kVersion; }
+
+void OrdSet(uint8_t* ord, int teamSize, int side, int slot, uint8_t a, uint8_t t) {
+  const uint32_t off = duel::wire::kOrdersOffTeams +
+                       side * duel::wire::OrdersSideLen(teamSize) +
+                       slot * duel::wire::kOrdersTreatLen;
+  ord[off + duel::wire::kOrdersTreatOffAction] = a;
+  ord[off + duel::wire::kOrdersTreatOffTarget] = t;
+}
+
+void OrdRecoverAll(uint8_t* ord, int teamSize) {
+  OrdInit(ord);
+  for (int side = 0; side < 2; ++side) {
+    for (int slot = 0; slot < teamSize; ++slot) {
+      OrdSet(ord, teamSize, side, slot, duel::wire::kActionRecover,
+             duel::wire::kTargetNone);
+    }
+  }
+}
+
+bool DecodeOut(duel::DuelState* out) {
+  return duel::decode_state(duel_out_ptr(), duel_out_len(), out);
+}
+
+bool LogHas(const char* needle) {
+  const uint8_t* p = duel_log_ptr();
+  const uint32_t n = duel_log_len();
+  const uint32_t m = static_cast<uint32_t>(std::strlen(needle));
+  if (m == 0) return true;
+  if (m > n) return false;
+  for (uint32_t i = 0; i + m <= n; ++i) {
+    if (std::memcmp(p + i, needle, m) == 0) return true;
+  }
+  return false;
+}
+
+int LogIndexOf(const char* needle) {
+  const uint8_t* p = duel_log_ptr();
+  const uint32_t n = duel_log_len();
+  const uint32_t m = static_cast<uint32_t>(std::strlen(needle));
+  if (m == 0 || m > n) return -1;
+  for (uint32_t i = 0; i + m <= n; ++i) {
+    if (std::memcmp(p + i, needle, m) == 0) return static_cast<int>(i);
+  }
+  return -1;
+}
+
+// Dense move indices used in the behavioral vectors (from stats_gen.h):
+//   [3]  Coco Chaos          {power 24, speed 98, cd 0, Speedy}
+//   [6]  Pucker Sucker       {power 24, speed 57, cd 0, Tricky}
+//   [10] Super Sugary Rush   {power 51, speed 97, cd 3, Speedy}
+//   [18] Sugar Shield        {power 12, speed 43, cd 0, Blocking}
+//   [24] Pop Rock Pop        {power 26, speed 27, cd 0, Heavy}
+//   [25] Bubble Trouble      {power 25, speed 76, cd 0, Distance}
+//   [26] Vicious Jawbreaker  {power 40, speed 28, cd 2, Heavy}
+
+// jsonout: jb_i32 must not overflow when negating INT32_MIN (classic edge; the
+// helper widens to int64 first). Log/view use jb_u32, but this pins jb_i32.
+void test_jsonout_i32_min() {
+  uint8_t buf[16];
+  duel::JsonBuf b{buf, sizeof(buf), 0};
+  duel::jb_i32(&b, INT32_MIN);
+  const char expected[] = "-2147483648"; // 11 chars, no overflow/UB
+  CHECK(b.len == sizeof(expected) - 1);
+  CHECK(std::memcmp(buf, expected, b.len) == 0);
+}
+
+// Case 1 — Clash advantage: Heavy(power 40) vs a target that picked Speedy →
+// Heavy>Speedy → adv ×384 → dmg = (40*384)>>8 = 60.
+void test_apply_clash_advantage() {
+  duel::DuelState s = MakeState(1, 1);
+  const uint8_t mH[] = {26}, cH[] = {0}; // Heavy power 40
+  const uint8_t mS[] = {3}, cS[] = {0};  // Speedy
+  SetTreat(s, 0, 0, 250, 250, 3, 6, 1, mH, cH);
+  SetTreat(s, 1, 0, 250, 250, 1, 1, 1, mS, cS);
+  uint8_t st[200];
+  const uint32_t stLen = duel::encode_state(s, st, sizeof(st));
+  uint8_t ord[32];
+  OrdInit(ord);
+  OrdSet(ord, 1, 0, 0, 0, 0);
+  OrdSet(ord, 1, 1, 0, 0, 0);
+  CHECK(duel_apply(st, stLen, ord, duel::wire::OrdersLen(1)) == 0);
+  duel::DuelState o{};
+  CHECK(DecodeOut(&o));
+  CHECK(o.treats[1][0].hp == 190); // 250 - 60 (adv)
+  CHECK(o.treats[0][0].hp == 235); // Speedy vs Heavy = dis 170: 24*170>>8 = 15
+  CHECK(LogHas("\"clash\":\"adv\""));
+  CHECK(LogHas("\"dmg\":60"));
+  CHECK(o.phase == duel::wire::kPhaseActive);
+}
+
+// Case 2 — Disadvantage: Heavy vs a target that picked Tricky → Tricky>Heavy →
+// dis ×170 → dmg = (40*170)>>8 = 26.
+void test_apply_clash_disadvantage() {
+  duel::DuelState s = MakeState(1, 1);
+  const uint8_t mH[] = {26}, cH[] = {0}; // Heavy power 40
+  const uint8_t mT[] = {6}, cT[] = {0};  // Tricky
+  SetTreat(s, 0, 0, 250, 250, 3, 6, 1, mH, cH);
+  SetTreat(s, 1, 0, 250, 250, 1, 1, 1, mT, cT);
+  uint8_t st[200];
+  const uint32_t stLen = duel::encode_state(s, st, sizeof(st));
+  uint8_t ord[32];
+  OrdInit(ord);
+  OrdSet(ord, 1, 0, 0, 0, 0);
+  OrdSet(ord, 1, 1, 0, 0, 0);
+  CHECK(duel_apply(st, stLen, ord, duel::wire::OrdersLen(1)) == 0);
+  duel::DuelState o{};
+  CHECK(DecodeOut(&o));
+  CHECK(o.treats[1][0].hp == 224); // 250 - 26 (dis)
+  CHECK(LogHas("\"clash\":\"dis\""));
+  CHECK(LogHas("\"dmg\":26"));
+}
+
+// Case 3 — Block stance. (A) Heavy(power 40) vs a Blocking target → adv ×384
+// then block: ((40*384)>>8 *154)>>8 = 36. (B) the stance holds even when the
+// blocker's own action fires LAST (attacker faster).
+void test_apply_block_stance() {
+  // (A) exact 36
+  {
+    duel::DuelState s = MakeState(1, 1);
+    const uint8_t mH[] = {26}, cH[] = {0}; // Heavy power 40, speed 28
+    const uint8_t mB[] = {18}, cB[] = {0}; // Blocking, speed 43 (acts first here)
+    SetTreat(s, 0, 0, 250, 250, 3, 6, 1, mH, cH);
+    SetTreat(s, 1, 0, 250, 250, 1, 1, 1, mB, cB);
+    uint8_t st[200];
+    const uint32_t stLen = duel::encode_state(s, st, sizeof(st));
+    uint8_t ord[32];
+    OrdInit(ord);
+    OrdSet(ord, 1, 0, 0, 0, 0);
+    OrdSet(ord, 1, 1, 0, 0, 0);
+    CHECK(duel_apply(st, stLen, ord, duel::wire::OrdersLen(1)) == 0);
+    duel::DuelState o{};
+    CHECK(DecodeOut(&o));
+    CHECK(o.treats[1][0].hp == 214); // 250 - 36 (adv then block)
+    CHECK(LogHas("\"blocked\":true"));
+    CHECK(LogHas("\"dmg\":36"));
+    CHECK(LogHas("\"clash\":\"adv\""));
+  }
+  // (B) stance active even though the blocker resolves last
+  {
+    duel::DuelState s = MakeState(1, 1);
+    const uint8_t mS[] = {3}, cS[] = {0};  // Speedy, speed 98 (fires first)
+    const uint8_t mB[] = {18}, cB[] = {0}; // Blocking, speed 43 (fires last)
+    SetTreat(s, 0, 0, 250, 250, 1, 1, 1, mS, cS);
+    SetTreat(s, 1, 0, 250, 250, 1, 1, 1, mB, cB);
+    uint8_t st[200];
+    const uint32_t stLen = duel::encode_state(s, st, sizeof(st));
+    uint8_t ord[32];
+    OrdInit(ord);
+    OrdSet(ord, 1, 0, 0, 0, 0);
+    OrdSet(ord, 1, 1, 0, 0, 0);
+    CHECK(duel_apply(st, stLen, ord, duel::wire::OrdersLen(1)) == 0);
+    duel::DuelState o{};
+    CHECK(DecodeOut(&o));
+    // Speedy vs Blocking = dis 170: (24*170)>>8 = 15; block: (15*154)>>8 = 9.
+    CHECK(o.treats[1][0].hp == 241); // 250 - 9, blocked though blocker acts last
+    CHECK(LogHas("\"blocked\":true"));
+    const int i0 = LogIndexOf("\"side\":0");
+    const int i1 = LogIndexOf("\"side\":1");
+    CHECK(i0 >= 0);
+    CHECK(i1 >= 0);
+    CHECK(i0 < i1); // attacker (speed 98) resolves before the blocker (speed 43)
+  }
+}
+
+// Case 4 — Speed order + KO skip: a fast Speedy KOs a slower treat before it
+// acts → the victim's own action is logged "skip".
+void test_apply_speed_order_ko_skip() {
+  duel::DuelState s = MakeState(1, 1);
+  const uint8_t mS[] = {10}, cS[] = {0}; // Speedy power 51, speed 97
+  const uint8_t mD[] = {25}, cD[] = {0}; // Distance, speed 76
+  SetTreat(s, 0, 0, 250, 250, 4, 10, 1, mS, cS);
+  SetTreat(s, 1, 0, 40, 110, 1, 1, 1, mD, cD);
+  uint8_t st[200];
+  const uint32_t stLen = duel::encode_state(s, st, sizeof(st));
+  uint8_t ord[32];
+  OrdInit(ord);
+  OrdSet(ord, 1, 0, 0, 0, 0);
+  OrdSet(ord, 1, 1, 0, 0, 0);
+  CHECK(duel_apply(st, stLen, ord, duel::wire::OrdersLen(1)) == 0);
+  duel::DuelState o{};
+  CHECK(DecodeOut(&o));
+  CHECK(o.treats[1][0].hp == 0);
+  CHECK(LogHas("\"dmg\":76")); // Speedy>Distance adv: 51*384>>8 = 76
+  CHECK(LogHas("\"ko\":true"));
+  CHECK(LogHas("{\"side\":1,\"slot\":0,\"kind\":\"skip\"")); // victim skipped
+  CHECK(o.phase == duel::wire::kPhaseSide0Won);
+  const int i0 = LogIndexOf("\"side\":0"); // killer acts before victim
+  const int i1 = LogIndexOf("\"side\":1");
+  CHECK(i0 >= 0);
+  CHECK(i1 >= 0);
+  CHECK(i0 < i1);
+}
+
+// Case 5 — Retarget: two attackers aim at the same 1-hp treat; the first KOs
+// it, the second retargets to the lowest-hp living enemy (retargeted:true).
+void test_apply_retarget() {
+  duel::DuelState s = MakeState(2, 1);
+  const uint8_t mS[] = {10}, cS[] = {0}; // Speedy power 51, speed 97
+  const uint8_t mH[] = {26}, cH[] = {0}; // Heavy  power 40, speed 28
+  const uint8_t mD[] = {24}, cD[] = {0};
+  SetTreat(s, 0, 0, 250, 250, 4, 10, 1, mS, cS);
+  SetTreat(s, 0, 1, 250, 250, 3, 6, 1, mH, cH);
+  SetTreat(s, 1, 0, 1, 110, 1, 1, 1, mD, cD);   // 1 hp → dies to attacker 1
+  SetTreat(s, 1, 1, 50, 110, 1, 1, 1, mD, cD);  // living → retarget lands here
+  uint8_t st[200];
+  const uint32_t stLen = duel::encode_state(s, st, sizeof(st));
+  uint8_t ord[32];
+  OrdInit(ord);
+  OrdSet(ord, 2, 0, 0, 0, 0); // both attackers aim at enemy slot 0
+  OrdSet(ord, 2, 0, 1, 0, 0);
+  OrdSet(ord, 2, 1, 0, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  OrdSet(ord, 2, 1, 1, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  CHECK(duel_apply(st, stLen, ord, duel::wire::OrdersLen(2)) == 0);
+  duel::DuelState o{};
+  CHECK(DecodeOut(&o));
+  CHECK(o.treats[1][0].hp == 0);
+  CHECK(o.treats[1][1].hp == 10); // 50 - 40 (Heavy vs recover = neutral)
+  CHECK(LogHas("\"retargeted\":true"));
+  CHECK(LogHas(
+      "{\"side\":0,\"slot\":1,\"kind\":\"hit\",\"move\":26,\"target\":1,"
+      "\"retargeted\":true,\"clash\":\"neu\",\"dmg\":40,\"blocked\":false,"
+      "\"targetHp\":10,\"ko\":false}"));
+  CHECK(o.phase == duel::wire::kPhaseActive);
+}
+
+// Case 6 — Recover: (a) all moves cooling → 0xFE legal, logged "recover";
+// (b) ordering a cooling move → reject; (c) KO'd treat encoded non-canonically
+// → reject.
+void test_apply_recover() {
+  // (a) all-cooling treat may Recover
+  {
+    duel::DuelState s = MakeState(1, 1);
+    const uint8_t m0[] = {26}, c0[] = {2}; // its only move is cooling
+    const uint8_t m1[] = {24}, c1[] = {0};
+    SetTreat(s, 0, 0, 250, 250, 3, 6, 1, m0, c0);
+    SetTreat(s, 1, 0, 250, 250, 1, 1, 1, m1, c1);
+    uint8_t st[200];
+    const uint32_t stLen = duel::encode_state(s, st, sizeof(st));
+    uint8_t ord[32];
+    OrdRecoverAll(ord, 1);
+    CHECK(duel_apply(st, stLen, ord, duel::wire::OrdersLen(1)) == 0);
+    CHECK(LogHas("\"kind\":\"recover\""));
+    duel::DuelState o{};
+    CHECK(DecodeOut(&o));
+    CHECK(o.phase == duel::wire::kPhaseActive);
+    CHECK(o.round == 1);
+    CHECK(o.treats[0][0].cooldowns[0] == 1); // recover ticks the cooldown down
+  }
+  // (b) ordering a cooling move rejects the whole apply
+  {
+    duel::DuelState s = MakeState(1, 1);
+    const uint8_t m0[] = {26}, c0[] = {2};
+    const uint8_t m1[] = {24}, c1[] = {0};
+    SetTreat(s, 0, 0, 250, 250, 3, 6, 1, m0, c0);
+    SetTreat(s, 1, 0, 250, 250, 1, 1, 1, m1, c1);
+    uint8_t st[200];
+    const uint32_t stLen = duel::encode_state(s, st, sizeof(st));
+    uint8_t ord[32];
+    OrdInit(ord);
+    OrdSet(ord, 1, 0, 0, 0, 0); // the cooling move
+    OrdSet(ord, 1, 1, 0, duel::wire::kActionRecover, duel::wire::kTargetNone);
+    CHECK(duel_apply(st, stLen, ord, duel::wire::OrdersLen(1)) == -1);
+    CHECK(duel_out_len() == 0);
+    CHECK(duel_log_len() == 0);
+  }
+  // (c) KO'd treat must carry the canonical 0xFE/0xFF encoding
+  {
+    duel::DuelState s = MakeState(2, 1);
+    const uint8_t m[] = {24}, c[] = {0};
+    SetTreat(s, 0, 0, 0, 110, 1, 1, 1, m, c);   // KO'd
+    SetTreat(s, 0, 1, 200, 200, 1, 1, 1, m, c); // alive
+    SetTreat(s, 1, 0, 200, 200, 1, 1, 1, m, c);
+    SetTreat(s, 1, 1, 200, 200, 1, 1, 1, m, c);
+    uint8_t st[200];
+    const uint32_t stLen = duel::encode_state(s, st, sizeof(st));
+    {
+      uint8_t ord[32];
+      OrdRecoverAll(ord, 2);
+      OrdSet(ord, 2, 0, 0, 0, duel::wire::kTargetNone); // action != 0xFE
+      CHECK(duel_apply(st, stLen, ord, duel::wire::OrdersLen(2)) == -1);
+      CHECK(duel_out_len() == 0);
+    }
+    {
+      uint8_t ord[32];
+      OrdRecoverAll(ord, 2);
+      OrdSet(ord, 2, 0, 0, duel::wire::kActionRecover, 0); // target != 0xFF
+      CHECK(duel_apply(st, stLen, ord, duel::wire::OrdersLen(2)) == -1);
+      CHECK(duel_out_len() == 0);
+    }
+  }
+}
+
+// Case 7 — Cooldown cycle: a cd-2 move is unusable the next 2 rounds and usable
+// on the 3rd. Drive four applies, carrying the state forward.
+void test_apply_cooldown_cycle() {
+  duel::DuelState s = MakeState(1, 1);
+  const uint8_t m0[] = {26}, c0[] = {0}; // Vicious Jawbreaker: authored cd = 2
+  const uint8_t m1[] = {24}, c1[] = {0};
+  SetTreat(s, 0, 0, 250, 250, 3, 6, 1, m0, c0);
+  SetTreat(s, 1, 0, 290, 290, 4, 10, 1, m1, c1); // enough hp to survive
+  uint8_t st[200];
+  uint32_t stLen = duel::encode_state(s, st, sizeof(st));
+  const uint32_t ordLen = duel::wire::OrdersLen(1);
+
+  // Round A: use the move → cooldown set to 2.
+  {
+    uint8_t ord[32];
+    OrdInit(ord);
+    OrdSet(ord, 1, 0, 0, 0, 0);
+    OrdSet(ord, 1, 1, 0, duel::wire::kActionRecover, duel::wire::kTargetNone);
+    CHECK(duel_apply(st, stLen, ord, ordLen) == 0);
+    duel::DuelState o{};
+    CHECK(DecodeOut(&o));
+    CHECK(o.treats[0][0].cooldowns[0] == 2);
+    stLen = duel_out_len();
+    for (uint32_t i = 0; i < stLen; ++i) st[i] = duel_out_ptr()[i];
+  }
+  // Round B: cd 2 → move rejected; recover → cd 1.
+  {
+    uint8_t ord[32];
+    OrdInit(ord);
+    OrdSet(ord, 1, 0, 0, 0, 0);
+    OrdSet(ord, 1, 1, 0, duel::wire::kActionRecover, duel::wire::kTargetNone);
+    CHECK(duel_apply(st, stLen, ord, ordLen) == -1);
+    OrdSet(ord, 1, 0, 0, duel::wire::kActionRecover, duel::wire::kTargetNone);
+    CHECK(duel_apply(st, stLen, ord, ordLen) == 0);
+    duel::DuelState o{};
+    CHECK(DecodeOut(&o));
+    CHECK(o.treats[0][0].cooldowns[0] == 1);
+    stLen = duel_out_len();
+    for (uint32_t i = 0; i < stLen; ++i) st[i] = duel_out_ptr()[i];
+  }
+  // Round C: cd 1 → still rejected; recover → cd 0.
+  {
+    uint8_t ord[32];
+    OrdInit(ord);
+    OrdSet(ord, 1, 0, 0, 0, 0);
+    OrdSet(ord, 1, 1, 0, duel::wire::kActionRecover, duel::wire::kTargetNone);
+    CHECK(duel_apply(st, stLen, ord, ordLen) == -1);
+    OrdSet(ord, 1, 0, 0, duel::wire::kActionRecover, duel::wire::kTargetNone);
+    CHECK(duel_apply(st, stLen, ord, ordLen) == 0);
+    duel::DuelState o{};
+    CHECK(DecodeOut(&o));
+    CHECK(o.treats[0][0].cooldowns[0] == 0);
+    stLen = duel_out_len();
+    for (uint32_t i = 0; i < stLen; ++i) st[i] = duel_out_ptr()[i];
+  }
+  // Round D: cd 0 → usable again.
+  {
+    uint8_t ord[32];
+    OrdInit(ord);
+    OrdSet(ord, 1, 0, 0, 0, 0);
+    OrdSet(ord, 1, 1, 0, duel::wire::kActionRecover, duel::wire::kTargetNone);
+    CHECK(duel_apply(st, stLen, ord, ordLen) == 0);
+  }
+}
+
+// Case 8 — Win: KO all 3 enemies → phase 1, and a later apply on the finished
+// duel rejects (phase != 0).
+void test_apply_win_then_reject() {
+  duel::DuelState s = MakeState(3, 1);
+  const uint8_t mS[] = {10}, cS[] = {0}; // Speedy power 51 → 51 dmg vs recover
+  const uint8_t mD[] = {24}, cD[] = {0};
+  for (int slot = 0; slot < 3; ++slot) SetTreat(s, 0, slot, 250, 250, 4, 10, 1, mS, cS);
+  for (int slot = 0; slot < 3; ++slot) SetTreat(s, 1, slot, 40, 110, 1, 1, 1, mD, cD);
+  uint8_t st[200];
+  const uint32_t stLen = duel::encode_state(s, st, sizeof(st));
+  uint8_t ord[32];
+  OrdInit(ord);
+  OrdSet(ord, 3, 0, 0, 0, 0);
+  OrdSet(ord, 3, 0, 1, 0, 1);
+  OrdSet(ord, 3, 0, 2, 0, 2);
+  OrdSet(ord, 3, 1, 0, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  OrdSet(ord, 3, 1, 1, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  OrdSet(ord, 3, 1, 2, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  CHECK(duel_apply(st, stLen, ord, duel::wire::OrdersLen(3)) == 0);
+  duel::DuelState o{};
+  CHECK(DecodeOut(&o));
+  CHECK(o.phase == duel::wire::kPhaseSide0Won);
+  CHECK(o.treats[1][0].hp == 0 && o.treats[1][1].hp == 0 && o.treats[1][2].hp == 0);
+
+  uint8_t st2[200];
+  const uint32_t st2Len = duel_out_len();
+  for (uint32_t i = 0; i < st2Len; ++i) st2[i] = duel_out_ptr()[i];
+  uint8_t ord2[32];
+  OrdRecoverAll(ord2, 3);
+  CHECK(duel_apply(st2, st2Len, ord2, duel::wire::OrdersLen(3)) == -1);
+  CHECK(duel_out_len() == 0);
+  CHECK(duel_log_len() == 0);
+}
+
+// Case 9 — Round cap: drive round_cap recover-only rounds; the winner is the
+// side with higher Σhp, equal → draw.
+void test_apply_round_cap() {
+  // (a) unequal totals → higher Σhp wins
+  {
+    duel::DuelState s = MakeState(1, 1);
+    const uint8_t m[] = {24}, c[] = {0};
+    SetTreat(s, 0, 0, 200, 200, 1, 1, 1, m, c);
+    SetTreat(s, 1, 0, 100, 100, 1, 1, 1, m, c);
+    uint8_t st[200];
+    uint32_t stLen = duel::encode_state(s, st, sizeof(st));
+    uint8_t ord[32];
+    OrdRecoverAll(ord, 1);
+    for (int i = 1; i <= duel::kTun.round_cap; ++i) {
+      CHECK(duel_apply(st, stLen, ord, duel::wire::OrdersLen(1)) == 0);
+      duel::DuelState o{};
+      CHECK(DecodeOut(&o));
+      CHECK(o.round == static_cast<uint16_t>(i));
+      if (i < duel::kTun.round_cap) {
+        CHECK(o.phase == duel::wire::kPhaseActive);
+      } else {
+        CHECK(o.phase == duel::wire::kPhaseSide0Won);
+      }
+      stLen = duel_out_len();
+      for (uint32_t k = 0; k < stLen; ++k) st[k] = duel_out_ptr()[k];
+    }
+  }
+  // (b) equal totals → draw
+  {
+    duel::DuelState s = MakeState(1, 1);
+    const uint8_t m[] = {24}, c[] = {0};
+    SetTreat(s, 0, 0, 150, 150, 1, 1, 1, m, c);
+    SetTreat(s, 1, 0, 150, 150, 1, 1, 1, m, c);
+    uint8_t st[200];
+    uint32_t stLen = duel::encode_state(s, st, sizeof(st));
+    uint8_t ord[32];
+    OrdRecoverAll(ord, 1);
+    for (int i = 1; i <= duel::kTun.round_cap; ++i) {
+      CHECK(duel_apply(st, stLen, ord, duel::wire::OrdersLen(1)) == 0);
+      stLen = duel_out_len();
+      for (uint32_t k = 0; k < stLen; ++k) st[k] = duel_out_ptr()[k];
+    }
+    duel::DuelState o{};
+    CHECK(DecodeOut(&o));
+    CHECK(o.phase == duel::wire::kPhaseDraw);
+    CHECK(o.round == duel::kTun.round_cap);
+  }
+}
+
+// Case 10 — Determinism: the same (state, orders) applied twice yields
+// byte-identical state + log output.
+void test_apply_deterministic() {
+  duel::DuelState s = MakeState(2, 1);
+  const uint8_t mS[] = {10}, cS[] = {0};
+  const uint8_t mH[] = {26}, cH[] = {0};
+  const uint8_t mD[] = {24}, cD[] = {0};
+  SetTreat(s, 0, 0, 250, 250, 4, 10, 1, mS, cS);
+  SetTreat(s, 0, 1, 250, 250, 3, 6, 1, mH, cH);
+  SetTreat(s, 1, 0, 1, 110, 1, 1, 1, mD, cD);
+  SetTreat(s, 1, 1, 50, 110, 1, 1, 1, mD, cD);
+  uint8_t st[200];
+  const uint32_t stLen = duel::encode_state(s, st, sizeof(st));
+  uint8_t ord[32];
+  OrdInit(ord);
+  OrdSet(ord, 2, 0, 0, 0, 0);
+  OrdSet(ord, 2, 0, 1, 0, 0);
+  OrdSet(ord, 2, 1, 0, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  OrdSet(ord, 2, 1, 1, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  const uint32_t ordLen = duel::wire::OrdersLen(2);
+
+  CHECK(duel_apply(st, stLen, ord, ordLen) == 0);
+  uint8_t outA[200];
+  const uint32_t outALen = duel_out_len();
+  for (uint32_t i = 0; i < outALen; ++i) outA[i] = duel_out_ptr()[i];
+  uint8_t logA[1024];
+  const uint32_t logALen = duel_log_len();
+  CHECK(logALen <= sizeof(logA));
+  for (uint32_t i = 0; i < logALen; ++i) logA[i] = duel_log_ptr()[i];
+
+  CHECK(duel_apply(st, stLen, ord, ordLen) == 0);
+  CHECK(duel_out_len() == outALen);
+  CHECK(std::memcmp(duel_out_ptr(), outA, outALen) == 0);
+  CHECK(duel_log_len() == logALen);
+  CHECK(std::memcmp(duel_log_ptr(), logA, logALen) == 0);
+}
+
+// ---- Task 4 Step 3: self-play soak + fuzz (test-side PRNG only) ----
+
+uint32_t g_rng = 0x1234567u;
+uint32_t Xr() {
+  uint32_t x = g_rng;
+  x ^= x << 13;
+  x ^= x >> 17;
+  x ^= x << 5;
+  g_rng = x;
+  return x;
+}
+uint32_t XrN(uint32_t n) { return Xr() % n; } // n > 0
+
+// Build a random VALID config (all wire-contract invariants satisfied) so
+// duel_init always accepts it. Returns the byte length.
+uint32_t BuildRandomConfig(uint8_t* cfg) {
+  const uint8_t teamSize = static_cast<uint8_t>(1 + XrN(5));
+  const uint8_t loadoutSize = static_cast<uint8_t>(1 + XrN(4));
+  cfg[duel::wire::kCfgOffVersion] = duel::wire::kVersion;
+  cfg[duel::wire::kCfgOffTeamSize] = teamSize;
+  cfg[duel::wire::kCfgOffLoadoutSize] = loadoutSize;
+  cfg[duel::wire::kCfgOffReserved] = 0;
+  uint32_t off = duel::wire::kCfgOffTeams;
+  for (int side = 0; side < 2; ++side) {
+    for (int slot = 0; slot < teamSize; ++slot) {
+      const uint8_t mc = static_cast<uint8_t>(1 + XrN(loadoutSize));
+      cfg[off++] = static_cast<uint8_t>(1 + XrN(4));  // quality
+      cfg[off++] = static_cast<uint8_t>(1 + XrN(10)); // sweetness
+      cfg[off++] = mc;
+      bool used[duel::wire::kMoveUniverse] = {};
+      for (int j = 0; j < loadoutSize; ++j) {
+        if (j < mc) {
+          uint8_t mv;
+          do {
+            mv = static_cast<uint8_t>(XrN(duel::wire::kMoveUniverse));
+          } while (used[mv]);
+          used[mv] = true;
+          cfg[off++] = mv;
+        } else {
+          cfg[off++] = duel::wire::kMoveSlotEmpty;
+        }
+      }
+    }
+  }
+  return off;
+}
+
+// 500 self-play games with random LEGAL orders: legal input never rejects, the
+// state length is constant, every game terminates in ≤ round_cap+1 applies with
+// a decided phase.
+void test_selfplay_soak() {
+  g_rng = 0xABCDEF01u;
+  for (int game = 0; game < 500; ++game) {
+    uint8_t cfg[80];
+    const uint32_t cfgLen = BuildRandomConfig(cfg);
+    CHECK(duel_init(cfg, cfgLen) == 0);
+    uint8_t st[200];
+    uint32_t stLen = duel_out_len();
+    const uint32_t constLen = stLen;
+    for (uint32_t i = 0; i < stLen; ++i) st[i] = duel_out_ptr()[i];
+
+    duel::DuelState s{};
+    int applies = 0;
+    bool ok = true;
+    for (;;) {
+      if (!duel::decode_state(st, stLen, &s)) {
+        CHECK(false);
+        ok = false;
+        break;
+      }
+      if (s.phase != duel::wire::kPhaseActive) break; // decided
+      if (applies > duel::kTun.round_cap) {           // must have decided by now
+        CHECK(false);
+        ok = false;
+        break;
+      }
+      const uint32_t teamSize = s.team_size;
+      uint8_t ord[32];
+      OrdInit(ord);
+      for (int side = 0; side < 2; ++side) {
+        for (uint32_t slot = 0; slot < teamSize; ++slot) {
+          const duel::TreatState& t = s.treats[side][slot];
+          if (t.hp == 0) {
+            OrdSet(ord, teamSize, side, slot, duel::wire::kActionRecover,
+                   duel::wire::kTargetNone);
+            continue;
+          }
+          uint8_t ready[4];
+          int nready = 0;
+          for (uint32_t j = 0; j < s.loadout_size && j < t.move_count; ++j) {
+            if (t.cooldowns[j] == 0) ready[nready++] = static_cast<uint8_t>(j);
+          }
+          if (nready == 0 || (Xr() & 1u)) {
+            OrdSet(ord, teamSize, side, slot, duel::wire::kActionRecover,
+                   duel::wire::kTargetNone);
+          } else {
+            const uint8_t a = ready[XrN(static_cast<uint32_t>(nready))];
+            const uint8_t tgt = static_cast<uint8_t>(XrN(teamSize));
+            OrdSet(ord, teamSize, side, slot, a, tgt);
+          }
+        }
+      }
+      const uint32_t ordLen = duel::wire::OrdersLen(teamSize);
+      if (duel_apply(st, stLen, ord, ordLen) != 0) {
+        CHECK(false); // legal orders must never be rejected
+        ok = false;
+        break;
+      }
+      if (duel_out_len() != constLen) {
+        CHECK(false); // state length is constant across a game
+        ok = false;
+        break;
+      }
+      stLen = duel_out_len();
+      for (uint32_t i = 0; i < stLen; ++i) st[i] = duel_out_ptr()[i];
+      ++applies;
+    }
+    CHECK(applies <= duel::kTun.round_cap + 1);
+    if (ok) {
+      CHECK(s.phase == duel::wire::kPhaseSide0Won ||
+            s.phase == duel::wire::kPhaseSide1Won ||
+            s.phase == duel::wire::kPhaseDraw);
+    }
+  }
+}
+
+// 10k byte-flip / truncation / random-byte fuzz of a valid state+orders pair:
+// duel_apply must only ever return 0 or -1 (never crash / never trip a
+// sanitizer — this test is the payload for build.sh's `sanitize` mode).
+void test_fuzz_no_crash() {
+  g_rng = 0x9E3779B9u;
+  duel::DuelState s = MakeState(3, 4);
+  const uint8_t mA[] = {10, 26}, cA[] = {0, 0};
+  const uint8_t mB[] = {24, 3}, cB[] = {0, 0};
+  for (int slot = 0; slot < 3; ++slot) SetTreat(s, 0, slot, 250, 250, 4, 10, 2, mA, cA);
+  for (int slot = 0; slot < 3; ++slot) SetTreat(s, 1, slot, 200, 200, 1, 1, 2, mB, cB);
+  uint8_t baseSt[200];
+  const uint32_t baseStLen = duel::encode_state(s, baseSt, sizeof(baseSt));
+  uint8_t baseOrd[32];
+  OrdInit(baseOrd);
+  OrdSet(baseOrd, 3, 0, 0, 0, 0);
+  OrdSet(baseOrd, 3, 0, 1, 0, 1);
+  OrdSet(baseOrd, 3, 0, 2, 1, 2);
+  OrdSet(baseOrd, 3, 1, 0, 0, 0);
+  OrdSet(baseOrd, 3, 1, 1, 1, 1);
+  OrdSet(baseOrd, 3, 1, 2, 0, 2);
+  const uint32_t baseOrdLen = duel::wire::OrdersLen(3);
+
+  for (int it = 0; it < 10000; ++it) {
+    uint8_t st[256];
+    uint8_t ord[64];
+    for (uint32_t i = 0; i < sizeof(st); ++i) st[i] = static_cast<uint8_t>(XrN(256));
+    for (uint32_t i = 0; i < sizeof(ord); ++i) ord[i] = static_cast<uint8_t>(XrN(256));
+    for (uint32_t i = 0; i < baseStLen; ++i) st[i] = baseSt[i];
+    for (uint32_t i = 0; i < baseOrdLen; ++i) ord[i] = baseOrd[i];
+    uint32_t stLen = baseStLen;
+    uint32_t ordLen = baseOrdLen;
+
+    const int muts = 1 + static_cast<int>(XrN(4));
+    for (int m = 0; m < muts; ++m) {
+      switch (XrN(5)) {
+        case 0:
+          if (stLen) st[XrN(stLen)] ^= static_cast<uint8_t>(1u << XrN(8));
+          break;
+        case 1:
+          if (ordLen) ord[XrN(ordLen)] ^= static_cast<uint8_t>(1u << XrN(8));
+          break;
+        case 2:
+          stLen = XrN(baseStLen + 8); // truncate/extend (0 .. baseStLen+7)
+          break;
+        case 3:
+          ordLen = XrN(baseOrdLen + 8);
+          break;
+        default:
+          if (stLen) st[XrN(stLen)] = static_cast<uint8_t>(XrN(256));
+          break;
+      }
+    }
+    const int32_t rc = duel_apply(st, stLen, ord, ordLen);
+    CHECK(rc == 0 || rc == -1);
+  }
+}
+
 } // namespace
 
 int main() {
@@ -571,6 +1269,19 @@ int main() {
   RUN(test_duel_init_rejects_invalid_configs);
   RUN(test_state_codec_roundtrip);
   RUN(test_state_codec_decode_rejects_bad_state);
+  RUN(test_jsonout_i32_min);
+  RUN(test_apply_clash_advantage);
+  RUN(test_apply_clash_disadvantage);
+  RUN(test_apply_block_stance);
+  RUN(test_apply_speed_order_ko_skip);
+  RUN(test_apply_retarget);
+  RUN(test_apply_recover);
+  RUN(test_apply_cooldown_cycle);
+  RUN(test_apply_win_then_reject);
+  RUN(test_apply_round_cap);
+  RUN(test_apply_deterministic);
+  RUN(test_selfplay_soak);
+  RUN(test_fuzz_no_crash);
 
   std::printf("---\n%d ran, %d failed\n", g_tests_run, g_tests_failed);
   return g_tests_failed == 0 ? 0 : 1;
