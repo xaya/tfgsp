@@ -555,6 +555,34 @@ void test_state_codec_decode_rejects_bad_state() {
   reset();
   bad[duel::wire::kStateOffTeams + duel::wire::kStateTreatOffPad] = 0xFF;
   CHECK(duel::decode_state(bad, 104, &decoded) == false); // treat pad != 0
+
+  // Filler-slot cooldowns MUST be 0 too: side0/slot0 has move_count 3 with
+  // loadout 4, so cooldown index 3 is a filler slot. A non-zero byte there is
+  // a second byte-encoding of the same logical state (the value is
+  // meaningless -- no move lives in that slot) -- reject it, or two
+  // byte-distinct states would decode/resolve/re-encode differently
+  // (malleability in hashed/signed channel states).
+  const uint32_t treat0FillerCd =
+      duel::wire::kStateOffTeams +
+      duel::wire::StateTreatOffCooldowns(kBaselineLoadoutSize) + 3;
+  reset();
+  bad[treat0FillerCd] = 1;
+  CHECK(duel::decode_state(bad, 104, &decoded) == false); // filler cd != 0
+
+  // ... and duel_apply rejects the same buffer outright (lens cleared).
+  // Orders: all six treats Recover (version byte, then 0xFE/0xFF pairs).
+  {
+    constexpr uint32_t kOrdLen = duel::wire::OrdersLen(kBaselineTeamSize); // 13
+    uint8_t ord[kOrdLen];
+    ord[duel::wire::kOrdersOffVersion] = duel::wire::kVersion;
+    for (uint32_t i = duel::wire::kOrdersOffTeams; i < kOrdLen; i += 2) {
+      ord[i] = duel::wire::kActionRecover;
+      ord[i + 1] = duel::wire::kTargetNone;
+    }
+    CHECK(duel_apply(bad, 104, ord, kOrdLen) == -1);
+    CHECK(duel_out_len() == 0);
+    CHECK(duel_log_len() == 0);
+  }
 }
 
 // ---- Task 4: duel_apply (round resolve + log) shared helpers ----

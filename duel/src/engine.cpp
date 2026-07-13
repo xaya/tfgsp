@@ -380,8 +380,17 @@ bool decode_state(const uint8_t* buf, uint32_t len, DuelState* out) {
       t.move_count = static_cast<uint8_t>(moveCount);
       const uint32_t cdOff = base + wire::StateTreatOffCooldowns(loadoutSize);
       for (uint32_t j = 0; j < loadoutSize; ++j) {
+        const uint8_t cd = buf[cdOff + j];
+        if (j >= moveCount && cd != 0) {
+          // Canonical encoding: a filler slot has no move, so its cooldown
+          // byte is meaningless -- it MUST be 0, or two byte-distinct
+          // encodings of the same logical state would both decode (and then
+          // resolve/re-encode differently once the end-of-round decrement
+          // ticks the copied value). Same malleability rule as pad/filler.
+          return false;
+        }
         t.moves[j] = moves[j];
-        t.cooldowns[j] = buf[cdOff + j];
+        t.cooldowns[j] = cd;
       }
     }
   }

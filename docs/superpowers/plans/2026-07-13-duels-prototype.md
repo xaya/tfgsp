@@ -39,7 +39,8 @@ u8 version=1 | u8 team_size | u8 loadout_size | u8 phase (0 active,1 side0 won,2
 u16 round (starts 0) | u16 reserved=0 (reject non-zero)
 per side, per slot:
   u16 hp | u16 max_hp | u8 quality | u8 sweetness | u8 move_count | u8 pad=0 (reject non-zero)
-  u8 moves[loadout_size] | u8 cooldowns[loadout_size]  // rounds until usable, 0=ready
+  u8 moves[loadout_size] | u8 cooldowns[loadout_size]  // rounds until usable, 0=ready;
+                           // filler slots (>= move_count) MUST be 0 (reject non-zero)
 ```
 
 **Round orders (input to `duel_apply`)** — `ORDERS_LEN = 1 + 2*team_size*2` (13 for 3v3):

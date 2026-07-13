@@ -14,7 +14,9 @@
 // = reject -- these buffers get hashed/signed in game channels, so exactly
 // one byte encoding per logical state is the contract), and per-treat
 // quality/sweetness/move_count/move-index/filler/uniqueness rules identical
-// to the config's. It does NOT
+// to the config's, plus filler-slot cooldowns (>= move_count) MUST be 0 --
+// no move lives there, so a non-zero byte would be a second encoding of the
+// same logical state. It does NOT
 // enforce game-semantic invariants (e.g. hp <= max_hp, cooldown <= a move's
 // authored cooldown) — those are Task 4's resolve-time concern, not a wire-
 // format constraint; a structurally valid state with an out-of-range hp
