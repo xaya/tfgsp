@@ -7,7 +7,7 @@ NAT="${NATIVE_CXX:-$HOME/emsdk/upstream/bin/clang++}"
 WASI="${WASI_SDK:-$HOME/arcade-spike/toolchains/wasi-sdk-24.0-x86_64-linux}"
 SRC="$here/src/engine.cpp"
 mode="${1:-all}"
-if [[ "$mode" == native || "$mode" == all || "$mode" == test ]]; then
+if [[ "$mode" == native || "$mode" == all || "$mode" == test || "$mode" == golden ]]; then
   "$NAT" -O2 -std=c++17 -fno-exceptions -fno-rtti -Wall -Wextra -Werror \
     -I"$here/src" "$SRC" "$here/test/test_main.cpp" -o "$here/test/duel_tests"
 fi
@@ -23,9 +23,21 @@ if [[ "$mode" == sanitize ]]; then
     -I"$here/src" "$SRC" "$here/test/test_main.cpp" -o "$here/test/duel_tests_san"
   "$here/test/duel_tests_san"
 fi
-if [[ "$mode" == wasm || "$mode" == all ]]; then
+if [[ "$mode" == wasm || "$mode" == all || "$mode" == parity ]]; then
   "$WASI/bin/clang++" -O2 -std=c++17 -fno-exceptions -fno-rtti -mexec-model=reactor \
     -I"$here/src" "$SRC" -o "$here/engine.wasm"
   sha256sum "$here/engine.wasm" | awk '{print $1}' > "$here/engine.wasm.sha256"
 fi
 if [[ "$mode" == test || "$mode" == all ]]; then "$here/test/duel_tests"; fi
+# golden: dump every behavioral vector from the just-built NATIVE binary as
+# golden JSON lines (test/golden.json is a build artifact -- see .gitignore
+# -- regenerate it any time engine.cpp/test_main.cpp change).
+if [[ "$mode" == golden ]]; then
+  "$here/test/duel_tests" --dump-golden > "$here/test/golden.json"
+fi
+# parity: replay test/golden.json (regenerate it first via `build.sh golden`
+# if stale/missing) through the just-built WASM module (Node) and
+# byte-compare every vector against the native output captured there.
+if [[ "$mode" == parity ]]; then
+  node "$here/test/parity.mjs"
+fi

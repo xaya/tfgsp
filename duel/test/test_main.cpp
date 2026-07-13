@@ -273,6 +273,18 @@ void test_duel_init_valid_3v3_produces_initial_state() {
                    moves5, 290);
 }
 
+constexpr uint32_t kShape2v2Loadout2CfgLen = 24;
+void Make2v2Loadout2Cfg(uint8_t cfg[kShape2v2Loadout2CfgLen]) {
+  const uint8_t bytes[kShape2v2Loadout2CfgLen] = {
+      1, 2, 2, 0,             // header
+      1, 2, 1, 0, 0xFF,       // side0 slot0: q1 sw2 mc1 moves[0,FF]
+      2, 5, 2, 1, 2,          // side0 slot1: q2 sw5 mc2 moves[1,2]
+      3, 8, 1, 3, 0xFF,       // side1 slot0: q3 sw8 mc1 moves[3,FF]
+      4, 1, 2, 4, 5,          // side1 slot1: q4 sw1 mc2 moves[4,5]
+  };
+  for (uint32_t i = 0; i < kShape2v2Loadout2CfgLen; ++i) cfg[i] = bytes[i];
+}
+
 // A non-3v3 shape (2v2, loadout 2) must work too -- the wire formulas, not
 // team_size==3, are the actual contract.
 void test_duel_init_valid_2v2_loadout2_shape() {
@@ -280,14 +292,10 @@ void test_duel_init_valid_2v2_loadout2_shape() {
   constexpr uint32_t kLoadoutSize = 2;
   constexpr uint32_t kCfgLen = duel::wire::CfgLen(kTeamSize, kLoadoutSize);
   CHECK(kCfgLen == 24); // 4 + 2*2*(3+2)
+  static_assert(kCfgLen == kShape2v2Loadout2CfgLen, "");
 
-  const uint8_t cfg[kCfgLen] = {
-      1, 2, 2, 0,             // header
-      1, 2, 1, 0, 0xFF,       // side0 slot0: q1 sw2 mc1 moves[0,FF]
-      2, 5, 2, 1, 2,          // side0 slot1: q2 sw5 mc2 moves[1,2]
-      3, 8, 1, 3, 0xFF,       // side1 slot0: q3 sw8 mc1 moves[3,FF]
-      4, 1, 2, 4, 5,          // side1 slot1: q4 sw1 mc2 moves[4,5]
-  };
+  uint8_t cfg[kCfgLen];
+  Make2v2Loadout2Cfg(cfg);
 
   CHECK(duel_init(cfg, kCfgLen) == 0);
   constexpr uint32_t kExpectedStateLen = duel::wire::StateLen(kTeamSize, kLoadoutSize);
@@ -688,21 +696,99 @@ void test_jsonout_i32_min() {
   CHECK(std::memcmp(buf, expected, b.len) == 0);
 }
 
+// ---- Task 5: golden-vector plumbing ----
+//
+// ApplyVec/InitVec bundle a NAMED (cfg|state)+orders byte buffer so the same
+// construction a test uses to exercise duel_init/duel_apply also feeds
+// DumpGolden() (bottom of this file, `--dump-golden` mode) without
+// duplicating any byte literals -- each MakeVec_*/Make*Cfg builder below is
+// the single source of truth for that vector's bytes; the test function and
+// DumpGolden() both call it.
+struct ApplyVec {
+  const char* name;
+  uint8_t st[200];
+  uint32_t stLen;
+  uint8_t ord[32];
+  uint32_t ordLen;
+};
+struct InitVec {
+  const char* name;
+  uint8_t cfg[80];
+  uint32_t cfgLen;
+};
+
+void PrintHexBytes(const uint8_t* p, uint32_t n) {
+  static const char kHex[] = "0123456789abcdef";
+  for (uint32_t i = 0; i < n; ++i) {
+    std::putchar(kHex[p[i] >> 4]);
+    std::putchar(kHex[p[i] & 0x0F]);
+  }
+}
+
+// Prints s[0..n) as a JSON string body, escaping '"' and '\\'. The log
+// buffer's own JSON content (jsonout.h) never emits any other character
+// needing escape (digits/letters/`{}[]:,"-` only), so this covers everything
+// actually reachable here.
+void PrintJsonEscaped(const uint8_t* s, uint32_t n) {
+  for (uint32_t i = 0; i < n; ++i) {
+    const uint8_t c = s[i];
+    if (c == '"' || c == '\\') std::putchar('\\');
+    std::putchar(static_cast<char>(c));
+  }
+}
+
+// One golden line per vector: {"name","rc","cfgHex","outHex","logJson":""}.
+// `rc` lets parity.mjs assert the reject path too (a straightforward
+// addition beyond the plan's {name,cfgHex|stateHex,ordersHex,outHex,logJson}
+// minimum -- reject vectors are meaningless to byte-compare without it).
+// logJson is always "" here: duel_init never touches the log buffer, so
+// reading it here would surface whatever a PRIOR call left behind.
+void DumpInitVector(const InitVec& v) {
+  const int32_t rc = duel_init(v.cfg, v.cfgLen);
+  std::printf("{\"name\":\"%s\",\"rc\":%d,\"cfgHex\":\"", v.name, rc);
+  PrintHexBytes(v.cfg, v.cfgLen);
+  std::printf("\",\"outHex\":\"");
+  if (rc == 0) PrintHexBytes(duel_out_ptr(), duel_out_len());
+  std::printf("\",\"logJson\":\"\"}\n");
+}
+
+// One golden line per vector: {"name","rc","stateHex","ordersHex","outHex",
+// "logJson"} -- logJson is the round-log JSON text verbatim (empty string on
+// reject, matching duel_log_len()==0 there).
+void DumpApplyVector(const ApplyVec& v) {
+  const int32_t rc = duel_apply(v.st, v.stLen, v.ord, v.ordLen);
+  std::printf("{\"name\":\"%s\",\"rc\":%d,\"stateHex\":\"", v.name, rc);
+  PrintHexBytes(v.st, v.stLen);
+  std::printf("\",\"ordersHex\":\"");
+  PrintHexBytes(v.ord, v.ordLen);
+  std::printf("\",\"outHex\":\"");
+  if (rc == 0) PrintHexBytes(duel_out_ptr(), duel_out_len());
+  std::printf("\",\"logJson\":\"");
+  if (rc == 0) PrintJsonEscaped(duel_log_ptr(), duel_log_len());
+  std::printf("\"}\n");
+}
+
 // Case 1 — Clash advantage: Heavy(power 40) vs a target that picked Speedy →
 // Heavy>Speedy → adv ×384 → dmg = (40*384)>>8 = 60.
-void test_apply_clash_advantage() {
+ApplyVec MakeVec_ClashAdvantage() {
+  ApplyVec v{};
+  v.name = "clash_advantage";
   duel::DuelState s = MakeState(1, 1);
   const uint8_t mH[] = {26}, cH[] = {0}; // Heavy power 40
   const uint8_t mS[] = {3}, cS[] = {0};  // Speedy
   SetTreat(s, 0, 0, 250, 250, 3, 6, 1, mH, cH);
   SetTreat(s, 1, 0, 250, 250, 1, 1, 1, mS, cS);
-  uint8_t st[200];
-  const uint32_t stLen = duel::encode_state(s, st, sizeof(st));
-  uint8_t ord[32];
-  OrdInit(ord);
-  OrdSet(ord, 1, 0, 0, 0, 0);
-  OrdSet(ord, 1, 1, 0, 0, 0);
-  CHECK(duel_apply(st, stLen, ord, duel::wire::OrdersLen(1)) == 0);
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdInit(v.ord);
+  OrdSet(v.ord, 1, 0, 0, 0, 0);
+  OrdSet(v.ord, 1, 1, 0, 0, 0);
+  v.ordLen = duel::wire::OrdersLen(1);
+  return v;
+}
+
+void test_apply_clash_advantage() {
+  ApplyVec v = MakeVec_ClashAdvantage();
+  CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
   duel::DuelState o{};
   CHECK(DecodeOut(&o));
   CHECK(o.treats[1][0].hp == 190); // 250 - 60 (adv)
@@ -714,19 +800,25 @@ void test_apply_clash_advantage() {
 
 // Case 2 — Disadvantage: Heavy vs a target that picked Tricky → Tricky>Heavy →
 // dis ×170 → dmg = (40*170)>>8 = 26.
-void test_apply_clash_disadvantage() {
+ApplyVec MakeVec_ClashDisadvantage() {
+  ApplyVec v{};
+  v.name = "clash_disadvantage";
   duel::DuelState s = MakeState(1, 1);
   const uint8_t mH[] = {26}, cH[] = {0}; // Heavy power 40
   const uint8_t mT[] = {6}, cT[] = {0};  // Tricky
   SetTreat(s, 0, 0, 250, 250, 3, 6, 1, mH, cH);
   SetTreat(s, 1, 0, 250, 250, 1, 1, 1, mT, cT);
-  uint8_t st[200];
-  const uint32_t stLen = duel::encode_state(s, st, sizeof(st));
-  uint8_t ord[32];
-  OrdInit(ord);
-  OrdSet(ord, 1, 0, 0, 0, 0);
-  OrdSet(ord, 1, 1, 0, 0, 0);
-  CHECK(duel_apply(st, stLen, ord, duel::wire::OrdersLen(1)) == 0);
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdInit(v.ord);
+  OrdSet(v.ord, 1, 0, 0, 0, 0);
+  OrdSet(v.ord, 1, 1, 0, 0, 0);
+  v.ordLen = duel::wire::OrdersLen(1);
+  return v;
+}
+
+void test_apply_clash_disadvantage() {
+  ApplyVec v = MakeVec_ClashDisadvantage();
+  CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
   duel::DuelState o{};
   CHECK(DecodeOut(&o));
   CHECK(o.treats[1][0].hp == 224); // 250 - 26 (dis)
@@ -737,21 +829,43 @@ void test_apply_clash_disadvantage() {
 // Case 3 — Block stance. (A) Heavy(power 40) vs a Blocking target → adv ×384
 // then block: ((40*384)>>8 *154)>>8 = 36. (B) the stance holds even when the
 // blocker's own action fires LAST (attacker faster).
+ApplyVec MakeVec_BlockStanceA() {
+  ApplyVec v{};
+  v.name = "block_stance_a";
+  duel::DuelState s = MakeState(1, 1);
+  const uint8_t mH[] = {26}, cH[] = {0}; // Heavy power 40, speed 28
+  const uint8_t mB[] = {18}, cB[] = {0}; // Blocking, speed 43 (acts first here)
+  SetTreat(s, 0, 0, 250, 250, 3, 6, 1, mH, cH);
+  SetTreat(s, 1, 0, 250, 250, 1, 1, 1, mB, cB);
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdInit(v.ord);
+  OrdSet(v.ord, 1, 0, 0, 0, 0);
+  OrdSet(v.ord, 1, 1, 0, 0, 0);
+  v.ordLen = duel::wire::OrdersLen(1);
+  return v;
+}
+
+ApplyVec MakeVec_BlockStanceLate() {
+  ApplyVec v{};
+  v.name = "block_stance_late_blocker";
+  duel::DuelState s = MakeState(1, 1);
+  const uint8_t mS[] = {3}, cS[] = {0};  // Speedy, speed 98 (fires first)
+  const uint8_t mB[] = {18}, cB[] = {0}; // Blocking, speed 43 (fires last)
+  SetTreat(s, 0, 0, 250, 250, 1, 1, 1, mS, cS);
+  SetTreat(s, 1, 0, 250, 250, 1, 1, 1, mB, cB);
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdInit(v.ord);
+  OrdSet(v.ord, 1, 0, 0, 0, 0);
+  OrdSet(v.ord, 1, 1, 0, 0, 0);
+  v.ordLen = duel::wire::OrdersLen(1);
+  return v;
+}
+
 void test_apply_block_stance() {
   // (A) exact 36
   {
-    duel::DuelState s = MakeState(1, 1);
-    const uint8_t mH[] = {26}, cH[] = {0}; // Heavy power 40, speed 28
-    const uint8_t mB[] = {18}, cB[] = {0}; // Blocking, speed 43 (acts first here)
-    SetTreat(s, 0, 0, 250, 250, 3, 6, 1, mH, cH);
-    SetTreat(s, 1, 0, 250, 250, 1, 1, 1, mB, cB);
-    uint8_t st[200];
-    const uint32_t stLen = duel::encode_state(s, st, sizeof(st));
-    uint8_t ord[32];
-    OrdInit(ord);
-    OrdSet(ord, 1, 0, 0, 0, 0);
-    OrdSet(ord, 1, 1, 0, 0, 0);
-    CHECK(duel_apply(st, stLen, ord, duel::wire::OrdersLen(1)) == 0);
+    ApplyVec v = MakeVec_BlockStanceA();
+    CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
     duel::DuelState o{};
     CHECK(DecodeOut(&o));
     CHECK(o.treats[1][0].hp == 214); // 250 - 36 (adv then block)
@@ -761,18 +875,8 @@ void test_apply_block_stance() {
   }
   // (B) stance active even though the blocker resolves last
   {
-    duel::DuelState s = MakeState(1, 1);
-    const uint8_t mS[] = {3}, cS[] = {0};  // Speedy, speed 98 (fires first)
-    const uint8_t mB[] = {18}, cB[] = {0}; // Blocking, speed 43 (fires last)
-    SetTreat(s, 0, 0, 250, 250, 1, 1, 1, mS, cS);
-    SetTreat(s, 1, 0, 250, 250, 1, 1, 1, mB, cB);
-    uint8_t st[200];
-    const uint32_t stLen = duel::encode_state(s, st, sizeof(st));
-    uint8_t ord[32];
-    OrdInit(ord);
-    OrdSet(ord, 1, 0, 0, 0, 0);
-    OrdSet(ord, 1, 1, 0, 0, 0);
-    CHECK(duel_apply(st, stLen, ord, duel::wire::OrdersLen(1)) == 0);
+    ApplyVec v = MakeVec_BlockStanceLate();
+    CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
     duel::DuelState o{};
     CHECK(DecodeOut(&o));
     // Speedy vs Blocking = dis 170: (24*170)>>8 = 15; block: (15*154)>>8 = 9.
@@ -788,19 +892,25 @@ void test_apply_block_stance() {
 
 // Case 4 — Speed order + KO skip: a fast Speedy KOs a slower treat before it
 // acts → the victim's own action is logged "skip".
-void test_apply_speed_order_ko_skip() {
+ApplyVec MakeVec_SpeedOrderKoSkip() {
+  ApplyVec v{};
+  v.name = "speed_order_ko_skip";
   duel::DuelState s = MakeState(1, 1);
   const uint8_t mS[] = {10}, cS[] = {0}; // Speedy power 51, speed 97
   const uint8_t mD[] = {25}, cD[] = {0}; // Distance, speed 76
   SetTreat(s, 0, 0, 250, 250, 4, 10, 1, mS, cS);
   SetTreat(s, 1, 0, 40, 110, 1, 1, 1, mD, cD);
-  uint8_t st[200];
-  const uint32_t stLen = duel::encode_state(s, st, sizeof(st));
-  uint8_t ord[32];
-  OrdInit(ord);
-  OrdSet(ord, 1, 0, 0, 0, 0);
-  OrdSet(ord, 1, 1, 0, 0, 0);
-  CHECK(duel_apply(st, stLen, ord, duel::wire::OrdersLen(1)) == 0);
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdInit(v.ord);
+  OrdSet(v.ord, 1, 0, 0, 0, 0);
+  OrdSet(v.ord, 1, 1, 0, 0, 0);
+  v.ordLen = duel::wire::OrdersLen(1);
+  return v;
+}
+
+void test_apply_speed_order_ko_skip() {
+  ApplyVec v = MakeVec_SpeedOrderKoSkip();
+  CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
   duel::DuelState o{};
   CHECK(DecodeOut(&o));
   CHECK(o.treats[1][0].hp == 0);
@@ -817,7 +927,9 @@ void test_apply_speed_order_ko_skip() {
 
 // Case 5 — Retarget: two attackers aim at the same 1-hp treat; the first KOs
 // it, the second retargets to the lowest-hp living enemy (retargeted:true).
-void test_apply_retarget() {
+ApplyVec MakeVec_Retarget() {
+  ApplyVec v{};
+  v.name = "retarget";
   duel::DuelState s = MakeState(2, 1);
   const uint8_t mS[] = {10}, cS[] = {0}; // Speedy power 51, speed 97
   const uint8_t mH[] = {26}, cH[] = {0}; // Heavy  power 40, speed 28
@@ -826,15 +938,19 @@ void test_apply_retarget() {
   SetTreat(s, 0, 1, 250, 250, 3, 6, 1, mH, cH);
   SetTreat(s, 1, 0, 1, 110, 1, 1, 1, mD, cD);   // 1 hp → dies to attacker 1
   SetTreat(s, 1, 1, 50, 110, 1, 1, 1, mD, cD);  // living → retarget lands here
-  uint8_t st[200];
-  const uint32_t stLen = duel::encode_state(s, st, sizeof(st));
-  uint8_t ord[32];
-  OrdInit(ord);
-  OrdSet(ord, 2, 0, 0, 0, 0); // both attackers aim at enemy slot 0
-  OrdSet(ord, 2, 0, 1, 0, 0);
-  OrdSet(ord, 2, 1, 0, duel::wire::kActionRecover, duel::wire::kTargetNone);
-  OrdSet(ord, 2, 1, 1, duel::wire::kActionRecover, duel::wire::kTargetNone);
-  CHECK(duel_apply(st, stLen, ord, duel::wire::OrdersLen(2)) == 0);
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdInit(v.ord);
+  OrdSet(v.ord, 2, 0, 0, 0, 0); // both attackers aim at enemy slot 0
+  OrdSet(v.ord, 2, 0, 1, 0, 0);
+  OrdSet(v.ord, 2, 1, 0, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  OrdSet(v.ord, 2, 1, 1, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  v.ordLen = duel::wire::OrdersLen(2);
+  return v;
+}
+
+void test_apply_retarget() {
+  ApplyVec v = MakeVec_Retarget();
+  CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
   duel::DuelState o{};
   CHECK(DecodeOut(&o));
   CHECK(o.treats[1][0].hp == 0);
@@ -850,19 +966,41 @@ void test_apply_retarget() {
 // Case 6 — Recover: (a) all moves cooling → 0xFE legal, logged "recover";
 // (b) ordering a cooling move → reject; (c) KO'd treat encoded non-canonically
 // → reject.
+ApplyVec MakeVec_RecoverA() {
+  ApplyVec v{};
+  v.name = "recover_a";
+  duel::DuelState s = MakeState(1, 1);
+  const uint8_t m0[] = {26}, c0[] = {2}; // its only move is cooling
+  const uint8_t m1[] = {24}, c1[] = {0};
+  SetTreat(s, 0, 0, 250, 250, 3, 6, 1, m0, c0);
+  SetTreat(s, 1, 0, 250, 250, 1, 1, 1, m1, c1);
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdRecoverAll(v.ord, 1);
+  v.ordLen = duel::wire::OrdersLen(1);
+  return v;
+}
+
+ApplyVec MakeVec_RecoverRejectCoolingMove() {
+  ApplyVec v{};
+  v.name = "recover_reject_cooling_move";
+  duel::DuelState s = MakeState(1, 1);
+  const uint8_t m0[] = {26}, c0[] = {2};
+  const uint8_t m1[] = {24}, c1[] = {0};
+  SetTreat(s, 0, 0, 250, 250, 3, 6, 1, m0, c0);
+  SetTreat(s, 1, 0, 250, 250, 1, 1, 1, m1, c1);
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdInit(v.ord);
+  OrdSet(v.ord, 1, 0, 0, 0, 0); // the cooling move
+  OrdSet(v.ord, 1, 1, 0, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  v.ordLen = duel::wire::OrdersLen(1);
+  return v;
+}
+
 void test_apply_recover() {
   // (a) all-cooling treat may Recover
   {
-    duel::DuelState s = MakeState(1, 1);
-    const uint8_t m0[] = {26}, c0[] = {2}; // its only move is cooling
-    const uint8_t m1[] = {24}, c1[] = {0};
-    SetTreat(s, 0, 0, 250, 250, 3, 6, 1, m0, c0);
-    SetTreat(s, 1, 0, 250, 250, 1, 1, 1, m1, c1);
-    uint8_t st[200];
-    const uint32_t stLen = duel::encode_state(s, st, sizeof(st));
-    uint8_t ord[32];
-    OrdRecoverAll(ord, 1);
-    CHECK(duel_apply(st, stLen, ord, duel::wire::OrdersLen(1)) == 0);
+    ApplyVec v = MakeVec_RecoverA();
+    CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
     CHECK(LogHas("\"kind\":\"recover\""));
     duel::DuelState o{};
     CHECK(DecodeOut(&o));
@@ -872,18 +1010,8 @@ void test_apply_recover() {
   }
   // (b) ordering a cooling move rejects the whole apply
   {
-    duel::DuelState s = MakeState(1, 1);
-    const uint8_t m0[] = {26}, c0[] = {2};
-    const uint8_t m1[] = {24}, c1[] = {0};
-    SetTreat(s, 0, 0, 250, 250, 3, 6, 1, m0, c0);
-    SetTreat(s, 1, 0, 250, 250, 1, 1, 1, m1, c1);
-    uint8_t st[200];
-    const uint32_t stLen = duel::encode_state(s, st, sizeof(st));
-    uint8_t ord[32];
-    OrdInit(ord);
-    OrdSet(ord, 1, 0, 0, 0, 0); // the cooling move
-    OrdSet(ord, 1, 1, 0, duel::wire::kActionRecover, duel::wire::kTargetNone);
-    CHECK(duel_apply(st, stLen, ord, duel::wire::OrdersLen(1)) == -1);
+    ApplyVec v = MakeVec_RecoverRejectCoolingMove();
+    CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == -1);
     CHECK(duel_out_len() == 0);
     CHECK(duel_log_len() == 0);
   }
@@ -916,23 +1044,31 @@ void test_apply_recover() {
 
 // Case 7 — Cooldown cycle: a cd-2 move is unusable the next 2 rounds and usable
 // on the 3rd. Drive four applies, carrying the state forward.
-void test_apply_cooldown_cycle() {
+ApplyVec MakeVec_CooldownUse() {
+  ApplyVec v{};
+  v.name = "cooldown_use";
   duel::DuelState s = MakeState(1, 1);
   const uint8_t m0[] = {26}, c0[] = {0}; // Vicious Jawbreaker: authored cd = 2
   const uint8_t m1[] = {24}, c1[] = {0};
   SetTreat(s, 0, 0, 250, 250, 3, 6, 1, m0, c0);
   SetTreat(s, 1, 0, 290, 290, 4, 10, 1, m1, c1); // enough hp to survive
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdInit(v.ord);
+  OrdSet(v.ord, 1, 0, 0, 0, 0);
+  OrdSet(v.ord, 1, 1, 0, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  v.ordLen = duel::wire::OrdersLen(1);
+  return v;
+}
+
+void test_apply_cooldown_cycle() {
   uint8_t st[200];
-  uint32_t stLen = duel::encode_state(s, st, sizeof(st));
+  uint32_t stLen;
   const uint32_t ordLen = duel::wire::OrdersLen(1);
 
   // Round A: use the move → cooldown set to 2.
   {
-    uint8_t ord[32];
-    OrdInit(ord);
-    OrdSet(ord, 1, 0, 0, 0, 0);
-    OrdSet(ord, 1, 1, 0, duel::wire::kActionRecover, duel::wire::kTargetNone);
-    CHECK(duel_apply(st, stLen, ord, ordLen) == 0);
+    ApplyVec v = MakeVec_CooldownUse();
+    CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
     duel::DuelState o{};
     CHECK(DecodeOut(&o));
     CHECK(o.treats[0][0].cooldowns[0] == 2);
@@ -981,40 +1117,92 @@ void test_apply_cooldown_cycle() {
 
 // Case 8 — Win: KO all 3 enemies → phase 1, and a later apply on the finished
 // duel rejects (phase != 0).
-void test_apply_win_then_reject() {
+ApplyVec MakeVec_Win() {
+  ApplyVec v{};
+  v.name = "win";
   duel::DuelState s = MakeState(3, 1);
   const uint8_t mS[] = {10}, cS[] = {0}; // Speedy power 51 → 51 dmg vs recover
   const uint8_t mD[] = {24}, cD[] = {0};
   for (int slot = 0; slot < 3; ++slot) SetTreat(s, 0, slot, 250, 250, 4, 10, 1, mS, cS);
   for (int slot = 0; slot < 3; ++slot) SetTreat(s, 1, slot, 40, 110, 1, 1, 1, mD, cD);
-  uint8_t st[200];
-  const uint32_t stLen = duel::encode_state(s, st, sizeof(st));
-  uint8_t ord[32];
-  OrdInit(ord);
-  OrdSet(ord, 3, 0, 0, 0, 0);
-  OrdSet(ord, 3, 0, 1, 0, 1);
-  OrdSet(ord, 3, 0, 2, 0, 2);
-  OrdSet(ord, 3, 1, 0, duel::wire::kActionRecover, duel::wire::kTargetNone);
-  OrdSet(ord, 3, 1, 1, duel::wire::kActionRecover, duel::wire::kTargetNone);
-  OrdSet(ord, 3, 1, 2, duel::wire::kActionRecover, duel::wire::kTargetNone);
-  CHECK(duel_apply(st, stLen, ord, duel::wire::OrdersLen(3)) == 0);
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdInit(v.ord);
+  OrdSet(v.ord, 3, 0, 0, 0, 0);
+  OrdSet(v.ord, 3, 0, 1, 0, 1);
+  OrdSet(v.ord, 3, 0, 2, 0, 2);
+  OrdSet(v.ord, 3, 1, 0, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  OrdSet(v.ord, 3, 1, 1, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  OrdSet(v.ord, 3, 1, 2, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  v.ordLen = duel::wire::OrdersLen(3);
+  return v;
+}
+
+// Builds on MakeVec_Win()'s OUTPUT (a finished duel, phase side0-won) as its
+// input state -- replays that first apply internally to get there, same
+// two-call chain the test itself drives.
+ApplyVec MakeVec_WinRejectAfter() {
+  ApplyVec win = MakeVec_Win();
+  duel_apply(win.st, win.stLen, win.ord, win.ordLen);
+  ApplyVec v{};
+  v.name = "win_reject_after";
+  v.stLen = duel_out_len();
+  for (uint32_t i = 0; i < v.stLen; ++i) v.st[i] = duel_out_ptr()[i];
+  OrdRecoverAll(v.ord, 3);
+  v.ordLen = duel::wire::OrdersLen(3);
+  return v;
+}
+
+void test_apply_win_then_reject() {
+  ApplyVec win = MakeVec_Win();
+  CHECK(duel_apply(win.st, win.stLen, win.ord, win.ordLen) == 0);
   duel::DuelState o{};
   CHECK(DecodeOut(&o));
   CHECK(o.phase == duel::wire::kPhaseSide0Won);
   CHECK(o.treats[1][0].hp == 0 && o.treats[1][1].hp == 0 && o.treats[1][2].hp == 0);
 
-  uint8_t st2[200];
-  const uint32_t st2Len = duel_out_len();
-  for (uint32_t i = 0; i < st2Len; ++i) st2[i] = duel_out_ptr()[i];
-  uint8_t ord2[32];
-  OrdRecoverAll(ord2, 3);
-  CHECK(duel_apply(st2, st2Len, ord2, duel::wire::OrdersLen(3)) == -1);
+  ApplyVec rej = MakeVec_WinRejectAfter();
+  CHECK(duel_apply(rej.st, rej.stLen, rej.ord, rej.ordLen) == -1);
   CHECK(duel_out_len() == 0);
   CHECK(duel_log_len() == 0);
 }
 
 // Case 9 — Round cap: drive round_cap recover-only rounds; the winner is the
 // side with higher Σhp, equal → draw.
+//
+// Golden-vector note: rather than replaying round_cap-1 recover-only applies
+// just to reach the decisive state (as the test below does, to also pin the
+// round-by-round increment behavior along the way), these two builders
+// hand-construct the state one round short of the cap directly via
+// MakeState's `round` parameter -- round isn't range-checked on decode (see
+// decode_state in engine.cpp), so this is a legal, purely-byte-built input
+// like every other vector, and it reaches the exact same pre-decisive state
+// without a 29-call loop in the dumper.
+ApplyVec MakeVec_RoundCapUnequalFinal() {
+  ApplyVec v{};
+  v.name = "round_cap_unequal_final";
+  duel::DuelState s = MakeState(1, 1, static_cast<uint16_t>(duel::kTun.round_cap - 1));
+  const uint8_t m[] = {24}, c[] = {0};
+  SetTreat(s, 0, 0, 200, 200, 1, 1, 1, m, c);
+  SetTreat(s, 1, 0, 100, 100, 1, 1, 1, m, c);
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdRecoverAll(v.ord, 1);
+  v.ordLen = duel::wire::OrdersLen(1);
+  return v;
+}
+
+ApplyVec MakeVec_RoundCapEqualFinal() {
+  ApplyVec v{};
+  v.name = "round_cap_equal_final";
+  duel::DuelState s = MakeState(1, 1, static_cast<uint16_t>(duel::kTun.round_cap - 1));
+  const uint8_t m[] = {24}, c[] = {0};
+  SetTreat(s, 0, 0, 150, 150, 1, 1, 1, m, c);
+  SetTreat(s, 1, 0, 150, 150, 1, 1, 1, m, c);
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdRecoverAll(v.ord, 1);
+  v.ordLen = duel::wire::OrdersLen(1);
+  return v;
+}
+
 void test_apply_round_cap() {
   // (a) unequal totals → higher Σhp wins
   {
@@ -1064,7 +1252,9 @@ void test_apply_round_cap() {
 
 // Case 10 — Determinism: the same (state, orders) applied twice yields
 // byte-identical state + log output.
-void test_apply_deterministic() {
+ApplyVec MakeVec_Deterministic() {
+  ApplyVec v{};
+  v.name = "deterministic";
   duel::DuelState s = MakeState(2, 1);
   const uint8_t mS[] = {10}, cS[] = {0};
   const uint8_t mH[] = {26}, cH[] = {0};
@@ -1073,17 +1263,19 @@ void test_apply_deterministic() {
   SetTreat(s, 0, 1, 250, 250, 3, 6, 1, mH, cH);
   SetTreat(s, 1, 0, 1, 110, 1, 1, 1, mD, cD);
   SetTreat(s, 1, 1, 50, 110, 1, 1, 1, mD, cD);
-  uint8_t st[200];
-  const uint32_t stLen = duel::encode_state(s, st, sizeof(st));
-  uint8_t ord[32];
-  OrdInit(ord);
-  OrdSet(ord, 2, 0, 0, 0, 0);
-  OrdSet(ord, 2, 0, 1, 0, 0);
-  OrdSet(ord, 2, 1, 0, duel::wire::kActionRecover, duel::wire::kTargetNone);
-  OrdSet(ord, 2, 1, 1, duel::wire::kActionRecover, duel::wire::kTargetNone);
-  const uint32_t ordLen = duel::wire::OrdersLen(2);
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdInit(v.ord);
+  OrdSet(v.ord, 2, 0, 0, 0, 0);
+  OrdSet(v.ord, 2, 0, 1, 0, 0);
+  OrdSet(v.ord, 2, 1, 0, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  OrdSet(v.ord, 2, 1, 1, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  v.ordLen = duel::wire::OrdersLen(2);
+  return v;
+}
 
-  CHECK(duel_apply(st, stLen, ord, ordLen) == 0);
+void test_apply_deterministic() {
+  ApplyVec v = MakeVec_Deterministic();
+  CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
   uint8_t outA[200];
   const uint32_t outALen = duel_out_len();
   for (uint32_t i = 0; i < outALen; ++i) outA[i] = duel_out_ptr()[i];
@@ -1092,7 +1284,7 @@ void test_apply_deterministic() {
   CHECK(logALen <= sizeof(logA));
   for (uint32_t i = 0; i < logALen; ++i) logA[i] = duel_log_ptr()[i];
 
-  CHECK(duel_apply(st, stLen, ord, ordLen) == 0);
+  CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
   CHECK(duel_out_len() == outALen);
   CHECK(std::memcmp(duel_out_ptr(), outA, outALen) == 0);
   CHECK(duel_log_len() == logALen);
@@ -1282,9 +1474,54 @@ void test_fuzz_no_crash() {
   }
 }
 
+// ---- Task 5: `--dump-golden` ----
+//
+// Runs every behavioral vector (the Task 3 duel_init shape vectors + all ten
+// Task 4 test_apply_* cases, decomposed into one line per distinct engine
+// call) through the NATIVE binary and prints one golden JSON line each to
+// stdout. `duel/build.sh golden` redirects this into duel/test/golden.json;
+// `duel/test/parity.mjs` replays every line through the WASM build via the
+// same C ABI and byte-compares. Pure JSON on stdout only -- no other output
+// in this mode.
+void DumpGolden() {
+  {
+    InitVec v{};
+    v.name = "init_3v3_baseline";
+    MakeBaselineCfg(v.cfg);
+    v.cfgLen = kBaselineCfgLen;
+    DumpInitVector(v);
+  }
+  {
+    InitVec v{};
+    v.name = "init_2v2_loadout2";
+    Make2v2Loadout2Cfg(v.cfg);
+    v.cfgLen = kShape2v2Loadout2CfgLen;
+    DumpInitVector(v);
+  }
+  DumpApplyVector(MakeVec_ClashAdvantage());
+  DumpApplyVector(MakeVec_ClashDisadvantage());
+  DumpApplyVector(MakeVec_BlockStanceA());
+  DumpApplyVector(MakeVec_BlockStanceLate());
+  DumpApplyVector(MakeVec_SpeedOrderKoSkip());
+  DumpApplyVector(MakeVec_Retarget());
+  DumpApplyVector(MakeVec_RecoverA());
+  DumpApplyVector(MakeVec_RecoverRejectCoolingMove());
+  DumpApplyVector(MakeVec_CooldownUse());
+  DumpApplyVector(MakeVec_Win());
+  DumpApplyVector(MakeVec_WinRejectAfter());
+  DumpApplyVector(MakeVec_RoundCapUnequalFinal());
+  DumpApplyVector(MakeVec_RoundCapEqualFinal());
+  DumpApplyVector(MakeVec_Deterministic());
+}
+
 } // namespace
 
-int main() {
+int main(int argc, char** argv) {
+  if (argc > 1 && std::strcmp(argv[1], "--dump-golden") == 0) {
+    DumpGolden();
+    return 0;
+  }
+
   RUN(test_duel_init_rejects_null_config);
   RUN(test_duel_init_rejects_zeroed_config);
   RUN(test_jsonout_builds_exact_json);
