@@ -768,6 +768,32 @@ void DumpApplyVector(const ApplyVec& v) {
   std::printf("\"}\n");
 }
 
+// Init-reject vector: the baseline config with side0/slot0's quality set to 5
+// (> max 4). duel_init must return -1 with empty output. Extracted from the
+// inline quality-5 case in test_duel_init_rejects_invalid_configs into a
+// builder (single source of truth for test + DumpGolden) so the parity gate
+// exercises a duel_init REJECT path (rc -1, no outHex) across native/wasm,
+// not only the accept path — decode-time field validation is exactly where
+// codegen divergence could bite. Quality (a real config field, unlike the
+// header version/reserved bytes) is chosen so the FE's typed-config replay
+// can reconstruct and re-reject the same vector too (tf-frontend
+// tests/duel/engine.test.ts) — its encodeConfig guard refuses quality 5
+// client-side, so the bad config never even reaches a fresh duel.
+InitVec MakeVec_InitRejectBadQuality() {
+  InitVec v{};
+  v.name = "init_reject_bad_quality";
+  MakeBaselineCfg(v.cfg);
+  v.cfg[duel::wire::kCfgOffTeams + duel::wire::kCfgTreatOffQuality] = 5; // > max 4 → reject
+  v.cfgLen = kBaselineCfgLen;
+  return v;
+}
+
+void test_duel_init_reject_vector() {
+  InitVec v = MakeVec_InitRejectBadQuality();
+  CHECK(duel_init(v.cfg, v.cfgLen) == -1);
+  CHECK(duel_out_len() == 0);
+}
+
 // Case 1 — Clash advantage: Heavy(power 40) vs a target that picked Speedy →
 // Heavy>Speedy → adv ×384 → dmg = (40*384)>>8 = 60.
 ApplyVec MakeVec_ClashAdvantage() {
@@ -960,6 +986,142 @@ void test_apply_retarget() {
       "{\"side\":0,\"slot\":1,\"kind\":\"hit\",\"move\":26,\"target\":1,"
       "\"retargeted\":true,\"clash\":\"neu\",\"dmg\":40,\"blocked\":false,"
       "\"targetHp\":10,\"ko\":false}"));
+  CHECK(o.phase == duel::wire::kPhaseActive);
+}
+
+// Case 5b — Retarget among MULTIPLE living enemies: a fast Speedy KOs the
+// aimed-at slot 0, then a slower Heavy (which also aimed at slot 0) must
+// retarget to the LOWEST-HP living enemy — slot 2 (60 hp) — NOT the lowest
+// living SLOT (slot 1, 100 hp). This is the comparator's hp-vs-slot branch,
+// which the single-living-enemy retarget vector can't discriminate.
+ApplyVec MakeVec_RetargetMultiLiving() {
+  ApplyVec v{};
+  v.name = "retarget_multi_living_lowest_hp";
+  duel::DuelState s = MakeState(3, 1);
+  const uint8_t mS[] = {10}, cS[] = {0}; // Speedy power 51, speed 97 — KOs slot 0
+  const uint8_t mH[] = {26}, cH[] = {0}; // Heavy  power 40, speed 28 — retargets
+  const uint8_t mD[] = {24}, cD[] = {0}; // filler move for the recovering treats
+  SetTreat(s, 0, 0, 250, 250, 4, 10, 1, mS, cS);
+  SetTreat(s, 0, 1, 250, 250, 3, 6, 1, mH, cH);
+  SetTreat(s, 0, 2, 250, 250, 1, 1, 1, mD, cD);  // recovers
+  SetTreat(s, 1, 0, 1, 110, 1, 1, 1, mD, cD);    // 1 hp → dies to attacker 0
+  SetTreat(s, 1, 1, 100, 110, 1, 1, 1, mD, cD);  // higher-hp living (NOT chosen)
+  SetTreat(s, 1, 2, 60, 110, 1, 1, 1, mD, cD);   // lowest-hp living → retarget lands
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdInit(v.ord);
+  OrdSet(v.ord, 3, 0, 0, 0, 0); // Speedy → enemy slot 0
+  OrdSet(v.ord, 3, 0, 1, 0, 0); // Heavy  → enemy slot 0 (dead by then → retarget)
+  OrdSet(v.ord, 3, 0, 2, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  OrdSet(v.ord, 3, 1, 0, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  OrdSet(v.ord, 3, 1, 1, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  OrdSet(v.ord, 3, 1, 2, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  v.ordLen = duel::wire::OrdersLen(3);
+  return v;
+}
+
+void test_apply_retarget_multi_living() {
+  ApplyVec v = MakeVec_RetargetMultiLiving();
+  CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
+  duel::DuelState o{};
+  CHECK(DecodeOut(&o));
+  CHECK(o.treats[1][0].hp == 0);   // slot 0 KO'd by the fast Speedy
+  CHECK(o.treats[1][1].hp == 100); // higher-hp living enemy left untouched
+  CHECK(o.treats[1][2].hp == 20);  // lowest-hp living enemy chosen: 60 - 40
+  CHECK(LogHas("\"retargeted\":true"));
+  // The retargeted Heavy aims at slot 2 (lowest hp), NOT slot 1 (lowest slot).
+  CHECK(LogHas(
+      "{\"side\":0,\"slot\":1,\"kind\":\"hit\",\"move\":26,\"target\":2,"
+      "\"retargeted\":true,\"clash\":\"neu\",\"dmg\":40,\"blocked\":false,"
+      "\"targetHp\":20,\"ko\":false}"));
+  CHECK(o.phase == duel::wire::kPhaseActive);
+}
+
+// Case 5c — Retarget TIE: after slot 0 is KO'd, the two living enemies (slots
+// 1 and 2) have EQUAL hp, so the "lowest hp" comparator ties and must fall
+// back to lowest SLOT — slot 1 wins, slot 2 is untouched.
+ApplyVec MakeVec_RetargetTieLowestSlot() {
+  ApplyVec v{};
+  v.name = "retarget_tie_lowest_slot";
+  duel::DuelState s = MakeState(3, 1);
+  const uint8_t mS[] = {10}, cS[] = {0};
+  const uint8_t mH[] = {26}, cH[] = {0};
+  const uint8_t mD[] = {24}, cD[] = {0};
+  SetTreat(s, 0, 0, 250, 250, 4, 10, 1, mS, cS);
+  SetTreat(s, 0, 1, 250, 250, 3, 6, 1, mH, cH);
+  SetTreat(s, 0, 2, 250, 250, 1, 1, 1, mD, cD);
+  SetTreat(s, 1, 0, 1, 110, 1, 1, 1, mD, cD);   // dies to attacker 0
+  SetTreat(s, 1, 1, 80, 110, 1, 1, 1, mD, cD);  // equal-hp living, lower slot → chosen
+  SetTreat(s, 1, 2, 80, 110, 1, 1, 1, mD, cD);  // equal-hp living, higher slot
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdInit(v.ord);
+  OrdSet(v.ord, 3, 0, 0, 0, 0);
+  OrdSet(v.ord, 3, 0, 1, 0, 0);
+  OrdSet(v.ord, 3, 0, 2, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  OrdSet(v.ord, 3, 1, 0, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  OrdSet(v.ord, 3, 1, 1, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  OrdSet(v.ord, 3, 1, 2, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  v.ordLen = duel::wire::OrdersLen(3);
+  return v;
+}
+
+void test_apply_retarget_tie_lowest_slot() {
+  ApplyVec v = MakeVec_RetargetTieLowestSlot();
+  CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
+  duel::DuelState o{};
+  CHECK(DecodeOut(&o));
+  CHECK(o.treats[1][0].hp == 0);  // KO'd
+  CHECK(o.treats[1][1].hp == 40); // tie → lowest slot chosen: 80 - 40
+  CHECK(o.treats[1][2].hp == 80); // equal-hp higher slot untouched
+  CHECK(LogHas(
+      "{\"side\":0,\"slot\":1,\"kind\":\"hit\",\"move\":26,\"target\":1,"
+      "\"retargeted\":true,\"clash\":\"neu\",\"dmg\":40,\"blocked\":false,"
+      "\"targetHp\":40,\"ko\":false}"));
+  CHECK(o.phase == duel::wire::kPhaseActive);
+}
+
+// Case 5d — Equal NONZERO speed across sides: all four actors pick the same
+// move (Coco Chaos, speed 98), so the (speed DESC, side ASC, slot ASC) order
+// is decided entirely by the side/slot tie-breaks — side 0 before side 1 at
+// equal speed, and slot ASC within a side. Pins the cross-side ordering the
+// other vectors (which vary speed or leave one side idle) never exercise.
+ApplyVec MakeVec_EqualSpeedSideOrder() {
+  ApplyVec v{};
+  v.name = "equal_speed_side_then_slot_order";
+  duel::DuelState s = MakeState(2, 1);
+  const uint8_t mC[] = {3}, cC[] = {0}; // Coco Chaos: speed 98 for all four actors
+  SetTreat(s, 0, 0, 250, 250, 1, 1, 1, mC, cC);
+  SetTreat(s, 0, 1, 250, 250, 1, 1, 1, mC, cC);
+  SetTreat(s, 1, 0, 250, 250, 1, 1, 1, mC, cC);
+  SetTreat(s, 1, 1, 250, 250, 1, 1, 1, mC, cC);
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdInit(v.ord);
+  OrdSet(v.ord, 2, 0, 0, 0, 0); // every actor aims at enemy slot 0 (no KO/retarget)
+  OrdSet(v.ord, 2, 0, 1, 0, 0);
+  OrdSet(v.ord, 2, 1, 0, 0, 0);
+  OrdSet(v.ord, 2, 1, 1, 0, 0);
+  v.ordLen = duel::wire::OrdersLen(2);
+  return v;
+}
+
+void test_apply_equal_speed_side_order() {
+  ApplyVec v = MakeVec_EqualSpeedSideOrder();
+  CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
+  // All four share speed 98 → order is (speed DESC, side ASC, slot ASC).
+  const int i00 = LogIndexOf("{\"side\":0,\"slot\":0,");
+  const int i01 = LogIndexOf("{\"side\":0,\"slot\":1,");
+  const int i10 = LogIndexOf("{\"side\":1,\"slot\":0,");
+  const int i11 = LogIndexOf("{\"side\":1,\"slot\":1,");
+  CHECK(i00 >= 0);
+  CHECK(i01 >= 0);
+  CHECK(i10 >= 0);
+  CHECK(i11 >= 0);
+  CHECK(i00 < i01); // same-side, equal speed → slot ASC
+  CHECK(i01 < i10); // equal speed ACROSS sides → side ASC (all of side 0 first)
+  CHECK(i10 < i11);
+  duel::DuelState o{};
+  CHECK(DecodeOut(&o));
+  CHECK(o.treats[1][0].hp == 202); // hit by both side-0 actors: 250 - 24 - 24
+  CHECK(o.treats[0][0].hp == 202); // hit by both side-1 actors
   CHECK(o.phase == duel::wire::kPhaseActive);
 }
 
@@ -1545,12 +1707,16 @@ void DumpGolden() {
     v.cfgLen = kShape2v2Loadout2CfgLen;
     DumpInitVector(v);
   }
+  DumpInitVector(MakeVec_InitRejectBadQuality());
   DumpApplyVector(MakeVec_ClashAdvantage());
   DumpApplyVector(MakeVec_ClashDisadvantage());
   DumpApplyVector(MakeVec_BlockStanceA());
   DumpApplyVector(MakeVec_BlockStanceLate());
   DumpApplyVector(MakeVec_SpeedOrderKoSkip());
   DumpApplyVector(MakeVec_Retarget());
+  DumpApplyVector(MakeVec_RetargetMultiLiving());
+  DumpApplyVector(MakeVec_RetargetTieLowestSlot());
+  DumpApplyVector(MakeVec_EqualSpeedSideOrder());
   DumpApplyVector(MakeVec_RecoverA());
   DumpApplyVector(MakeVec_RecoverRejectCoolingMove());
   DumpApplyVector(MakeVec_KoNoncanonicalAction());
@@ -1586,6 +1752,7 @@ int main(int argc, char** argv) {
   RUN(test_duel_init_valid_3v3_produces_initial_state);
   RUN(test_duel_init_valid_2v2_loadout2_shape);
   RUN(test_duel_init_rejects_invalid_configs);
+  RUN(test_duel_init_reject_vector);
   RUN(test_state_codec_roundtrip);
   RUN(test_state_codec_decode_rejects_bad_state);
   RUN(test_jsonout_i32_min);
@@ -1594,6 +1761,9 @@ int main(int argc, char** argv) {
   RUN(test_apply_block_stance);
   RUN(test_apply_speed_order_ko_skip);
   RUN(test_apply_retarget);
+  RUN(test_apply_retarget_multi_living);
+  RUN(test_apply_retarget_tie_lowest_slot);
+  RUN(test_apply_equal_speed_side_order);
   RUN(test_apply_recover);
   RUN(test_apply_cooldown_cycle);
   RUN(test_apply_win_then_reject);

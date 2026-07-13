@@ -241,8 +241,15 @@ reserved u16 (state), a non-zero per-treat **pad** byte, and **filler-slot coold
 (cooldown bytes for move slots `>= move_count` MUST be 0; filler move slots use the `0xFF` sentinel).
 See `duel/src/engine.cpp` (DecodeConfig/DecodeState) and `duel/src/{wire,state}.h`.
 
-**Golden + parity gate (23 vectors).** Determinism is locked by `duel/test/parity.mjs`, which replays
+**Golden + parity gate (27 vectors).** Determinism is locked by `duel/test/parity.mjs`, which replays
 the golden vectors through BOTH the native C++ build and `engine.wasm` and asserts byte-identical state
-+ logs (`PARITY OK (23 vectors)`), alongside 25 C++ unit tests (clash/block/speed/retarget/cooldown/
-win/round-cap/determinism/self-play-soak/fuzz). `make check` is untouched — `duel/` is not compiled into
-the GSP in phase 1.
++ logs (`PARITY OK (27 vectors)`), alongside 29 C++ unit tests (clash/block/speed/retarget/cooldown/
+win/round-cap/determinism/self-play-soak/fuzz). The vector set pins the consensus tie-break paths
+explicitly: retarget to lowest-hp among multiple living enemies, the equal-hp retarget tie (→ lowest
+slot), equal-nonzero-speed cross-side ordering (side ASC before slot ASC), and a `duel_init` reject
+(rc -1, empty out). `make check` is untouched — `duel/` is not compiled into the GSP in phase 1.
+
+**`duel_view` deferred to the channel phase.** The C ABI (§11 "API") lists `duel_view(state_bytes) → JSON`,
+but phase 1 leaves it a reserved, unimplemented stub (frozen signature, body hard-rejects). The web
+client decodes state client-side instead (`tf-frontend/src/duel/wire.ts` `decodeState`), so no
+engine-side view render is needed until the game-channel phase.

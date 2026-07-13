@@ -49,12 +49,15 @@ function parseBlueprint(text) {
     const name = body.match(/Name:\s*"([^"]+)"/)?.[1];
     if (!aid || !name) fail(`blueprint entry "${key}" missing AuthoredId or Name`);
     // proto2 optional fields may be omitted from text-proto when they'd hold the
-    // type's zero value; MoveType 0 == Heavy and Quality has no meaningful zero in
-    // the data (authored moves are always Quality 1..4), but default both to 0 so a
-    // future all-Heavy or (in error) zero-quality entry doesn't crash the parser.
+    // type's zero value. MoveType 0 == Heavy is a legitimate value, so an omitted
+    // MoveType correctly defaults to 0. Quality has no meaningful zero (authored
+    // moves are always Quality 1..4), so an omitted/zero (or otherwise out-of-range)
+    // Quality is a data error: parse it, then FAIL LOUDLY on the 1..4 range check
+    // below rather than silently emitting a wrong quality via the `?? 0` default.
     const quality = Number(body.match(/Quality:\s*(\d+)/)?.[1] ?? 0);
     const moveType = Number(body.match(/MoveType:\s*(\d+)/)?.[1] ?? 0);
     if (moveType < 0 || moveType > 4) fail(`blueprint entry "${key}" has out-of-range MoveType ${moveType}`);
+    if (quality < 1 || quality > 4) fail(`blueprint entry "${key}" has out-of-range Quality ${quality} (expected 1..4)`);
     moves.push({ key, aid, name, quality, moveType });
   }
   return moves;
@@ -231,7 +234,7 @@ export const DUEL_TUNABLES: DuelTunables = ${JSON.stringify(
   Object.fromEntries(TUNABLE_KEYS.map((k) => [k, tunables[k]])),
   null,
   2,
-).replace(/\n/g, '\n')};
+)};
 `;
 
 writeFileSync(OUT_CPP, cpp);

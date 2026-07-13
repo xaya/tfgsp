@@ -1,10 +1,15 @@
 // duel/src/engine.cpp — duel engine implementation.
 //
-// Task 1 (this scaffold): every ABI entry point below is a STUB — it
-// validates nothing and rejects every call (-1, zero-length output). Real
-// config/state decoding, resolve semantics, and JSON output land in Tasks
-// 3-4; this file only pins the ABI surface + the allocator/output-buffer
-// plumbing everything else will sit on top of.
+// Implements the frozen C ABI (engine.h): duel_init decodes + validates a
+// config buffer into an initial state; duel_apply validates a state+orders
+// pair and resolves one round (speed ordering, clash pentagon, block stance,
+// retarget, cooldowns, win/round-cap), emitting the new state plus that
+// round's resolve log as JSON. Both entry points reject any non-canonical
+// buffer rather than normalising it (a malleability guard for the channel
+// path, where a buffer's bytes are consensus). duel_view remains a reserved
+// stub until the channel phase (see its definition below). This file also
+// owns the duel_alloc/duel_free scratch arena + duel_out_*/duel_log_* result
+// buffers that the ABI sits on.
 //
 // Allocator scheme (duel_alloc/duel_free): a single static byte arena with
 // a bump pointer that WRAPS TO THE START when a request no longer fits.
@@ -66,6 +71,8 @@ uint32_t g_arenaUsed = 0;
 // Sized for the JSON view/log output (Tasks 3-4); a state buffer is at most
 // a few hundred bytes and its JSON rendering a small multiple of that.
 constexpr uint32_t kOutCap = 4096;
+// Worst case: 2*team_size (max 5) = 10 action entries * ~146 B each + the
+// {"round":N,"actions":[...],"phase":P} wrapper ≈ 1.5 KB « 8192.
 constexpr uint32_t kLogCap = 8192;
 uint8_t g_out[kOutCap];
 uint32_t g_outLen = 0;
@@ -649,6 +656,11 @@ int32_t duel_apply(const uint8_t* st, uint32_t stLen, const uint8_t* ord,
   return 0;
 }
 
+// RESERVED — unimplemented stub until the channel phase. The signature is a
+// frozen ABI slot (kept now so the export table never changes), but the body
+// just hard-rejects (-1, duel_out_len cleared) — no view render exists yet.
+// The web client decodes state client-side instead (tf-frontend
+// src/duel/wire.ts decodeState), so phase 1 needs no engine-side view.
 DUEL_ABI("duel_view")
 int32_t duel_view(const uint8_t* st, uint32_t stLen) {
   (void)st;

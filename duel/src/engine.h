@@ -33,9 +33,12 @@ int32_t duel_init(const uint8_t* cfg, uint32_t len);
 int32_t duel_apply(const uint8_t* st, uint32_t stLen,
                     const uint8_t* ord, uint32_t ordLen);
 
-// Render a state buffer to view JSON (duel_out_ptr/duel_out_len). Returns 0
-// on success, -1 if the state buffer fails validation (duel_out_len
-// cleared to 0, as above).
+// RESERVED — unimplemented stub until the channel phase. This is a frozen
+// ABI slot: the signature is fixed so the export table stays stable, but the
+// body currently just returns -1 (duel_out_len cleared to 0). No view render
+// is implemented in phase 1 — the web client decodes state TS-side instead
+// (tf-frontend src/duel/wire.ts decodeState). Intended contract when built:
+// render a state buffer to view JSON, 0 on success / -1 on validation fail.
 int32_t duel_view(const uint8_t* st, uint32_t stLen);
 
 const uint8_t* duel_out_ptr(void);

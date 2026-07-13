@@ -65,11 +65,12 @@ per side, per slot:
 int32_t duel_init(const uint8_t* cfg, uint32_t len);           // 0 ok, -1 reject; out buffer = state
 int32_t duel_apply(const uint8_t* st, uint32_t stLen,
                    const uint8_t* ord, uint32_t ordLen);       // 0 ok; out = new state, log buffer = round log JSON
-int32_t duel_view(const uint8_t* st, uint32_t stLen);          // 0 ok; out = state JSON
+int32_t duel_view(const uint8_t* st, uint32_t stLen);          // RESERVED stub (0 ok/-1 reject; out = state JSON) — see note
 const uint8_t* duel_out_ptr(void);  uint32_t duel_out_len(void);
 const uint8_t* duel_log_ptr(void);  uint32_t duel_log_len(void);
 uint8_t* duel_alloc(uint32_t n);    void duel_free(uint8_t* p); // wasm-side scratch for inputs
 ```
+`duel_view` is **deferred to the channel phase** — the phase-1 web client decodes state client-side (tf-frontend `src/duel/wire.ts` `decodeState`), so the ABI slot is frozen (signature fixed) but its body is an unimplemented stub that hard-rejects.
 Log JSON (one round): `{"round":N,"actions":[{"side":0,"slot":1,"kind":"hit|recover|skip","move":12,"target":2,"retargeted":false,"clash":"adv|dis|neu","dmg":37,"blocked":true,"targetHp":63,"ko":false},...],"phase":0}`. View JSON: `{"phase":0,"round":3,"teams":[[{"hp":120,"maxHp":150,"cooldowns":[0,2,0,0]},...],[...]]}` (numbers only — names/art are FE-side).
 
 ---
