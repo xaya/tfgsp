@@ -211,3 +211,38 @@ clash multipliers visibly mattering, cooldowns forcing rotation, KOs, victory/
 defeat modal — on desktop and the 360 px mobile tier, with all engine gates and FE
 tests green.  Balance tunables all live in duel-stats.json.  The owner can answer
 "is it fun?" and iterate numbers without touching code.
+
+## 11. Implementation notes (built 2026-07-13 — deviations from the spec above, intent preserved)
+
+These are implementation-level decisions taken during the build; the game rules (§4) and seams (§8)
+are unchanged. Recorded here so the spec and the code agree.
+
+**Integer `>>8` (÷256) scaling instead of a float/"fpm" multiplier.** §4 sketched clash multipliers as
+fractional scalars. The engine implements them as **zero-dependency fixed-point integers**: each
+multiplier is a `uint16_t` in /256 units (`adv_mult_256 = 384` = ×1.5, `dis_mult_256 = 170` ≈ ×0.664,
+neutral = `256` = ×1.0, `block_pct_256` likewise), and damage is `dmg = (power * mult) >> 8`, with block
+applying `dmg = (dmg * (256 - block_pct_256)) >> 8` (`duel/src/engine.cpp`; tunables in
+`duel/src/stats_gen.h`). No floats anywhere in the resolver — the arithmetic is bit-for-bit identical on
+every platform, which is what makes the native==WASM parity gate meaningful (and is a hard requirement
+for the phase-3 game-channel path where both peers must agree on state). Balance is still authored as
+human numbers in `duel-stats.json`; codegen emits the /256 forms. Intent (advantage/disadvantage/block
+scaling) preserved.
+
+**Playback uses each fighter's OWN `AnimationID` clip, not a move→clip map.** §7's UI sketch implied a
+per-move animation. The assets carry only a single showcase/attack clip per fighter plus `Idle01` (no
+per-move, hit, or KO clips), so the 3D stage drives every attacker between its own AnimationID clip and
+Idle, and renders flinch / KO topple+fade / recover / floating damage numbers **code-side**. This is a
+presentation choice only — it consumes the same resolve log and changes no engine output.
+
+**Canonical-encoding tightenings (reject, don't normalise).** Both `duel_init` and the state decoder
+reject any non-canonical buffer rather than silently accepting it — a malleability guard for the
+channel path where a buffer's bytes are consensus. Rejected: a non-zero **reserved** byte (config) or
+reserved u16 (state), a non-zero per-treat **pad** byte, and **filler-slot cooldowns** that aren't 0
+(cooldown bytes for move slots `>= move_count` MUST be 0; filler move slots use the `0xFF` sentinel).
+See `duel/src/engine.cpp` (DecodeConfig/DecodeState) and `duel/src/{wire,state}.h`.
+
+**Golden + parity gate (23 vectors).** Determinism is locked by `duel/test/parity.mjs`, which replays
+the golden vectors through BOTH the native C++ build and `engine.wasm` and asserts byte-identical state
++ logs (`PARITY OK (23 vectors)`), alongside 25 C++ unit tests (clash/block/speed/retarget/cooldown/
+win/round-cap/determinism/self-play-soak/fuzz). `make check` is untouched — `duel/` is not compiled into
+the GSP in phase 1.
