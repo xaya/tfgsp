@@ -10,6 +10,7 @@
 
 #include "../src/engine.h"
 #include "../src/jsonout.h"
+#include "../src/stats_gen.h"
 #include "../src/wire.h"
 
 #include <cstdint>
@@ -99,6 +100,65 @@ void test_jsonout_never_writes_past_cap() {
   CHECK(b.len == 4);
 }
 
+// ---- Task 2: stats_gen.h (duel/data/duel-stats.json codegen) ----
+//
+// kDuelMoves has no GUID field (DuelMoveStat is deliberately just
+// {power,speed,cooldown,type} per the plan's frozen interface), so the
+// "dense order matches the blueprint" check below is anchored on the two
+// GUIDs at either end of the ASCII sort of all 39
+// proto/roconfig/fightermoveblueprint.pb.text AuthoredIds (computed
+// independently of gen-stats.mjs and hardcoded here as literals):
+//   index 0  = "0090580c-04ef-9d84-e883-32f52c977b98" Gum Drop Kick
+//              (Move_Common_Blocking_GumDropKick, Quality 1, MoveType 4 Blocking)
+//   index 38 = "fa6144f9-ad49-8124-386f-351a7f1ab546" Float Like a Butter Cream
+//              (Move_Uncommon_Tricky_FloatLikeAButterCream, Quality 2, MoveType 2 Tricky)
+// type/cooldown are pure functions of (quality, moveType) per the Step 2
+// formula (cooldown = clamp(quality-1,0,3), Blocking gets an extra -1 floored
+// at 0) and are NOT touched by the hand-jitter, so they're exact-comparable;
+// power/speed are jittered and only bounds-checked elsewhere.
+void test_stats_gen_dense_order_matches_blueprint_ends() {
+  CHECK(duel::kDuelMoves[0].type == 4);     // Blocking
+  CHECK(duel::kDuelMoves[0].cooldown == 0); // quality 1 -> 0, Blocking -1 floored at 0
+  CHECK(duel::kDuelMoves[38].type == 2);     // Tricky
+  CHECK(duel::kDuelMoves[38].cooldown == 1); // quality 2 -> 1, not Blocking
+}
+
+// Every entry in range: power in [10,60], speed in [1,120], cooldown <= 3
+// (wire.h's move universe is exactly 39 -- kMoveUniverse). At least 5
+// Blocking-type (type==4) entries carry the "block" flag's meaning, since
+// DuelMoveStat has no separate flags field: type==4 IS the block marker
+// (see stats_gen.h / the plan's Task 2 test bullet).
+void test_stats_gen_bounds_and_blocking_count() {
+  CHECK(sizeof(duel::kDuelMoves) / sizeof(duel::kDuelMoves[0]) ==
+        duel::wire::kMoveUniverse);
+  int blockingCount = 0;
+  for (uint32_t i = 0; i < duel::wire::kMoveUniverse; ++i) {
+    const duel::DuelMoveStat& mv = duel::kDuelMoves[i];
+    CHECK(mv.power >= 10 && mv.power <= 60);
+    CHECK(mv.speed >= 1 && mv.speed <= 120);
+    CHECK(mv.cooldown <= 3);
+    CHECK(mv.type <= 4);
+    if (mv.type == 4) {
+      ++blockingCount;
+    }
+  }
+  CHECK(blockingCount >= 5);
+}
+
+// kTun mirrors duel/data/duel-stats.json's top-level "tunables" verbatim
+// (plan Task 2 Step 2 exact values).
+void test_stats_gen_tunables_exact() {
+  CHECK(duel::kTun.hp_base == 100);
+  CHECK(duel::kTun.hp_per_quality == 30);
+  CHECK(duel::kTun.hp_per_sweetness == 10);
+  CHECK(duel::kTun.adv_mult_256 == 384);
+  CHECK(duel::kTun.dis_mult_256 == 170);
+  CHECK(duel::kTun.block_pct_256 == 102);
+  CHECK(duel::kTun.round_cap == 30);
+  CHECK(duel::kTun.team_size == 3);
+  CHECK(duel::kTun.loadout_size == 4);
+}
+
 } // namespace
 
 int main() {
@@ -106,6 +166,9 @@ int main() {
   RUN(test_duel_init_rejects_zeroed_config);
   RUN(test_jsonout_builds_exact_json);
   RUN(test_jsonout_never_writes_past_cap);
+  RUN(test_stats_gen_dense_order_matches_blueprint_ends);
+  RUN(test_stats_gen_bounds_and_blocking_count);
+  RUN(test_stats_gen_tunables_exact);
 
   std::printf("---\n%d ran, %d failed\n", g_tests_run, g_tests_failed);
   return g_tests_failed == 0 ? 0 : 1;
