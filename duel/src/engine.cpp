@@ -79,10 +79,10 @@ constexpr uint32_t kOutCap = 4096;
 // Longest possible entry (WriteLogEntry's schema, every field at its widest --
 // kind "counter"/"recover" = 9 bytes with quotes, move/target/via/absorbed <=
 // 255 = 3 digits, dmg <= 108 (the round-29 sudden-death chip) = 3, targetHp <=
-// 290 = 3, clash "adv" = 5, blocked/ko "false" = 5), plus the comma that
+// 230 = 3, clash "adv" = 5, blocked/ko "false" = 5), plus the comma that
 // separates it from the previous entry:
 //   {"side":0,"slot":0,"kind":"counter","move":255,"target":255,"via":255,
-//    "clash":"adv","dmg":108,"blocked":false,"absorbed":255,"targetHp":290,
+//    "clash":"adv","dmg":108,"blocked":false,"absorbed":255,"targetHp":230,
 //    "ko":false}                                          = 151 B  (+1 comma)
 //                                                         = 152 B / entry
 // (Cross-check: a 1v1 recover-only round measures 325 B = 2 x 145 + 1 comma +
@@ -287,8 +287,11 @@ bool TypeBeats(uint8_t a, uint8_t b) {
   }
 }
 
-// 384 advantage / 170 disadvantage / 256 neutral (same type, unrelated, or the
-// target has no move type — Recover/skip).
+// adv_mult_256 advantage / dis_mult_256 disadvantage / 256 neutral (same type,
+// unrelated, or the target has no move type — Recover/skip). Combat-depth Task 7
+// narrowed the swing from 384/170 (+50%/-34%) to 320/205 (+25%/-20%): the pentagon
+// is meant to be ONE input into a round, not the one that drowns out every other
+// decision a player makes.
 uint16_t ClashMult(uint8_t atkType, uint8_t tgtClashType) {
   if (tgtClashType == kClashNeutral) {
     return 256;
@@ -316,7 +319,7 @@ const char* ClashLabel(uint16_t mult) {
 // FUSED into a SINGLE >>24 truncation -- never chained >>8 shifts, whose double
 // truncation drifts by a point on some inputs, and native/wasm must agree bit-for-bit.
 //   power  <= 60         (gen-stats.mjs bounds every authored power to [10,60])
-//   clash  <= adv 384    (the pentagon: 384 adv / 170 dis / 256 neutral)
+//   clash  <= adv_mult_256 (the pentagon: 320 adv / 205 dis / 256 neutral today)
 //   splash == kSplashFull for a single-target blow, kTun.aoe_pct_256 for an AoE
 //            (combat-depth Task 5 -- an AoE trades per-target damage for reach)
 //   mitig  == kSplashFull (nothing), 256 - block_pct_256 (the victim BLOCKED), or
@@ -706,6 +709,15 @@ int32_t duel_apply(const uint8_t* st, uint32_t stLen, const uint8_t* ord,
   // guard/shield/counter deliberately do NOT also reduce incoming damage. That
   // is what makes the four real CHOICES rather than strict upgrades of each
   // other -- and it is the direct answer to "what's the point doing block".
+  //
+  // Combat-depth Task 7 finished that answer in the DATA, which is where the
+  // complaint actually lived: q4 used to hold TWO plain `block` moves that were
+  // strictly worse than the q1 one (same effect, longer cooldown, nothing to show
+  // for it). One is now the game's biggest SHIELD, the other the best BLOCK, and
+  // every stance ladder is flat in throughput across qualities -- the rarer move
+  // lands the same points per round in one bigger, rarer lump. Rarity buys VERBS
+  // and BURST, never damage per round. (duel/data/duel-stats.json "_readme";
+  // `duel/test/duel_tests --balance-report` is the gate that keeps it true.)
   bool blockStance[2][wire::kMaxTeamSize] = {};
   // guardedBy[side][slot] = the slot of the ally covering it, or kNoGuardian.
   // Built HERE, before any action resolves, so a same-round intercept is fully
@@ -1180,8 +1192,8 @@ int32_t duel_apply(const uint8_t* st, uint32_t stLen, const uint8_t* ord,
   // guarantees the duel ENDS -- and, more importantly, what stops turtling
   // from becoming the meta: the round cap's tiebreak is by HP-sum, which turns
   // into a win-on-time button the moment healing exists (Task 6). With the
-  // authored 12/6, the chip sums past the largest reachable max_hp (290) by
-  // round 21, so the cap is effectively unreachable.
+  // authored 12/6, the chip sums past the largest reachable max_hp (230, at
+  // hp_per_quality 10) by round 20, so the cap is effectively unreachable.
   //
   // It is NOT an attack -- it is the arena. It ignores the clash pentagon, the
   // block stance, the shield pool and the guard redirect alike (combat-depth

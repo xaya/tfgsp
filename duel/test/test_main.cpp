@@ -13,6 +13,7 @@
 #include "../src/state.h"
 #include "../src/stats_gen.h"
 #include "../src/wire.h"
+#include "moves_meta_gen.h" // TEST-ONLY: move names/qualities for --balance-report
 
 #include <climits>
 #include <cstdint>
@@ -210,7 +211,7 @@ void test_stats_gen_bounds_and_blocking_count() {
 
 // The AoE caster every combat-depth Task 5 vector uses (its section is far below; the
 // stats-table pin immediately after this needs the index too, so it lives up here).
-constexpr uint8_t kAoeMove = 34; // Gold Rush (Distance, power 51, speed 69, cd 3, AOE)
+constexpr uint8_t kAoeMove = 34; // Gold Rush (Distance, power 33, speed 69, cd 3, AOE)
 
 // ---- combat-depth Task 3: kDuelMoves effect/hits/max_uses invariants ----
 //
@@ -262,15 +263,49 @@ void test_stats_gen_effect_partition_and_limits() {
   // reasoning: without the DATA, the resolve paths below are unreachable and untested.
   CHECK(healCount == 1);      // Sugar Rush [27]
   CHECK(groupHealCount == 1); // Super Sugary Rush [10]
-  CHECK(siphonCount == 1);    // Pucker Sucker [6]
+  // combat-depth Task 7 moved the siphon UP a tier: it was on Pucker Sucker [6], a q1
+  // STARTER, which handed the game's only lifesteal -- a VERB -- to the cheapest treats
+  // and denied it to every other quality (a fighter only rolls moves of its own quality).
+  // It now rides Toffee Tripper [5], a q3 Tricky; Pucker Sucker is plain damage.
+  CHECK(siphonCount == 1);    // Toffee Tripper [5]
   CHECK(multiHitCount == 1);  // Limon Shuriken [15]
   CHECK(limitedUseCount == 2); // Super Sugary Rush [10] + Silver Knuckles [37], both 2
   CHECK(duel::kDuelMoves[27].effect == duel::kEffHeal);
   CHECK(duel::kDuelMoves[10].effect == duel::kEffGroupHeal);
   CHECK(duel::kDuelMoves[10].max_uses == 2);
-  CHECK(duel::kDuelMoves[6].effect == duel::kEffSiphon);
+  CHECK(duel::kDuelMoves[5].effect == duel::kEffSiphon);
+  CHECK(duel::kDuelMoves[6].effect == duel::kEffDamage); // ...and the starter is plain again
   CHECK(duel::kDuelMoves[15].hits == 2);
   CHECK(duel::kDuelMoves[37].max_uses == 2);
+
+  // combat-depth Task 7, THE STANCE LADDER. The q4 Blocking corner used to hold TWO plain
+  // `block` moves that were strictly worse than the q1 one (same effect, longer cooldown,
+  // nothing to show for it) -- the exact "what's the point doing block?" complaint that
+  // started this epic. Heavy Gumdrop Kick [14] is now the game's biggest SHIELD (which also
+  // gives q4 the one stance it was missing), and Tarnising Knee Drop [13] is the best BLOCK
+  // (the heaviest swing of any stance). Pinned here because the whole fairness argument
+  // rests on the DATA, and a regeneration that quietly dropped it would pass every
+  // behavioural test below.
+  CHECK(duel::kDuelMoves[14].effect == duel::kEffShield);
+  CHECK(duel::kDuelMoves[13].effect == duel::kEffBlock);
+  // The flat-throughput ladders (power x hits / (cooldown+1) is EQUAL across qualities, so
+  // the rarer move buys BURST, never damage per round -- see duel-stats.json's _readme and
+  // `duel_tests --balance-report`):
+  //   shield  14 points/round at every quality: 14/cd0, 28/cd1, 42/cd2, 56/cd3
+  CHECK(duel::kDuelMoves[18].power == 14 && duel::kDuelMoves[18].cooldown == 0); // q1
+  CHECK(duel::kDuelMoves[12].power == 28 && duel::kDuelMoves[12].cooldown == 1); // q2
+  CHECK(duel::kDuelMoves[11].power == 42 && duel::kDuelMoves[11].cooldown == 2); // q3
+  CHECK(duel::kDuelMoves[14].power == 56 && duel::kDuelMoves[14].cooldown == 3); // q4
+  //   block   12 damage/round at both qualities: 12/cd0 (q1), 24/cd1 (q4)
+  CHECK(duel::kDuelMoves[0].power == 12 && duel::kDuelMoves[0].cooldown == 0);
+  CHECK(duel::kDuelMoves[13].power == 24 && duel::kDuelMoves[13].cooldown == 1);
+  //   counter 11 damage/round at both qualities: 22/cd1 (q3), 33/cd2 (q4)
+  CHECK(duel::kDuelMoves[8].power == 22 && duel::kDuelMoves[8].cooldown == 1);
+  CHECK(duel::kDuelMoves[21].power == 33 && duel::kDuelMoves[21].cooldown == 2);
+  //   guard's power is UNUSED by the engine (the guard branch never reads it): pinned at
+  //   the table minimum so it cannot be mistaken for a lever.
+  CHECK(duel::kDuelMoves[1].effect == duel::kEffGuard);
+  CHECK(duel::kDuelMoves[1].power == 10);
 }
 
 // kTun mirrors duel/data/duel-stats.json's top-level "tunables" verbatim
@@ -278,10 +313,20 @@ void test_stats_gen_effect_partition_and_limits() {
 // new-verb percentages, not consumed by any behaviour yet).
 void test_stats_gen_tunables_exact() {
   CHECK(duel::kTun.hp_base == 100);
-  CHECK(duel::kTun.hp_per_quality == 30);
+  // Combat-depth Task 7 (the balance pass): 30 -> 10. At 30 an Epic carried up to +90 hp
+  // over a Common -- ~2.6x tankier at the same sweetness -- which is a PURE NUMBERS
+  // advantage and the exact thing "rarity buys verbs, not numbers" forbids. At 10 the gap
+  // is +30 (~15% at a shared sweetness bracket), so a rare treat's real edge is its
+  // toolkit. Sweetness (+10/level, the progression axis anyone can climb) still dwarfs it.
+  CHECK(duel::kTun.hp_per_quality == 10);
   CHECK(duel::kTun.hp_per_sweetness == 10);
-  CHECK(duel::kTun.adv_mult_256 == 384);
-  CHECK(duel::kTun.dis_mult_256 == 170);
+  // Combat-depth Task 7: the clash pentagon swung +50%/-34%, which read as LUCK and
+  // drowned out every other decision. Narrowed to +25%/-20%, it is one input among
+  // several. dis_mult_256 MUST stay strictly below adv_mult_256 -- BlowDamage's
+  // overflow static_assert takes adv as the maximum clash multiplier.
+  CHECK(duel::kTun.adv_mult_256 == 320);
+  CHECK(duel::kTun.dis_mult_256 == 205);
+  CHECK(duel::kTun.dis_mult_256 < duel::kTun.adv_mult_256);
   // Combat-depth Task 4: 102 (40%) -> 154 (60%). A plain `block` buys the
   // BIGGEST flat reduction of the four stances -- that is what makes it worth
   // the turn next to guard/shield/counter, which reduce nothing at all.
@@ -291,14 +336,17 @@ void test_stats_gen_tunables_exact() {
   CHECK(duel::kTun.loadout_size == 4);
   // Combat-depth Task 2 (controller resolution R2): sudden death. chip is
   // 6, 12, 18, ... from round 12, whose running sum passes the largest
-  // reachable max_hp (290 = q4 sw10) by round 21 -- so every duel ends well
-  // inside round_cap, and the cap's Sum-HP tiebreak stops being a win-on-time
-  // button once heals exist.
+  // reachable max_hp (230 = q4 sw10, since Task 7 cut hp_per_quality to 10) by
+  // round 20 -- so every duel ends well inside round_cap, and the cap's Sum-HP
+  // tiebreak stops being a win-on-time button once heals exist.
   CHECK(duel::kTun.sudden_start == 12);
   CHECK(duel::kTun.sudden_step == 6);
-  // Combat-depth Task 3: aoe_pct_256 ~60%, guard_pct_256 ~70%,
-  // siphon_pct_256 50%, counter_pct_256 40% (Task 7 retunes these).
-  CHECK(duel::kTun.aoe_pct_256 == 154);
+  // Combat-depth Task 7: aoe_pct_256 60% -> 50%. An AoE's raw power is now a normal blow
+  // of its tier (Task 7 deflated it: the AoEs used to carry ~51 power AND the 60% splash,
+  // so each victim took MORE than a focused blow -- the reach came free). Half of a normal
+  // blow, on every foe, is the honest price. guard_pct_256 ~70%, siphon_pct_256 50%,
+  // counter_pct_256 40% all re-checked against the retuned powers and kept.
+  CHECK(duel::kTun.aoe_pct_256 == 128);
   CHECK(duel::kTun.guard_pct_256 == 179);
   CHECK(duel::kTun.siphon_pct_256 == 128);
   CHECK(duel::kTun.counter_pct_256 == 102);
@@ -306,16 +354,17 @@ void test_stats_gen_tunables_exact() {
 
 // ---- Task 3: duel_init (config validation + initial state) ----
 //
-// hp/max_hp are derived from kTun (stats_gen.h, Task 2's authored values:
-// hp_base=100, hp_per_quality=30, hp_per_sweetness=10) via the plan's
+// hp/max_hp are derived from kTun (stats_gen.h; combat-depth Task 7 cut
+// hp_per_quality from 30 to 10 -- quality must not buy a stat line) via the
 // formula `max_hp = hp_base + (quality-1)*hp_per_quality +
-// sweetness*hp_per_sweetness`:
-//   q1 sw1  -> 100 + 0*30 + 1*10  = 110
-//   q2 sw4  -> 100 + 1*30 + 4*10  = 170
-//   q3 sw7  -> 100 + 2*30 + 7*10  = 230
-//   q3 sw3  -> 100 + 2*30 + 3*10  = 190
-//   q4 sw6  -> 100 + 3*30 + 6*10  = 250
-//   q4 sw10 -> 100 + 3*30 + 10*10 = 290
+// sweetness*hp_per_sweetness`, i.e. 100 + (q-1)*10 + sw*10:
+//   q1 sw1  -> 100 + 0*10 + 1*10  = 110
+//   q2 sw4  -> 100 + 1*10 + 4*10  = 150
+//   q3 sw7  -> 100 + 2*10 + 7*10  = 190
+//   q3 sw3  -> 100 + 2*10 + 3*10  = 150
+//   q4 sw6  -> 100 + 3*10 + 6*10  = 190
+//   q4 sw10 -> 100 + 3*10 + 10*10 = 230  (the largest max_hp reachable at all)
+// Note SWEETNESS, the axis anyone can climb, now dwarfs quality: +100 vs +30.
 
 uint16_t ReadU16LE(const uint8_t* p) {
   return static_cast<uint16_t>(p[0] | (static_cast<uint16_t>(p[1]) << 8));
@@ -430,15 +479,15 @@ void test_duel_init_valid_3v3_produces_initial_state() {
   CheckStateTreat(out, kBaselineTeamSize, kBaselineLoadoutSize, 0, 0, 1, 1, 3,
                    moves0, 110);
   CheckStateTreat(out, kBaselineTeamSize, kBaselineLoadoutSize, 0, 1, 2, 4, 4,
-                   moves1, 170);
+                   moves1, 150);
   CheckStateTreat(out, kBaselineTeamSize, kBaselineLoadoutSize, 0, 2, 3, 7, 2,
-                   moves2, 230);
+                   moves2, 190);
   CheckStateTreat(out, kBaselineTeamSize, kBaselineLoadoutSize, 1, 0, 3, 3, 1,
-                   moves3, 190);
+                   moves3, 150);
   CheckStateTreat(out, kBaselineTeamSize, kBaselineLoadoutSize, 1, 1, 4, 6, 3,
-                   moves4, 250);
+                   moves4, 190);
   CheckStateTreat(out, kBaselineTeamSize, kBaselineLoadoutSize, 1, 2, 4, 10, 4,
-                   moves5, 290);
+                   moves5, 230);
 }
 
 constexpr uint32_t kShape2v2Loadout2CfgLen = 24;
@@ -481,9 +530,9 @@ void test_duel_init_valid_2v2_loadout2_shape() {
   const uint8_t moves10[2] = {3, 0xFF};
   const uint8_t moves11[2] = {4, 5};
   CheckStateTreat(out, kTeamSize, kLoadoutSize, 0, 0, 1, 2, 1, moves00, 120);
-  CheckStateTreat(out, kTeamSize, kLoadoutSize, 0, 1, 2, 5, 2, moves01, 180);
-  CheckStateTreat(out, kTeamSize, kLoadoutSize, 1, 0, 3, 8, 1, moves10, 240);
-  CheckStateTreat(out, kTeamSize, kLoadoutSize, 1, 1, 4, 1, 2, moves11, 200);
+  CheckStateTreat(out, kTeamSize, kLoadoutSize, 0, 1, 2, 5, 2, moves01, 160);
+  CheckStateTreat(out, kTeamSize, kLoadoutSize, 1, 0, 3, 8, 1, moves10, 200);
+  CheckStateTreat(out, kTeamSize, kLoadoutSize, 1, 1, 4, 1, 2, moves11, 140);
 }
 
 // Every reject case from the plan's Task 3 list, each mutating exactly one
@@ -941,31 +990,36 @@ int LogCount(const char* needle) {
   return count;
 }
 
-// Dense move indices used in the behavioral vectors (from stats_gen.h):
-//   [0]  Gum Drop Kick       {power 11, speed 46, cd 0, Blocking, block}
-//   [1]  Gilded Bonds        {power 23, speed 45, cd 2, Blocking, GUARD}
-//   [2]  Quicksilver Slice   {power 50, speed 93, cd 3, Speedy}
-//   [3]  Coco Chaos          {power 24, speed 98, cd 0, Speedy}
-//   [6]  Pucker Sucker       {power 24, speed 57, cd 0, Tricky, SIPHON}  (Task 6)
-//   [8]  Berry Bounce        {power 20, speed 46, cd 1, Blocking, COUNTER}
-//   [10] Super Sugary Rush   {power 51, speed 97, cd 3, Speedy, GROUPHEAL, max_uses 2} (Task 6)
-//   [11] Candied Shell       {power 20, speed 47, cd 1, Blocking, SHIELD}
-//   [12] Chewy Absorption    {power 15, speed 42, cd 0, Blocking, SHIELD} (Task 6)
-//   [15] Limon Shuriken      {power 41, speed 75, cd 2, Distance, hits 2} (Task 6)
-//   [18] Sugar Shield        {power 12, speed 43, cd 0, Blocking, SHIELD}
-//   [21] Bouncing Barrage    {power 24, speed 45, cd 2, Blocking, COUNTER}
-//   [24] Pop Rock Pop        {power 26, speed 27, cd 0, Heavy}
-//   [25] Bubble Trouble      {power 25, speed 76, cd 0, Distance}
-//   [26] Vicious Jawbreaker  {power 40, speed 28, cd 2, Heavy}
-//   [27] Sugar Rush          {power 37, speed 82, cd 2, Speedy, HEAL}    (Task 6)
+// Dense move indices used in the behavioral vectors (from stats_gen.h, AFTER the
+// combat-depth Task 7 balance pass -- every power/cooldown below moved, and the
+// expected numbers in the vectors moved with them):
+//   [0]  Gum Drop Kick       {power 12, speed 46, cd 0, Blocking, block}
+//   [1]  Gilded Bonds        {power 10, speed 45, cd 2, Blocking, GUARD -- power UNUSED}
+//   [2]  Quicksilver Slice   {power 30, speed 93, cd 2, Speedy}
+//   [3]  Coco Chaos          {power 23, speed 98, cd 0, Speedy}
+//   [5]  Toffee Tripper      {power 27, speed 54, cd 1, Tricky, SIPHON}  (Task 7 moved it here)
+//   [6]  Pucker Sucker       {power 26, speed 57, cd 0, Tricky}          (Task 7: plain damage)
+//   [8]  Berry Bounce        {power 22, speed 46, cd 1, Blocking, COUNTER}
+//   [10] Super Sugary Rush   {power 48, speed 97, cd 3, Speedy, GROUPHEAL, max_uses 2}
+//   [11] Candied Shell       {power 42, speed 47, cd 2, Blocking, SHIELD}
+//   [12] Chewy Absorption    {power 28, speed 42, cd 1, Blocking, SHIELD}
+//   [13] Tarnising Knee Drop {power 24, speed 49, cd 1, Blocking, block} (Task 7: the best block)
+//   [14] Heavy Gumdrop Kick  {power 56, speed 49, cd 3, Blocking, SHIELD} (Task 7: was a 2nd block)
+//   [15] Limon Shuriken      {power 18, speed 75, cd 2, Distance, hits 2}
+//   [18] Sugar Shield        {power 14, speed 43, cd 0, Blocking, SHIELD}
+//   [21] Bouncing Barrage    {power 33, speed 45, cd 2, Blocking, COUNTER}
+//   [24] Pop Rock Pop        {power 26, speed 33, cd 0, Heavy}
+//   [25] Bubble Trouble      {power 24, speed 76, cd 0, Distance}
+//   [26] Vicious Jawbreaker  {power 31, speed 31, cd 2, Heavy}
+//   [27] Sugar Rush          {power 42, speed 82, cd 2, Speedy, HEAL}
 //   [32] Sugary Sweep        {power 25, speed 64, cd 0, Tricky}
-//   [34] Gold Rush           {power 51, speed 69, cd 3, Distance, AOE}   (Task 5, kAoeMove)
-//   [37] Silver Knuckles     {power 45, speed 30, cd 3, Heavy, max_uses 2} (Task 6)
+//   [34] Gold Rush           {power 33, speed 69, cd 3, Distance, AOE}   (kAoeMove)
+//   [37] Silver Knuckles     {power 40, speed 30, cd 3, Heavy, max_uses 2}
 //
-// Combat-depth Task 6 gave [6]/[10]/[12] their real verbs, so the older vectors
-// that used them as a generic Tricky/fast-Speedy/block move were re-pointed at
-// [32]/[2]/[0] -- a vector that means "a plain damage move" must not silently
-// become a vector that means "a siphon".
+// Combat-depth Task 6 gave [10]/[12] their real verbs, and Task 7 moved the SIPHON off the
+// q1 starter [6] and onto the q3 [5], so the older vectors that used them as a generic
+// Tricky/fast-Speedy/block move were re-pointed -- a vector that means "a plain damage
+// move" must not silently become a vector that means "a siphon", and vice versa.
 
 // jsonout: jb_i32 must not overflow when negating INT32_MIN (classic edge; the
 // helper widens to int64 first). Log/view use jb_u32, but this pins jb_i32.
@@ -1076,13 +1130,15 @@ void test_duel_init_reject_vector() {
   CHECK(duel_out_len() == 0);
 }
 
-// Case 1 — Clash advantage: Heavy(power 40) vs a target that picked Speedy →
-// Heavy>Speedy → adv ×384 → dmg = (40*384)>>8 = 60.
+// Case 1 — Clash advantage: Heavy(power 31) vs a target that picked Speedy →
+// Heavy>Speedy → adv ×320 → dmg = (31*320)>>8 = 38. (Task 7 narrowed the pentagon
+// from ×384/×170 to ×320/×205: +25%/-20% instead of +50%/-34%, so a clash is one
+// input among several rather than the only one that matters.)
 ApplyVec MakeVec_ClashAdvantage() {
   ApplyVec v{};
   v.name = "clash_advantage";
   duel::DuelState s = MakeState(1, 1);
-  const uint8_t mH[] = {26}, cH[] = {0}; // Heavy power 40
+  const uint8_t mH[] = {26}, cH[] = {0}; // Heavy power 31
   const uint8_t mS[] = {3}, cS[] = {0};  // Speedy
   SetTreat(s, 0, 0, 250, 250, 3, 6, 1, mH, cH);
   SetTreat(s, 1, 0, 250, 250, 1, 1, 1, mS, cS);
@@ -1099,20 +1155,20 @@ void test_apply_clash_advantage() {
   CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
   duel::DuelState o{};
   CHECK(DecodeOut(&o));
-  CHECK(o.treats[1][0].hp == 190); // 250 - 60 (adv)
-  CHECK(o.treats[0][0].hp == 235); // Speedy vs Heavy = dis 170: 24*170>>8 = 15
+  CHECK(o.treats[1][0].hp == 212); // 250 - 38 (adv: (31*320)>>8)
+  CHECK(o.treats[0][0].hp == 232); // Speedy vs Heavy = dis 205: (23*205)>>8 = 18
   CHECK(LogHas("\"clash\":\"adv\""));
-  CHECK(LogHas("\"dmg\":60"));
+  CHECK(LogHas("\"dmg\":38"));
   CHECK(o.phase == duel::wire::kPhaseActive);
 }
 
 // Case 2 — Disadvantage: Heavy vs a target that picked Tricky → Tricky>Heavy →
-// dis ×170 → dmg = (40*170)>>8 = 26.
+// dis ×205 → dmg = (31*205)>>8 = 24.
 ApplyVec MakeVec_ClashDisadvantage() {
   ApplyVec v{};
   v.name = "clash_disadvantage";
   duel::DuelState s = MakeState(1, 1);
-  const uint8_t mH[] = {26}, cH[] = {0}; // Heavy power 40
+  const uint8_t mH[] = {26}, cH[] = {0}; // Heavy power 31
   const uint8_t mT[] = {32}, cT[] = {0}; // Sugary Sweep (Tricky, plain damage)
   SetTreat(s, 0, 0, 250, 250, 3, 6, 1, mH, cH);
   SetTreat(s, 1, 0, 250, 250, 1, 1, 1, mT, cT);
@@ -1129,15 +1185,15 @@ void test_apply_clash_disadvantage() {
   CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
   duel::DuelState o{};
   CHECK(DecodeOut(&o));
-  CHECK(o.treats[1][0].hp == 224); // 250 - 26 (dis)
+  CHECK(o.treats[1][0].hp == 226); // 250 - 24 (dis)
   CHECK(LogHas("\"clash\":\"dis\""));
-  CHECK(LogHas("\"dmg\":26"));
+  CHECK(LogHas("\"dmg\":24"));
 }
 
-// Case 3 — Block stance. (A) Heavy(power 40) vs a Blocking target → adv ×384
-// then block: (40*384*102)>>16 = 23 (combat-depth Task 4 raised block_pct_256 to
-// 154, so the surviving fraction is 256-154 = 102, and the two multiplies are
-// FUSED into one >>16 rather than chained through two >>8 truncations).
+// Case 3 — Block stance. (A) Heavy(power 31) vs a Blocking target → adv ×320
+// then block: (31*320*102)>>16 = 15 (block_pct_256 is 154, so the surviving
+// fraction is 256-154 = 102, and the two multiplies are FUSED into one >>16
+// rather than chained through two >>8 truncations).
 // (B) the stance holds even when the blocker's own action fires LAST (attacker
 // faster). Both use Gum Drop Kick [0] -- the only effects that still buy the
 // flat reduction are `block`, and Sugar Shield [18] / Chewy Absorption [12] are
@@ -1146,8 +1202,8 @@ ApplyVec MakeVec_BlockStanceA() {
   ApplyVec v{};
   v.name = "block_stance_a";
   duel::DuelState s = MakeState(1, 1);
-  const uint8_t mH[] = {26}, cH[] = {0}; // Heavy power 40, speed 28
-  const uint8_t mB[] = {0}, cB[] = {0};  // Gum Drop Kick (block, power 11), speed 46 (acts first here)
+  const uint8_t mH[] = {26}, cH[] = {0}; // Heavy power 31, speed 31
+  const uint8_t mB[] = {0}, cB[] = {0};  // Gum Drop Kick (block, power 12), speed 46 (acts first here)
   SetTreat(s, 0, 0, 250, 250, 3, 6, 1, mH, cH);
   SetTreat(s, 1, 0, 250, 250, 1, 1, 1, mB, cB);
   v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
@@ -1175,15 +1231,15 @@ ApplyVec MakeVec_BlockStanceLate() {
 }
 
 void test_apply_block_stance() {
-  // (A) exact 23 -- a plain block is worth the turn now: (40*384*102)>>16.
+  // (A) exact 15 -- a plain block still eats 60% of the blow: (31*320*102)>>16.
   {
     ApplyVec v = MakeVec_BlockStanceA();
     CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
     duel::DuelState o{};
     CHECK(DecodeOut(&o));
-    CHECK(o.treats[1][0].hp == 227); // 250 - 23 (adv then block)
+    CHECK(o.treats[1][0].hp == 235); // 250 - 15 (adv then block)
     CHECK(LogHas("\"blocked\":true"));
-    CHECK(LogHas("\"dmg\":23"));
+    CHECK(LogHas("\"dmg\":15"));
     CHECK(LogHas("\"clash\":\"adv\""));
     CHECK(o.treats[1][0].shield == 0); // a `block` raises no absorb pool
   }
@@ -1193,8 +1249,8 @@ void test_apply_block_stance() {
     CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
     duel::DuelState o{};
     CHECK(DecodeOut(&o));
-    // Speedy vs Blocking = dis 170, then block: (24*170*102)>>16 = 6.
-    CHECK(o.treats[1][0].hp == 244); // 250 - 6, blocked though blocker acts last
+    // Speedy vs Blocking = dis 205, then block: (23*205*102)>>16 = 7.
+    CHECK(o.treats[1][0].hp == 243); // 250 - 7, blocked though blocker acts last
     CHECK(LogHas("\"blocked\":true"));
     const int i0 = LogIndexOf("\"side\":0");
     const int i1 = LogIndexOf("\"side\":1");
@@ -1210,10 +1266,13 @@ ApplyVec MakeVec_SpeedOrderKoSkip() {
   ApplyVec v{};
   v.name = "speed_order_ko_skip";
   duel::DuelState s = MakeState(1, 1);
-  const uint8_t mS[] = {2}, cS[] = {0};  // Quicksilver Slice (Speedy 50), speed 93
+  const uint8_t mS[] = {2}, cS[] = {0};  // Quicksilver Slice (Speedy 30), speed 93
   const uint8_t mD[] = {25}, cD[] = {0}; // Distance, speed 76
   SetTreat(s, 0, 0, 250, 250, 4, 10, 1, mS, cS);
-  SetTreat(s, 1, 0, 40, 110, 1, 1, 1, mD, cD);
+  // 30 hp: the Task 7 retune shrank this blow from 75 to 37 (weaker moves AND a
+  // narrower pentagon), so the seed comes down with it -- the vector has to still
+  // mean "the fast one KILLS before the slow one swings".
+  SetTreat(s, 1, 0, 30, 110, 1, 1, 1, mD, cD);
   v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
   OrdInit(v.ord);
   OrdSet(v.ord, 1, 0, 0, 0, 0);
@@ -1228,7 +1287,7 @@ void test_apply_speed_order_ko_skip() {
   duel::DuelState o{};
   CHECK(DecodeOut(&o));
   CHECK(o.treats[1][0].hp == 0);
-  CHECK(LogHas("\"dmg\":75")); // Speedy>Distance adv: 50*384>>8 = 75
+  CHECK(LogHas("\"dmg\":37")); // Speedy>Distance adv: (30*320)>>8 = 37
   CHECK(LogHas("\"ko\":true"));
   CHECK(LogHas("{\"side\":1,\"slot\":0,\"kind\":\"skip\"")); // victim skipped
   CHECK(o.phase == duel::wire::kPhaseSide0Won);
@@ -1376,8 +1435,8 @@ void test_apply_turn_order_alternates_by_round() {
     CHECK(i10 < i11);
     duel::DuelState o{};
     CHECK(DecodeOut(&o));
-    CHECK(o.treats[1][0].hp == 202); // hit by both side-0 actors: 250 - 24 - 24
-    CHECK(o.treats[0][0].hp == 202); // hit by both side-1 actors
+    CHECK(o.treats[1][0].hp == 204); // hit by both side-0 actors: 250 - 23 - 23
+    CHECK(o.treats[0][0].hp == 204); // hit by both side-1 actors
     CHECK(o.phase == duel::wire::kPhaseActive);
   }
   // Odd round: the SAME state+orders, one round later → side 1 goes first.
@@ -1394,8 +1453,8 @@ void test_apply_turn_order_alternates_by_round() {
     CHECK(i00 < i01);
     duel::DuelState o{};
     CHECK(DecodeOut(&o));
-    CHECK(o.treats[1][0].hp == 202); // damage is unchanged: only the ORDER flips
-    CHECK(o.treats[0][0].hp == 202);
+    CHECK(o.treats[1][0].hp == 204); // damage is unchanged: only the ORDER flips
+    CHECK(o.treats[0][0].hp == 204);
     CHECK(o.phase == duel::wire::kPhaseActive);
   }
 }
@@ -1501,8 +1560,9 @@ void test_apply_recover() {
 // Case 7 chain, parameterized: one builder is the single source of truth for
 // every round of the cooldown cycle. Side0's Vicious Jawbreaker (authored
 // cd 2) sits at cooldown `cd` in round `round`; side1 (Recover every round)
-// is at `hp1` of max 290 (290 fresh, 250 after round A's 40-dmg neutral
-// hit). `useMove` picks the order variant: the Jawbreaker (loadout index 0,
+// is at `hp1` of max 230 (230 fresh, 199 after round A's 31-dmg neutral
+// hit -- Task 7 retuned the Jawbreaker to power 31, and 230 is now the largest
+// max_hp any treat can have). `useMove` picks the order variant: the Jawbreaker (loadout index 0,
 // legal iff cd==0) or Recover. The test below cross-checks these hand-built
 // states against the REAL chained apply outputs with memcmp, so the builders
 // can't drift from what the engine actually produces.
@@ -1514,7 +1574,7 @@ ApplyVec MakeVec_CooldownRound(const char* name, uint16_t round, uint8_t cd,
   const uint8_t m0[] = {26}, c0[] = {cd}; // Vicious Jawbreaker: authored cd = 2
   const uint8_t m1[] = {24}, c1[] = {0};
   SetTreat(s, 0, 0, 250, 250, 3, 6, 1, m0, c0);
-  SetTreat(s, 1, 0, hp1, 290, 4, 10, 1, m1, c1); // enough hp to survive
+  SetTreat(s, 1, 0, hp1, 230, 4, 10, 1, m1, c1); // enough hp to survive (q4 sw10 = 230)
   v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
   OrdInit(v.ord);
   if (useMove) {
@@ -1527,29 +1587,29 @@ ApplyVec MakeVec_CooldownRound(const char* name, uint16_t round, uint8_t cd,
   return v;
 }
 
-// Round A: fresh, use the move (sets cd 2, hits 290 -> 250).
+// Round A: fresh, use the move (sets cd 2, hits 230 -> 199).
 ApplyVec MakeVec_CooldownUse() {
-  return MakeVec_CooldownRound("cooldown_use", 0, 0, 290, true);
+  return MakeVec_CooldownRound("cooldown_use", 0, 0, 230, true);
 }
 // Round B: cd 2 -- ordering the cooling move rejects...
 ApplyVec MakeVec_CooldownRejectCd2() {
-  return MakeVec_CooldownRound("cooldown_reject_cd2", 1, 2, 250, true);
+  return MakeVec_CooldownRound("cooldown_reject_cd2", 1, 2, 199, true);
 }
 // ...and Recover ticks it to 1.
 ApplyVec MakeVec_CooldownRecoverCd2() {
-  return MakeVec_CooldownRound("cooldown_recover_cd2", 1, 2, 250, false);
+  return MakeVec_CooldownRound("cooldown_recover_cd2", 1, 2, 199, false);
 }
 // Round C: cd 1 -- still rejected...
 ApplyVec MakeVec_CooldownRejectCd1() {
-  return MakeVec_CooldownRound("cooldown_reject_cd1", 2, 1, 250, true);
+  return MakeVec_CooldownRound("cooldown_reject_cd1", 2, 1, 199, true);
 }
 // ...and Recover ticks it to 0.
 ApplyVec MakeVec_CooldownRecoverCd1() {
-  return MakeVec_CooldownRound("cooldown_recover_cd1", 2, 1, 250, false);
+  return MakeVec_CooldownRound("cooldown_recover_cd1", 2, 1, 199, false);
 }
 // Round D: cd 0 -- the move is usable again.
 ApplyVec MakeVec_CooldownReuseReady() {
-  return MakeVec_CooldownRound("cooldown_reuse_ready", 3, 0, 250, true);
+  return MakeVec_CooldownRound("cooldown_reuse_ready", 3, 0, 199, true);
 }
 
 // Asserts the engine's current output buffer byte-equals vector `v`'s input
@@ -1605,10 +1665,13 @@ ApplyVec MakeVec_Win() {
   ApplyVec v{};
   v.name = "win";
   duel::DuelState s = MakeState(3, 1);
-  const uint8_t mS[] = {2}, cS[] = {0};  // Quicksilver Slice (Speedy 50) → 50 dmg vs recover
+  const uint8_t mS[] = {2}, cS[] = {0};  // Quicksilver Slice (Speedy 30) → 30 dmg vs recover
   const uint8_t mD[] = {24}, cD[] = {0};
   for (int slot = 0; slot < 3; ++slot) SetTreat(s, 0, slot, 250, 250, 4, 10, 1, mS, cS);
-  for (int slot = 0; slot < 3; ++slot) SetTreat(s, 1, slot, 40, 110, 1, 1, 1, mD, cD);
+  // 25 hp each: the Task 7 retune took this blow from 50 to 30 (a Recover target has no
+  // move type, so there is no clash either way) -- the seeds come down so the vector
+  // still means "all three enemies are wiped in one round".
+  for (int slot = 0; slot < 3; ++slot) SetTreat(s, 1, slot, 25, 110, 1, 1, 1, mD, cD);
   v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
   OrdInit(v.ord);
   OrdSet(v.ord, 3, 0, 0, 0, 0);
@@ -2119,12 +2182,12 @@ ApplyVec MakeVec_GuardDeadGuardianLapses() {
   ApplyVec v{};
   v.name = "guard_dead_guardian_lapses";
   duel::DuelState s = MakeState(2, 1);
-  const uint8_t mS[] = {2}, cS[] = {0};  // Quicksilver Slice (Speedy 50), speed 93
-  const uint8_t mH[] = {24}, cH[] = {0}; // Pop Rock Pop (Heavy 26), speed 27
+  const uint8_t mS[] = {2}, cS[] = {0};  // Quicksilver Slice (Speedy 30), speed 93
+  const uint8_t mH[] = {24}, cH[] = {0}; // Pop Rock Pop (Heavy 26), speed 33
   const uint8_t mG[] = {1}, cG[] = {0};  // Gilded Bonds (guard), speed 45
   SetTreat(s, 0, 0, 250, 250, 4, 10, 1, mS, cS);
   SetTreat(s, 0, 1, 250, 250, 3, 6, 1, mH, cH);
-  SetTreat(s, 1, 0, 30, 250, 3, 6, 1, mG, cG);  // the guardian, 30 hp
+  SetTreat(s, 1, 0, 20, 250, 3, 6, 1, mG, cG);  // the guardian, 20 hp (see the clash below)
   SetTreat(s, 1, 1, 250, 250, 3, 6, 1, mH, cH); // the ward
   v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
   OrdInit(v.ord);
@@ -2141,7 +2204,7 @@ void test_apply_guard_dead_guardian_cannot_intercept() {
   CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
   duel::DuelState o{};
   CHECK(DecodeOut(&o));
-  // Speedy vs the guardian's Blocking = dis 170: (50*170*256)>>16 = 33 > 30 hp.
+  // Speedy vs the guardian's Blocking = dis 205: (30*205)>>8 = 24 > 20 hp.
   CHECK(o.treats[1][0].hp == 0);
   // The guard lapsed: the ward takes the SECOND blow in full (26, neutral --
   // it is recovering), not the 18 a live guardian would have absorbed for it.
@@ -2194,15 +2257,15 @@ void test_apply_guard_redirect_never_chains() {
 
 // A shield move raises a self-absorb pool worth its `power` and deals NO damage.
 // The pool is eaten BEFORE hp and the excess carries through: Heavy 26 vs a
-// Blocking target = adv 384 -> (26*384*256)>>16 = 39; shield 12 eats 12, hp
-// takes the remaining 27. And because `shield` is not `block`, it buys no flat
-// reduction at all -- the blow lands for its full 39.
+// Blocking target = adv 320 -> (26*320)>>8 = 32; shield 14 eats 14, hp takes the
+// remaining 18. And because `shield` is not `block`, it buys no flat reduction at
+// all -- the blow lands for its full 32.
 ApplyVec MakeVec_ShieldRaiseAbsorb() {
   ApplyVec v{};
   v.name = "shield_raise_absorb";
   duel::DuelState s = MakeState(1, 1);
-  const uint8_t mH[] = {24}, cH[] = {0}; // Pop Rock Pop (Heavy 26), speed 27
-  const uint8_t mS[] = {18}, cS[] = {0}; // Sugar Shield (shield 12), speed 43
+  const uint8_t mH[] = {24}, cH[] = {0}; // Pop Rock Pop (Heavy 26), speed 33
+  const uint8_t mS[] = {18}, cS[] = {0}; // Sugar Shield (shield 14), speed 43
   SetTreat(s, 0, 0, 250, 250, 3, 6, 1, mH, cH);
   SetTreat(s, 1, 0, 250, 250, 3, 6, 1, mS, cS);
   v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
@@ -2218,15 +2281,15 @@ void test_apply_shield_raise_and_absorb() {
   CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
   duel::DuelState o{};
   CHECK(DecodeOut(&o));
-  CHECK(o.treats[1][0].hp == 223);   // 250 - (39 - 12 absorbed)
+  CHECK(o.treats[1][0].hp == 232);   // 250 - (32 - 14 absorbed)
   CHECK(o.treats[1][0].shield == 0); // the pool is spent exactly
   CHECK(o.treats[0][0].hp == 250);   // a shield deals NO damage
   CHECK(LogHas("{\"side\":1,\"slot\":0,\"kind\":\"shield\",\"move\":18,"
-               "\"target\":255,\"via\":255,\"clash\":\"neu\",\"dmg\":12,"
+               "\"target\":255,\"via\":255,\"clash\":\"neu\",\"dmg\":14,"
                "\"blocked\":false,\"absorbed\":0,\"targetHp\":250,\"ko\":false}"));
   CHECK(LogHas("{\"side\":0,\"slot\":0,\"kind\":\"hit\",\"move\":24,\"target\":0,"
-               "\"via\":255,\"clash\":\"adv\",\"dmg\":39,\"blocked\":false,"
-               "\"absorbed\":12,\"targetHp\":223,\"ko\":false}"));
+               "\"via\":255,\"clash\":\"adv\",\"dmg\":32,\"blocked\":false,"
+               "\"absorbed\":14,\"targetHp\":232,\"ko\":false}"));
 }
 
 // A shield PERSISTS ACROSS ROUNDS until consumed. Round 1: a 50-point pool eats
@@ -2285,8 +2348,8 @@ void test_apply_shield_persists_between_rounds() {
   }
 }
 
-// The pool is a u8: raising it past 255 CLAMPS (250 + a 12-power Sugar Shield
-// grants only the 5 points that fit) rather than wrapping to 7.
+// The pool is a u8: raising it past 255 CLAMPS (250 + a 14-power Sugar Shield
+// grants only the 5 points that fit) rather than wrapping.
 ApplyVec MakeVec_ShieldClamp255() {
   ApplyVec v{};
   v.name = "shield_clamp_255";
@@ -2308,8 +2371,8 @@ void test_apply_shield_clamps_at_255() {
   CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
   duel::DuelState o{};
   CHECK(DecodeOut(&o));
-  // 250 + min(12, 255-250) = 255, then the 39-damage blow eats 39 of it.
-  CHECK(o.treats[1][0].shield == 216);
+  // 250 + min(14, 255-250) = 255, then the 32-damage blow eats 32 of it.
+  CHECK(o.treats[1][0].shield == 223);
   CHECK(o.treats[1][0].hp == 250); // nothing reached hp
   CHECK(LogHas("\"kind\":\"shield\",\"move\":18,\"target\":255,\"via\":255,"
                "\"clash\":\"neu\",\"dmg\":5,")); // only the 5 points that FIT
@@ -2319,16 +2382,15 @@ void test_apply_shield_clamps_at_255() {
 
 // A counter-stance treat reflects counter_pct (102/256 = 40%) of `landed` back
 // at whoever struck it. Berry Bounce (Blocking) also swings normally: Blocking
-// vs Heavy = dis 170 -> (20*170*256)>>16 = 13 on the attacker. The attacker's
-// Heavy vs Blocking = adv 384 -> (26*384*256)>>16 = 39 -- landing IN FULL,
-// because a counter buys no flat reduction (the stance split) -- and the reflect
-// is (39*102)>>8 = 15.
+// vs Heavy = dis 205 -> (22*205)>>8 = 17 on the attacker. The attacker's Heavy vs
+// Blocking = adv 320 -> (26*320)>>8 = 32 -- landing IN FULL, because a counter
+// buys no flat reduction (the stance split) -- and the reflect is (32*102)>>8 = 12.
 ApplyVec MakeVec_CounterReflects() {
   ApplyVec v{};
   v.name = "counter_reflects";
   duel::DuelState s = MakeState(1, 1);
-  const uint8_t mH[] = {24}, cH[] = {0}; // Pop Rock Pop (Heavy 26), speed 27
-  const uint8_t mC[] = {8}, cC[] = {0};  // Berry Bounce (counter 20), speed 46
+  const uint8_t mH[] = {24}, cH[] = {0}; // Pop Rock Pop (Heavy 26), speed 33
+  const uint8_t mC[] = {8}, cC[] = {0};  // Berry Bounce (counter 22), speed 46
   SetTreat(s, 0, 0, 250, 250, 3, 6, 1, mH, cH);
   SetTreat(s, 1, 0, 250, 250, 3, 6, 1, mC, cC);
   v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
@@ -2344,11 +2406,11 @@ void test_apply_counter_reflects() {
   CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
   duel::DuelState o{};
   CHECK(DecodeOut(&o));
-  CHECK(o.treats[1][0].hp == 211); // 250 - 39: NOT reduced, a counter isn't a block
-  CHECK(o.treats[0][0].hp == 222); // 250 - 13 (its swing) - 15 (the reflect)
+  CHECK(o.treats[1][0].hp == 218); // 250 - 32: NOT reduced, a counter isn't a block
+  CHECK(o.treats[0][0].hp == 221); // 250 - 17 (its swing) - 12 (the reflect)
   CHECK(LogHas("{\"side\":1,\"slot\":0,\"kind\":\"counter\",\"move\":8,"
-               "\"target\":0,\"via\":255,\"clash\":\"neu\",\"dmg\":15,"
-               "\"blocked\":false,\"absorbed\":0,\"targetHp\":222,\"ko\":false}"));
+               "\"target\":0,\"via\":255,\"clash\":\"neu\",\"dmg\":12,"
+               "\"blocked\":false,\"absorbed\":0,\"targetHp\":221,\"ko\":false}"));
 }
 
 // A REDIRECTED blow triggers NO counter -- it fires off the FINAL RECIPIENT's
@@ -2380,12 +2442,12 @@ void test_apply_counter_none_on_redirected_blow() {
   CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
   duel::DuelState o{};
   CHECK(DecodeOut(&o));
-  // Heavy vs the ward's Blocking = adv 384, then guard_pct: (26*384*179)>>16 = 27.
-  CHECK(o.treats[1][0].hp == 223); // the guardian ate it
+  // Heavy vs the ward's Blocking = adv 320, then guard_pct: (26*320*179)>>16 = 22.
+  CHECK(o.treats[1][0].hp == 228); // the guardian ate it
   CHECK(o.treats[1][1].hp == 250); // the counter-er never got hit...
   CHECK(LogCount("\"kind\":\"counter\"") == 0); // ...so it never countered
-  // The attacker is only down by the ward's own Berry Bounce swing (dis: 13).
-  CHECK(o.treats[0][0].hp == 237);
+  // The attacker is only down by the ward's own Berry Bounce swing (dis: 17).
+  CHECK(o.treats[0][0].hp == 233);
 }
 
 // A reflect CANNOT ITSELF BE COUNTERED -- it is not a move. Both sides hold a
@@ -2395,8 +2457,8 @@ ApplyVec MakeVec_CounterReflectNotCountered() {
   ApplyVec v{};
   v.name = "counter_reflect_not_countered";
   duel::DuelState s = MakeState(1, 1);
-  const uint8_t mB[] = {8}, cB[] = {0};  // Berry Bounce (counter 20), speed 46
-  const uint8_t mR[] = {21}, cR[] = {0}; // Bouncing Barrage (counter 24), speed 45
+  const uint8_t mB[] = {8}, cB[] = {0};  // Berry Bounce (counter 22), speed 46
+  const uint8_t mR[] = {21}, cR[] = {0}; // Bouncing Barrage (counter 33), speed 45
   SetTreat(s, 0, 0, 250, 250, 3, 6, 1, mB, cB);
   SetTreat(s, 1, 0, 250, 250, 3, 6, 1, mR, cR);
   v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
@@ -2413,10 +2475,10 @@ void test_apply_counter_reflect_cannot_be_countered() {
   duel::DuelState o{};
   CHECK(DecodeOut(&o));
   // Blocking vs Blocking = neutral throughout. Side 0 swings first (speed 46):
-  // 20 lands, side 1 reflects (20*102)>>8 = 7. Side 1 then swings: 24 lands,
-  // side 0 reflects (24*102)>>8 = 9.
-  CHECK(o.treats[1][0].hp == 221); // 250 - 20 - 9
-  CHECK(o.treats[0][0].hp == 219); // 250 - 7 - 24
+  // 22 lands, side 1 reflects (22*102)>>8 = 8. Side 1 then swings: 33 lands,
+  // side 0 reflects (33*102)>>8 = 13.
+  CHECK(o.treats[1][0].hp == 215); // 250 - 22 - 13 (side 0's own reflect)
+  CHECK(o.treats[0][0].hp == 209); // 250 - 8 (the reflect) - 33
   CHECK(LogCount("\"kind\":\"counter\"") == 2); // ONE per blow. No recursion.
 }
 
@@ -2443,14 +2505,14 @@ void test_apply_counter_reflect_absorbed_by_shield() {
   CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
   duel::DuelState o{};
   CHECK(DecodeOut(&o));
-  // Berry Bounce lands 13 -> the 20-pool eats it all (7 left, hp untouched).
-  // The attacker's own 39 then reflects 15 -> the 7 remaining points are eaten,
-  // and only 8 reaches hp.
-  CHECK(o.treats[0][0].hp == 242);
+  // Berry Bounce lands 17 -> the 20-pool eats it all (3 left, hp untouched).
+  // The attacker's own 32 then reflects 12 -> the 3 remaining points are eaten,
+  // and only 9 reaches hp.
+  CHECK(o.treats[0][0].hp == 241);
   CHECK(o.treats[0][0].shield == 0);
   CHECK(LogHas("\"kind\":\"counter\",\"move\":8,\"target\":0,\"via\":255,"
-               "\"clash\":\"neu\",\"dmg\":15,\"blocked\":false,\"absorbed\":7,"
-               "\"targetHp\":242,\"ko\":false}"));
+               "\"clash\":\"neu\",\"dmg\":12,\"blocked\":false,\"absorbed\":3,"
+               "\"targetHp\":241,\"ko\":false}"));
 }
 
 // The reflect is counter_pct of `landed` -- the blow's force at the moment it
@@ -2463,16 +2525,16 @@ void test_apply_counter_reflect_absorbed_by_shield() {
 // catch the reflect silently being refactored onto `drained` (the quantity
 // Task 6's siphon correctly uses).
 //
-// Attacker's Heavy vs the counter-er's Blocking = adv 384 -> landed =
-// (26*384*256)>>16 = 39. The counter-er's OWN 20-point shield absorbs 20 of
-// that (drained = 19), but the reflect must still be counter_pct of the full
-// 39: (39*102)>>8 = 15 -- NOT (19*102)>>8 = 7.
+// Attacker's Heavy vs the counter-er's Blocking = adv 320 -> landed =
+// (26*320)>>8 = 32. The counter-er's OWN 20-point shield absorbs 20 of that
+// (drained = 12), but the reflect must still be counter_pct of the full 32:
+// (32*102)>>8 = 12 -- NOT (12*102)>>8 = 4.
 ApplyVec MakeVec_CounterReflectsLandedNotDrained() {
   ApplyVec v{};
   v.name = "counter_reflects_landed_not_drained";
   duel::DuelState s = MakeState(1, 1);
-  const uint8_t mH[] = {24}, cH[] = {0}; // Pop Rock Pop (Heavy 26), speed 27
-  const uint8_t mC[] = {8}, cC[] = {0};  // Berry Bounce (counter 20), speed 46
+  const uint8_t mH[] = {24}, cH[] = {0}; // Pop Rock Pop (Heavy 26), speed 33
+  const uint8_t mC[] = {8}, cC[] = {0};  // Berry Bounce (counter 22), speed 46
   SetTreat(s, 0, 0, 250, 250, 3, 6, 1, mH, cH);
   SetTreat(s, 1, 0, 250, 250, 3, 6, 1, mC, cC, /*shield=*/20); // the counter-er ALSO shielded
   v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
@@ -2488,20 +2550,20 @@ void test_apply_counter_reflects_landed_not_drained() {
   CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
   duel::DuelState o{};
   CHECK(DecodeOut(&o));
-  // Berry Bounce swings first (speed 46): Blocking vs Heavy = dis 170 ->
-  // (20*170*256)>>16 = 13, straight to the attacker's hp (it holds no shield).
-  CHECK(o.treats[0][0].hp == 222); // 250 - 13 (its swing) - 15 (the reflect, off `landed`)
-  // The attacker's 39 lands second: the counter-er's 20-point shield absorbs
-  // 20, leaving 19 to reach hp (250 - 19 = 231) -- but the reflect below is
-  // computed off the pre-absorb 39, not this drained 19.
-  CHECK(o.treats[1][0].hp == 231);
+  // Berry Bounce swings first (speed 46): Blocking vs Heavy = dis 205 ->
+  // (22*205)>>8 = 17, straight to the attacker's hp (it holds no shield).
+  CHECK(o.treats[0][0].hp == 221); // 250 - 17 (its swing) - 12 (the reflect, off `landed`)
+  // The attacker's 32 lands second: the counter-er's 20-point shield absorbs
+  // 20, leaving 12 to reach hp (250 - 12 = 238) -- but the reflect below is
+  // computed off the pre-absorb 32, not this drained 12.
+  CHECK(o.treats[1][0].hp == 238);
   CHECK(o.treats[1][0].shield == 0);
   CHECK(LogHas("{\"side\":0,\"slot\":0,\"kind\":\"hit\",\"move\":24,\"target\":0,"
-               "\"via\":255,\"clash\":\"adv\",\"dmg\":39,\"blocked\":false,"
-               "\"absorbed\":20,\"targetHp\":231,\"ko\":false}"));
+               "\"via\":255,\"clash\":\"adv\",\"dmg\":32,\"blocked\":false,"
+               "\"absorbed\":20,\"targetHp\":238,\"ko\":false}"));
   CHECK(LogHas("{\"side\":1,\"slot\":0,\"kind\":\"counter\",\"move\":8,"
-               "\"target\":0,\"via\":255,\"clash\":\"neu\",\"dmg\":15,"
-               "\"blocked\":false,\"absorbed\":0,\"targetHp\":222,\"ko\":false}"));
+               "\"target\":0,\"via\":255,\"clash\":\"neu\",\"dmg\":12,"
+               "\"blocked\":false,\"absorbed\":0,\"targetHp\":221,\"ko\":false}"));
 }
 
 // A reflect CAN KO the attacker (it is real damage, and the win check sees it).
@@ -2511,7 +2573,7 @@ ApplyVec MakeVec_CounterReflectKos() {
   duel::DuelState s = MakeState(1, 1);
   const uint8_t mH[] = {24}, cH[] = {0};
   const uint8_t mC[] = {8}, cC[] = {0};
-  SetTreat(s, 0, 0, 20, 250, 3, 6, 1, mH, cH); // 20 hp: eats 13, then reflects 15
+  SetTreat(s, 0, 0, 20, 250, 3, 6, 1, mH, cH); // 20 hp: eats 17, then the 12-point reflect
   SetTreat(s, 1, 0, 250, 250, 3, 6, 1, mC, cC);
   v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
   OrdInit(v.ord);
@@ -2526,10 +2588,10 @@ void test_apply_counter_reflect_can_ko() {
   CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
   duel::DuelState o{};
   CHECK(DecodeOut(&o));
-  CHECK(o.treats[0][0].hp == 0);   // 20 - 13 = 7, then the 15-point reflect
-  CHECK(o.treats[1][0].hp == 211); // the counter-er still took the blow
+  CHECK(o.treats[0][0].hp == 0);   // 20 - 17 = 3, then the 12-point reflect
+  CHECK(o.treats[1][0].hp == 218); // the counter-er still took the blow
   CHECK(LogHas("\"kind\":\"counter\",\"move\":8,\"target\":0,\"via\":255,"
-               "\"clash\":\"neu\",\"dmg\":15,\"blocked\":false,\"absorbed\":0,"
+               "\"clash\":\"neu\",\"dmg\":12,\"blocked\":false,\"absorbed\":0,"
                "\"targetHp\":0,\"ko\":true}"));
   CHECK(o.phase == duel::wire::kPhaseSide1Won); // the win check sees the reflect
 }
@@ -2542,10 +2604,10 @@ ApplyVec MakeVec_CounterKilledDoesNotReflect() {
   ApplyVec v{};
   v.name = "counter_killed_does_not_reflect";
   duel::DuelState s = MakeState(1, 1);
-  const uint8_t mJ[] = {26}, cJ[] = {0}; // Vicious Jawbreaker (Heavy 40), speed 28
+  const uint8_t mJ[] = {26}, cJ[] = {0}; // Vicious Jawbreaker (Heavy 31), speed 31
   const uint8_t mC[] = {8}, cC[] = {0};  // Berry Bounce (counter), speed 46
   SetTreat(s, 0, 0, 250, 250, 3, 6, 1, mJ, cJ);
-  SetTreat(s, 1, 0, 30, 250, 3, 6, 1, mC, cC); // 30 hp vs a 60-damage blow
+  SetTreat(s, 1, 0, 30, 250, 3, 6, 1, mC, cC); // 30 hp vs a 38-damage blow
   v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
   OrdInit(v.ord);
   OrdSet(v.ord, 1, 0, 0, 0, 0);
@@ -2559,8 +2621,8 @@ void test_apply_counter_killed_does_not_reflect() {
   CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
   duel::DuelState o{};
   CHECK(DecodeOut(&o));
-  CHECK(o.treats[1][0].hp == 0);                // (40*384*256)>>16 = 60 >= 30
-  CHECK(o.treats[0][0].hp == 237);              // only Berry Bounce's own 13
+  CHECK(o.treats[1][0].hp == 0);                // (31*320)>>8 = 38 >= 30
+  CHECK(o.treats[0][0].hp == 233);              // only Berry Bounce's own 17
   CHECK(LogCount("\"kind\":\"counter\"") == 0); // the dead do not riposte
   CHECK(o.phase == duel::wire::kPhaseSide0Won);
 }
@@ -2625,9 +2687,12 @@ void test_apply_sudden_death_ignores_guard_and_shield() {
 // Case A — three living enemies, each holding a DIFFERENT move TYPE, so the three
 // splash damages must all differ. A test whose enemies clashed identically would pass
 // even if the clash were computed ONCE against the wrong treat.
-//   enemy slot0 picks Heavy    -> Distance BEATS Heavy      -> adv -> 46
-//   enemy slot1 picks Speedy   -> Speedy BEATS Distance     -> dis -> 20
-//   enemy slot2 picks Distance -> same type                 -> neu -> 30
+//   enemy slot0 picks Heavy    -> Distance BEATS Heavy      -> adv -> 20
+//   enemy slot1 picks Speedy   -> Speedy BEATS Distance     -> dis -> 13
+//   enemy slot2 picks Distance -> same type                 -> neu -> 16
+// (Gold Rush is power 33 at aoe_pct 128 after Task 7: an AoE's raw power is now an
+// ORDINARY blow of its tier, and the splash tax is what it pays for reaching everyone --
+// it used to carry 51 power AND the 60% splash, i.e. a full blow on every foe, for free.)
 ApplyVec MakeVec_AoePerVictimClash() {
   ApplyVec v{};
   v.name = "aoe_per_victim_clash";
@@ -2659,50 +2724,52 @@ void test_apply_aoe_hits_every_living_enemy_per_victim_clash() {
   CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
   duel::DuelState o{};
   CHECK(DecodeOut(&o));
-  CHECK(o.treats[1][0].hp == 204); // 250 - 46 (adv: Distance > Heavy)
-  CHECK(o.treats[1][1].hp == 230); // 250 - 20 (dis: Speedy > Distance)
-  CHECK(o.treats[1][2].hp == 220); // 250 - 30 (neu: Distance vs Distance)
+  CHECK(o.treats[1][0].hp == 230); // 250 - 20 (adv: Distance > Heavy)
+  CHECK(o.treats[1][1].hp == 237); // 250 - 13 (dis: Speedy > Distance)
+  CHECK(o.treats[1][2].hp == 234); // 250 - 16 (neu: Distance vs Distance)
   CHECK(LogCount("\"kind\":\"aoe\"") == 3); // one entry PER VICTIM, never one "hit"
   CHECK(LogCount("\"kind\":\"hit\"") == 3); // ...and the three enemy swings ARE hits
   CHECK(LogHas("{\"side\":0,\"slot\":0,\"kind\":\"aoe\",\"move\":34,\"target\":0,"
-               "\"via\":255,\"clash\":\"adv\",\"dmg\":46,\"blocked\":false,"
-               "\"absorbed\":0,\"targetHp\":204,\"ko\":false}"));
-  CHECK(LogHas("{\"side\":0,\"slot\":0,\"kind\":\"aoe\",\"move\":34,\"target\":1,"
-               "\"via\":255,\"clash\":\"dis\",\"dmg\":20,\"blocked\":false,"
+               "\"via\":255,\"clash\":\"adv\",\"dmg\":20,\"blocked\":false,"
                "\"absorbed\":0,\"targetHp\":230,\"ko\":false}"));
+  CHECK(LogHas("{\"side\":0,\"slot\":0,\"kind\":\"aoe\",\"move\":34,\"target\":1,"
+               "\"via\":255,\"clash\":\"dis\",\"dmg\":13,\"blocked\":false,"
+               "\"absorbed\":0,\"targetHp\":237,\"ko\":false}"));
   CHECK(LogHas("{\"side\":0,\"slot\":0,\"kind\":\"aoe\",\"move\":34,\"target\":2,"
-               "\"via\":255,\"clash\":\"neu\",\"dmg\":30,\"blocked\":false,"
-               "\"absorbed\":0,\"targetHp\":220,\"ko\":false}"));
+               "\"via\":255,\"clash\":\"neu\",\"dmg\":16,\"blocked\":false,"
+               "\"absorbed\":0,\"targetHp\":234,\"ko\":false}"));
   // The victims are splashed in SLOT ORDER (deterministic, not initiative order).
   const int i0 = LogIndexOf("\"kind\":\"aoe\",\"move\":34,\"target\":0");
   const int i1 = LogIndexOf("\"kind\":\"aoe\",\"move\":34,\"target\":1");
   const int i2 = LogIndexOf("\"kind\":\"aoe\",\"move\":34,\"target\":2");
   CHECK(i0 >= 0 && i1 > i0 && i2 > i1);
-  // The caster (Distance) eats all three swings: Coco Chaos adv 36, Bubble Trouble neu
-  // 25, Pop Rock Pop dis 17 -- and never counters (its own move is an aoe, not a counter).
-  CHECK(o.treats[0][0].hp == 172); // 250 - 36 - 25 - 17
+  // The caster (Distance) eats all three swings: Coco Chaos adv 28, Bubble Trouble neu
+  // 24, Pop Rock Pop dis 20 -- and never counters (its own move is an aoe, not a counter).
+  CHECK(o.treats[0][0].hp == 178); // 250 - 28 - 24 - 20
   CHECK(LogCount("\"kind\":\"counter\"") == 0);
   CHECK(o.treats[0][0].cooldowns[0] == 3); // Gold Rush's authored cd
   CHECK(o.phase == duel::wire::kPhaseActive);
 }
 
 // Case B — BLOCK applies per victim, SHIELD absorbs per victim.
-//   slot0 holds a `block` stance (Blocking, so also dis) -> (51*170*154*102)>>24 = 8
-//   slot1 walked in with a 20-point shield pool and recovers -> neu 30, 20 absorbed,
-//         only 10 reaches hp, pool spent exactly
-//   slot2 recovers bare -> neu 30 straight to hp
+//   slot0 holds a `block` stance (Blocking, so also dis) -> (33*205*128*102)>>24 = 5
+//   slot1 walked in with a 10-point shield pool and recovers -> neu 16, 10 absorbed,
+//         only 6 reaches hp, pool spent exactly
+//   slot2 recovers bare -> neu 16 straight to hp
 ApplyVec MakeVec_AoeBlockAndShieldPerVictim() {
   ApplyVec v{};
   v.name = "aoe_block_and_shield_per_victim";
   duel::DuelState s = MakeState(3, 1);
   const uint8_t mA[] = {kAoeMove}, cA[] = {0};
-  const uint8_t mB[] = {0}, cB[] = {0};  // Gum Drop Kick (Blocking/block, power 11)
+  const uint8_t mB[] = {0}, cB[] = {0};  // Gum Drop Kick (Blocking/block, power 12)
   const uint8_t mH[] = {24}, cH[] = {0};
   SetTreat(s, 0, 0, 250, 250, 3, 6, 1, mA, cA);
   SetTreat(s, 0, 1, 250, 250, 3, 6, 1, mH, cH);
   SetTreat(s, 0, 2, 250, 250, 3, 6, 1, mH, cH);
   SetTreat(s, 1, 0, 250, 250, 3, 6, 1, mB, cB);
-  SetTreat(s, 1, 1, 250, 250, 3, 6, 1, mH, cH, /*shield=*/20);
+  // 10, not 20: the Task 7 splash is 16, so a 10-point pool is still "eaten EXACTLY, with
+  // the excess carrying through to hp" -- which is the rule this vector exists to pin.
+  SetTreat(s, 1, 1, 250, 250, 3, 6, 1, mH, cH, /*shield=*/10);
   SetTreat(s, 1, 2, 250, 250, 3, 6, 1, mH, cH);
   v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
   OrdInit(v.ord);
@@ -2721,16 +2788,16 @@ void test_apply_aoe_block_and_shield_per_victim() {
   CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
   duel::DuelState o{};
   CHECK(DecodeOut(&o));
-  CHECK(o.treats[1][0].hp == 242);   // 250 - 8 (dis THEN blocked)
-  CHECK(o.treats[1][1].hp == 240);   // 250 - (30 - 20 absorbed)
+  CHECK(o.treats[1][0].hp == 245);   // 250 - 5 (dis THEN blocked)
+  CHECK(o.treats[1][1].hp == 244);   // 250 - (16 - 10 absorbed)
   CHECK(o.treats[1][1].shield == 0); // the pool is spent exactly
-  CHECK(o.treats[1][2].hp == 220);   // 250 - 30, bare
+  CHECK(o.treats[1][2].hp == 234);   // 250 - 16, bare
   CHECK(LogHas("\"kind\":\"aoe\",\"move\":34,\"target\":0,\"via\":255,\"clash\":\"dis\","
-               "\"dmg\":8,\"blocked\":true,\"absorbed\":0,\"targetHp\":242,\"ko\":false}"));
+               "\"dmg\":5,\"blocked\":true,\"absorbed\":0,\"targetHp\":245,\"ko\":false}"));
   CHECK(LogHas("\"kind\":\"aoe\",\"move\":34,\"target\":1,\"via\":255,\"clash\":\"neu\","
-               "\"dmg\":30,\"blocked\":false,\"absorbed\":20,\"targetHp\":240,\"ko\":false}"));
-  // Gum Drop Kick (Blocking) BEATS Distance: (11*384)>>8 = 16 on the caster.
-  CHECK(o.treats[0][0].hp == 234);
+               "\"dmg\":16,\"blocked\":false,\"absorbed\":10,\"targetHp\":244,\"ko\":false}"));
+  // Gum Drop Kick (Blocking) BEATS Distance: (12*320)>>8 = 15 on the caster.
+  CHECK(o.treats[0][0].hp == 235);
 }
 
 // Case C — AoE IGNORES GUARD. slot0 guards slot1; the spray hits the ward DIRECTLY
@@ -2766,13 +2833,13 @@ void test_apply_aoe_ignores_guard() {
   CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
   duel::DuelState o{};
   CHECK(DecodeOut(&o));
-  CHECK(o.treats[1][0].hp == 230); // the guardian takes only its OWN splash (dis 20)
-  CHECK(o.treats[1][1].hp == 220); // the WARD takes its full 30: the guard did NOT intercept
-  CHECK(o.treats[1][2].hp == 220);
+  CHECK(o.treats[1][0].hp == 237); // the guardian takes only its OWN splash (dis 13)
+  CHECK(o.treats[1][1].hp == 234); // the WARD takes its full 16: the guard did NOT intercept
+  CHECK(o.treats[1][2].hp == 234);
   CHECK(LogCount("\"kind\":\"guard\"") == 1); // the guard action still happened...
   CHECK(!LogHas("\"kind\":\"aoe\",\"move\":34,\"target\":1,\"via\":0")); // ...and never fired
   CHECK(LogHas("\"kind\":\"aoe\",\"move\":34,\"target\":1,\"via\":255,\"clash\":\"neu\","
-               "\"dmg\":30,\"blocked\":false,\"absorbed\":0,\"targetHp\":220,\"ko\":false}"));
+               "\"dmg\":16,\"blocked\":false,\"absorbed\":0,\"targetHp\":234,\"ko\":false}"));
   CHECK(o.treats[0][0].hp == 250); // a guard deals no damage
 }
 
@@ -2811,20 +2878,20 @@ void test_apply_aoe_triggers_counter_per_victim() {
   CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
   duel::DuelState o{};
   CHECK(DecodeOut(&o));
-  // Both counter-stances are Blocking, so the spray lands dis (20) on each; slot 2
-  // recovers and takes the neutral 30.
-  CHECK(o.treats[1][0].hp == 230);
-  CHECK(o.treats[1][1].hp == 230);
-  CHECK(o.treats[1][2].hp == 220);
+  // Both counter-stances are Blocking, so the spray lands dis (13) on each; slot 2
+  // recovers and takes the neutral 16.
+  CHECK(o.treats[1][0].hp == 237);
+  CHECK(o.treats[1][1].hp == 237);
+  CHECK(o.treats[1][2].hp == 234);
   CHECK(LogCount("\"kind\":\"aoe\"") == 3);
   CHECK(LogCount("\"kind\":\"counter\"") == 2); // ONE PER COUNTERING VICTIM, not one per swing
-  // The caster pays for spraying into two counters: 2 x (20*102)>>8 = 2 x 7 reflected,
-  // then both Blocking swings land adv on its Distance move (30 + 36).
-  CHECK(o.treats[0][0].hp == 170); // 250 - 7 - 7 - 30 - 36
+  // The caster pays for spraying into two counters: 2 x (13*102)>>8 = 2 x 5 reflected,
+  // then both Blocking swings land adv on its Distance move (27 + 41).
+  CHECK(o.treats[0][0].hp == 172); // 250 - 5 - 5 - 27 - 41
   CHECK(LogHas("{\"side\":1,\"slot\":0,\"kind\":\"counter\",\"move\":8,\"target\":0,"
-               "\"via\":255,\"clash\":\"neu\",\"dmg\":7,"));
+               "\"via\":255,\"clash\":\"neu\",\"dmg\":5,"));
   CHECK(LogHas("{\"side\":1,\"slot\":1,\"kind\":\"counter\",\"move\":21,\"target\":0,"
-               "\"via\":255,\"clash\":\"neu\",\"dmg\":7,"));
+               "\"via\":255,\"clash\":\"neu\",\"dmg\":5,"));
 }
 
 // Case E — the one move that can cash TWO KILLS in a round: both low-hp enemies fall to
@@ -2838,8 +2905,9 @@ ApplyVec MakeVec_AoeKillsTwo() {
   SetTreat(s, 0, 0, 250, 250, 3, 6, 1, mA, cA);
   SetTreat(s, 0, 1, 250, 250, 3, 6, 1, mH, cH);
   SetTreat(s, 0, 2, 250, 250, 3, 6, 1, mH, cH);
-  SetTreat(s, 1, 0, 20, 250, 3, 6, 1, mH, cH);  // dies to the 30-point splash
-  SetTreat(s, 1, 1, 20, 250, 3, 6, 1, mH, cH);  // ...and so does this one
+  // Every enemy RECOVERS (no move type -> the splash is neutral, 16), so 12 hp dies to it.
+  SetTreat(s, 1, 0, 12, 250, 3, 6, 1, mH, cH);  // dies to the 16-point splash
+  SetTreat(s, 1, 1, 12, 250, 3, 6, 1, mH, cH);  // ...and so does this one
   SetTreat(s, 1, 2, 250, 250, 3, 6, 1, mH, cH);
   v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
   OrdInit(v.ord);
@@ -2858,9 +2926,9 @@ void test_apply_aoe_kills_two_at_once() {
   CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
   duel::DuelState o{};
   CHECK(DecodeOut(&o));
-  CHECK(o.treats[1][0].hp == 0);   // 20 - 30
-  CHECK(o.treats[1][1].hp == 0);   // 20 - 30
-  CHECK(o.treats[1][2].hp == 220); // 250 - 30
+  CHECK(o.treats[1][0].hp == 0);   // 12 - 16
+  CHECK(o.treats[1][1].hp == 0);   // 12 - 16
+  CHECK(o.treats[1][2].hp == 234); // 250 - 16
   CHECK(LogCount("\"ko\":true") == 2); // TWO kills, one swing
   CHECK(o.phase == duel::wire::kPhaseActive); // ...but slot 2 still stands
 }
@@ -2914,7 +2982,7 @@ ApplyVec MakeVec_AoeCasterFelledMidSpray() {
   const uint8_t mA[] = {kAoeMove}, cA[] = {0};
   const uint8_t mC[] = {8}, cC[] = {0}; // Berry Bounce (counter)
   const uint8_t mH[] = {24}, cH[] = {0};
-  SetTreat(s, 0, 0, 5, 250, 3, 6, 1, mA, cA); // 5 hp: the first reflect (7) fells it
+  SetTreat(s, 0, 0, 5, 250, 3, 6, 1, mA, cA); // 5 hp: the first reflect (5) fells it
   SetTreat(s, 0, 1, 250, 250, 3, 6, 1, mH, cH);
   SetTreat(s, 0, 2, 250, 250, 3, 6, 1, mH, cH);
   SetTreat(s, 1, 0, 250, 250, 3, 6, 1, mC, cC); // the counter-stance, in SLOT 0
@@ -2937,14 +3005,14 @@ void test_apply_aoe_caster_felled_mid_spray_stops() {
   CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
   duel::DuelState o{};
   CHECK(DecodeOut(&o));
-  CHECK(o.treats[0][0].hp == 0);   // felled by slot 0's reflect (5 hp - 7)
-  CHECK(o.treats[1][0].hp == 230); // it still ate its own splash (dis 20)
+  CHECK(o.treats[0][0].hp == 0);   // felled by slot 0's reflect (5 hp - 5)
+  CHECK(o.treats[1][0].hp == 237); // it still ate its own splash (dis 13)
   CHECK(o.treats[1][1].hp == 250); // ...and the spray STOPPED with the caster
   CHECK(o.treats[1][2].hp == 250);
   CHECK(LogCount("\"kind\":\"aoe\"") == 1);
   CHECK(LogCount("\"kind\":\"counter\"") == 1);
   CHECK(LogHas("\"kind\":\"counter\",\"move\":8,\"target\":0,\"via\":255,\"clash\":\"neu\","
-               "\"dmg\":7,\"blocked\":false,\"absorbed\":0,\"targetHp\":0,\"ko\":true}"));
+               "\"dmg\":5,\"blocked\":false,\"absorbed\":0,\"targetHp\":0,\"ko\":true}"));
   // ...and the counter-stance's own swing then finds a corpse and whiffs.
   CHECK(LogHas("{\"side\":1,\"slot\":0,\"kind\":\"skip\""));
   CHECK(o.phase == duel::wire::kPhaseActive); // side 0 still has slots 1 and 2
@@ -3053,12 +3121,12 @@ void test_apply_heal_wounded_ally() {
   CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
   duel::DuelState o{};
   CHECK(DecodeOut(&o));
-  CHECK(o.treats[0][1].hp == 137);         // 100 + 37, no clash multiplier anywhere
+  CHECK(o.treats[0][1].hp == 142);         // 100 + 42, no clash multiplier anywhere
   CHECK(o.treats[1][0].hp == 250);         // a heal deals NO damage to anyone
   CHECK(o.treats[0][0].cooldowns[0] == 2); // ...and burns its cooldown like any move
   CHECK(LogHas("{\"side\":0,\"slot\":0,\"kind\":\"heal\",\"move\":27,\"target\":1,"
-               "\"via\":255,\"clash\":\"neu\",\"dmg\":37,\"blocked\":false,"
-               "\"absorbed\":0,\"targetHp\":137,\"ko\":false}"));
+               "\"via\":255,\"clash\":\"neu\",\"dmg\":42,\"blocked\":false,"
+               "\"absorbed\":0,\"targetHp\":142,\"ko\":false}"));
 }
 
 // Healing a FULL-HP ally is legal and simply WASTED: overheal is not an error, and the
@@ -3100,7 +3168,7 @@ ApplyVec MakeVec_HealDeadAllyIsNoop() {
   v.name = "heal_dead_ally_is_a_noop";
   duel::DuelState s = MakeState(2, 1);
   const uint8_t mHeal[] = {27}, cHeal[] = {0}; // Sugar Rush (heal), speed 82 -- acts FIRST
-  const uint8_t mJ[] = {26}, cJ[] = {0};       // Vicious Jawbreaker (Heavy 40), speed 28
+  const uint8_t mJ[] = {26}, cJ[] = {0};       // Vicious Jawbreaker (Heavy 31), speed 31
   const uint8_t mH[] = {24}, cH[] = {0};
   SetTreat(s, 0, 0, 20, 250, 3, 6, 1, mHeal, cHeal); // 20 hp: the Jawbreaker fells it
   SetTreat(s, 0, 1, 0, 250, 3, 6, 1, mH, cH);        // ALREADY DEAD
@@ -3109,7 +3177,7 @@ ApplyVec MakeVec_HealDeadAllyIsNoop() {
   v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
   OrdRecoverAll(v.ord, 2); // the dead ally: canonical Recover, as the wire demands
   OrdSet(v.ord, 2, 0, 0, 0, 1); // heal -> the CORPSE in ally slot 1
-  OrdSet(v.ord, 2, 1, 0, 0, 0); // Heavy -> enemy slot 0 (Heavy > Speedy: adv 60 >= 20 hp)
+  OrdSet(v.ord, 2, 1, 0, 0, 0); // Heavy -> enemy slot 0 (Heavy > Speedy: adv 38 >= 20 hp)
   v.ordLen = duel::wire::OrdersLen(2);
   return v;
 }
@@ -3152,7 +3220,7 @@ void test_apply_heal_self_is_legal() {
   CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
   duel::DuelState o{};
   CHECK(DecodeOut(&o));
-  CHECK(o.treats[0][0].hp == 137); // 100 + 37, poured into itself
+  CHECK(o.treats[0][0].hp == 142); // 100 + 42, poured into itself
   CHECK(LogHas("\"kind\":\"heal\",\"move\":27,\"target\":0,"));
 }
 
@@ -3183,7 +3251,7 @@ void test_apply_heal_rejects_bad_target() {
 // --- Group-heal ---
 
 // A group-heal names NOBODY (kTargetAll) and restores (power * aoe_pct_256) >> 8 =
-// (51*154)>>8 = 30 to EVERY LIVING ALLY INCLUDING THE CASTER, in slot order. aoe_pct is
+// (48*128)>>8 = 24 to EVERY LIVING ALLY INCLUDING THE CASTER, in slot order. aoe_pct is
 // reused deliberately as the SPREAD: reaching everyone costs per-head potency, exactly as
 // it does for an AoE. Overheal clamps per ally; DEAD ALLIES GET NOTHING and log nothing --
 // a group-heal is not a mass revive either.
@@ -3191,10 +3259,10 @@ ApplyVec MakeVec_GroupHeal() {
   ApplyVec v{};
   v.name = "group_heal";
   duel::DuelState s = MakeState(3, 1);
-  const uint8_t mG[] = {10}, cG[] = {0}; // Super Sugary Rush (groupheal 51, max_uses 2)
+  const uint8_t mG[] = {10}, cG[] = {0}; // Super Sugary Rush (groupheal 48, max_uses 2)
   const uint8_t mH[] = {24}, cH[] = {0};
-  SetTreat(s, 0, 0, 200, 250, 4, 10, 1, mG, cG); // the caster heals ITSELF too: +30
-  SetTreat(s, 0, 1, 240, 250, 3, 6, 1, mH, cH);  // clamps: only 10 of the 30 fits
+  SetTreat(s, 0, 0, 200, 250, 4, 10, 1, mG, cG); // the caster heals ITSELF too: +24
+  SetTreat(s, 0, 1, 240, 250, 3, 6, 1, mH, cH);  // clamps: only 10 of the 24 fits
   SetTreat(s, 0, 2, 0, 250, 3, 6, 1, mH, cH);    // DEAD: gets nothing, logs nothing
   for (int slot = 0; slot < 3; ++slot) SetTreat(s, 1, slot, 250, 250, 3, 6, 1, mH, cH);
   v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
@@ -3209,13 +3277,13 @@ void test_apply_group_heal() {
   CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
   duel::DuelState o{};
   CHECK(DecodeOut(&o));
-  CHECK(o.treats[0][0].hp == 230); // 200 + 30 -- the caster is an ally too
-  CHECK(o.treats[0][1].hp == 250); // 240 + min(30, 10) -- clamped at max_hp
+  CHECK(o.treats[0][0].hp == 224); // 200 + 24 -- the caster is an ally too
+  CHECK(o.treats[0][1].hp == 250); // 240 + min(24, 10) -- clamped at max_hp
   CHECK(o.treats[0][2].hp == 0);   // *** DEAD STAYS DEAD. No mass revive. ***
   CHECK(LogCount("\"kind\":\"heal\"") == 2); // one entry per LIVING ally; the corpse gets none
   CHECK(LogHas("{\"side\":0,\"slot\":0,\"kind\":\"heal\",\"move\":10,\"target\":0,"
-               "\"via\":255,\"clash\":\"neu\",\"dmg\":30,\"blocked\":false,"
-               "\"absorbed\":0,\"targetHp\":230,\"ko\":false}"));
+               "\"via\":255,\"clash\":\"neu\",\"dmg\":24,\"blocked\":false,"
+               "\"absorbed\":0,\"targetHp\":224,\"ko\":false}"));
   CHECK(LogHas("{\"side\":0,\"slot\":0,\"kind\":\"heal\",\"move\":10,\"target\":1,"
                "\"via\":255,\"clash\":\"neu\",\"dmg\":10,\"blocked\":false,"
                "\"absorbed\":0,\"targetHp\":250,\"ko\":false}"));
@@ -3258,13 +3326,13 @@ void test_apply_group_heal_requires_target_all() {
 // (counter_reflects_landed_not_drained). Collapsing them into a single "damage dealt"
 // helper passes every other gate in this repo while silently deleting a consensus rule.
 //
-// Pucker Sucker (Tricky 24) vs a Heavy target: Tricky BEATS Heavy -> adv 384 ->
-// landed = (24*384)>>8 = 36, drained 36 (no shield) -> heal = (36*128)>>8 = 18.
+// Toffee Tripper (Tricky 27) vs a Heavy target: Tricky BEATS Heavy -> adv 320 ->
+// landed = (27*320)>>8 = 33, drained 33 (no shield) -> heal = (33*128)>>8 = 16.
 ApplyVec MakeVec_SiphonDrains() {
   ApplyVec v{};
   v.name = "siphon_drains";
   duel::DuelState s = MakeState(1, 1);
-  const uint8_t mS[] = {6}, cS[] = {0};  // Pucker Sucker (siphon 24), speed 57
+  const uint8_t mS[] = {5}, cS[] = {0};  // Toffee Tripper (siphon 27), speed 54
   const uint8_t mH[] = {24}, cH[] = {0}; // Pop Rock Pop (Heavy 26), speed 27
   SetTreat(s, 0, 0, 100, 250, 3, 6, 1, mS, cS);
   SetTreat(s, 1, 0, 250, 250, 3, 6, 1, mH, cH);
@@ -3281,17 +3349,17 @@ void test_apply_siphon_heals_off_drained() {
   CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
   duel::DuelState o{};
   CHECK(DecodeOut(&o));
-  CHECK(o.treats[1][0].hp == 214); // 250 - 36
-  // 100 + 18 (siphoned) - 17 (the Heavy's dis-170 swing: (26*170)>>8) = 101.
-  CHECK(o.treats[0][0].hp == 101);
-  CHECK(LogHas("{\"side\":0,\"slot\":0,\"kind\":\"hit\",\"move\":6,\"target\":0,"
-               "\"via\":255,\"clash\":\"adv\",\"dmg\":36,\"blocked\":false,"
-               "\"absorbed\":0,\"targetHp\":214,\"ko\":false}"));
+  CHECK(o.treats[1][0].hp == 217); // 250 - 33
+  // 100 + 16 (siphoned) - 20 (the Heavy's dis-205 swing: (26*205)>>8) = 96.
+  CHECK(o.treats[0][0].hp == 96);
+  CHECK(LogHas("{\"side\":0,\"slot\":0,\"kind\":\"hit\",\"move\":5,\"target\":0,"
+               "\"via\":255,\"clash\":\"adv\",\"dmg\":33,\"blocked\":false,"
+               "\"absorbed\":0,\"targetHp\":217,\"ko\":false}"));
   // The lifesteal rides in as its OWN `heal` entry on the attacker (target == its own
-  // slot), so the client can float a green +18 over it.
-  CHECK(LogHas("{\"side\":0,\"slot\":0,\"kind\":\"heal\",\"move\":6,\"target\":0,"
-               "\"via\":255,\"clash\":\"neu\",\"dmg\":18,\"blocked\":false,"
-               "\"absorbed\":0,\"targetHp\":118,\"ko\":false}"));
+  // slot), so the client can float a green +16 over it.
+  CHECK(LogHas("{\"side\":0,\"slot\":0,\"kind\":\"heal\",\"move\":5,\"target\":0,"
+               "\"via\":255,\"clash\":\"neu\",\"dmg\":16,\"blocked\":false,"
+               "\"absorbed\":0,\"targetHp\":116,\"ko\":false}"));
 }
 
 // *** THE OVERKILL-DRAIN PIN. *** LandBlow's `drained` is `fatal ? rcv.hp : toHp` -- a
@@ -3303,19 +3371,19 @@ void test_apply_siphon_heals_off_drained() {
 // silently deleting this rule -- a future refactor collapsing the ternary would give every
 // FINISHING siphon a ~6x lifesteal swing, in signed channel state.
 //
-// Same clash as siphon_drains (Tricky beats Heavy -> adv 384 -> landed = (24*384)>>8 = 36),
-// but the victim has only 5 hp: fatal, so `drained` = 5 (not 36) -> heal = (5*128)>>8 = 2.
-// The victim dies to the blow before its own (slower, speed 27) turn comes round, so it
-// never swings back either -- the attacker's final hp is 100 + 2 = 102, not the 118 the
-// inverted rule would give (100 + ((36*128)>>8) = 118, siphon_drains' own number).
+// Same clash as siphon_drains (Tricky beats Heavy -> adv 320 -> landed = (27*320)>>8 = 33),
+// but the victim has only 5 hp: fatal, so `drained` = 5 (not 33) -> heal = (5*128)>>8 = 2.
+// The victim dies to the blow before its own (slower, speed 33) turn comes round, so it
+// never swings back either -- the attacker's final hp is 100 + 2 = 102, not the 116 the
+// inverted rule would give (100 + ((33*128)>>8) = 116, siphon_drains' own number).
 ApplyVec MakeVec_SiphonOverkillDrainsOnlyWhatWasThere() {
   ApplyVec v{};
   v.name = "siphon_overkill_drains_only_what_was_there";
   duel::DuelState s = MakeState(1, 1);
-  const uint8_t mS[] = {6}, cS[] = {0};  // Pucker Sucker (siphon 24), speed 57
+  const uint8_t mS[] = {5}, cS[] = {0};  // Toffee Tripper (siphon 27), speed 54
   const uint8_t mH[] = {24}, cH[] = {0}; // Pop Rock Pop (Heavy 26), speed 27
   SetTreat(s, 0, 0, 100, 250, 3, 6, 1, mS, cS);
-  SetTreat(s, 1, 0, 5, 250, 3, 6, 1, mH, cH); // 5 hp: the 36-force blow overkills it
+  SetTreat(s, 1, 0, 5, 250, 3, 6, 1, mH, cH); // 5 hp: the 33-force blow overkills it
   v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
   OrdInit(v.ord);
   OrdSet(v.ord, 1, 0, 0, 0, 0);
@@ -3329,27 +3397,27 @@ void test_apply_siphon_overkill_drains_only_what_was_there() {
   CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
   duel::DuelState o{};
   CHECK(DecodeOut(&o));
-  CHECK(o.treats[1][0].hp == 0); // overkilled: the 36-force blow only had 5 hp to take
-  // 100 + 2 (siphoned off the 5 it ACTUALLY drained, not the 36 that landed); the victim
+  CHECK(o.treats[1][0].hp == 0); // overkilled: the 33-force blow only had 5 hp to take
+  // 100 + 2 (siphoned off the 5 it ACTUALLY drained, not the 33 that landed); the victim
   // is dead before its own slower turn, so no counter-swing lands back either.
   CHECK(o.treats[0][0].hp == 102);
-  CHECK(LogHas("{\"side\":0,\"slot\":0,\"kind\":\"hit\",\"move\":6,\"target\":0,"
-               "\"via\":255,\"clash\":\"adv\",\"dmg\":36,\"blocked\":false,"
+  CHECK(LogHas("{\"side\":0,\"slot\":0,\"kind\":\"hit\",\"move\":5,\"target\":0,"
+               "\"via\":255,\"clash\":\"adv\",\"dmg\":33,\"blocked\":false,"
                "\"absorbed\":0,\"targetHp\":0,\"ko\":true}"));
-  CHECK(LogHas("{\"side\":0,\"slot\":0,\"kind\":\"heal\",\"move\":6,\"target\":0,"
+  CHECK(LogHas("{\"side\":0,\"slot\":0,\"kind\":\"heal\",\"move\":5,\"target\":0,"
                "\"via\":255,\"clash\":\"neu\",\"dmg\":2,\"blocked\":false,"
-               "\"absorbed\":0,\"targetHp\":102,\"ko\":false}")); // NOT 18 (the toHp answer)
+               "\"absorbed\":0,\"targetHp\":102,\"ko\":false}")); // NOT 16 (the toHp answer)
   CHECK(o.phase == duel::wire::kPhaseSide0Won);
 }
 
-// A BLOCKED siphon drains LESS, so it heals less: adv 384 then block (surviving 102) ->
-// landed = (24*384*102)>>16 = 14, drained 14 -> heal = (14*128)>>8 = 7 (not 18).
+// A BLOCKED siphon drains LESS, so it heals less: adv 320 then block (surviving 102) ->
+// landed = (27*320*102)>>16 = 13, drained 13 -> heal = (13*128)>>8 = 6 (not 16).
 ApplyVec MakeVec_SiphonBlockedHealsLess() {
   ApplyVec v{};
   v.name = "siphon_blocked_heals_less";
   duel::DuelState s = MakeState(1, 1);
-  const uint8_t mS[] = {6}, cS[] = {0}; // Pucker Sucker, speed 57
-  const uint8_t mB[] = {0}, cB[] = {0}; // Gum Drop Kick (block 11), speed 46
+  const uint8_t mS[] = {5}, cS[] = {0}; // Toffee Tripper (siphon 27), speed 54
+  const uint8_t mB[] = {0}, cB[] = {0}; // Gum Drop Kick (block 12), speed 46
   SetTreat(s, 0, 0, 100, 250, 3, 6, 1, mS, cS);
   SetTreat(s, 1, 0, 250, 250, 3, 6, 1, mB, cB);
   v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
@@ -3365,26 +3433,26 @@ void test_apply_siphon_blocked_heals_less() {
   CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
   duel::DuelState o{};
   CHECK(DecodeOut(&o));
-  CHECK(o.treats[1][0].hp == 236); // 250 - 14 (adv, then blocked)
-  // 100 + 7 (half of the 14 it actually drained) - 7 (Gum Drop Kick's dis swing) = 100.
-  CHECK(o.treats[0][0].hp == 100);
-  CHECK(LogHas("\"kind\":\"heal\",\"move\":6,\"target\":0,\"via\":255,\"clash\":\"neu\","
-               "\"dmg\":7,")); // 7, not the 18 an unblocked drain would have fed it
+  CHECK(o.treats[1][0].hp == 237); // 250 - 13 (adv, then blocked)
+  // 100 + 6 (half of the 13 it actually drained) - 9 (Gum Drop Kick's dis swing) = 97.
+  CHECK(o.treats[0][0].hp == 97);
+  CHECK(LogHas("\"kind\":\"heal\",\"move\":5,\"target\":0,\"via\":255,\"clash\":\"neu\","
+               "\"dmg\":6,")); // 6, not the 16 an unblocked drain would have fed it
 }
 
 // *** THE `drained` vs `landed` PIN. *** A blow the victim's SHIELD ate whole drains
 // NOTHING -- so it siphons NOTHING, even though it LANDED at full force. "I can only
 // drain what I actually take out of you."
 //
-// The victim recovers (no move type -> neutral clash), so landed = (24*256)>>8 = 24, and
-// its 50-point shield absorbs all 24: drained = 0 -> heal = 0. A siphon wired to `landed`
-// would heal (24*128)>>8 = 12 here, and every other siphon vector in this file would still
+// The victim recovers (no move type -> neutral clash), so landed = (27*256)>>8 = 27, and
+// its 50-point shield absorbs all 27: drained = 0 -> heal = 0. A siphon wired to `landed`
+// would heal (27*128)>>8 = 13 here, and every other siphon vector in this file would still
 // pass.
 ApplyVec MakeVec_SiphonFullyShieldedHealsNothing() {
   ApplyVec v{};
   v.name = "siphon_fully_shielded_heals_nothing";
   duel::DuelState s = MakeState(1, 1);
-  const uint8_t mS[] = {6}, cS[] = {0};
+  const uint8_t mS[] = {5}, cS[] = {0}; // Toffee Tripper (siphon 27), speed 54
   const uint8_t mH[] = {24}, cH[] = {0};
   SetTreat(s, 0, 0, 100, 250, 3, 6, 1, mS, cS);
   SetTreat(s, 1, 0, 250, 250, 3, 6, 1, mH, cH, /*shield=*/50);
@@ -3402,12 +3470,12 @@ void test_apply_siphon_fully_shielded_heals_nothing() {
   duel::DuelState o{};
   CHECK(DecodeOut(&o));
   CHECK(o.treats[1][0].hp == 250);    // the pool ate the WHOLE blow: hp untouched
-  CHECK(o.treats[1][0].shield == 26); // 50 - 24
+  CHECK(o.treats[1][0].shield == 23); // 50 - 27
   CHECK(o.treats[0][0].hp == 100);    // *** and the siphon drank NOTHING ***
-  CHECK(LogHas("\"kind\":\"hit\",\"move\":6,\"target\":0,\"via\":255,\"clash\":\"neu\","
-               "\"dmg\":24,\"blocked\":false,\"absorbed\":24,\"targetHp\":250,\"ko\":false}"));
-  CHECK(LogHas("\"kind\":\"heal\",\"move\":6,\"target\":0,\"via\":255,\"clash\":\"neu\","
-               "\"dmg\":0,")); // NOT 12 -- `drained` is 0, however hard the blow landed
+  CHECK(LogHas("\"kind\":\"hit\",\"move\":5,\"target\":0,\"via\":255,\"clash\":\"neu\","
+               "\"dmg\":27,\"blocked\":false,\"absorbed\":27,\"targetHp\":250,\"ko\":false}"));
+  CHECK(LogHas("\"kind\":\"heal\",\"move\":5,\"target\":0,\"via\":255,\"clash\":\"neu\","
+               "\"dmg\":0,")); // NOT 13 -- `drained` is 0, however hard the blow landed
 }
 
 // A FIZZLED siphon (its target died earlier in the round) siphons nothing: there is no
@@ -3416,8 +3484,8 @@ ApplyVec MakeVec_SiphonFizzledHealsNothing() {
   ApplyVec v{};
   v.name = "siphon_fizzled_heals_nothing";
   duel::DuelState s = MakeState(2, 1);
-  const uint8_t mC[] = {3}, cC[] = {0};  // Coco Chaos (Speedy 24), speed 98 -- kills first
-  const uint8_t mS[] = {6}, cS[] = {0};  // Pucker Sucker (siphon), speed 57 -- too late
+  const uint8_t mC[] = {3}, cC[] = {0};  // Coco Chaos (Speedy 23), speed 98 -- kills first
+  const uint8_t mS[] = {5}, cS[] = {0};  // Toffee Tripper (siphon), speed 54 -- too late
   const uint8_t mH[] = {24}, cH[] = {0};
   SetTreat(s, 0, 0, 250, 250, 3, 6, 1, mC, cC);
   SetTreat(s, 0, 1, 100, 250, 3, 6, 1, mS, cS);
@@ -3439,17 +3507,17 @@ void test_apply_siphon_fizzled_heals_nothing() {
   CHECK(o.treats[1][0].hp == 0);
   CHECK(o.treats[0][1].hp == 100); // the siphoner drank NOTHING off a corpse
   CHECK(LogCount("\"kind\":\"heal\"") == 0);
-  CHECK(LogHas("{\"side\":0,\"slot\":1,\"kind\":\"skip\",\"move\":6,"));
+  CHECK(LogHas("{\"side\":0,\"slot\":1,\"kind\":\"skip\",\"move\":5,"));
 }
 
 // A GUARDED siphon drains from the GUARDIAN -- it is the one that actually took the hit.
-// Neutral clash (the ward recovers) then guard_pct: landed = (24*256*179)>>16 = 16 on the
-// guardian, drained 16 -> heal = (16*128)>>8 = 8.
+// Neutral clash (the ward recovers) then guard_pct: landed = (27*179)>>8 = 18 on the
+// guardian, drained 18 -> heal = (18*128)>>8 = 9.
 ApplyVec MakeVec_SiphonGuardedDrainsGuardian() {
   ApplyVec v{};
   v.name = "siphon_guarded_drains_the_guardian";
   duel::DuelState s = MakeState(2, 1);
-  const uint8_t mS[] = {6}, cS[] = {0};  // Pucker Sucker (siphon), speed 57
+  const uint8_t mS[] = {5}, cS[] = {0};  // Toffee Tripper (siphon), speed 54
   const uint8_t mG[] = {1}, cG[] = {0};  // Gilded Bonds (guard), speed 45
   const uint8_t mH[] = {24}, cH[] = {0};
   SetTreat(s, 0, 0, 100, 250, 3, 6, 1, mS, cS);
@@ -3469,23 +3537,23 @@ void test_apply_siphon_guarded_drains_the_guardian() {
   CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
   duel::DuelState o{};
   CHECK(DecodeOut(&o));
-  CHECK(o.treats[1][0].hp == 234); // the GUARDIAN bled 16...
+  CHECK(o.treats[1][0].hp == 232); // the GUARDIAN bled 18...
   CHECK(o.treats[1][1].hp == 250); // ...and the ward not at all
-  CHECK(o.treats[0][0].hp == 108); // 100 + 8: drained off whoever actually took it
-  CHECK(LogHas("\"kind\":\"hit\",\"move\":6,\"target\":1,\"via\":0,\"clash\":\"neu\","
-               "\"dmg\":16,"));
-  CHECK(LogHas("\"kind\":\"heal\",\"move\":6,\"target\":0,\"via\":255,\"clash\":\"neu\","
-               "\"dmg\":8,"));
+  CHECK(o.treats[0][0].hp == 109); // 100 + 9: drained off whoever actually took it
+  CHECK(LogHas("\"kind\":\"hit\",\"move\":5,\"target\":1,\"via\":0,\"clash\":\"neu\","
+               "\"dmg\":18,"));
+  CHECK(LogHas("\"kind\":\"heal\",\"move\":5,\"target\":0,\"via\":255,\"clash\":\"neu\","
+               "\"dmg\":9,"));
 }
 
-// A siphon CANNOT OVERHEAL: 245/250 drinks 18 but keeps only the 5 that fit.
+// A siphon CANNOT OVERHEAL: 245/250 drinks 16 but keeps only the 5 that fit.
 ApplyVec MakeVec_SiphonCannotOverheal() {
   ApplyVec v = MakeVec_SiphonDrains();
   v.name = "siphon_cannot_overheal";
   duel::DuelState s = MakeState(1, 1);
-  const uint8_t mS[] = {6}, cS[] = {0};
+  const uint8_t mS[] = {5}, cS[] = {0}; // Toffee Tripper (siphon 27), speed 54
   const uint8_t mH[] = {24}, cH[] = {0};
-  SetTreat(s, 0, 0, 245, 250, 3, 6, 1, mS, cS); // 5 points of room, 18 of lifesteal
+  SetTreat(s, 0, 0, 245, 250, 3, 6, 1, mS, cS); // 5 points of room, 16 of lifesteal
   SetTreat(s, 1, 0, 250, 250, 3, 6, 1, mH, cH);
   v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
   return v;
@@ -3496,22 +3564,22 @@ void test_apply_siphon_cannot_overheal() {
   CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
   duel::DuelState o{};
   CHECK(DecodeOut(&o));
-  CHECK(o.treats[0][0].hp == 233); // 245 + min(18, 5) = 250, then the Heavy's 17
-  CHECK(LogHas("\"kind\":\"heal\",\"move\":6,\"target\":0,\"via\":255,\"clash\":\"neu\","
+  CHECK(o.treats[0][0].hp == 230); // 245 + min(16, 5) = 250, then the Heavy's 20
+  CHECK(LogHas("\"kind\":\"heal\",\"move\":5,\"target\":0,\"via\":255,\"clash\":\"neu\","
                "\"dmg\":5,\"blocked\":false,\"absorbed\":0,\"targetHp\":250,\"ko\":false}"));
 }
 
 // A siphoner FELLED BY THE RIPOSTE drinks NOTHING. KO is permanent, so the corpse does not
 // heal itself back up off the blow that killed it -- the same hp == 0 guard that stops a
 // heal reviving an ally, reached from the other direction. (The blow still lands: its
-// victim is down 36 all the same.)
+// victim is down 33 all the same.)
 ApplyVec MakeVec_SiphonFelledByCounterHealsNothing() {
   ApplyVec v{};
   v.name = "siphon_felled_by_counter_heals_nothing";
   duel::DuelState s = MakeState(1, 1);
-  const uint8_t mS[] = {6}, cS[] = {0}; // Pucker Sucker (siphon 24), speed 57
+  const uint8_t mS[] = {5}, cS[] = {0}; // Toffee Tripper (siphon 27), speed 54
   const uint8_t mC[] = {8}, cC[] = {0}; // Berry Bounce (counter), speed 46
-  SetTreat(s, 0, 0, 5, 250, 3, 6, 1, mS, cS); // 5 hp: the reflect (14) fells it
+  SetTreat(s, 0, 0, 5, 250, 3, 6, 1, mS, cS); // 5 hp: the reflect (13) fells it
   SetTreat(s, 1, 0, 250, 250, 3, 6, 1, mC, cC);
   v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
   OrdInit(v.ord);
@@ -3526,8 +3594,8 @@ void test_apply_siphon_felled_by_counter_heals_nothing() {
   CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
   duel::DuelState o{};
   CHECK(DecodeOut(&o));
-  // Tricky vs Blocking = adv 384 -> 36 lands; the reflect is (36*102)>>8 = 14 >= 5 hp.
-  CHECK(o.treats[1][0].hp == 214);
+  // Tricky vs Blocking = adv 320 -> 33 lands; the reflect is (33*102)>>8 = 13 >= 5 hp.
+  CHECK(o.treats[1][0].hp == 217);
   CHECK(o.treats[0][0].hp == 0);             // *** dead, and it stays dead ***
   CHECK(LogCount("\"kind\":\"heal\"") == 0); // a corpse drinks nothing
   CHECK(o.phase == duel::wire::kPhaseSide1Won);
@@ -3616,8 +3684,8 @@ void test_apply_limited_uses() {
     CHECK(o.treats[0][0].uses_left[0] == 1);   // 2 - 1
     CHECK(o.treats[0][0].uses_left[1] == 255); // the unlimited sentinel: NEVER decremented
     CHECK(o.treats[0][0].cooldowns[0] == 3);   // Silver Knuckles' authored cd
-    // Heavy 45 vs Heavy = neutral: 250 - 45 = 205.
-    CHECK(o.treats[1][0].hp == 205);
+    // Heavy 40 vs Heavy = neutral: 250 - 40 = 210.
+    CHECK(o.treats[1][0].hp == 210);
   }
 
   // Round 2 replays that OUTPUT state: uses_left survived the encode/decode round-trip,
@@ -3655,13 +3723,15 @@ void test_apply_limited_uses() {
 // independently, gets its OWN log entry, and is punished by the recipient's counter
 // separately.
 
-// Two strikes, two entries. Distance BEATS Heavy -> adv 384 -> 61 per strike, 122 total.
+// Two strikes, two entries. Distance BEATS Heavy -> adv 320 -> 22 per strike, 44 total.
+// (Task 7 rebuilt Limon Shuriken around its BURST, not its per-strike power: 18 x 2 = 36
+// per cast, which is what the balance report compares against a single blow of its tier.)
 ApplyVec MakeVec_DoubleStrike() {
   ApplyVec v{};
   v.name = "double_strike";
   duel::DuelState s = MakeState(1, 1);
-  const uint8_t mL[] = {15}, cL[] = {0}; // Limon Shuriken (Distance 41, hits 2), speed 75
-  const uint8_t mH[] = {24}, cH[] = {0}; // Pop Rock Pop (Heavy 26), speed 27
+  const uint8_t mL[] = {15}, cL[] = {0}; // Limon Shuriken (Distance 18, hits 2), speed 75
+  const uint8_t mH[] = {24}, cH[] = {0}; // Pop Rock Pop (Heavy 26), speed 33
   SetTreat(s, 0, 0, 250, 250, 3, 6, 1, mL, cL);
   SetTreat(s, 1, 0, 250, 250, 3, 6, 1, mH, cH);
   v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
@@ -3677,15 +3747,15 @@ void test_apply_double_strike() {
   CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
   duel::DuelState o{};
   CHECK(DecodeOut(&o));
-  CHECK(o.treats[1][0].hp == 128);            // 250 - 61 - 61
+  CHECK(o.treats[1][0].hp == 206);            // 250 - 22 - 22
   CHECK(LogCount("\"move\":15") == 2);        // TWO entries -- the client plays two impacts
   CHECK(LogHas("\"kind\":\"hit\",\"move\":15,\"target\":0,\"via\":255,\"clash\":\"adv\","
-               "\"dmg\":61,\"blocked\":false,\"absorbed\":0,\"targetHp\":189,\"ko\":false}"));
+               "\"dmg\":22,\"blocked\":false,\"absorbed\":0,\"targetHp\":228,\"ko\":false}"));
   CHECK(LogHas("\"kind\":\"hit\",\"move\":15,\"target\":0,\"via\":255,\"clash\":\"adv\","
-               "\"dmg\":61,\"blocked\":false,\"absorbed\":0,\"targetHp\":128,\"ko\":false}"));
+               "\"dmg\":22,\"blocked\":false,\"absorbed\":0,\"targetHp\":206,\"ko\":false}"));
   // The Heavy swings back into a Distance move -- Distance BEATS Heavy, so it is at a
-  // disadvantage: (26*170)>>8 = 17.
-  CHECK(o.treats[0][0].hp == 233);
+  // disadvantage: (26*205)>>8 = 20.
+  CHECK(o.treats[0][0].hp == 230);
 }
 
 // If STRIKE 1 KILLS, STRIKE 2 NEVER HAPPENS -- and emits no entry. Consistent with
@@ -3697,7 +3767,7 @@ ApplyVec MakeVec_DoubleStrikeStopsOnKo() {
   const uint8_t mL[] = {15}, cL[] = {0};
   const uint8_t mH[] = {24}, cH[] = {0};
   SetTreat(s, 0, 0, 250, 250, 3, 6, 1, mL, cL);
-  SetTreat(s, 1, 0, 50, 250, 3, 6, 1, mH, cH); // 50 hp: strike 1 (61) fells it
+  SetTreat(s, 1, 0, 20, 250, 3, 6, 1, mH, cH); // 20 hp: strike 1 (22) fells it
   v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
   OrdInit(v.ord);
   OrdSet(v.ord, 1, 0, 0, 0, 0);
@@ -3714,19 +3784,19 @@ void test_apply_double_strike_stops_on_ko() {
   CHECK(o.treats[1][0].hp == 0);
   CHECK(LogCount("\"move\":15") == 1); // ONE entry: the second shuriken is never thrown
   CHECK(LogHas("\"kind\":\"hit\",\"move\":15,\"target\":0,\"via\":255,\"clash\":\"adv\","
-               "\"dmg\":61,\"blocked\":false,\"absorbed\":0,\"targetHp\":0,\"ko\":true}"));
+               "\"dmg\":22,\"blocked\":false,\"absorbed\":0,\"targetHp\":0,\"ko\":true}"));
   CHECK(o.phase == duel::wire::kPhaseSide0Won);
 }
 
 // EACH STRIKE IS A BLOW, so each triggers the recipient's counter: two strikes into a
 // counter-stance = TWO reflects. No special case -- it falls out of Task 4's rule.
-// Blocking BEATS Distance -> dis 170 -> 27 per strike; each reflects (27*102)>>8 = 10.
+// Blocking BEATS Distance -> dis 205 -> 14 per strike; each reflects (14*102)>>8 = 5.
 ApplyVec MakeVec_DoubleStrikeCounteredTwice() {
   ApplyVec v{};
   v.name = "double_strike_countered_twice";
   duel::DuelState s = MakeState(1, 1);
   const uint8_t mL[] = {15}, cL[] = {0}; // Limon Shuriken, speed 75 -- strikes first
-  const uint8_t mC[] = {8}, cC[] = {0};  // Berry Bounce (counter 20), speed 46
+  const uint8_t mC[] = {8}, cC[] = {0};  // Berry Bounce (counter 22), speed 46
   SetTreat(s, 0, 0, 250, 250, 3, 6, 1, mL, cL);
   SetTreat(s, 1, 0, 250, 250, 3, 6, 1, mC, cC);
   v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
@@ -3742,11 +3812,11 @@ void test_apply_double_strike_is_countered_twice() {
   CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
   duel::DuelState o{};
   CHECK(DecodeOut(&o));
-  CHECK(o.treats[1][0].hp == 196);              // 250 - 27 - 27
+  CHECK(o.treats[1][0].hp == 222);              // 250 - 14 - 14
   CHECK(LogCount("\"move\":15") == 2);
   CHECK(LogCount("\"kind\":\"counter\"") == 2); // ONE PER STRIKE -- you pay twice
-  // 250 - 10 - 10 (the two reflects) - 30 (Berry Bounce's own adv swing) = 200.
-  CHECK(o.treats[0][0].hp == 200);
+  // 250 - 5 - 5 (the two reflects) - 27 (Berry Bounce's own adv swing) = 213.
+  CHECK(o.treats[0][0].hp == 213);
 }
 
 // A COUNTER THAT FELLS THE ATTACKER between the strikes STOPS the second one -- KO is
@@ -3758,7 +3828,7 @@ ApplyVec MakeVec_DoubleStrikeAttackerFelledMidStrike() {
   duel::DuelState s = MakeState(1, 1);
   const uint8_t mL[] = {15}, cL[] = {0};
   const uint8_t mC[] = {8}, cC[] = {0}; // Berry Bounce (counter), speed 46
-  SetTreat(s, 0, 0, 5, 250, 3, 6, 1, mL, cL); // 5 hp: strike 1's reflect (10) fells it
+  SetTreat(s, 0, 0, 5, 250, 3, 6, 1, mL, cL); // 5 hp: strike 1's reflect (5) fells it
   SetTreat(s, 1, 0, 250, 250, 3, 6, 1, mC, cC);
   v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
   OrdInit(v.ord);
@@ -3774,7 +3844,7 @@ void test_apply_double_strike_attacker_felled_mid_strike() {
   duel::DuelState o{};
   CHECK(DecodeOut(&o));
   CHECK(o.treats[0][0].hp == 0);
-  CHECK(o.treats[1][0].hp == 223);              // struck ONCE (250 - 27), never twice
+  CHECK(o.treats[1][0].hp == 236);              // struck ONCE (250 - 14), never twice
   CHECK(LogCount("\"move\":15") == 1);
   CHECK(LogCount("\"kind\":\"counter\"") == 1);
   CHECK(o.phase == duel::wire::kPhaseSide1Won);
@@ -3792,7 +3862,7 @@ ApplyVec MakeVec_DoubleStrikeGuardLapsesMidStrike() {
   const uint8_t mH[] = {24}, cH[] = {0};
   SetTreat(s, 0, 0, 250, 250, 3, 6, 1, mL, cL);
   SetTreat(s, 0, 1, 250, 250, 3, 6, 1, mH, cH);
-  SetTreat(s, 1, 0, 20, 250, 3, 6, 1, mG, cG); // the GUARDIAN, 20 hp -- strike 1 fells it
+  SetTreat(s, 1, 0, 10, 250, 3, 6, 1, mG, cG); // the GUARDIAN, 10 hp -- strike 1 fells it
   SetTreat(s, 1, 1, 250, 250, 3, 6, 1, mH, cH); // the WARD (recovers -> neutral clash)
   v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
   OrdRecoverAll(v.ord, 2);
@@ -3807,14 +3877,14 @@ void test_apply_double_strike_guard_lapses_mid_strike() {
   CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
   duel::DuelState o{};
   CHECK(DecodeOut(&o));
-  // Strike 1: neutral (the ward recovers) then guard_pct -> (41*256*179)>>16 = 28 >= 20 hp.
+  // Strike 1: neutral (the ward recovers) then guard_pct -> (18*179)>>8 = 12 >= 10 hp.
   CHECK(o.treats[1][0].hp == 0);
-  // Strike 2: the guard has LAPSED, so it lands on the ward in full: 250 - 41 = 209.
-  CHECK(o.treats[1][1].hp == 209);
+  // Strike 2: the guard has LAPSED, so it lands on the ward in full: 250 - 18 = 232.
+  CHECK(o.treats[1][1].hp == 232);
   CHECK(LogHas("\"kind\":\"hit\",\"move\":15,\"target\":1,\"via\":0,\"clash\":\"neu\","
-               "\"dmg\":28,\"blocked\":false,\"absorbed\":0,\"targetHp\":0,\"ko\":true}"));
+               "\"dmg\":12,\"blocked\":false,\"absorbed\":0,\"targetHp\":0,\"ko\":true}"));
   CHECK(LogHas("\"kind\":\"hit\",\"move\":15,\"target\":1,\"via\":255,\"clash\":\"neu\","
-               "\"dmg\":41,\"blocked\":false,\"absorbed\":0,\"targetHp\":209,\"ko\":false}"));
+               "\"dmg\":18,\"blocked\":false,\"absorbed\":0,\"targetHp\":232,\"ko\":false}"));
 }
 
 // ---- Task 4 Step 3: self-play soak + fuzz (test-side PRNG only) ----
@@ -4205,11 +4275,265 @@ void DumpGolden() {
   DumpApplyVector(MakeVec_DoubleStrikeGuardLapsesMidStrike());
 }
 
+// ================= combat-depth Task 7: `--balance-report` =================
+//
+// A DEV TOOL, not a test and not engine code: it reads the compile-time move table and
+// prints the evidence the balance pass is judged on. It touches no engine entry point, so
+// it cannot move a golden vector or a wasm byte.
+//
+// It answers three questions, in order of importance:
+//
+//   1. IS ANY MOVE STRICTLY DOMINATED?  A move is dominated when another move of the SAME
+//      TYPE and the SAME EFFECT, at the SAME OR LOWER quality, is >= on all three of
+//      burst, speed and damage-per-round. A q4 that is dominated by a q1 is the bug this
+//      whole task exists to kill ("what's the point doing block?"), so this section must
+//      print NONE.
+//
+//      Why BURST (power x hits) and not raw `power` on the first axis: `power` is
+//      PER STRIKE, so a double-strike's 18 is not comparable to a single blow's 25 -- the
+//      cast lands 36. For all 38 single-hit moves burst == power and the two readings are
+//      identical; on the one multi-hit move burst is the only honest one.
+//
+//   2. DOES QUALITY BUY DAMAGE?  It must not. dpr = burst / (cooldown + 1) is the
+//      textbook throughput of ONE move, but it badly understates a long-cooldown move in a
+//      real fight, because a fighter holds FOUR moves and simply plays another one while
+//      that one cools. So the kit section below does the honest thing and SIMULATES: for
+//      every 4-move subset of a quality's pool it greedily plays the hardest-hitting ready
+//      move for 24 rounds, and reports the BEST kit that quality can roll. Those four
+//      numbers -- not dpr -- are what "rarity must not buy numbers" actually means, and
+//      they are what to keep inside a narrow band.
+//
+//   3. WHAT VERBS DOES EACH QUALITY GET?  This is what rarity is allowed to buy.
+//
+// (A fighter only ever rolls moves whose quality equals its own -- the on-chain rule --
+// which is what makes "a quality's pool IS its toolkit" true, and what makes a per-quality
+// kit simulation meaningful in the first place.)
+
+const char* kTypeNames[5] = {"Heavy", "Speedy", "Tricky", "Distance", "Blocking"};
+const char* kEffectNames[9] = {"damage",  "block",  "guard",   "aoe",     "heal",
+                                "siphon",  "shield", "counter", "groupheal"};
+
+// power x hits: what ONE cast puts out. For a shield/heal/groupheal this is POINTS
+// (granted/restored), not damage -- see the legend the report prints.
+uint32_t MoveBurst(uint32_t i) {
+  return duel::kDuelMoves[i].power * duel::kDuelMoves[i].hits;
+}
+
+// Throughput in TENTHS (integer only -- this binary shares engine.cpp's no-float rule even
+// though nothing here is consensus): burst per round if the move is played on cooldown.
+uint32_t MoveDprX10(uint32_t i) {
+  return MoveBurst(i) * 10u / (duel::kDuelMoves[i].cooldown + 1u);
+}
+
+bool EffectDealsDamage(uint8_t eff) {
+  return eff == duel::kEffDamage || eff == duel::kEffSiphon || eff == duel::kEffBlock ||
+         eff == duel::kEffCounter || eff == duel::kEffAoe;
+}
+
+// The damage ONE cast of this move puts on the board. `spread` counts an AoE against a
+// full enemy team (aoe_pct of power, on each of team_size foes) instead of ignoring it --
+// the two kit metrics below are exactly this switch.
+uint32_t KitCastValue(uint32_t i, bool spread) {
+  const duel::DuelMoveStat& m = duel::kDuelMoves[i];
+  if (m.effect == duel::kEffAoe) {
+    if (!spread) return 0;
+    return ((m.power * duel::kTun.aoe_pct_256) >> 8) * duel::kTun.team_size;
+  }
+  if (!EffectDealsDamage(m.effect)) return 0; // a shield/heal/guard turn deals none
+  return MoveBurst(i);
+}
+
+// Play a 4-move kit for 24 rounds, always casting the hardest-hitting READY move (a move
+// is ready when its cooldown is 0 and it has a use left), and return the average damage
+// per round in TENTHS. Cooldowns tick exactly as duel_apply ticks them: the cast move is
+// SET to its cooldown, every other move decrements.
+constexpr uint32_t kKitRounds = 24;
+uint32_t SimKit(const uint8_t* kit, uint32_t n, bool spread) {
+  uint8_t cd[4] = {0, 0, 0, 0};
+  uint8_t uses[4] = {0, 0, 0, 0};
+  for (uint32_t j = 0; j < n; ++j) uses[j] = duel::kDuelMoves[kit[j]].max_uses;
+  uint32_t total = 0;
+  for (uint32_t r = 0; r < kKitRounds; ++r) {
+    int best = -1;
+    uint32_t bestVal = 0;
+    for (uint32_t j = 0; j < n; ++j) {
+      if (cd[j] != 0 || uses[j] == 0) continue;
+      const uint32_t v = KitCastValue(kit[j], spread);
+      if (v > bestVal) {
+        bestVal = v;
+        best = static_cast<int>(j);
+      }
+    }
+    if (best >= 0) { // nothing worth casting -> the round is a Recover, and cds still tick
+      total += bestVal;
+      if (uses[best] != 255) --uses[best];
+      cd[best] = duel::kDuelMoves[kit[best]].cooldown;
+    }
+    for (uint32_t j = 0; j < n; ++j) {
+      if (static_cast<int>(j) != best && cd[j] > 0) --cd[j];
+    }
+  }
+  return total * 10u / kKitRounds;
+}
+
+// The best 4-move kit a fighter of this quality can roll, by brute force over every subset
+// of its pool (13 choose 4 = 715 at worst).
+void BestKit(uint8_t quality, bool spread, uint32_t* outX10, uint8_t* outKit) {
+  uint8_t pool[duel::wire::kMoveUniverse];
+  uint32_t n = 0;
+  for (uint32_t i = 0; i < duel::wire::kMoveUniverse; ++i) {
+    if (duel::kDuelMoveMeta[i].quality == quality) pool[n++] = static_cast<uint8_t>(i);
+  }
+  *outX10 = 0;
+  for (uint32_t a = 0; a < n; ++a) {
+    for (uint32_t b = a + 1; b < n; ++b) {
+      for (uint32_t c = b + 1; c < n; ++c) {
+        for (uint32_t d = c + 1; d < n; ++d) {
+          const uint8_t kit[4] = {pool[a], pool[b], pool[c], pool[d]};
+          const uint32_t v = SimKit(kit, 4, spread);
+          if (v > *outX10) {
+            *outX10 = v;
+            for (uint32_t j = 0; j < 4; ++j) outKit[j] = kit[j];
+          }
+        }
+      }
+    }
+  }
+}
+
+void PrintKitLine(const char* label, uint8_t quality, bool spread) {
+  uint32_t x10 = 0;
+  uint8_t kit[4] = {0, 0, 0, 0};
+  BestKit(quality, spread, &x10, kit);
+  std::printf("  q%u %s %3u.%u/round  [", quality, label, x10 / 10, x10 % 10);
+  for (uint32_t j = 0; j < 4; ++j) {
+    std::printf("%s%s", j ? ", " : "", duel::kDuelMoveMeta[kit[j]].name);
+  }
+  std::printf("]\n");
+}
+
+void BalanceReport() {
+  std::printf("=========================== DUEL BALANCE REPORT ===========================\n");
+  std::printf("RARITY BUYS VERBS, NOT NUMBERS. A fighter only rolls moves of its OWN quality,\n");
+  std::printf("so a quality's pool IS its toolkit.\n\n");
+  std::printf("burst = power x hits (what ONE cast puts out).  dpr = burst / (cooldown+1).\n");
+  std::printf("For shield/heal/groupheal the unit is POINTS granted/restored, not damage --\n");
+  std::printf("those moves deal none. A guard NEVER reads power (see duel-stats.json _readme):\n");
+  std::printf("its numbers are shown as `-`.\n\n");
+
+  // ---- 1. the table, grouped by type then effect then quality ----
+  for (uint8_t type = 0; type < 5; ++type) {
+    std::printf("---- %s ----\n", kTypeNames[type]);
+    std::printf("  %-28s q  eff        pow hits burst spd cd  dpr  uses\n", "move");
+    for (uint8_t eff = 0; eff < 9; ++eff) {
+      for (uint8_t q = 1; q <= 4; ++q) {
+        for (uint32_t i = 0; i < duel::wire::kMoveUniverse; ++i) {
+          const duel::DuelMoveStat& m = duel::kDuelMoves[i];
+          if (m.type != type || m.effect != eff || duel::kDuelMoveMeta[i].quality != q) continue;
+          const bool unusedPower = (m.effect == duel::kEffGuard);
+          // 16, not 8: gcc's -Wformat-truncation cannot prove dpr's range from the
+          // u32 arithmetic, and a warning is an error in this build.
+          char burstBuf[16], dprBuf[16], powBuf[16];
+          if (unusedPower) {
+            std::snprintf(powBuf, sizeof(powBuf), "%s", "-");
+            std::snprintf(burstBuf, sizeof(burstBuf), "%s", "-");
+            std::snprintf(dprBuf, sizeof(dprBuf), "%s", "-");
+          } else {
+            std::snprintf(powBuf, sizeof(powBuf), "%u", m.power);
+            std::snprintf(burstBuf, sizeof(burstBuf), "%u", MoveBurst(i));
+            const uint32_t d = MoveDprX10(i);
+            std::snprintf(dprBuf, sizeof(dprBuf), "%u.%u", d / 10, d % 10);
+          }
+          char usesBuf[16];
+          if (m.max_uses == 255) {
+            std::snprintf(usesBuf, sizeof(usesBuf), "%s", "-");
+          } else {
+            std::snprintf(usesBuf, sizeof(usesBuf), "%u", m.max_uses);
+          }
+          std::printf("  %-28s q%u %-9s %3s %4u %5s %3u %2u %5s %4s\n",
+                      duel::kDuelMoveMeta[i].name, q, kEffectNames[eff], powBuf, m.hits,
+                      burstBuf, m.speed, m.cooldown, dprBuf, usesBuf);
+        }
+      }
+    }
+    std::printf("\n");
+  }
+
+  // ---- 2. THE ACCEPTANCE CRITERION: strictly-dominated moves ----
+  std::printf("---- STRICTLY DOMINATED MOVES ----\n");
+  std::printf("(same type + same effect, dominator's quality <= the dominated move's,\n");
+  std::printf(" and the dominated move is <= on burst AND speed AND dpr -- i.e. a move you\n");
+  std::printf(" would never, in any situation, prefer.)\n");
+  int dominated = 0;
+  for (uint32_t y = 0; y < duel::wire::kMoveUniverse; ++y) {
+    const duel::DuelMoveStat& my = duel::kDuelMoves[y];
+    if (my.effect == duel::kEffGuard) continue; // power is unused: nothing to compare
+    for (uint32_t x = 0; x < duel::wire::kMoveUniverse; ++x) {
+      if (x == y) continue;
+      const duel::DuelMoveStat& mx = duel::kDuelMoves[x];
+      if (mx.type != my.type || mx.effect != my.effect) continue;
+      if (duel::kDuelMoveMeta[x].quality > duel::kDuelMoveMeta[y].quality) continue;
+      if (MoveBurst(y) <= MoveBurst(x) && my.speed <= mx.speed &&
+          MoveDprX10(y) <= MoveDprX10(x)) {
+        std::printf("  !! %s (q%u) is DOMINATED by %s (q%u) -- same %s/%s\n",
+                    duel::kDuelMoveMeta[y].name, duel::kDuelMoveMeta[y].quality,
+                    duel::kDuelMoveMeta[x].name, duel::kDuelMoveMeta[x].quality,
+                    kTypeNames[my.type], kEffectNames[my.effect]);
+        ++dominated;
+      }
+    }
+  }
+  if (dominated == 0) {
+    std::printf("  NONE. No move is a strict upgrade of a cheaper one.\n");
+  }
+  std::printf("\n");
+
+  // ---- 3. does quality buy damage? (the number that actually matters) ----
+  std::printf("---- BEST-KIT DAMAGE PER ROUND (greedy, 24 rounds, every 4-move subset) ----\n");
+  std::printf("FOCUSED = single-target output only (an AoE counts 0 -- it cannot focus).\n");
+  for (uint8_t q = 1; q <= 4; ++q) PrintKitLine("FOCUSED", q, false);
+  std::printf("SPREAD  = the same, but an AoE is credited against a full enemy team of %u.\n",
+              duel::kTun.team_size);
+  for (uint8_t q = 1; q <= 4; ++q) PrintKitLine("SPREAD ", q, true);
+  std::printf("\n");
+
+  // ---- 4. what rarity IS allowed to buy ----
+  std::printf("---- THE TOOLKIT (the verbs each quality can roll) ----\n");
+  for (uint8_t q = 1; q <= 4; ++q) {
+    std::printf("  q%u:", q);
+    for (uint8_t eff = 0; eff < 9; ++eff) {
+      int n = 0;
+      for (uint32_t i = 0; i < duel::wire::kMoveUniverse; ++i) {
+        if (duel::kDuelMoveMeta[i].quality == q && duel::kDuelMoves[i].effect == eff) ++n;
+      }
+      if (n > 0) std::printf(" %s x%d", kEffectNames[eff], n);
+    }
+    std::printf("\n");
+  }
+  std::printf("\n");
+  std::printf("---- HP (damage never scales with quality; hp barely does) ----\n");
+  std::printf("  max_hp = %u + (quality-1) x %u + sweetness x %u\n", duel::kTun.hp_base,
+              duel::kTun.hp_per_quality, duel::kTun.hp_per_sweetness);
+  std::printf("  q1 sw1 = %u ... q4 sw10 = %u (an Epic is +%u hp over a Common at equal sweetness)\n",
+              duel::kTun.hp_base + duel::kTun.hp_per_sweetness,
+              duel::kTun.hp_base + 3u * duel::kTun.hp_per_quality + 10u * duel::kTun.hp_per_sweetness,
+              3u * duel::kTun.hp_per_quality);
+  std::printf("  clash pentagon: adv x%u/256 (+%u%%), dis x%u/256 (-%u%%)\n", duel::kTun.adv_mult_256,
+              (duel::kTun.adv_mult_256 - 256u) * 100u / 256u, duel::kTun.dis_mult_256,
+              (256u - duel::kTun.dis_mult_256) * 100u / 256u);
+  std::printf("==========================================================================\n");
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
   if (argc > 1 && std::strcmp(argv[1], "--dump-golden") == 0) {
     DumpGolden();
+    return 0;
+  }
+  // combat-depth Task 7: the balance evidence tool (dev-only; see BalanceReport).
+  if (argc > 1 && std::strcmp(argv[1], "--balance-report") == 0) {
+    BalanceReport();
     return 0;
   }
   // duel_tests_logcap only (build.sh compiles it with -DDUEL_LOG_CAP=320):

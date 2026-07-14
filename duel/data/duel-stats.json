@@ -1,112 +1,163 @@
 {
+  "_readme": [
+    "duel/data/duel-stats.json — THE single source of truth for every duel move.",
+    "Edit here, then `node duel/gen-stats.mjs` (emits duel/src/stats_gen.h AND",
+    "tf-frontend/src/data/duel-stats.ts), then `bash duel/build.sh test|golden|parity`.",
+    "",
+    "=== THE LOCKED PRINCIPLE: RARITY BUYS VERBS, NOT NUMBERS ===",
+    "A duel can stake a real treat, so a q4 Epic must NOT out-stat a q1 Common. A fighter",
+    "only ever rolls moves of its OWN quality, so a quality's move pool IS its toolkit:",
+    "  q1  damage, block, shield          — the honest, reliable, FAST baseline a newbie wins with",
+    "  q2  damage, shield, AoE            — the first splash",
+    "  q3  damage, shield, counter, heal, life-siphon, double-strike — sustain and punish",
+    "  q4  damage, shield, block, counter, guard, four AoEs, group-heal, two ultimates",
+    "Quality buys MORE VERBS and BIGGER BURST PER CAST. It must never buy more damage per",
+    "round: `--balance-report` (duel/test/duel_tests --balance-report) prints every move's",
+    "throughput, flags any strictly-dominated move, and measures each quality's best-kit",
+    "damage-per-round. Keep those four kit numbers inside one narrow band.",
+    "",
+    "=== WHAT `power` MEANS (audited against duel/src/engine.cpp's resolve loop) ===",
+    "One column, nine effects — the rule, effect by effect:",
+    "  damage     damage dealt by one strike (x `hits` strikes, each clashing separately)",
+    "  siphon     damage dealt; the caster then heals siphon_pct_256 of what it actually DRAINED",
+    "  aoe        damage dealt to EVERY living foe, each scaled by aoe_pct_256",
+    "  block      damage dealt by the swing that comes WITH the stance (a block move DOES hit)",
+    "  counter    damage dealt by the swing that comes WITH the stance (a counter move DOES hit)",
+    "  shield     shield points granted to the caster (no damage at all)",
+    "  heal       health restored to one ally, self included (no damage at all)",
+    "  groupheal  health restored to EVERY living ally, scaled by aoe_pct_256 (no damage at all)",
+    "  guard      *** UNUSED ***. The guard branch deals no damage and never reads power; it is",
+    "             pinned at the table minimum (10) so nobody mistakes it for a lever. Give it a",
+    "             job in the engine before giving it a number.",
+    "",
+    "=== THE TRADE RULE ===",
+    "A verb-carrying move TRADES damage for its utility:",
+    "  - heal / groupheal / guard / shield deal NO damage — the whole turn is the utility.",
+    "  - an AoE's RAW power is a normal blow of its tier; aoe_pct_256 then taxes it per victim",
+    "    (so it never gets its reach for free).",
+    "  - a siphon hits for slightly less than a plain blow of its tier (it gets the sustain).",
+    "  - a counter/block hits for much less than a plain blow (it gets the stance).",
+    "  - a max_uses ultimate may be genuinely powerful — the limited uses are what pay for it.",
+    "",
+    "=== THE LADDERS (why no move is a strict upgrade of a cheaper one) ===",
+    "Within ONE effect, throughput (power x hits / (cooldown+1)) is held FLAT across qualities;",
+    "the rarer move simply lands it in one bigger lump, less often:",
+    "  shield   q1 14/cd0 · q2 28/cd1 · q3 42/cd2 · q4 56/cd3   — all exactly 14 points/round",
+    "  block    q1 12/cd0 · q4 24/cd1                            — both exactly 12 damage/round",
+    "  counter  q3 22/cd1 · q4 33/cd2                            — both exactly 11 damage/round",
+    "Plain damage cannot be perfectly flat (a longer cooldown MUST buy more power, or the rarer",
+    "move would be strictly dominated), so it climbs only gently — see the kit table the balance",
+    "report prints. Speed is the other axis: q1's moves are the FASTEST in the game and strike",
+    "first, which in a game with permanent KO is worth real tempo."
+  ],
   "0090580c-04ef-9d84-e883-32f52c977b98": {
-    "power": 11,
+    "power": 12,
     "speed": 46,
     "cooldown": 0,
     "effect": "block",
-    "description": "Plants a stubborn gumdrop stance — soaks part of the next blow."
+    "description": "The honest stance: a light gumdrop kick, and for the rest of the round you shrug off most of whatever lands on you. It is ready again the very next round — a newbie can hold this wall all fight."
   },
   "01b34a91-37d8-29d4-09cb-2d515f51e315": {
-    "power": 23,
+    "power": 10,
     "speed": 45,
     "cooldown": 2,
     "effect": "guard",
-    "description": "Binds you to an ALLY in shimmering caramel for the round: every single-target blow aimed at them lands on you instead, at 70% of its force. Pick an ally, not an enemy. Deals no damage."
+    "description": "Binds you to an ALLY in shimmering caramel: for the rest of the round every single-target blow aimed at them lands on YOU instead, and lands softer for the trouble. Pick an ally, not an enemy. It deals no damage — the whole turn is spent covering someone."
   },
   "1a67cc79-b97a-4624-ca67-36c9fcbee970": {
-    "power": 50,
+    "power": 30,
     "speed": 93,
-    "cooldown": 3,
+    "cooldown": 2,
     "effect": "damage",
-    "description": "A flashing mercury-quick slash — rare speed backing up serious power."
+    "description": "A flashing mercury-quick slash — almost nothing in the arena moves before it does, and it still lands with weight. Needs a breath to line up again."
   },
   "1d1dec74-ca35-0cc4-d930-164786a9dd81": {
-    "power": 24,
+    "power": 23,
     "speed": 98,
     "cooldown": 0,
     "effect": "damage",
-    "description": "A frantic chocolate-fisted flurry, fast enough to strike before the foe can react."
+    "description": "A frantic chocolate-fisted flurry — the fastest thing in the pantry. Light, but it always goes first, and it is always ready."
   },
   "1e47a8e0-acfd-1244-0b7d-539d62429060": {
     "power": 24,
     "speed": 94,
     "cooldown": 0,
     "effect": "damage",
-    "description": "A swift dollop of icing flicked like a whip — light but blisteringly fast."
+    "description": "A swift dollop of icing flicked like a whip — blisteringly fast, and never on cooldown."
   },
   "2569d967-c676-8b44-cbdf-d514e4c5c73d": {
-    "power": 42,
+    "power": 27,
     "speed": 54,
-    "cooldown": 2,
-    "effect": "damage",
-    "description": "A sticky toffee snare underfoot, punished the instant the foe stumbles."
+    "cooldown": 1,
+    "effect": "siphon",
+    "description": "A sticky toffee snare that drinks the foe in as they stumble: a blow that also DRAINS. You heal for a share of the health it actually takes off them — so a hit their shield swallowed whole, or one that finds them already down, feeds you nothing. It hits a little softer than a plain blow; the sustain is what you are paying for."
   },
   "29d559bb-41a7-9f14-5bf8-605da8166943": {
-    "power": 24,
+    "power": 26,
     "speed": 57,
     "cooldown": 0,
-    "effect": "siphon",
-    "description": "A sour sucker clamped onto the foe that drinks them in: a normal blow that also DRAINS. You heal for half of the health it actually takes off them — so a hit their shield swallowed whole, or one that finds them already down, feeds you nothing."
+    "effect": "damage",
+    "description": "A sour sucker clamped on and yanked away — plain, dependable, and ready every single round."
   },
   "2c555752-8a84-58f4-395e-6460b7864069": {
-    "power": 24,
+    "power": 25,
     "speed": 70,
     "cooldown": 0,
     "effect": "damage",
-    "description": "Yanks the fight to close range with a taffy-rope pull before landing the hit."
+    "description": "Yanks the fight to close range with a taffy-rope pull before landing the hit. Simple, and always available."
   },
   "2c94f949-a10e-2524-2827-6588982ce0b1": {
-    "power": 20,
+    "power": 22,
     "speed": 46,
     "cooldown": 1,
     "effect": "counter",
-    "description": "A springy berry-skin stance: strike, then bounce 40% of any blow that lands on you this round straight back at whoever threw it. It soaks nothing — it punishes."
+    "description": "A springy berry-skin stance: strike, then bounce a good part of any blow that lands on you this round straight back at whoever threw it. It soaks NOTHING — it punishes. A big enough hit still fells you before you swing back."
   },
   "34a115db-3153-aff4-9a46-97700634f1fb": {
-    "power": 53,
+    "power": 30,
     "speed": 55,
-    "cooldown": 3,
+    "cooldown": 1,
     "effect": "damage",
-    "description": "A gilded feint that sends the foe stumbling before the real blow lands."
+    "description": "A gilded feint that sends the foe stumbling before the real blow lands — the workhorse of a champion's kit."
   },
   "3e76f2fa-072c-5654-dac9-c9b0e4e1643a": {
-    "power": 51,
+    "power": 48,
     "speed": 97,
     "cooldown": 3,
     "effect": "groupheal",
     "max_uses": 2,
-    "description": "An overloaded sugar rush poured over the WHOLE team: every living ally, you included, is restored by about 60% of its 51 points. Pick no target — it reaches them all. It will not raise the fallen. Only TWICE per duel."
+    "description": "An overloaded sugar rush poured over the WHOLE team: every living ally, you included, is pulled back from the brink. Pick no target — it reaches them all. It will not raise the fallen, and you only have the sugar for it TWICE per duel."
   },
   "41416afb-0d72-f9b4-ba30-f089b713500f": {
-    "power": 20,
+    "power": 42,
     "speed": 47,
-    "cooldown": 1,
+    "cooldown": 2,
     "effect": "shield",
-    "description": "Hardens into a glassy candy shell worth 20 points of shield. It soaks damage before your health does and KEEPS whatever is left over for later rounds. Deals no damage."
+    "description": "Hardens into a thick glassy candy shell. It soaks damage before your health does and KEEPS whatever is left over for later rounds. Careful: it goes up when YOUR turn comes, not the moment the round starts — a faster foe strikes before it exists. A shield is an investment, not a reaction. Deals no damage."
   },
   "431900a2-54d4-df34-d9f7-6a4608fecfaa": {
-    "power": 15,
+    "power": 28,
     "speed": 42,
-    "cooldown": 0,
+    "cooldown": 1,
     "effect": "shield",
-    "description": "Goes soft and gummy and ABSORBS: 15 points of chewy shield. It soaks damage before your health does and keeps whatever survives into later rounds. Deals no damage."
+    "description": "Goes soft and gummy and ABSORBS. It soaks damage before your health does and keeps whatever survives into later rounds. Careful: it goes up when YOUR turn comes, not the moment the round starts — a faster foe strikes before it exists. A shield is an investment, not a reaction. Deals no damage."
   },
   "4dbb297f-6a80-ca44-a94f-3ea9ed3311e8": {
-    "power": 27,
-    "speed": 49,
-    "cooldown": 2,
-    "effect": "block",
-    "description": "Drops into a tarnished-silver crouch that digs in and shrugs off part of the next strike."
-  },
-  "55cafe03-4a58-0f44-6a27-f9fc6fce881a": {
     "power": 24,
     "speed": 49,
-    "cooldown": 2,
+    "cooldown": 1,
     "effect": "block",
-    "description": "A heavier stomp into a gumdrop stance, braced hard against whatever's coming."
+    "description": "The finest block in the arena: a tarnished-silver crouch that shrugs off most of the round's incoming AND lands the heaviest blow of any stance. You need a round to dig in again — hold it for the hits that matter."
+  },
+  "55cafe03-4a58-0f44-6a27-f9fc6fce881a": {
+    "power": 56,
+    "speed": 49,
+    "cooldown": 3,
+    "effect": "shield",
+    "description": "Stamps down and throws up the thickest wall of candy in the game in a single turn. It soaks damage before your health does and keeps whatever survives for later rounds. Careful: it goes up when YOUR turn comes, not the moment the round starts — a faster foe strikes before it exists. A shield is an investment, not a reaction. Deals no damage, and it is a long wait for the next one."
   },
   "55e05ece-a3f6-a924-3833-2222a0eee6a3": {
-    "power": 41,
+    "power": 18,
     "speed": 75,
     "cooldown": 2,
     "effect": "damage",
@@ -114,95 +165,95 @@
     "description": "Flings TWO razor-edged lime candies in a single breath. They land as two separate strikes — each clashes on its own, each can fell the foe, and each is punished on its own by a counter. If the first one kills, the second is never thrown."
   },
   "61d8b3ec-9a01-0e64-fb45-27d2b858e332": {
-    "power": 51,
+    "power": 34,
     "speed": 28,
     "cooldown": 3,
     "effect": "aoe",
-    "description": "Lobs a jawbreaker packed with popping powder into the middle of the enemy team — it detonates on EVERY living foe at once, each for about 60% of its force. Pick no target: it catches them all. It goes straight through a Guard, but every foe holding a counter still hits back."
+    "description": "Lobs a jawbreaker packed with popping powder into the middle of the enemy team — it detonates on EVERY living foe at once, though the blast is thinner than a focused blow. Pick no target: it catches them all. It goes straight through a Guard, but every foe holding a counter still hits back."
   },
   "628ebc0b-bb19-ee64-68b8-2f66f4b92720": {
     "power": 26,
     "speed": 86,
     "cooldown": 0,
     "effect": "damage",
-    "description": "A blur of paper-thin candy shards — many quick nicks rather than one big cut."
+    "description": "A blur of paper-thin candy shards — many quick nicks rather than one big cut. The heaviest of the quick strikes, and always ready."
   },
   "73eb61fc-70a9-25a4-ba01-0ecaa0d547c5": {
-    "power": 12,
+    "power": 14,
     "speed": 43,
     "cooldown": 0,
     "effect": "shield",
-    "description": "Raises a crystallized sugar shield worth 12 points. It soaks damage before your health does and carries whatever survives into the next round. Deals no damage."
+    "description": "Raises a crystallized sugar shield. It soaks damage before your health does and carries whatever survives into the next round — and you can raise another every single round. Careful: it goes up when YOUR turn comes, not the moment the round starts — a faster foe strikes before it exists. A shield is an investment, not a reaction. Deals no damage."
   },
   "86b323c2-b2fd-2494-ab5e-bc3514bc92d8": {
-    "power": 26,
+    "power": 28,
     "speed": 29,
     "cooldown": 0,
     "effect": "damage",
-    "description": "A basic candy-coated haymaker — dependable weight behind every swing."
+    "description": "A basic candy-coated haymaker — dependable weight behind every swing, and the hardest blow a newcomer can throw. Slow, but never on cooldown."
   },
   "86bd4f81-e96b-9864-78b5-5fc51fbff6a4": {
-    "power": 34,
+    "power": 29,
     "speed": 69,
     "cooldown": 1,
     "effect": "damage",
-    "description": "A frosty strike thrown from range that chills on impact — reach over raw power."
+    "description": "A frosty strike thrown from range that chills on impact — reach and weight together, at the cost of a round to wind up again."
   },
   "8e4753b5-c739-aaf4-ab79-4d333a69cae6": {
-    "power": 24,
+    "power": 33,
     "speed": 45,
     "cooldown": 2,
     "effect": "counter",
-    "description": "A heavier bouncing riposte: strike, then hurl 40% of any blow that lands on you this round back at its owner. Soaks nothing — a big enough hit still fells you before you swing back."
+    "description": "A heavier bouncing riposte: strike hard, then hurl a good part of any blow that lands on you this round back at its owner. It soaks NOTHING — it punishes, and it punishes every attacker who touches you. Two rounds to set it again."
   },
   "92f7b745-c1ff-3cd4-f9cf-0fe0dafb5536": {
-    "power": 54,
+    "power": 33,
     "speed": 30,
     "cooldown": 3,
     "effect": "aoe",
-    "description": "Rains gilded chocolate chips down over the WHOLE enemy team — every living foe is caught in the downpour, each for about 60% of its force. Pick no target: it catches them all. It goes straight through a Guard, but every foe holding a counter still hits back."
+    "description": "Rains gilded chocolate chips down over the WHOLE enemy team — every living foe is caught in the downpour, each taking less than a focused blow would deal. Pick no target: it catches them all. It goes straight through a Guard, but every foe holding a counter still hits back."
   },
   "9f0df0ed-13a6-84c4-781d-9dbf9741c66e": {
     "power": 29,
     "speed": 30,
     "cooldown": 1,
     "effect": "damage",
-    "description": "A crunching chocolate-bar clothesline — solid, no-frills power."
+    "description": "A crunching chocolate-bar clothesline — solid, no-frills power, and a round to reset."
   },
   "9fd0b9ef-2e7d-d344-8926-69f1fab99f65": {
     "power": 26,
-    "speed": 27,
+    "speed": 33,
     "cooldown": 0,
     "effect": "damage",
-    "description": "A fistful of popping candy detonated point-blank — quick to throw, light but always ready."
+    "description": "A fistful of popping candy detonated point-blank — quicker off the mark than a proper haymaker, lighter for it, and always ready."
   },
   "a9d69fc0-a1b8-ae24-cbd7-249760200211": {
-    "power": 25,
+    "power": 24,
     "speed": 76,
     "cooldown": 0,
     "effect": "damage",
-    "description": "A bubblegum bubble lobbed from afar that pops right on target."
+    "description": "A bubblegum bubble lobbed from afar that pops right on target — quick, light and always ready."
   },
   "aa7d8565-99e1-84f4-49d2-8925c2602a7b": {
-    "power": 40,
-    "speed": 28,
+    "power": 31,
+    "speed": 31,
     "cooldown": 2,
     "effect": "damage",
-    "description": "Winds up and hurls a rock-hard jawbreaker — brutal, but you'll see it coming."
+    "description": "Winds up and hurls a rock-hard jawbreaker — brutal, and quicker off the mark than it has any right to be. You will need two rounds before the next one."
   },
   "ad6d5d28-08b4-4304-6b49-11f8f5f9ff1c": {
-    "power": 37,
+    "power": 42,
     "speed": 82,
     "cooldown": 2,
     "effect": "heal",
-    "description": "Pours a caffeinated rush of sugar into an ALLY — or into yourself — restoring 37 health. Pick a friend, not a foe. It cannot raise a fallen treat: a KO is forever, and healing the dead does nothing at all."
+    "description": "Pours a caffeinated rush of sugar into an ALLY — or into yourself — hauling them back on their feet. Pick a friend, not a foe. It cannot raise a fallen treat: a KO is forever, and healing the dead does nothing at all. Deals no damage."
   },
   "b1bd32de-88b2-1204-7b2e-0680677d78c4": {
-    "power": 32,
+    "power": 27,
     "speed": 99,
     "cooldown": 1,
     "effect": "damage",
-    "description": "Slides a caramel puddle underfoot and closes the gap in a flash."
+    "description": "Slides a caramel puddle underfoot and closes the gap in a flash — nothing in the arena is quicker."
   },
   "b889835e-1cd6-d3d4-f9b4-dd1989f49dac": {
     "power": 29,
@@ -212,64 +263,64 @@
     "description": "A cheeky low blow to the jellybean midsection — as rude as it is effective."
   },
   "b96f1ff8-66d5-f244-79fd-260735d4c3d7": {
-    "power": 51,
+    "power": 32,
     "speed": 63,
-    "cooldown": 3,
+    "cooldown": 2,
     "effect": "damage",
-    "description": "An unsettling gut-churner of a hit that leaves the target queasy and off their game."
+    "description": "An unsettling gut-churner of a hit that leaves the target queasy and off their game — the heaviest ordinary blow a champion throws."
   },
   "bbf71f26-78f5-5014-5b4b-a1c3866cb75b": {
-    "power": 51,
+    "power": 32,
     "speed": 56,
     "cooldown": 3,
     "effect": "aoe",
-    "description": "A crackling metallic coating whose charge ARCS to every living foe at once, each for about 60% of its force. Pick no target: the chain finds them all. It goes straight through a Guard, but every foe holding a counter still hits back."
+    "description": "A crackling metallic coating whose charge ARCS to every living foe at once — thinner than a focused blow, but nobody escapes it. Pick no target: the chain finds them all. It goes straight through a Guard, but every foe holding a counter still hits back."
   },
   "bd27fe1c-ce9a-f524-c887-61f9e4d5088b": {
     "power": 25,
     "speed": 64,
     "cooldown": 0,
     "effect": "damage",
-    "description": "A low sweeping kick that scatters loose sugar and knocks the foe off balance."
+    "description": "A low sweeping kick that scatters loose sugar and knocks the foe off balance. Nothing fancy — and nothing to wait for."
   },
   "c28e13b4-cb1f-6ea4-680f-91010a400e10": {
     "power": 25,
     "speed": 88,
     "cooldown": 0,
     "effect": "damage",
-    "description": "A snappy jab aimed straight at the sweet spot — quick and precise."
+    "description": "A snappy jab aimed straight at the sweet spot — quick, precise, and always ready."
   },
   "c6770789-4a1f-7f24-f921-c4dc66c2697a": {
-    "power": 51,
+    "power": 33,
     "speed": 69,
     "cooldown": 3,
     "effect": "aoe",
-    "description": "Sprays a shimmering hail of golden shot across the whole arena — EVERY living foe is peppered for about 60% of its force. Pick no target: the volley covers them all. It goes straight through a Guard, but every foe holding a counter still hits back."
+    "description": "Sprays a shimmering hail of golden shot across the whole arena — EVERY living foe is peppered, though no one of them as hard as a focused blow. Pick no target: the volley covers them all. It goes straight through a Guard, but every foe holding a counter still hits back."
   },
   "e16531a7-33fd-a3e4-69fd-ff10eba65cb7": {
-    "power": 42,
-    "speed": 28,
+    "power": 33,
+    "speed": 26,
     "cooldown": 2,
     "effect": "damage",
-    "description": "A licorice haymaker thrown with everything behind it — heavy, but leaves an opening."
+    "description": "A licorice haymaker thrown with everything behind it — the heaviest swing that isn't an ultimate. Slow, and it leaves an opening."
   },
   "e201f964-8949-9d74-fbee-4ee8786284ca": {
-    "power": 32,
+    "power": 28,
     "speed": 81,
     "cooldown": 1,
     "effect": "aoe",
-    "description": "A fiery cinnamon burst that scatters over EVERY living foe for about 60% of its force — a small splash, but a fast one, and it reaches the whole team. Pick no target. It goes straight through a Guard, but every foe holding a counter still hits back."
+    "description": "A fiery cinnamon burst that scatters over EVERY living foe — a thin splash, but a fast one, and it reaches the whole team. Pick no target. It goes straight through a Guard, but every foe holding a counter still hits back."
   },
   "e55a3d69-9fb4-5194-4812-c2f85e887aca": {
-    "power": 45,
+    "power": 40,
     "speed": 30,
     "cooldown": 3,
     "effect": "damage",
     "max_uses": 2,
-    "description": "A knuckle-duster forged from hardened silver taffy, swung with everything you have — a slow, bone-rattling haymaker. You only have the strength to throw it TWICE per duel."
+    "description": "A knuckle-duster forged from hardened silver taffy, swung with everything you have — the single hardest blow in the game. You only have the strength to throw it TWICE per duel, and you will wait for it in between."
   },
   "fa6144f9-ad49-8124-386f-351a7f1ab546": {
-    "power": 29,
+    "power": 28,
     "speed": 62,
     "cooldown": 1,
     "effect": "damage",
@@ -277,17 +328,17 @@
   },
   "tunables": {
     "hp_base": 100,
-    "hp_per_quality": 30,
+    "hp_per_quality": 10,
     "hp_per_sweetness": 10,
-    "adv_mult_256": 384,
-    "dis_mult_256": 170,
+    "adv_mult_256": 320,
+    "dis_mult_256": 205,
     "block_pct_256": 154,
     "round_cap": 30,
     "team_size": 3,
     "loadout_size": 4,
     "sudden_start": 12,
     "sudden_step": 6,
-    "aoe_pct_256": 154,
+    "aoe_pct_256": 128,
     "guard_pct_256": 179,
     "siphon_pct_256": 128,
     "counter_pct_256": 102
