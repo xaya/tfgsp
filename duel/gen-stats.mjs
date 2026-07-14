@@ -128,10 +128,34 @@ for (const k of TUNABLE_KEYS) {
   if (typeof tunables[k] !== 'number') fail(`tunables.${k} missing or not a number in ${STATS_JSON}`);
 }
 
+// Every key a move entry may carry. Anything else is a TYPO, and a typo must be
+// louder than a default: `"max_use": 1` (missing the s) would otherwise sail
+// through as max_uses=255 -- an "ultimate" with UNLIMITED uses -- and no gate
+// downstream can catch it, because 255 and 1 are perfectly legal values. Golden
+// regenerates cleanly, the C++ partition pin passes, parity is fine. This
+// allow-list is the only thing standing between a one-character slip and a
+// broken signature move.
+const MOVE_KEYS = new Set([
+  'power', 'speed', 'cooldown', 'effect', 'description', 'hits', 'max_uses',
+]);
+
 const entries = dense.map((bp, idx) => {
   const stat = statsByGuid[bp.aid];
   for (const f of ['power', 'speed', 'cooldown', 'effect', 'description']) {
     if (stat[f] === undefined) fail(`duel-stats.json entry ${bp.aid} (${bp.name}) missing "${f}"`);
+  }
+  for (const k of Object.keys(stat)) {
+    if (!MOVE_KEYS.has(k)) {
+      fail(
+        `${bp.aid} (${bp.name}) has unknown key "${k}" — typo? ` +
+          `(expected one of: ${[...MOVE_KEYS].join(', ')})`,
+      );
+    }
+  }
+  // `?? default` swallows an explicit null, so reject it here rather than
+  // letting `"hits": null` silently mean "1".
+  for (const f of ['hits', 'max_uses']) {
+    if (stat[f] === null) fail(`${bp.aid} (${bp.name}) "${f}" is null — omit the key to take the default`);
   }
   if (stat.power < 10 || stat.power > 60) fail(`${bp.aid} (${bp.name}) power ${stat.power} outside [10,60]`);
   if (stat.speed < 1 || stat.speed > 120) fail(`${bp.aid} (${bp.name}) speed ${stat.speed} outside [1,120]`);
@@ -228,8 +252,9 @@ namespace duel {
 // are legal ONLY on MoveType 4 (Blocking); action effects {damage,aoe,heal,siphon}
 // are legal ONLY on MoveType 0-3. gen-stats.mjs enforces this partition in both
 // directions, so an illegal (effect, type) pair can never reach this table.
-enum : uint8_t { kEffDamage = 0, kEffBlock = 1, kEffGuard = 2, kEffAoe = 3,
-                 kEffHeal = 4, kEffSiphon = 5, kEffShield = 6, kEffCounter = 7 };
+enum : uint8_t { ${Object.entries(EFFECT_CODES)
+  .map(([name, code]) => `${EFFECT_CPP_SYMBOL[name]} = ${code}`)
+  .join(', ')} };
 
 struct DuelMoveStat {
   uint16_t power; uint8_t speed; uint8_t cooldown; uint8_t type;

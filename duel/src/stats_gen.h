@@ -20,8 +20,7 @@ namespace duel {
 // are legal ONLY on MoveType 4 (Blocking); action effects {damage,aoe,heal,siphon}
 // are legal ONLY on MoveType 0-3. gen-stats.mjs enforces this partition in both
 // directions, so an illegal (effect, type) pair can never reach this table.
-enum : uint8_t { kEffDamage = 0, kEffBlock = 1, kEffGuard = 2, kEffAoe = 3,
-                 kEffHeal = 4, kEffSiphon = 5, kEffShield = 6, kEffCounter = 7 };
+enum : uint8_t { kEffDamage = 0, kEffBlock = 1, kEffGuard = 2, kEffAoe = 3, kEffHeal = 4, kEffSiphon = 5, kEffShield = 6, kEffCounter = 7 };
 
 struct DuelMoveStat {
   uint16_t power; uint8_t speed; uint8_t cooldown; uint8_t type;
