@@ -104,6 +104,38 @@ Reserve the bytes in Wave 1's version bump; implement after Waves 1–2 prove th
 Canonicality rule: **one `u8` turn-counter per status** (0 = absent). A shared flags+duration byte is
 NOT canonical (two encodings for one logical state) and the buffers get hashed/signed.
 
+## Wave 1b — INFORMATION (the cheapest depth in the whole design)
+
+Owner: *"when choose the attacks, we see a lot more info for the attacks, what it does, what it's
+best against. also the treats weaknesses etc."* — and, on card-ifying the moves: *"nah is fine how
+is"* → **keep the current move-button HUD; enrich it.**
+
+This is **not just UI**. The research finding: *in a blind-pick game the information comes from the
+OPTION SET, not the choice.* Public loadouts + public cooldowns give you poker's exact structure —
+you know their **range**, not their **hand**. That converts the clash pentagon from a coin flip into
+**inference**, which is the difference between luck and skill. The data already exists; we simply
+aren't showing it. Ship this in Wave 1, before any new verb.
+
+**A. Rich move info (on the picking HUD, for the move you're about to choose):**
+- **What it does** — the per-move `description` (owner's ask), authored in `duel-stats.json`.
+- **What it's best against / loses to** — the clash pentagon, spelled out in words, not just a
+  colour. (The owner has now asked twice what the colours mean → the game must say it.)
+- Power · speed (who acts first) · cooldown · effect (AoE / heal / siphon / stun / guard …).
+
+**B. Derived treat "weakness" (there is no intrinsic element in this game — it is derived):**
+A treat has **no** type of its own; its vulnerability is **read off its loadout**. If an enemy's
+moves are mostly Heavy, then Tricky and Distance beat Heavy → *"vulnerable to Tricky / Distance"*.
+Show, per enemy treat:
+- its **move pool** (what it *could* do — its range),
+- which of those are **on cooldown right now** (what it *cannot* do this round — this is the
+  load-bearing one; it narrows the range and is already in state),
+- the **derived weakness/strength** summary computed from the still-available moves.
+
+**C. Own-team readout:** the same, so you can see what your treat is currently good/bad into.
+
+Design constraint: **legible to a casual player.** Plain words ("Strong vs Speedy & Blocking"), not
+a matrix. Progressive disclosure — a tap/hover expands the detail; the button stays clean.
+
 ## Move → ability mapping (names drive it)
 
 Owner: *"can check the names for what we can change them to."* The existing names are a gift —
