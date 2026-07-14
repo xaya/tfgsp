@@ -320,3 +320,7 @@ Still open from the audit (tracked):
 Any roconfig VALUE change (#1, #2, #5) ⇒ full clean rebuild + golden regen (acceptable
 pre-launch). Batch them into one regen where possible. Always run the full suite afterward
 (golden byte-identical + unit + reorg + reorg-game + database).
+
+## Economy: crystal-price audit + live tuning (owner-requested 2026-07-14)
+
+- [ ] **Audit the crystal economy** end-to-end (faucet: goody bundles/WCHI -> sinks: cook, listing fee, tournament join, sweeteners) and **migrate every crystal price out of the consensus-pinned roconfig blob into the runtime `parameters` KV** (the Soccerverse pattern `database/params.hpp` already implements), so prices are admin-tunable live via `g/tf` with **no rebuild and no fork**. Today a price change is a HARD FORK, which is backwards for the numbers most likely to need post-launch tuning. **Must land before mainnet genesis is pinned.** Full detail: `docs/economy-live-tuning-backlog.md`.
