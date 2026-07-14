@@ -45,23 +45,46 @@ const MOVE_TYPE_NAMES = ['Heavy', 'Speedy', 'Tricky', 'Distance', 'Blocking'];
 // groups, each legal on exactly one side of the MoveType 4 (Blocking) split —
 // see the partition check in the entries map below.
 //
-// `groupheal` (combat-depth Task 6) is the 9th — the effect table is compile-time,
-// so a new verb costs ZERO wire bytes: `effect` is a stat-table column, never a
-// state/orders field. Adding it here is the whole cost.
-const EFFECT_CODES = { damage: 0, block: 1, guard: 2, aoe: 3, heal: 4, siphon: 5, shield: 6, counter: 7, groupheal: 8 };
+// `groupheal` (combat-depth Task 6) is the 9th and `groupshield` (Task 7's fairness
+// pass) the 10th — the effect table is compile-time, so a new verb costs ZERO wire
+// bytes: `effect` is a stat-table column, never a state/orders field. Adding it here
+// is the whole cost. THAT is what makes "rarity buys VERBS, not NUMBERS" affordable:
+// the answer to "a q4's shield is bigger" is never a smaller number, it is a NEW VERB.
+const EFFECT_CODES = {
+  damage: 0, block: 1, guard: 2, aoe: 3, heal: 4,
+  siphon: 5, shield: 6, counter: 7, groupheal: 8, groupshield: 9,
+};
 const EFFECT_CPP_SYMBOL = {
   damage: 'kEffDamage', block: 'kEffBlock', guard: 'kEffGuard', aoe: 'kEffAoe',
   heal: 'kEffHeal', siphon: 'kEffSiphon', shield: 'kEffShield', counter: 'kEffCounter',
-  groupheal: 'kEffGroupHeal',
+  groupheal: 'kEffGroupHeal', groupshield: 'kEffGroupShield',
 };
-const STANCE_EFFECTS = new Set(['block', 'guard', 'shield', 'counter']); // legal ONLY on MoveType 4
-const ACTION_EFFECTS = new Set(['damage', 'aoe', 'heal', 'siphon', 'groupheal']); // legal ONLY on MoveType 0-3
+// legal ONLY on MoveType 4 (Blocking)
+const STANCE_EFFECTS = new Set(['block', 'guard', 'shield', 'counter', 'groupshield']);
+// legal ONLY on MoveType 0-3
+const ACTION_EFFECTS = new Set(['damage', 'aoe', 'heal', 'siphon', 'groupheal']);
 // The effects whose order NAMES NOBODY: the engine REQUIRES the kTargetAll (0xFE)
 // sentinel in their target byte, and FORBIDS it for every other effect (one
 // logical order, exactly one byte encoding — game channels sign order bytes).
 // Kept here as the single written-down statement of that rule; the engine's
 // duel_apply enforces it, and duel/test/test_main.cpp pins both directions.
-const TARGET_ALL_EFFECTS = new Set(['aoe', 'groupheal']);
+//
+// Note it CROSSES the stance/action split: `aoe` and `groupheal` are actions,
+// `groupshield` is a stance. "Names nobody" is about REACH, not about which side of
+// the MoveType 4 line the move sits on — the two rules are orthogonal.
+const TARGET_ALL_EFFECTS = new Set(['aoe', 'groupheal', 'groupshield']);
+// Cross-check the two partitions against each other at codegen time, so a future
+// verb can never be added to TARGET_ALL_EFFECTS without also being classified.
+for (const e of TARGET_ALL_EFFECTS) {
+  if (!STANCE_EFFECTS.has(e) && !ACTION_EFFECTS.has(e)) {
+    fail(`TARGET_ALL_EFFECTS contains "${e}", which is in neither STANCE_EFFECTS nor ACTION_EFFECTS`);
+  }
+}
+for (const e of Object.keys(EFFECT_CODES)) {
+  if (STANCE_EFFECTS.has(e) === ACTION_EFFECTS.has(e)) {
+    fail(`effect "${e}" must be in EXACTLY ONE of STANCE_EFFECTS / ACTION_EFFECTS`);
+  }
+}
 
 function fail(msg) {
   console.error(`gen-stats.mjs: ${msg}`);
@@ -138,9 +161,10 @@ const TUNABLE_KEYS = [
   'sudden_start',
   'sudden_step',
   // The new-verb percentages, all four now consumed by the resolver: AoE splash %
-  // (Task 5 — and REUSED by Task 6's group-heal as its per-head spread: healing
-  // everyone costs potency exactly as spraying everyone does), guard intercept %
-  // (Task 4), siphon lifesteal % (Task 6), counter reflect % (Task 4).
+  // (Task 5 — and REUSED by Task 6's group-heal and Task 7's group-shield as their
+  // per-head spread: healing or warding everyone costs potency exactly as spraying
+  // everyone does), guard intercept % (Task 4), siphon lifesteal % (Task 6), counter
+  // reflect % (Task 4).
   'aoe_pct_256',
   'guard_pct_256',
   'siphon_pct_256',
@@ -281,24 +305,30 @@ namespace duel {
 // MoveType (matches database/fighter.hpp pxd::MoveType / the proto MoveType field):
 // 0 Heavy, 1 Speedy, 2 Tricky, 3 Distance, 4 Blocking.
 //
-// Move effects (combat-depth Tasks 3 + 6): stance effects {block,guard,shield,
-// counter} are legal ONLY on MoveType 4 (Blocking); action effects {damage,aoe,
-// heal,siphon,groupheal} are legal ONLY on MoveType 0-3. gen-stats.mjs enforces
-// this partition in both directions, so an illegal (effect, type) pair can never
-// reach this table -- as it enforces that hits > 1 is legal ONLY on kEffDamage.
+// Move effects (combat-depth Tasks 3 + 6 + 7): stance effects {block,guard,shield,
+// counter,groupshield} are legal ONLY on MoveType 4 (Blocking); action effects
+// {damage,aoe,heal,siphon,groupheal} are legal ONLY on MoveType 0-3. gen-stats.mjs
+// enforces this partition in both directions, so an illegal (effect, type) pair can
+// never reach this table -- as it enforces that hits > 1 is legal ONLY on kEffDamage.
+//
+// A SECOND, ORTHOGONAL rule: {aoe, groupheal, groupshield} NAME NOBODY -- their order's
+// target byte MUST be the kTargetAll sentinel, and every other effect FORBIDS it.
 enum : uint8_t { ${Object.entries(EFFECT_CODES)
   .map(([name, code]) => `${EFFECT_CPP_SYMBOL[name]} = ${code}`)
   .join(', ')} };
 
 // WHAT \`power\` MEANS, effect by effect (audited against engine.cpp's resolve loop;
-// the full rule + the trade rule + the flat-throughput ladders live in
+// the full rule + the trade rule + the FLAT stance ladders live in
 // duel/data/duel-stats.json's "_readme"):
 //   damage/siphon/block/counter  damage dealt by ONE strike (a block and a counter move
 //                                DO swing -- the stance comes with the blow)
 //   aoe                          damage dealt to every living foe, taxed by aoe_pct_256
-//   shield                       shield points granted   } no damage at all --
-//   heal                         health restored to one ally } the whole turn IS the utility
+//   shield                       shield points granted to the caster } no damage at all --
+//   heal                         health restored to one ally         } the whole turn IS
 //   groupheal                    health restored per living ally, taxed by aoe_pct_256
+//   groupshield                  shield points granted PER LIVING ALLY (caster included),
+//                                taxed by aoe_pct_256 -- the same tax, for the same reason:
+//                                reaching everyone costs per-head potency
 //   guard                        *** UNUSED *** -- the guard branch never reads power. It is
 //                                pinned at the table minimum so it can't be mistaken for a lever.
 struct DuelMoveStat {
@@ -332,9 +362,9 @@ struct DuelTunables {
   // The new-verb percentages (combat-depth Tasks 4/5/6), all four consumed by
   // duel_apply:
   //   aoe_pct_256     an AoE's damage per victim, as a fraction of a normal blow
-  //                   -- and, DELIBERATELY THE SAME NUMBER, a group-heal's
-  //                   restore per ally: reaching everyone costs per-head potency,
-  //                   and that is one idea, not two.
+  //                   -- and, DELIBERATELY THE SAME NUMBER, a group-heal's restore
+  //                   AND a group-shield's grant per ally: reaching everyone costs
+  //                   per-head potency, and that is one idea, not three.
   //   guard_pct_256   the fraction of an intercepted blow the guardian takes.
   //   siphon_pct_256  the fraction of the hp a siphon actually DRAINED (never the
   //                   force it landed) that comes back as healing.
@@ -416,16 +446,18 @@ const ts = `/**
 export type DuelMoveType = 0 | 1 | 2 | 3 | 4;
 
 /**
- * Move effect (combat-depth Tasks 3 + 6, mirrors kEff* in stats_gen.h). Partitions into
+ * Move effect (combat-depth Tasks 3 + 6 + 7, mirrors kEff* in stats_gen.h). Partitions into
  * stance effects — legal ONLY on type 4 (Blocking) — and action effects — legal ONLY
  * on type 0-3; gen-stats.mjs enforces that split in both directions at codegen time.
  *
- * 'aoe' and 'groupheal' are the two that NAME NOBODY: their order's target byte must be
- * the TARGET_ALL sentinel (see src/duel/targeting.ts) — the engine rejects a slot index
- * there, and rejects TARGET_ALL on everything else.
+ * 'aoe', 'groupheal' and 'groupshield' are the three that NAME NOBODY: their order's target
+ * byte must be the TARGET_ALL sentinel (see src/duel/targeting.ts) — the engine rejects a
+ * slot index there, and rejects TARGET_ALL on everything else. That rule is ORTHOGONAL to the
+ * stance/action split ('groupshield' is a stance; the other two are actions).
  */
 export type DuelEffect =
-  | 'damage' | 'block' | 'guard' | 'aoe' | 'heal' | 'siphon' | 'shield' | 'counter' | 'groupheal';
+  | 'damage' | 'block' | 'guard' | 'aoe' | 'heal'
+  | 'siphon' | 'shield' | 'counter' | 'groupheal' | 'groupshield';
 
 export interface DuelMoveStat {
   guid: string;
@@ -437,9 +469,11 @@ export interface DuelMoveStat {
    * the authoring rules live in tfgsp-polygon/duel/data/duel-stats.json's "_readme"):
    *   damage/siphon/block/counter — damage dealt by ONE strike (a block/counter move DOES swing)
    *   aoe                         — damage per living foe, taxed by aoe_pct_256
-   *   shield                      — shield points granted    (no damage at all)
+   *   shield                      — shield points granted to the caster (no damage at all)
    *   heal                        — health restored to an ally (no damage at all)
    *   groupheal                   — health restored per living ally, taxed by aoe_pct_256
+   *   groupshield                 — shield points per living ally (caster included), taxed by
+   *                                 aoe_pct_256 (no damage at all)
    *   guard                       — UNUSED: a guard deals no damage and never reads power.
    */
   power: number;
@@ -480,7 +514,8 @@ export interface DuelTunables {
   /** Sudden-death chip = sudden_step * (playedRound - sudden_start + 1) — escalates, ignores block/shield. */
   sudden_step: number;
   /** AoE damage per victim, as a fraction of a normal blow — and, the same number by design,
-   *  a group-heal's restore per ally (reaching everyone costs per-head potency). */
+   *  a group-heal's restore AND a group-shield's grant per ally (reaching everyone costs
+   *  per-head potency, in every direction: damage, healing and warding alike). */
   aoe_pct_256: number;
   /** The fraction of an intercepted blow that the GUARDIAN takes instead of the ward. */
   guard_pct_256: number;

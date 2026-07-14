@@ -79,10 +79,10 @@ constexpr uint32_t kOutCap = 4096;
 // Longest possible entry (WriteLogEntry's schema, every field at its widest --
 // kind "counter"/"recover" = 9 bytes with quotes, move/target/via/absorbed <=
 // 255 = 3 digits, dmg <= 108 (the round-29 sudden-death chip) = 3, targetHp <=
-// 230 = 3, clash "adv" = 5, blocked/ko "false" = 5), plus the comma that
+// 200 = 3, clash "adv" = 5, blocked/ko "false" = 5), plus the comma that
 // separates it from the previous entry:
 //   {"side":0,"slot":0,"kind":"counter","move":255,"target":255,"via":255,
-//    "clash":"adv","dmg":108,"blocked":false,"absorbed":255,"targetHp":230,
+//    "clash":"adv","dmg":108,"blocked":false,"absorbed":255,"targetHp":200,
 //    "ko":false}                                          = 151 B  (+1 comma)
 //                                                         = 152 B / entry
 // (Cross-check: a 1v1 recover-only round measures 325 B = 2 x 145 + 1 comma +
@@ -101,14 +101,15 @@ constexpr uint32_t kOutCap = 4096;
 // + 10 chips = 65 entries ~ 9.9 KB. The over-count is what we size against.)
 // static_assert'd below, against the same formula the code uses.
 //
-// The AoE is STILL the worst actor after combat-depth Task 6, so the arithmetic
-// above stands unchanged -- re-checked verb by verb, since a new one that could
-// out-log it would silently turn a legal round into a REJECTED one:
-//   group-heal  <= 5 heal entries (one per living ally), and it draws no counters = 5
-//   hits: 2     <= 2 hit entries + 2 counters (each strike is a blow)             = 4
-//   siphon      <= 1 hit + 1 counter + 1 heal entry (its own lifesteal)           = 3
+// The AoE is STILL the worst actor after combat-depth Tasks 6 and 7, so the
+// arithmetic above stands unchanged -- re-checked verb by verb, since a new one that
+// could out-log it would silently turn a legal round into a REJECTED one:
+//   group-heal   <= 5 heal entries (one per living ally), and it draws no counters  = 5
+//   group-shield <= 5 shield entries (one per living ally), and it draws none either = 5
+//   hits: 2      <= 2 hit entries + 2 counters (each strike is a blow)              = 4
+//   siphon       <= 1 hit + 1 counter + 1 heal entry (its own lifesteal)            = 3
 // -- all under the AoE's 10, which is what kLogEntriesPerActor encodes. Nor is any
-// entry WIDER: "heal" is shorter than "counter", and a heal's dmg (<= a move's
+// entry WIDER: "heal"/"shield" are shorter than "counter", and their dmg (<= a move's
 // power, 60) is shorter than the 3-digit chip the 152 B figure was sized on.
 //
 // Running out of log buffer is NOT a truncation we can ship (the client's
@@ -663,16 +664,22 @@ int32_t duel_apply(const uint8_t* st, uint32_t stLen, const uint8_t* ord,
           if (t >= teamSize || t == slot || s.treats[side][t].hp == 0) {
             return -1;
           }
-        } else if (moveEff == duel::kEffAoe || moveEff == duel::kEffGroupHeal) {
-          // THE kTargetAll RULE (Task 5, generalised by Task 6): the effects that
-          // name NOBODY -- an AoE hits every living enemy, a group-heal restores
-          // every living ally -- REQUIRE exactly kTargetAll, and every other
-          // effect FORBIDS it (the `t >= teamSize` check below catches 0xFE,
-          // which is >= any legal team_size). Accepting one of these "aimed" at a
-          // slot and then ignoring the byte would give ONE logical order MANY
-          // byte-encodings, and game channels SIGN order bytes: one encoding per
-          // logical order is the contract. (Neither needs a living target to be
-          // legal: with none left, they simply whiff.)
+        } else if (moveEff == duel::kEffAoe || moveEff == duel::kEffGroupHeal ||
+                   moveEff == duel::kEffGroupShield) {
+          // THE kTargetAll RULE (Task 5, generalised by Task 6, and again by Task 7's
+          // group-shield): the effects that name NOBODY -- an AoE hits every living
+          // enemy, a group-heal restores every living ally, a group-shield WARDS every
+          // living ally -- REQUIRE exactly kTargetAll, and every other effect FORBIDS it
+          // (the `t >= teamSize` check below catches 0xFE, which is >= any legal
+          // team_size). Accepting one of these "aimed" at a slot and then ignoring the
+          // byte would give ONE logical order MANY byte-encodings, and game channels SIGN
+          // order bytes: one encoding per logical order is the contract. (None of the
+          // three needs a living target to be legal: with none left, they simply whiff --
+          // and a group-shield always has at least the caster, who is alive by definition
+          // here.)
+          //
+          // Note this rule CROSSES the stance/action split: the group-shield is a STANCE
+          // (MoveType 4) and the other two are actions. "Names nobody" is about REACH.
           if (t != wire::kTargetAll) {
             return -1;
           }
@@ -700,23 +707,31 @@ int32_t duel_apply(const uint8_t* st, uint32_t stLen, const uint8_t* ord,
   // THE STANCE SPLIT (combat-depth Task 4). MoveType 4 (Blocking) is the stance
   // corner, but it is no longer one verb with four power levels: the stance a
   // move grants is its EFFECT, and each buys exactly ONE thing.
-  //   block   -> the flat damage reduction (kTun.block_pct_256 -- the BIGGEST of
-  //              the four, which is what makes a plain block worth the turn)
-  //   guard   -> intercept a single-target blow aimed at an ALLY (below)
-  //   shield  -> a persisting absorb pool, raised at the caster's initiative in
-  //              the resolve loop (it is an action, not a round-wide stance)
-  //   counter -> reflect part of a landed blow back at whoever threw it
-  // guard/shield/counter deliberately do NOT also reduce incoming damage. That
-  // is what makes the four real CHOICES rather than strict upgrades of each
-  // other -- and it is the direct answer to "what's the point doing block".
+  //   block       -> the flat damage reduction (kTun.block_pct_256 -- the BIGGEST of
+  //                  the five, which is what makes a plain block worth the turn)
+  //   guard       -> intercept a single-target blow aimed at an ALLY (below)
+  //   shield      -> a persisting absorb pool on the CASTER, raised at its own
+  //                  initiative in the resolve loop (an action, not a round-wide stance)
+  //   groupshield -> that same pool, on EVERY LIVING ALLY at once (combat-depth Task 7)
+  //   counter     -> reflect part of a landed blow back at whoever threw it
+  // guard/shield/groupshield/counter deliberately do NOT also reduce incoming damage.
+  // That is what makes the five real CHOICES rather than strict upgrades of each other
+  // -- and it is the direct answer to "what's the point doing block".
   //
-  // Combat-depth Task 7 finished that answer in the DATA, which is where the
-  // complaint actually lived: q4 used to hold TWO plain `block` moves that were
-  // strictly worse than the q1 one (same effect, longer cooldown, nothing to show
-  // for it). One is now the game's biggest SHIELD, the other the best BLOCK, and
-  // every stance ladder is flat in throughput across qualities -- the rarer move
-  // lands the same points per round in one bigger, rarer lump. Rarity buys VERBS
-  // and BURST, never damage per round. (duel/data/duel-stats.json "_readme";
+  // Only `block` and `guard` are ROUND-WIDE stances, so only they are read HERE;
+  // shield/groupshield/counter resolve at the caster's own initiative, in the loop below.
+  //
+  // *** THE DATA IS THE OTHER HALF OF THE ANSWER, and it is where the unfairness lived. ***
+  // Every stance ladder is now literally FLAT: the same verb is the SAME MOVE at every
+  // quality -- same power, same cooldown, same speed. A q1's shield and a q3's shield are
+  // interchangeable. That is not redundancy: a fighter only ever rolls moves of its OWN
+  // quality (database/recipe.cpp), so each quality NEEDS its own copy of the baseline verbs.
+  //
+  // The shield ladder used to climb 14/28/42/56 across q1..q4, defended as "flat, because
+  // power/(cooldown+1) is 14 at every tier". It was NOT flat. A TURN is the scarce
+  // resource, not a cooldown, and per turn spent that ladder was a clean 4x for the Epic.
+  // Rarity now buys strictly MORE VERBS -- q4 alone holds block AND guard AND counter AND
+  // the group-shield -- and never a bigger number. (duel/data/duel-stats.json "_readme";
   // `duel/test/duel_tests --balance-report` is the gate that keeps it true.)
   bool blockStance[2][wire::kMaxTeamSize] = {};
   // guardedBy[side][slot] = the slot of the ally covering it, or kNoGuardian.
@@ -849,6 +864,28 @@ int32_t duel_apply(const uint8_t* st, uint32_t stLen, const uint8_t* ord,
       continue;
     }
 
+    // ========================== THE ONE SHIELD GRANT (Task 7) ==========================
+    //
+    // *** KO IS PERMANENT. A SHIELD ON A CORPSE MUST BE A NO-OP. ***
+    //
+    // Every shield point any treat ever GAINS -- self shield, group-shield -- goes through
+    // this one function, for the same reason HealTreat exists below: so that the `hp == 0`
+    // guard is written ONCE and cannot be forgotten at a call site. A dead treat is not
+    // warded; it is not half-revived by a shield pool sitting on a corpse either.
+    //
+    // It also CLAMPS at the u8 pool ceiling (255) and returns the points ACTUALLY granted,
+    // which is what the log reports -- so the client floats the number the player really
+    // got, not the one the move promised.
+    auto ShieldTreat = [](TreatState& t, uint32_t amount) -> uint32_t {
+      if (t.hp == 0) {
+        return 0; // *** NO WARDING THE DEAD. ***
+      }
+      const uint32_t room = 255u - t.shield; // u8 pool: raising it CLAMPS
+      const uint32_t gain = (amount < room) ? amount : room;
+      t.shield = static_cast<uint8_t>(t.shield + gain);
+      return gain;
+    };
+
     // SHIELD (combat-depth Task 4): a self-absorb pool worth the move's power,
     // raised AT THE CASTER'S INITIATIVE -- it is an action, not a round-wide
     // stance, so a blow that resolves BEFORE the caster acts finds no shield up
@@ -856,11 +893,43 @@ int32_t duel_apply(const uint8_t* st, uint32_t stLen, const uint8_t* ord,
     // across rounds until something eats it). It deals no damage and ignores
     // the order's target byte.
     if (eff == duel::kEffShield) {
-      const uint32_t room = 255u - actor.shield; // u8 pool: raising it CLAMPS
-      const uint32_t gain = (power < room) ? power : room;
-      actor.shield = static_cast<uint8_t>(actor.shield + gain);
+      const uint32_t gain = ShieldTreat(actor, power); // the actor is alive: the guard is moot here
       WriteLogEntry(&log, nEntries++ == 0, aS, aL, "shield", mvIdx,
                     wire::kTargetNone, "neu", gain, false, actor.hp, false);
+      continue;
+    }
+
+    // GROUP-SHIELD (combat-depth Task 7). The shape of a group-heal, in the other currency:
+    // it names NOBODY (its target byte is kTargetAll, checked above) and grants
+    // (power * aoe_pct_256) >> 8 shield points to EVERY LIVING ALLY, THE CASTER INCLUDED,
+    // in SLOT ORDER.
+    //
+    // *** THIS IS THE WHOLE "RARITY BUYS VERBS, NOT NUMBERS" ARGUMENT, IN ONE MOVE. ***
+    // The q4 Blocking corner used to answer "what does an Epic get?" with a BIGGER NUMBER:
+    // a 56-point self-shield against a Common's 14, i.e. FOUR TIMES the effective HP per
+    // turn spent. Per turn -- not per cooldown -- is the honest denominator, because a TURN
+    // is the scarce resource; the old "flat power/(cooldown+1)" defence was an artifact of
+    // the metric. So the number is gone: the caster now gets (56*128)>>8 = 28 points,
+    // EXACTLY what the flat q1/q2/q3 shield grants for its turn. What the Epic buys instead
+    // is REACH -- the same 28 lands on its whole team. A verb, not a stat.
+    //
+    // aoe_pct_256 is REUSED as the spread multiplier (as the group-heal reuses it, and for
+    // the identical reason): reaching everyone costs per-head potency. One idea, not three.
+    //
+    // DEAD ALLIES GET NOTHING and log nothing -- ShieldTreat's guard, the mirror of
+    // HealTreat's. A living ally whose pool is already at the 255 ceiling still LOGS, at
+    // dmg 0: it received the ward, it simply had no room for it.
+    if (eff == duel::kEffGroupShield) {
+      const uint32_t amount = (power * kTun.aoe_pct_256) >> 8;
+      for (uint32_t sSlot = 0; sSlot < teamSize; ++sSlot) {
+        TreatState& ally = s.treats[aS][sSlot];
+        if (ally.hp == 0) {
+          continue; // KO is permanent: a corpse is not warded and logs nothing
+        }
+        const uint32_t gain = ShieldTreat(ally, amount);
+        WriteLogEntry(&log, nEntries++ == 0, aS, aL, "shield", mvIdx, sSlot, "neu", gain,
+                      false, ally.hp, false);
+      }
       continue;
     }
 
@@ -1192,8 +1261,10 @@ int32_t duel_apply(const uint8_t* st, uint32_t stLen, const uint8_t* ord,
   // guarantees the duel ENDS -- and, more importantly, what stops turtling
   // from becoming the meta: the round cap's tiebreak is by HP-sum, which turns
   // into a win-on-time button the moment healing exists (Task 6). With the
-  // authored 12/6, the chip sums past the largest reachable max_hp (230, at
-  // hp_per_quality 10) by round 20, so the cap is effectively unreachable.
+  // authored 12/6, the chip sums past the largest reachable max_hp (200 = sw10,
+  // now that Task 7 cut hp_per_quality to 0 -- quality buys no stats at all, so
+  // max_hp is hp_base + sweetness * hp_per_sweetness and nothing else) well before
+  // round 20, so the cap is effectively unreachable.
   //
   // It is NOT an attack -- it is the arena. It ignores the clash pentagon, the
   // block stance, the shield pool and the guard redirect alike (combat-depth
