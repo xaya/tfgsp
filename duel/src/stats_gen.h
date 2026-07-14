@@ -75,11 +75,19 @@ struct DuelTunables {
   uint8_t round_cap;
   uint8_t team_size;
   uint8_t loadout_size;
+  // Sudden death (combat-depth Task 2): from round `sudden_start` on, the arena
+  // collapses -- every LIVING treat takes sudden_step * (playedRound -
+  // sudden_start + 1) chip damage at end of round. It escalates past any
+  // reachable max_hp well before round_cap, so the cap's Sum-HP tiebreak stops
+  // being a win-on-time button (and turtling stops being a strategy).
+  uint8_t sudden_start;
+  uint8_t sudden_step;
 };
 
 constexpr DuelTunables kTun = {
     100, 30, 10,
     384, 170, 102,
-    30, 3, 4};
+    30, 3, 4,
+    12, 6};
 
 } // namespace duel

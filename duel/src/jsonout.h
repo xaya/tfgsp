@@ -6,11 +6,15 @@
 // pull WASI host imports through (the whole point of the zero-import
 // reactor build — see duel/build.sh). Every helper is `inline` (safe to
 // include from multiple translation units) and bounds-checked against
-// `JsonBuf::cap`: writes past capacity are silently dropped rather than
-// overflowing. Buffers are sized generously by callers; a truncated JSON
-// output is a "buffer too small" bug to catch in tests, not something this
-// header tries to report at runtime.
-
+// `JsonBuf::cap`: a write past capacity is dropped rather than overflowing.
+//
+// A dropped write is NOT silent (combat-depth Task 2): it latches
+// `JsonBuf::overflow`, and duel_apply turns that flag into a hard -1 reject
+// rather than handing the client TRUNCATED JSON (which its
+// `JSON.parse(readLog())` would throw on). Every writer below — including the
+// PARTIAL-write paths, where jb_raw stops mid-string and jb_u32 stops
+// mid-number — must set the flag; a writer that drops a byte without flagging
+// defeats the whole guard.
 #pragma once
 
 #include <cstdint>
@@ -21,11 +25,20 @@ struct JsonBuf {
   uint8_t* p;
   uint32_t cap;
   uint32_t len;
+  // Latched true the moment ANY byte is dropped for want of capacity. Never
+  // cleared by a writer — callers check it once, after building the whole
+  // document. Default-initialized so an aggregate `JsonBuf{p, cap, 0}` is
+  // still correct.
+  bool overflow = false;
 };
 
 // Append `n` raw bytes verbatim.
 inline void jb_raw(JsonBuf* b, const char* s, uint32_t n) {
-  for (uint32_t i = 0; i < n && b->len < b->cap; ++i) {
+  for (uint32_t i = 0; i < n; ++i) {
+    if (b->len >= b->cap) {
+      b->overflow = true;
+      return;
+    }
     b->p[b->len++] = static_cast<uint8_t>(s[i]);
   }
 }
@@ -33,7 +46,11 @@ inline void jb_raw(JsonBuf* b, const char* s, uint32_t n) {
 // Append a NUL-terminated literal (e.g. punctuation/field-name fragments
 // like "{\"hp\":").
 inline void jb_raw(JsonBuf* b, const char* s) {
-  while (*s != '\0' && b->len < b->cap) {
+  while (*s != '\0') {
+    if (b->len >= b->cap) {
+      b->overflow = true;
+      return;
+    }
     b->p[b->len++] = static_cast<uint8_t>(*s++);
   }
 }
@@ -54,7 +71,11 @@ inline void jb_u32(JsonBuf* b, uint32_t v) {
     tmp[n++] = static_cast<char>('0' + (v % 10));
     v /= 10;
   } while (v != 0);
-  while (n > 0 && b->len < b->cap) {
+  while (n > 0) {
+    if (b->len >= b->cap) {
+      b->overflow = true; // stopped MID-NUMBER: the digits already written are a lie
+      return;
+    }
     b->p[b->len++] = static_cast<uint8_t>(tmp[--n]);
   }
 }

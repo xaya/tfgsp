@@ -11,6 +11,18 @@ if [[ "$mode" == native || "$mode" == all || "$mode" == test || "$mode" == golde
   "$NAT" -O2 -std=c++17 -fno-exceptions -fno-rtti -Wall -Wextra -Werror \
     -I"$here/src" "$SRC" "$here/test/test_main.cpp" -o "$here/test/duel_tests"
 fi
+# duel_tests_logcap: the SAME sources with a deliberately tiny log buffer
+# (-DDUEL_LOG_CAP, engine.cpp), so duel_apply's "log overflowed -> reject the
+# round" path is exercised by a REAL apply call. At the shipped 32 KiB cap no
+# legal round can overflow, so without this the guard would be untestable
+# end-to-end. It runs ONLY the log-cap test (`--logcap-only`) -- every other
+# test would (correctly) fail against a 320-byte log buffer. The shipped
+# native/wasm builds above never define DUEL_LOG_CAP.
+if [[ "$mode" == test || "$mode" == all ]]; then
+  "$NAT" -O2 -std=c++17 -fno-exceptions -fno-rtti -Wall -Wextra -Werror \
+    -DDUEL_LOG_CAP=320 \
+    -I"$here/src" "$SRC" "$here/test/test_main.cpp" -o "$here/test/duel_tests_logcap"
+fi
 # sanitize: same native test binary under ASan+UBSan (abort on any UB), the
 # one-shot gate for Task 4's self-play soak + byte-flip/truncation fuzz. Uses a
 # host compiler that ships the sanitizer runtimes (emsdk clang doesn't), so
@@ -28,7 +40,10 @@ if [[ "$mode" == wasm || "$mode" == all || "$mode" == parity ]]; then
     -I"$here/src" "$SRC" -o "$here/engine.wasm"
   sha256sum "$here/engine.wasm" | awk '{print $1}' > "$here/engine.wasm.sha256"
 fi
-if [[ "$mode" == test || "$mode" == all ]]; then "$here/test/duel_tests"; fi
+if [[ "$mode" == test || "$mode" == all ]]; then
+  "$here/test/duel_tests"
+  "$here/test/duel_tests_logcap" --logcap-only
+fi
 # golden: dump every behavioral vector from the just-built NATIVE binary as
 # golden JSON lines (test/golden.json is a build artifact -- see .gitignore
 # -- regenerate it any time engine.cpp/test_main.cpp change).

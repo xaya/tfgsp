@@ -102,6 +102,67 @@ void test_jsonout_never_writes_past_cap() {
   CHECK(b.len == 4);
 }
 
+// jsonout (combat-depth Task 2): a dropped write must LATCH JsonBuf::overflow.
+// jsonout.h drops past-cap writes by design, and duel_apply turns this flag
+// into a hard reject rather than handing the client truncated JSON — so every
+// writer must flag, INCLUDING the partial-write paths (jb_raw stopping
+// mid-string, jb_u32 stopping mid-number). A writer that drops a byte silently
+// defeats the whole guard, so each is pinned separately below.
+void test_jsonout_overflow_flag() {
+  uint8_t buf[32];
+
+  // A buffer that exactly fits its content does NOT overflow (an off-by-one
+  // here would reject every legitimate round).
+  {
+    duel::JsonBuf b{buf, 5, 0};
+    duel::jb_raw(&b, "12345");
+    CHECK(b.len == 5);
+    CHECK(b.overflow == false);
+  }
+  // jb_raw (NUL-terminated) stopping mid-string.
+  {
+    duel::JsonBuf b{buf, 4, 0};
+    duel::jb_raw(&b, "hello");
+    CHECK(b.len == 4);
+    CHECK(b.overflow);
+  }
+  // jb_raw (explicit-length overload) stopping mid-buffer.
+  {
+    duel::JsonBuf b{buf, 2, 0};
+    duel::jb_raw(&b, "hello", 5);
+    CHECK(b.len == 2);
+    CHECK(b.overflow);
+  }
+  // jb_u32 stopping MID-NUMBER: "12" of 12345 is not a truncation, it's a lie.
+  {
+    duel::JsonBuf b{buf, 2, 0};
+    duel::jb_u32(&b, 12345);
+    CHECK(b.len == 2);
+    CHECK(b.overflow);
+  }
+  // jb_str: the body fits but the closing quote does not.
+  {
+    duel::JsonBuf b{buf, 3, 0};
+    duel::jb_str(&b, "ok"); // "ok" needs 4 bytes with both quotes
+    CHECK(b.len == 3);
+    CHECK(b.overflow);
+  }
+  // jb_i32's negative path (delegates to jb_raw + jb_u32).
+  {
+    duel::JsonBuf b{buf, 2, 0};
+    duel::jb_i32(&b, -12345);
+    CHECK(b.overflow);
+  }
+  // Any write onto an already-full buffer flags, even a 1-byte one.
+  {
+    duel::JsonBuf b{buf, 1, 0};
+    duel::jb_raw(&b, "x");
+    CHECK(b.overflow == false);
+    duel::jb_raw(&b, "y");
+    CHECK(b.overflow);
+  }
+}
+
 // ---- Task 2: stats_gen.h (duel/data/duel-stats.json codegen) ----
 //
 // kDuelMoves has no GUID field (DuelMoveStat is deliberately just
@@ -159,6 +220,13 @@ void test_stats_gen_tunables_exact() {
   CHECK(duel::kTun.round_cap == 30);
   CHECK(duel::kTun.team_size == 3);
   CHECK(duel::kTun.loadout_size == 4);
+  // Combat-depth Task 2 (controller resolution R2): sudden death. chip is
+  // 6, 12, 18, ... from round 12, whose running sum passes the largest
+  // reachable max_hp (290 = q4 sw10) by round 21 -- so every duel ends well
+  // inside round_cap, and the cap's Sum-HP tiebreak stops being a win-on-time
+  // button once heals exist.
+  CHECK(duel::kTun.sudden_start == 12);
+  CHECK(duel::kTun.sudden_step == 6);
 }
 
 // ---- Task 3: duel_init (config validation + initial state) ----
@@ -754,6 +822,25 @@ int LogIndexOf(const char* needle) {
   return -1;
 }
 
+// Non-overlapping occurrences of `needle` in the round log (used to pin
+// "exactly one chip entry PER LIVING VICTIM, and none for a KO'd one").
+int LogCount(const char* needle) {
+  const uint8_t* p = duel_log_ptr();
+  const uint32_t n = duel_log_len();
+  const uint32_t m = static_cast<uint32_t>(std::strlen(needle));
+  if (m == 0 || m > n) return 0;
+  int count = 0;
+  for (uint32_t i = 0; i + m <= n;) {
+    if (std::memcmp(p + i, needle, m) == 0) {
+      ++count;
+      i += m;
+    } else {
+      ++i;
+    }
+  }
+  return count;
+}
+
 // Dense move indices used in the behavioral vectors (from stats_gen.h):
 //   [3]  Coco Chaos          {power 24, speed 98, cd 0, Speedy}
 //   [6]  Pucker Sucker       {power 24, speed 57, cd 0, Tricky}
@@ -1029,19 +1116,23 @@ void test_apply_speed_order_ko_skip() {
   CHECK(i0 < i1);
 }
 
-// Case 5 — Retarget: two attackers aim at the same 1-hp treat; the first KOs
-// it, the second retargets to the lowest-hp living enemy (retargeted:true).
-ApplyVec MakeVec_Retarget() {
+// Case 5 — FIZZLE-ON-DEATH (combat-depth Task 2). Two attackers aim at the
+// same 1-hp treat; the faster one KOs it, and the second one's blow WHIFFS —
+// it is NOT auto-retargeted onto a living enemy (that rule, and the
+// `retargeted` log field it set, are gone). The whiffed swing still burns its
+// cooldown, so over-committing costs the turn AND the move. This is the rule
+// that turns target selection from a lookup into a bet you can lose.
+ApplyVec MakeVec_FizzleOnDeath() {
   ApplyVec v{};
-  v.name = "retarget";
+  v.name = "fizzle_on_death";
   duel::DuelState s = MakeState(2, 1);
-  const uint8_t mS[] = {10}, cS[] = {0}; // Speedy power 51, speed 97
-  const uint8_t mH[] = {26}, cH[] = {0}; // Heavy  power 40, speed 28
+  const uint8_t mS[] = {10}, cS[] = {0}; // Speedy power 51, speed 97 → KOs slot 0
+  const uint8_t mH[] = {26}, cH[] = {0}; // Heavy power 40, speed 28, authored cd 2 → whiffs
   const uint8_t mD[] = {24}, cD[] = {0};
   SetTreat(s, 0, 0, 250, 250, 4, 10, 1, mS, cS);
   SetTreat(s, 0, 1, 250, 250, 3, 6, 1, mH, cH);
-  SetTreat(s, 1, 0, 1, 110, 1, 1, 1, mD, cD);   // 1 hp → dies to attacker 1
-  SetTreat(s, 1, 1, 50, 110, 1, 1, 1, mD, cD);  // living → retarget lands here
+  SetTreat(s, 1, 0, 1, 110, 1, 1, 1, mD, cD);    // 1 hp → dies to the Speedy
+  SetTreat(s, 1, 1, 110, 110, 1, 1, 1, mD, cD);  // FULL hp → must stay untouched
   v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
   OrdInit(v.ord);
   OrdSet(v.ord, 2, 0, 0, 0, 0); // both attackers aim at enemy slot 0
@@ -1052,43 +1143,45 @@ ApplyVec MakeVec_Retarget() {
   return v;
 }
 
-void test_apply_retarget() {
-  ApplyVec v = MakeVec_Retarget();
+void test_apply_fizzle_on_death() {
+  ApplyVec v = MakeVec_FizzleOnDeath();
   CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
   duel::DuelState o{};
   CHECK(DecodeOut(&o));
-  CHECK(o.treats[1][0].hp == 0);
-  CHECK(o.treats[1][1].hp == 10); // 50 - 40 (Heavy vs recover = neutral)
-  CHECK(LogHas("\"retargeted\":true"));
+  CHECK(o.treats[1][0].hp == 0);   // KO'd by the fast Speedy
+  CHECK(o.treats[1][1].hp == 110); // the OTHER enemy is at FULL hp: no auto-retarget
+  // The whiffed swing is logged as a `skip` with dmg 0 and no target.
   CHECK(LogHas(
-      "{\"side\":0,\"slot\":1,\"kind\":\"hit\",\"move\":26,\"target\":1,"
-      "\"retargeted\":true,\"clash\":\"neu\",\"dmg\":40,\"blocked\":false,"
-      "\"targetHp\":10,\"ko\":false}"));
+      "{\"side\":0,\"slot\":1,\"kind\":\"skip\",\"move\":26,\"target\":255,"
+      "\"clash\":\"neu\",\"dmg\":0,\"blocked\":false,\"targetHp\":0,"
+      "\"ko\":false}"));
+  CHECK(!LogHas("\"retargeted\"")); // the dead field is gone from the format
+  // ...and it still BURNS the cooldown (Vicious Jawbreaker's authored cd is 2):
+  // over-committing costs you the turn *and* the move.
+  CHECK(o.treats[0][1].cooldowns[0] == 2);
   CHECK(o.phase == duel::wire::kPhaseActive);
 }
 
-// Case 5b — Retarget among MULTIPLE living enemies: a fast Speedy KOs the
-// aimed-at slot 0, then a slower Heavy (which also aimed at slot 0) must
-// retarget to the LOWEST-HP living enemy — slot 2 (60 hp) — NOT the lowest
-// living SLOT (slot 1, 100 hp). This is the comparator's hp-vs-slot branch,
-// which the single-living-enemy retarget vector can't discriminate.
-ApplyVec MakeVec_RetargetMultiLiving() {
+// Case 5b — Fizzle with MULTIPLE living enemies available: the old rule picked
+// the lowest-hp living enemy (slot 2, 60 hp) for the whiffed Heavy. Now NOBODY
+// is picked — both living enemies end the round untouched.
+ApplyVec MakeVec_FizzleMultiLivingUntouched() {
   ApplyVec v{};
-  v.name = "retarget_multi_living_lowest_hp";
+  v.name = "fizzle_multi_living_untouched";
   duel::DuelState s = MakeState(3, 1);
   const uint8_t mS[] = {10}, cS[] = {0}; // Speedy power 51, speed 97 — KOs slot 0
-  const uint8_t mH[] = {26}, cH[] = {0}; // Heavy  power 40, speed 28 — retargets
+  const uint8_t mH[] = {26}, cH[] = {0}; // Heavy  power 40, speed 28 — whiffs
   const uint8_t mD[] = {24}, cD[] = {0}; // filler move for the recovering treats
   SetTreat(s, 0, 0, 250, 250, 4, 10, 1, mS, cS);
   SetTreat(s, 0, 1, 250, 250, 3, 6, 1, mH, cH);
   SetTreat(s, 0, 2, 250, 250, 1, 1, 1, mD, cD);  // recovers
   SetTreat(s, 1, 0, 1, 110, 1, 1, 1, mD, cD);    // 1 hp → dies to attacker 0
-  SetTreat(s, 1, 1, 100, 110, 1, 1, 1, mD, cD);  // higher-hp living (NOT chosen)
-  SetTreat(s, 1, 2, 60, 110, 1, 1, 1, mD, cD);   // lowest-hp living → retarget lands
+  SetTreat(s, 1, 1, 100, 110, 1, 1, 1, mD, cD);  // living → untouched
+  SetTreat(s, 1, 2, 60, 110, 1, 1, 1, mD, cD);   // the old retarget victim → untouched
   v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
   OrdInit(v.ord);
   OrdSet(v.ord, 3, 0, 0, 0, 0); // Speedy → enemy slot 0
-  OrdSet(v.ord, 3, 0, 1, 0, 0); // Heavy  → enemy slot 0 (dead by then → retarget)
+  OrdSet(v.ord, 3, 0, 1, 0, 0); // Heavy  → enemy slot 0 (dead by then → whiffs)
   OrdSet(v.ord, 3, 0, 2, duel::wire::kActionRecover, duel::wire::kTargetNone);
   OrdSet(v.ord, 3, 1, 0, duel::wire::kActionRecover, duel::wire::kTargetNone);
   OrdSet(v.ord, 3, 1, 1, duel::wire::kActionRecover, duel::wire::kTargetNone);
@@ -1097,75 +1190,30 @@ ApplyVec MakeVec_RetargetMultiLiving() {
   return v;
 }
 
-void test_apply_retarget_multi_living() {
-  ApplyVec v = MakeVec_RetargetMultiLiving();
+void test_apply_fizzle_multi_living_untouched() {
+  ApplyVec v = MakeVec_FizzleMultiLivingUntouched();
   CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
   duel::DuelState o{};
   CHECK(DecodeOut(&o));
   CHECK(o.treats[1][0].hp == 0);   // slot 0 KO'd by the fast Speedy
-  CHECK(o.treats[1][1].hp == 100); // higher-hp living enemy left untouched
-  CHECK(o.treats[1][2].hp == 20);  // lowest-hp living enemy chosen: 60 - 40
-  CHECK(LogHas("\"retargeted\":true"));
-  // The retargeted Heavy aims at slot 2 (lowest hp), NOT slot 1 (lowest slot).
-  CHECK(LogHas(
-      "{\"side\":0,\"slot\":1,\"kind\":\"hit\",\"move\":26,\"target\":2,"
-      "\"retargeted\":true,\"clash\":\"neu\",\"dmg\":40,\"blocked\":false,"
-      "\"targetHp\":20,\"ko\":false}"));
+  CHECK(o.treats[1][1].hp == 100); // untouched
+  CHECK(o.treats[1][2].hp == 60);  // untouched (the old rule hit THIS one for 40)
+  CHECK(LogHas("{\"side\":0,\"slot\":1,\"kind\":\"skip\",\"move\":26,\"target\":255,"
+               "\"clash\":\"neu\",\"dmg\":0"));
   CHECK(o.phase == duel::wire::kPhaseActive);
 }
 
-// Case 5c — Retarget TIE: after slot 0 is KO'd, the two living enemies (slots
-// 1 and 2) have EQUAL hp, so the "lowest hp" comparator ties and must fall
-// back to lowest SLOT — slot 1 wins, slot 2 is untouched.
-ApplyVec MakeVec_RetargetTieLowestSlot() {
+// Case 5c/5d — FAIR TURN ORDER (combat-depth Task 2). All four actors pick the
+// same move (Coco Chaos, speed 98), so the whole order is decided by the
+// tie-breaks: speed DESC → THIS ROUND'S FIRST SIDE → slot ASC. The first side
+// alternates with the round parity (`round & 1`), so side 0 no longer wins
+// every speed tie for the whole duel (a systematic, permanent advantage).
+// Two vectors, identical but for the round number, pin BOTH parities — a test
+// that only checked round 0 would pass against the old side-ASC code.
+ApplyVec MakeVec_EqualSpeedRound(const char* name, uint16_t round) {
   ApplyVec v{};
-  v.name = "retarget_tie_lowest_slot";
-  duel::DuelState s = MakeState(3, 1);
-  const uint8_t mS[] = {10}, cS[] = {0};
-  const uint8_t mH[] = {26}, cH[] = {0};
-  const uint8_t mD[] = {24}, cD[] = {0};
-  SetTreat(s, 0, 0, 250, 250, 4, 10, 1, mS, cS);
-  SetTreat(s, 0, 1, 250, 250, 3, 6, 1, mH, cH);
-  SetTreat(s, 0, 2, 250, 250, 1, 1, 1, mD, cD);
-  SetTreat(s, 1, 0, 1, 110, 1, 1, 1, mD, cD);   // dies to attacker 0
-  SetTreat(s, 1, 1, 80, 110, 1, 1, 1, mD, cD);  // equal-hp living, lower slot → chosen
-  SetTreat(s, 1, 2, 80, 110, 1, 1, 1, mD, cD);  // equal-hp living, higher slot
-  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
-  OrdInit(v.ord);
-  OrdSet(v.ord, 3, 0, 0, 0, 0);
-  OrdSet(v.ord, 3, 0, 1, 0, 0);
-  OrdSet(v.ord, 3, 0, 2, duel::wire::kActionRecover, duel::wire::kTargetNone);
-  OrdSet(v.ord, 3, 1, 0, duel::wire::kActionRecover, duel::wire::kTargetNone);
-  OrdSet(v.ord, 3, 1, 1, duel::wire::kActionRecover, duel::wire::kTargetNone);
-  OrdSet(v.ord, 3, 1, 2, duel::wire::kActionRecover, duel::wire::kTargetNone);
-  v.ordLen = duel::wire::OrdersLen(3);
-  return v;
-}
-
-void test_apply_retarget_tie_lowest_slot() {
-  ApplyVec v = MakeVec_RetargetTieLowestSlot();
-  CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
-  duel::DuelState o{};
-  CHECK(DecodeOut(&o));
-  CHECK(o.treats[1][0].hp == 0);  // KO'd
-  CHECK(o.treats[1][1].hp == 40); // tie → lowest slot chosen: 80 - 40
-  CHECK(o.treats[1][2].hp == 80); // equal-hp higher slot untouched
-  CHECK(LogHas(
-      "{\"side\":0,\"slot\":1,\"kind\":\"hit\",\"move\":26,\"target\":1,"
-      "\"retargeted\":true,\"clash\":\"neu\",\"dmg\":40,\"blocked\":false,"
-      "\"targetHp\":40,\"ko\":false}"));
-  CHECK(o.phase == duel::wire::kPhaseActive);
-}
-
-// Case 5d — Equal NONZERO speed across sides: all four actors pick the same
-// move (Coco Chaos, speed 98), so the (speed DESC, side ASC, slot ASC) order
-// is decided entirely by the side/slot tie-breaks — side 0 before side 1 at
-// equal speed, and slot ASC within a side. Pins the cross-side ordering the
-// other vectors (which vary speed or leave one side idle) never exercise.
-ApplyVec MakeVec_EqualSpeedSideOrder() {
-  ApplyVec v{};
-  v.name = "equal_speed_side_then_slot_order";
-  duel::DuelState s = MakeState(2, 1);
+  v.name = name;
+  duel::DuelState s = MakeState(2, 1, round);
   const uint8_t mC[] = {3}, cC[] = {0}; // Coco Chaos: speed 98 for all four actors
   SetTreat(s, 0, 0, 250, 250, 1, 1, 1, mC, cC);
   SetTreat(s, 0, 1, 250, 250, 1, 1, 1, mC, cC);
@@ -1173,7 +1221,7 @@ ApplyVec MakeVec_EqualSpeedSideOrder() {
   SetTreat(s, 1, 1, 250, 250, 1, 1, 1, mC, cC);
   v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
   OrdInit(v.ord);
-  OrdSet(v.ord, 2, 0, 0, 0, 0); // every actor aims at enemy slot 0 (no KO/retarget)
+  OrdSet(v.ord, 2, 0, 0, 0, 0); // every actor aims at enemy slot 0 (nobody dies)
   OrdSet(v.ord, 2, 0, 1, 0, 0);
   OrdSet(v.ord, 2, 1, 0, 0, 0);
   OrdSet(v.ord, 2, 1, 1, 0, 0);
@@ -1181,26 +1229,52 @@ ApplyVec MakeVec_EqualSpeedSideOrder() {
   return v;
 }
 
-void test_apply_equal_speed_side_order() {
-  ApplyVec v = MakeVec_EqualSpeedSideOrder();
-  CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
-  // All four share speed 98 → order is (speed DESC, side ASC, slot ASC).
-  const int i00 = LogIndexOf("{\"side\":0,\"slot\":0,");
-  const int i01 = LogIndexOf("{\"side\":0,\"slot\":1,");
-  const int i10 = LogIndexOf("{\"side\":1,\"slot\":0,");
-  const int i11 = LogIndexOf("{\"side\":1,\"slot\":1,");
-  CHECK(i00 >= 0);
-  CHECK(i01 >= 0);
-  CHECK(i10 >= 0);
-  CHECK(i11 >= 0);
-  CHECK(i00 < i01); // same-side, equal speed → slot ASC
-  CHECK(i01 < i10); // equal speed ACROSS sides → side ASC (all of side 0 first)
-  CHECK(i10 < i11);
-  duel::DuelState o{};
-  CHECK(DecodeOut(&o));
-  CHECK(o.treats[1][0].hp == 202); // hit by both side-0 actors: 250 - 24 - 24
-  CHECK(o.treats[0][0].hp == 202); // hit by both side-1 actors
-  CHECK(o.phase == duel::wire::kPhaseActive);
+// Round 0 (EVEN) → side 0 acts first.
+ApplyVec MakeVec_EqualSpeedEvenRound() {
+  return MakeVec_EqualSpeedRound("equal_speed_even_round_side0_first", 0);
+}
+// Round 1 (ODD) → side 1 acts first.
+ApplyVec MakeVec_EqualSpeedOddRound() {
+  return MakeVec_EqualSpeedRound("equal_speed_odd_round_side1_first", 1);
+}
+
+void test_apply_turn_order_alternates_by_round() {
+  // Even round: side 0 first (both of its slots), then side 1; slot ASC within.
+  {
+    ApplyVec v = MakeVec_EqualSpeedEvenRound();
+    CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
+    const int i00 = LogIndexOf("{\"side\":0,\"slot\":0,");
+    const int i01 = LogIndexOf("{\"side\":0,\"slot\":1,");
+    const int i10 = LogIndexOf("{\"side\":1,\"slot\":0,");
+    const int i11 = LogIndexOf("{\"side\":1,\"slot\":1,");
+    CHECK(i00 >= 0 && i01 >= 0 && i10 >= 0 && i11 >= 0);
+    CHECK(i00 < i01); // same side, equal speed → slot ASC
+    CHECK(i01 < i10); // equal speed ACROSS sides → the round's first side (0) goes first
+    CHECK(i10 < i11);
+    duel::DuelState o{};
+    CHECK(DecodeOut(&o));
+    CHECK(o.treats[1][0].hp == 202); // hit by both side-0 actors: 250 - 24 - 24
+    CHECK(o.treats[0][0].hp == 202); // hit by both side-1 actors
+    CHECK(o.phase == duel::wire::kPhaseActive);
+  }
+  // Odd round: the SAME state+orders, one round later → side 1 goes first.
+  {
+    ApplyVec v = MakeVec_EqualSpeedOddRound();
+    CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
+    const int i00 = LogIndexOf("{\"side\":0,\"slot\":0,");
+    const int i01 = LogIndexOf("{\"side\":0,\"slot\":1,");
+    const int i10 = LogIndexOf("{\"side\":1,\"slot\":0,");
+    const int i11 = LogIndexOf("{\"side\":1,\"slot\":1,");
+    CHECK(i00 >= 0 && i01 >= 0 && i10 >= 0 && i11 >= 0);
+    CHECK(i10 < i11); // slot ASC still holds within the first side
+    CHECK(i11 < i00); // ...but side 1 now goes FIRST
+    CHECK(i00 < i01);
+    duel::DuelState o{};
+    CHECK(DecodeOut(&o));
+    CHECK(o.treats[1][0].hp == 202); // damage is unchanged: only the ORDER flips
+    CHECK(o.treats[0][0].hp == 202);
+    CHECK(o.phase == duel::wire::kPhaseActive);
+  }
 }
 
 // Case 6 — Recover: (a) all moves cooling → 0xFE legal, logged "recover";
@@ -1453,24 +1527,176 @@ void test_apply_win_then_reject() {
   CHECK(duel_log_len() == 0);
 }
 
-// Case 9 — Round cap: drive round_cap recover-only rounds; the winner is the
-// side with higher Σhp, equal → draw.
+// ---- Case 9 — SUDDEN DEATH (combat-depth Task 2) ----
 //
-// Golden-vector note: rather than replaying round_cap-1 recover-only applies
-// just to reach the decisive state (as the test below does, to also pin the
-// round-by-round increment behavior along the way), these two builders
-// hand-construct the state one round short of the cap directly via
-// MakeState's `round` parameter -- round isn't range-checked on decode (see
-// decode_state in engine.cpp), so this is a legal, purely-byte-built input
-// like every other vector, and it reaches the exact same pre-decisive state
-// without a 29-call loop in the dumper.
+// From `sudden_start` on, the arena collapses: at end of round (after the
+// cooldown tick, before the win check) every LIVING treat takes
+// `sudden_step * (playedRound - sudden_start + 1)` chip damage. It ignores
+// clash/block/shield/guard entirely (it is not an attack), it can KO, and the
+// win check sees the post-chip HP. Every vector below drives recover-only
+// orders, so the chip is the ONLY damage in the round.
+ApplyVec MakeVec_SuddenDeathRound(const char* name, uint16_t round, uint16_t hp0,
+                                  uint16_t hp1) {
+  ApplyVec v{};
+  v.name = name;
+  duel::DuelState s = MakeState(1, 1, round);
+  const uint8_t m[] = {24}, c[] = {0};
+  SetTreat(s, 0, 0, hp0, 250, 1, 1, 1, m, c);
+  SetTreat(s, 1, 0, hp1, 250, 1, 1, 1, m, c);
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdRecoverAll(v.ord, 1);
+  v.ordLen = duel::wire::OrdersLen(1);
+  return v;
+}
+
+// Round 11 — the last round BEFORE sudden death: no chip at all.
+ApplyVec MakeVec_SuddenDeathNotYet() {
+  return MakeVec_SuddenDeathRound("sudden_death_not_yet_round11", 11, 250, 250);
+}
+// Round 12 (== sudden_start) — the first chip: 6 * (12 - 12 + 1) = 6.
+ApplyVec MakeVec_SuddenDeathFirstChip() {
+  return MakeVec_SuddenDeathRound("sudden_death_first_chip_round12", 12, 250, 250);
+}
+// Round 15 — the chip has escalated: 6 * (15 - 12 + 1) = 24.
+ApplyVec MakeVec_SuddenDeathEscalated() {
+  return MakeVec_SuddenDeathRound("sudden_death_escalated_round15", 15, 250, 250);
+}
+
+void test_apply_sudden_death_escalates() {
+  // (a) one round short of sudden_start: nothing is chipped.
+  {
+    ApplyVec v = MakeVec_SuddenDeathNotYet();
+    CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
+    duel::DuelState o{};
+    CHECK(DecodeOut(&o));
+    CHECK(o.treats[0][0].hp == 250);
+    CHECK(o.treats[1][0].hp == 250);
+    CHECK(LogCount("\"kind\":\"chip\"") == 0);
+  }
+  // (b) round 12 == sudden_start: chip is exactly sudden_step * 1 == 6, one
+  // entry per LIVING treat, and the entry carries the victim's own side/slot
+  // (there is no actor) with move/target 255 and clash "neu".
+  {
+    ApplyVec v = MakeVec_SuddenDeathFirstChip();
+    CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
+    duel::DuelState o{};
+    CHECK(DecodeOut(&o));
+    CHECK(o.treats[0][0].hp == 244); // 250 - 6
+    CHECK(o.treats[1][0].hp == 244);
+    CHECK(LogCount("\"kind\":\"chip\"") == 2);
+    CHECK(LogHas(
+        "{\"side\":0,\"slot\":0,\"kind\":\"chip\",\"move\":255,\"target\":255,"
+        "\"clash\":\"neu\",\"dmg\":6,\"blocked\":false,\"targetHp\":244,"
+        "\"ko\":false}"));
+    CHECK(LogHas(
+        "{\"side\":1,\"slot\":0,\"kind\":\"chip\",\"move\":255,\"target\":255,"
+        "\"clash\":\"neu\",\"dmg\":6,\"blocked\":false,\"targetHp\":244,"
+        "\"ko\":false}"));
+    CHECK(o.phase == duel::wire::kPhaseActive);
+  }
+  // (c) round 15: chip = 6 * (15 - 12 + 1) = 24 — it escalates every round.
+  {
+    ApplyVec v = MakeVec_SuddenDeathEscalated();
+    CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
+    duel::DuelState o{};
+    CHECK(DecodeOut(&o));
+    CHECK(o.treats[0][0].hp == 226); // 250 - 24
+    CHECK(o.treats[1][0].hp == 226);
+    CHECK(LogHas("\"kind\":\"chip\",\"move\":255,\"target\":255,\"clash\":\"neu\","
+                 "\"dmg\":24"));
+  }
+}
+
+// Round 15 (chip 24) with a KO'd treat and a treat the chip is about to fell:
+// the KO'd one takes NO chip and gets NO chip entry; the 20-hp one dies TO the
+// chip (ko:true, targetHp 0). Side 1 survives on its other slot, so the duel
+// stays active — the win check ran on the POST-chip HP either way.
+ApplyVec MakeVec_SuddenDeathKo() {
+  ApplyVec v{};
+  v.name = "sudden_death_ko_round15";
+  duel::DuelState s = MakeState(2, 1, 15);
+  const uint8_t m[] = {24}, c[] = {0};
+  SetTreat(s, 0, 0, 100, 250, 1, 1, 1, m, c); // 100 - 24 = 76
+  SetTreat(s, 0, 1, 0, 250, 1, 1, 1, m, c);   // already KO'd → no chip, no entry
+  SetTreat(s, 1, 0, 20, 250, 1, 1, 1, m, c);  // 20 - 24 → 0, KO'd BY the chip
+  SetTreat(s, 1, 1, 200, 250, 1, 1, 1, m, c); // 200 - 24 = 176
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdRecoverAll(v.ord, 2);
+  v.ordLen = duel::wire::OrdersLen(2);
+  return v;
+}
+
+void test_apply_sudden_death_ko() {
+  ApplyVec v = MakeVec_SuddenDeathKo();
+  CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
+  duel::DuelState o{};
+  CHECK(DecodeOut(&o));
+  CHECK(o.treats[0][0].hp == 76);
+  CHECK(o.treats[0][1].hp == 0);  // stays 0: a KO'd treat takes no chip
+  CHECK(o.treats[1][0].hp == 0);  // felled BY the chip
+  CHECK(o.treats[1][1].hp == 176);
+  CHECK(LogCount("\"kind\":\"chip\"") == 3); // 3 living victims, not 4
+  CHECK(!LogHas("{\"side\":0,\"slot\":1,\"kind\":\"chip\"")); // ...and not the KO'd one
+  CHECK(LogHas("{\"side\":1,\"slot\":0,\"kind\":\"chip\",\"move\":255,\"target\":255,"
+               "\"clash\":\"neu\",\"dmg\":24,\"blocked\":false,\"targetHp\":0,"
+               "\"ko\":true}"));
+  CHECK(o.phase == duel::wire::kPhaseActive); // side 1 still has slot 1
+}
+
+// Sudden death must TERMINATE every duel well inside round_cap, even the
+// worst case: two max-hp treats (q4 sw10 = 290) that never attack. Chip sums
+// to 270 through round 20 and 330 through round 21, so both fall on round 21.
+//
+// Both sides being wiped in the SAME round is only reachable because of the
+// chip (a treat's own action can never kill an already-dead attacker), and it
+// must be a DRAW — resolving it as "side 0 wins" would hand side 0 every
+// symmetric mirror match, exactly the bias the round-alternating turn order
+// exists to remove.
+void test_apply_sudden_death_terminates_and_mutual_ko_is_a_draw() {
+  duel::DuelState s = MakeState(1, 1);
+  const uint8_t m[] = {24}, c[] = {0};
+  SetTreat(s, 0, 0, 290, 290, 4, 10, 1, m, c);
+  SetTreat(s, 1, 0, 290, 290, 4, 10, 1, m, c);
+  uint8_t st[kMaxStateLen];
+  uint32_t stLen = duel::encode_state(s, st, sizeof(st));
+  uint8_t ord[32];
+  OrdRecoverAll(ord, 1);
+
+  int rounds = 0;
+  duel::DuelState o{};
+  for (;;) {
+    CHECK(duel::decode_state(st, stLen, &o));
+    if (o.phase != duel::wire::kPhaseActive) break;
+    CHECK(rounds < duel::kTun.round_cap); // must never reach the cap
+    CHECK(duel_apply(st, stLen, ord, duel::wire::OrdersLen(1)) == 0);
+    stLen = duel_out_len();
+    for (uint32_t k = 0; k < stLen; ++k) st[k] = duel_out_ptr()[k];
+    ++rounds;
+  }
+  CHECK(rounds == 22);  // played rounds 0..21; round 21 is the fatal chip (60)
+  CHECK(o.round == 22); // and it ended a full 8 rounds inside round_cap 30
+  CHECK(o.treats[0][0].hp == 0);
+  CHECK(o.treats[1][0].hp == 0);
+  CHECK(o.phase == duel::wire::kPhaseDraw); // mutual wipe → draw, NOT side 0
+}
+
+// Case 10 — Round cap: the Σhp tiebreak still decides a duel that somehow
+// survives to the cap; equal Σhp → draw.
+//
+// Reaching the cap at all now takes a hand-built state: sudden death ends
+// every duel that starts from duel_init by ~round 21 (see the test above).
+// Both builders therefore construct the state one round short of the cap
+// (MakeState's `round` parameter — legal, and decode_state accepts any active
+// round < round_cap) with enough HP for both treats to SURVIVE round 29's
+// 108-point chip (6 * (29 - 12 + 1)), so the cap — not a chip KO — is what
+// decides them.
 ApplyVec MakeVec_RoundCapUnequalFinal() {
   ApplyVec v{};
   v.name = "round_cap_unequal_final";
   duel::DuelState s = MakeState(1, 1, static_cast<uint16_t>(duel::kTun.round_cap - 1));
   const uint8_t m[] = {24}, c[] = {0};
-  SetTreat(s, 0, 0, 200, 200, 1, 1, 1, m, c);
-  SetTreat(s, 1, 0, 100, 100, 1, 1, 1, m, c);
+  SetTreat(s, 0, 0, 200, 200, 1, 1, 1, m, c); // 200 - 108 = 92
+  SetTreat(s, 1, 0, 150, 150, 1, 1, 1, m, c); // 150 - 108 = 42
   v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
   OrdRecoverAll(v.ord, 1);
   v.ordLen = duel::wire::OrdersLen(1);
@@ -1491,49 +1717,78 @@ ApplyVec MakeVec_RoundCapEqualFinal() {
 }
 
 void test_apply_round_cap() {
-  // (a) unequal totals → higher Σhp wins
+  // (a) unequal totals → higher Σhp wins (both survived the round-29 chip)
   {
-    duel::DuelState s = MakeState(1, 1);
-    const uint8_t m[] = {24}, c[] = {0};
-    SetTreat(s, 0, 0, 200, 200, 1, 1, 1, m, c);
-    SetTreat(s, 1, 0, 100, 100, 1, 1, 1, m, c);
-    uint8_t st[kMaxStateLen];
-    uint32_t stLen = duel::encode_state(s, st, sizeof(st));
-    uint8_t ord[32];
-    OrdRecoverAll(ord, 1);
-    for (int i = 1; i <= duel::kTun.round_cap; ++i) {
-      CHECK(duel_apply(st, stLen, ord, duel::wire::OrdersLen(1)) == 0);
-      duel::DuelState o{};
-      CHECK(DecodeOut(&o));
-      CHECK(o.round == static_cast<uint16_t>(i));
-      if (i < duel::kTun.round_cap) {
-        CHECK(o.phase == duel::wire::kPhaseActive);
-      } else {
-        CHECK(o.phase == duel::wire::kPhaseSide0Won);
-      }
-      stLen = duel_out_len();
-      for (uint32_t k = 0; k < stLen; ++k) st[k] = duel_out_ptr()[k];
-    }
+    ApplyVec v = MakeVec_RoundCapUnequalFinal();
+    CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
+    duel::DuelState o{};
+    CHECK(DecodeOut(&o));
+    CHECK(o.round == duel::kTun.round_cap);
+    CHECK(o.treats[0][0].hp == 92);
+    CHECK(o.treats[1][0].hp == 42);
+    CHECK(o.phase == duel::wire::kPhaseSide0Won);
   }
   // (b) equal totals → draw
   {
-    duel::DuelState s = MakeState(1, 1);
-    const uint8_t m[] = {24}, c[] = {0};
-    SetTreat(s, 0, 0, 150, 150, 1, 1, 1, m, c);
-    SetTreat(s, 1, 0, 150, 150, 1, 1, 1, m, c);
-    uint8_t st[kMaxStateLen];
-    uint32_t stLen = duel::encode_state(s, st, sizeof(st));
-    uint8_t ord[32];
-    OrdRecoverAll(ord, 1);
-    for (int i = 1; i <= duel::kTun.round_cap; ++i) {
-      CHECK(duel_apply(st, stLen, ord, duel::wire::OrdersLen(1)) == 0);
-      stLen = duel_out_len();
-      for (uint32_t k = 0; k < stLen; ++k) st[k] = duel_out_ptr()[k];
-    }
+    ApplyVec v = MakeVec_RoundCapEqualFinal();
+    CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
     duel::DuelState o{};
     CHECK(DecodeOut(&o));
-    CHECK(o.phase == duel::wire::kPhaseDraw);
     CHECK(o.round == duel::kTun.round_cap);
+    CHECK(o.treats[0][0].hp == 42);
+    CHECK(o.treats[1][0].hp == 42);
+    CHECK(o.phase == duel::wire::kPhaseDraw);
+  }
+}
+
+// R6 — an ACTIVE state at/past the round cap is unreachable from duel_init +
+// duel_apply (apply always sets a terminal phase once round >= round_cap), and
+// with sudden death it is actively dangerous (a crafted round = 60000 makes the
+// chip term enormous). decode_state must reject it outright — a terminal-phase
+// state AT the cap is the legitimate end state and must still decode.
+void test_decode_rejects_active_state_at_round_cap() {
+  const uint8_t m[] = {24}, c[] = {0};
+  uint8_t buf[kMaxStateLen];
+  duel::DuelState o{};
+
+  // active, round == round_cap - 1 → the last legal active round: accepted.
+  {
+    duel::DuelState s = MakeState(1, 1, static_cast<uint16_t>(duel::kTun.round_cap - 1));
+    SetTreat(s, 0, 0, 100, 100, 1, 1, 1, m, c);
+    SetTreat(s, 1, 0, 100, 100, 1, 1, 1, m, c);
+    const uint32_t len = duel::encode_state(s, buf, sizeof(buf));
+    CHECK(duel::decode_state(buf, len, &o));
+  }
+  // active, round == round_cap → rejected (and duel_apply rejects it too).
+  {
+    duel::DuelState s = MakeState(1, 1, duel::kTun.round_cap);
+    SetTreat(s, 0, 0, 100, 100, 1, 1, 1, m, c);
+    SetTreat(s, 1, 0, 100, 100, 1, 1, 1, m, c);
+    const uint32_t len = duel::encode_state(s, buf, sizeof(buf));
+    CHECK(duel::decode_state(buf, len, &o) == false);
+    uint8_t ord[32];
+    OrdRecoverAll(ord, 1);
+    CHECK(duel_apply(buf, len, ord, duel::wire::OrdersLen(1)) == -1);
+    CHECK(duel_out_len() == 0);
+    CHECK(duel_log_len() == 0);
+  }
+  // active, absurd round (the crafted-chip hazard) → rejected.
+  {
+    duel::DuelState s = MakeState(1, 1, 60000);
+    SetTreat(s, 0, 0, 100, 100, 1, 1, 1, m, c);
+    SetTreat(s, 1, 0, 100, 100, 1, 1, 1, m, c);
+    const uint32_t len = duel::encode_state(s, buf, sizeof(buf));
+    CHECK(duel::decode_state(buf, len, &o) == false);
+  }
+  // ...but a FINISHED duel at the cap is the legitimate terminal state: accepted.
+  {
+    duel::DuelState s = MakeState(1, 1, duel::kTun.round_cap);
+    s.phase = duel::wire::kPhaseDraw;
+    SetTreat(s, 0, 0, 100, 100, 1, 1, 1, m, c);
+    SetTreat(s, 1, 0, 100, 100, 1, 1, 1, m, c);
+    const uint32_t len = duel::encode_state(s, buf, sizeof(buf));
+    CHECK(duel::decode_state(buf, len, &o));
+    CHECK(o.phase == duel::wire::kPhaseDraw);
   }
 }
 
@@ -1767,6 +2022,57 @@ void test_fuzz_no_crash() {
   }
 }
 
+// ---- Task 2 (combat depth): the hard log cap ----
+//
+// RUN ONLY BY duel_tests_logcap (`--logcap-only`), the twin binary build.sh
+// compiles with -DDUEL_LOG_CAP=320. jsonout.h drops past-cap writes, so a
+// round whose log doesn't fit must be REJECTED (-1, both output buffers
+// cleared) rather than emitted as truncated JSON — the client's
+// JSON.parse(readLog()) would throw on it. At the shipped 32 KiB cap no legal
+// round can come close, so this is the only way to drive the real duel_apply
+// down that path; the shrunk cap makes it reachable without weakening the
+// shipped engine (the native+wasm builds never define DUEL_LOG_CAP, so they
+// stay byte-identical to each other).
+//
+// Both halves matter: the 3v3 round must reject, and the 1v1 round (whose log
+// DOES fit in 320 bytes) must still succeed — otherwise "always return -1"
+// would pass.
+void test_apply_log_overflow_rejects() {
+  const uint8_t m[] = {24}, c[] = {0};
+
+  // Positive control: a 1v1 recover-only round's log is 279 bytes — it fits.
+  {
+    duel::DuelState s = MakeState(1, 1);
+    SetTreat(s, 0, 0, 250, 250, 1, 1, 1, m, c);
+    SetTreat(s, 1, 0, 250, 250, 1, 1, 1, m, c);
+    uint8_t st[kMaxStateLen];
+    const uint32_t stLen = duel::encode_state(s, st, sizeof(st));
+    uint8_t ord[32];
+    OrdRecoverAll(ord, 1);
+    CHECK(duel_apply(st, stLen, ord, duel::wire::OrdersLen(1)) == 0);
+    CHECK(duel_log_len() > 0);
+    CHECK(duel_out_len() > 0);
+  }
+
+  // A 3v3 round's log is ~771 bytes — it does NOT fit. Reject, don't truncate:
+  // rc -1 with BOTH output buffers cleared, so a rejected round leaves the
+  // caller's state untouched (same contract as every other reject path).
+  {
+    duel::DuelState s = MakeState(3, 1);
+    for (int slot = 0; slot < 3; ++slot) {
+      SetTreat(s, 0, slot, 250, 250, 1, 1, 1, m, c);
+      SetTreat(s, 1, slot, 250, 250, 1, 1, 1, m, c);
+    }
+    uint8_t st[kMaxStateLen];
+    const uint32_t stLen = duel::encode_state(s, st, sizeof(st));
+    uint8_t ord[32];
+    OrdRecoverAll(ord, 3);
+    CHECK(duel_apply(st, stLen, ord, duel::wire::OrdersLen(3)) == -1);
+    CHECK(duel_out_len() == 0);
+    CHECK(duel_log_len() == 0);
+  }
+}
+
 // ---- Task 5: `--dump-golden` ----
 //
 // Runs every behavioral vector (the Task 3 duel_init shape vectors + all ten
@@ -1797,10 +2103,10 @@ void DumpGolden() {
   DumpApplyVector(MakeVec_BlockStanceA());
   DumpApplyVector(MakeVec_BlockStanceLate());
   DumpApplyVector(MakeVec_SpeedOrderKoSkip());
-  DumpApplyVector(MakeVec_Retarget());
-  DumpApplyVector(MakeVec_RetargetMultiLiving());
-  DumpApplyVector(MakeVec_RetargetTieLowestSlot());
-  DumpApplyVector(MakeVec_EqualSpeedSideOrder());
+  DumpApplyVector(MakeVec_FizzleOnDeath());
+  DumpApplyVector(MakeVec_FizzleMultiLivingUntouched());
+  DumpApplyVector(MakeVec_EqualSpeedEvenRound());
+  DumpApplyVector(MakeVec_EqualSpeedOddRound());
   DumpApplyVector(MakeVec_RecoverA());
   DumpApplyVector(MakeVec_RecoverRejectCoolingMove());
   DumpApplyVector(MakeVec_KoNoncanonicalAction());
@@ -1813,6 +2119,10 @@ void DumpGolden() {
   DumpApplyVector(MakeVec_CooldownReuseReady());
   DumpApplyVector(MakeVec_Win());
   DumpApplyVector(MakeVec_WinRejectAfter());
+  DumpApplyVector(MakeVec_SuddenDeathNotYet());
+  DumpApplyVector(MakeVec_SuddenDeathFirstChip());
+  DumpApplyVector(MakeVec_SuddenDeathEscalated());
+  DumpApplyVector(MakeVec_SuddenDeathKo());
   DumpApplyVector(MakeVec_RoundCapUnequalFinal());
   DumpApplyVector(MakeVec_RoundCapEqualFinal());
   DumpApplyVector(MakeVec_Deterministic());
@@ -1825,11 +2135,20 @@ int main(int argc, char** argv) {
     DumpGolden();
     return 0;
   }
+  // duel_tests_logcap only (build.sh compiles it with -DDUEL_LOG_CAP=320):
+  // every OTHER test would correctly fail against a 320-byte log buffer, so
+  // this binary runs exactly the one test the shrunk cap exists for.
+  if (argc > 1 && std::strcmp(argv[1], "--logcap-only") == 0) {
+    RUN(test_apply_log_overflow_rejects);
+    std::printf("---\n%d ran, %d failed\n", g_tests_run, g_tests_failed);
+    return g_tests_failed == 0 ? 0 : 1;
+  }
 
   RUN(test_duel_init_rejects_null_config);
   RUN(test_duel_init_rejects_zeroed_config);
   RUN(test_jsonout_builds_exact_json);
   RUN(test_jsonout_never_writes_past_cap);
+  RUN(test_jsonout_overflow_flag);
   RUN(test_stats_gen_dense_order_matches_blueprint_ends);
   RUN(test_stats_gen_bounds_and_blocking_count);
   RUN(test_stats_gen_tunables_exact);
@@ -1839,18 +2158,21 @@ int main(int argc, char** argv) {
   RUN(test_duel_init_reject_vector);
   RUN(test_state_codec_roundtrip);
   RUN(test_state_codec_decode_rejects_bad_state);
+  RUN(test_decode_rejects_active_state_at_round_cap);
   RUN(test_jsonout_i32_min);
   RUN(test_apply_clash_advantage);
   RUN(test_apply_clash_disadvantage);
   RUN(test_apply_block_stance);
   RUN(test_apply_speed_order_ko_skip);
-  RUN(test_apply_retarget);
-  RUN(test_apply_retarget_multi_living);
-  RUN(test_apply_retarget_tie_lowest_slot);
-  RUN(test_apply_equal_speed_side_order);
+  RUN(test_apply_fizzle_on_death);
+  RUN(test_apply_fizzle_multi_living_untouched);
+  RUN(test_apply_turn_order_alternates_by_round);
   RUN(test_apply_recover);
   RUN(test_apply_cooldown_cycle);
   RUN(test_apply_win_then_reject);
+  RUN(test_apply_sudden_death_escalates);
+  RUN(test_apply_sudden_death_ko);
+  RUN(test_apply_sudden_death_terminates_and_mutual_ko_is_a_draw);
   RUN(test_apply_round_cap);
   RUN(test_apply_deterministic);
   RUN(test_selfplay_soak);

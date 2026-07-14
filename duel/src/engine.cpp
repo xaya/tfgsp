@@ -71,9 +71,23 @@ uint32_t g_arenaUsed = 0;
 // Sized for the JSON view/log output (Tasks 3-4); a state buffer is at most
 // a few hundred bytes and its JSON rendering a small multiple of that.
 constexpr uint32_t kOutCap = 4096;
-// Worst case: 2*team_size (max 5) = 10 action entries * ~146 B each + the
-// {"round":N,"actions":[...],"phase":P} wrapper ≈ 1.5 KB « 8192.
-constexpr uint32_t kLogCap = 8192;
+// Log capacity. Today's worst case is 2*team_size (max 5) = 10 action entries
+// + 10 sudden-death chip entries * ~125 B each + the
+// {"round":N,"actions":[...],"phase":P} wrapper ≈ 2.5 KB, but the headroom to
+// 32 KiB is deliberate: AoE (Task 5) multiplies entries per action, and
+// running out of log buffer is NOT a truncation we can ship (the client's
+// JSON.parse would throw) — duel_apply hard-rejects on overflow instead, so
+// this cap is a consensus-visible number, not a hint.
+//
+// DUEL_LOG_CAP is a build-time override with exactly ONE user: build.sh's
+// duel_tests_logcap binary, which shrinks the cap so the overflow -> -1 reject
+// path is reachable by a real duel_apply call (at 32 KiB no legal 5v5 round
+// can come close). The shipped native + wasm builds never define it, so both
+// compile with the same 32768 and stay byte-identical.
+#ifndef DUEL_LOG_CAP
+#define DUEL_LOG_CAP 32768
+#endif
+constexpr uint32_t kLogCap = DUEL_LOG_CAP;
 uint8_t g_out[kOutCap];
 uint32_t g_outLen = 0;
 uint8_t g_log[kLogCap];
@@ -249,11 +263,18 @@ const char* ClashLabel(uint16_t mult) {
 
 // Append one round-log action entry (schema in the plan's "Log JSON"). `move`
 // and `target` carry wire::kMoveSlotEmpty/kTargetNone (255) when absent
-// (recover/skip). Bounds-checked writes drop silently past capacity.
+// (recover/skip/chip). On a "chip" entry, side/slot are the VICTIM (sudden
+// death has no actor). Writes past capacity are dropped, but they latch
+// b->overflow -- duel_apply turns that into a hard reject (see kLogCap).
+//
+// There is no `retargeted` field: fizzle-on-death (combat-depth Task 2)
+// deleted the auto-retarget rule that was the only thing that could ever set
+// it, and a permanently-false field is not something to freeze into a format
+// that game channels will hash and sign.
 void WriteLogEntry(duel::JsonBuf* b, bool first, uint32_t side, uint32_t slot,
                    const char* kind, uint32_t move, uint32_t target,
-                   bool retargeted, const char* clash, uint32_t dmg,
-                   bool blocked, uint32_t targetHp, bool ko) {
+                   const char* clash, uint32_t dmg, bool blocked,
+                   uint32_t targetHp, bool ko) {
   if (!first) {
     duel::jb_raw(b, ",");
   }
@@ -267,8 +288,6 @@ void WriteLogEntry(duel::JsonBuf* b, bool first, uint32_t side, uint32_t slot,
   duel::jb_u32(b, move);
   duel::jb_raw(b, ",\"target\":");
   duel::jb_u32(b, target);
-  duel::jb_raw(b, ",\"retargeted\":");
-  duel::jb_raw(b, retargeted ? "true" : "false");
   duel::jb_raw(b, ",\"clash\":");
   duel::jb_str(b, clash);
   duel::jb_raw(b, ",\"dmg\":");
@@ -370,13 +389,27 @@ bool decode_state(const uint8_t* buf, uint32_t len, DuelState* out) {
     return false;
   }
 
+  const uint16_t round = static_cast<uint16_t>(
+      buf[wire::kStateOffRound] |
+      (static_cast<uint16_t>(buf[wire::kStateOffRound + 1]) << 8));
+  // An ACTIVE duel at or past the round cap is unreachable from duel_init +
+  // duel_apply (apply always sets a terminal phase once round >= round_cap),
+  // so accepting one would only ever admit a CRAFTED state -- and sudden
+  // death (combat-depth Task 2) makes that dangerous: the chip term scales
+  // with (round - sudden_start), so a forged round = 60000 would one-shot the
+  // whole arena. Reject it here, at the only door into the engine. (A
+  // terminal-phase state AT the cap is the legitimate end state of a
+  // round-cap duel and still decodes -- duel_apply rejects it on `phase !=
+  // active` instead.)
+  if (phase == wire::kPhaseActive && round >= kTun.round_cap) {
+    return false;
+  }
+
   out->version = version;
   out->team_size = static_cast<uint8_t>(teamSize);
   out->loadout_size = static_cast<uint8_t>(loadoutSize);
   out->phase = phase;
-  out->round = static_cast<uint16_t>(
-      buf[wire::kStateOffRound] |
-      (static_cast<uint16_t>(buf[wire::kStateOffRound + 1]) << 8));
+  out->round = round;
 
   const uint32_t treatLen = wire::StateTreatLen(loadoutSize);
   const uint32_t sideLen = wire::StateSideLen(teamSize, loadoutSize);
@@ -532,9 +565,19 @@ int32_t duel_apply(const uint8_t* st, uint32_t stLen, const uint8_t* ord,
     }
   }
 
-  // ---- semantics 3: order actions by (speed DESC, side ASC, slot ASC).
-  // Recover / KO'd actions have speed 0. (side, slot) is unique so the order
-  // is total and deterministic. ----
+  // ---- semantics 3: order actions by (speed DESC, THIS ROUND'S FIRST SIDE,
+  // slot ASC). Recover / KO'd actions have speed 0.
+  //
+  // The side tie-break ALTERNATES with the round parity. A fixed `side ASC`
+  // tie-break (what this used to be) handed side 0 every speed tie in every
+  // round of every duel -- a systematic, permanent advantage, and in a mirror
+  // match the only thing separating the two teams. Alternating it makes the
+  // first-strike edge a shared resource instead of a birthright.
+  //
+  // The order stays TOTAL and deterministic: (side, slot) is unique, so ties
+  // always bottom out in a strict comparison -- equal speed and equal side
+  // means the same treat. ----
+  const uint32_t firstSide = s.round & 1u; // round 0 -> side 0, round 1 -> side 1, ...
   uint8_t speed[2][wire::kMaxTeamSize];
   const uint32_t nActions = 2 * teamSize;
   uint8_t ordSide[2 * wire::kMaxTeamSize];
@@ -562,9 +605,10 @@ int32_t duel_apply(const uint8_t* st, uint32_t stLen, const uint8_t* ord,
       while (j > 0) {
         const uint8_t ps = ordSide[j - 1], pl = ordSlot[j - 1];
         const uint8_t psp = speed[ps][pl];
-        const bool prevBefore = (psp > csp) ||
-                                (psp == csp &&
-                                 (ps < cs || (ps == cs && pl < cl)));
+        const bool prevSideFirst = (ps == firstSide);
+        const bool prevBefore =
+            (psp > csp) ||
+            (psp == csp && ((ps != cs) ? prevSideFirst : (pl < cl)));
         if (prevBefore) {
           break;
         }
@@ -580,6 +624,7 @@ int32_t duel_apply(const uint8_t* st, uint32_t stLen, const uint8_t* ord,
   // ---- semantics 4: resolve each action in order, appending a log entry ----
   const uint16_t playedRound = s.round;
   duel::JsonBuf log{g_log, kLogCap, 0};
+  uint32_t nEntries = 0; // only the FIRST entry omits its leading comma
   duel::jb_raw(&log, "{\"round\":");
   duel::jb_u32(&log, playedRound);
   duel::jb_raw(&log, ",\"actions\":[");
@@ -587,45 +632,43 @@ int32_t duel_apply(const uint8_t* st, uint32_t stLen, const uint8_t* ord,
   for (uint32_t i = 0; i < nActions; ++i) {
     const uint32_t aS = ordSide[i];
     const uint32_t aL = ordSlot[i];
-    const bool first = (i == 0);
     TreatState& actor = s.treats[aS][aL];
     const uint8_t act = action[aS][aL];
 
     if (actor.hp == 0) {
       const uint32_t mv = (act == wire::kActionRecover) ? wire::kMoveSlotEmpty
                                                         : actor.moves[act];
-      WriteLogEntry(&log, first, aS, aL, "skip", mv, wire::kTargetNone, false,
-                    "neu", 0, false, 0, false);
+      WriteLogEntry(&log, nEntries++ == 0, aS, aL, "skip", mv,
+                    wire::kTargetNone, "neu", 0, false, 0, false);
       continue;
     }
     if (act == wire::kActionRecover) {
-      WriteLogEntry(&log, first, aS, aL, "recover", wire::kMoveSlotEmpty,
-                    wire::kTargetNone, false, "neu", 0, false, 0, false);
+      WriteLogEntry(&log, nEntries++ == 0, aS, aL, "recover",
+                    wire::kMoveSlotEmpty, wire::kTargetNone, "neu", 0, false, 0,
+                    false);
       continue;
     }
 
     const uint8_t mvIdx = actor.moves[act];
     const uint32_t enemy = 1u - aS;
-    uint32_t tgtSlot = target[aS][aL];
-    bool retargeted = false;
+    const uint32_t tgtSlot = target[aS][aL];
+
+    // FIZZLE-ON-DEATH (combat-depth Task 2). The blow was aimed at THAT treat;
+    // if it is already dead when the swing lands, the swing WHIFFS. It is not
+    // redirected onto some other enemy, and the overkill is not refunded --
+    // the engine used to auto-retarget onto the lowest-hp living enemy, which
+    // made over-committing free and turned target selection into a lookup
+    // ("everyone hit the lowest HP") rather than a decision. Now committing a
+    // second attacker to a treat that might already be dead is a BET, and any
+    // enemy defensive action is a potential BAIT.
+    //
+    // The whiff still burns the move's cooldown -- semantics 5 below ticks off
+    // `action[side][slot]`, not off whether the action connected -- so
+    // over-committing costs you the turn AND the move.
     if (s.treats[enemy][tgtSlot].hp == 0) {
-      // Retarget to the living enemy with lowest hp (tie: lowest slot).
-      int best = -1;
-      for (uint32_t k = 0; k < teamSize; ++k) {
-        if (s.treats[enemy][k].hp > 0 &&
-            (best < 0 ||
-             s.treats[enemy][k].hp < s.treats[enemy][best].hp)) {
-          best = static_cast<int>(k);
-        }
-      }
-      if (best < 0) {
-        // No living enemy: the move whiffs.
-        WriteLogEntry(&log, first, aS, aL, "skip", mvIdx, wire::kTargetNone,
-                      false, "neu", 0, false, 0, false);
-        continue;
-      }
-      retargeted = (static_cast<uint32_t>(best) != tgtSlot);
-      tgtSlot = static_cast<uint32_t>(best);
+      WriteLogEntry(&log, nEntries++ == 0, aS, aL, "skip", mvIdx,
+                    wire::kTargetNone, "neu", 0, false, 0, false);
+      continue;
     }
 
     TreatState& tgt = s.treats[enemy][tgtSlot];
@@ -645,7 +688,7 @@ int32_t duel_apply(const uint8_t* st, uint32_t stLen, const uint8_t* ord,
         (tgt.hp > dmg) ? static_cast<uint16_t>(tgt.hp - dmg) : 0;
     tgt.hp = newHp;
     const bool ko = (newHp == 0);
-    WriteLogEntry(&log, first, aS, aL, "hit", mvIdx, tgtSlot, retargeted,
+    WriteLogEntry(&log, nEntries++ == 0, aS, aL, "hit", mvIdx, tgtSlot,
                   ClashLabel(mult), dmg, blocked, newHp, ko);
   }
 
@@ -667,7 +710,41 @@ int32_t duel_apply(const uint8_t* st, uint32_t stLen, const uint8_t* ord,
     }
   }
 
-  // ---- semantics 6: advance round, decide winner ----
+  // ---- semantics 5b: SUDDEN DEATH (combat-depth Task 2) ----
+  //
+  // From round `sudden_start` on, the arena itself starts collapsing: every
+  // LIVING treat takes an escalating chip at end of round. This is what
+  // guarantees the duel ENDS -- and, more importantly, what stops turtling
+  // from becoming the meta: the round cap's tiebreak is by HP-sum, which turns
+  // into a win-on-time button the moment healing exists (Task 6). With the
+  // authored 12/6, the chip sums past the largest reachable max_hp (290) by
+  // round 21, so the cap is effectively unreachable.
+  //
+  // It is NOT an attack -- it is the arena. It ignores the clash pentagon,
+  // block stance, shield and guard alike. TASK 4 MUST NOT MAKE `shield` ABSORB
+  // IT; there is nothing here to absorb.
+  if (playedRound >= kTun.sudden_start) {
+    const uint32_t chip =
+        static_cast<uint32_t>(kTun.sudden_step) *
+        (static_cast<uint32_t>(playedRound) - kTun.sudden_start + 1u);
+    for (uint32_t side = 0; side < 2; ++side) {
+      for (uint32_t slot = 0; slot < teamSize; ++slot) {
+        TreatState& tr = s.treats[side][slot];
+        if (tr.hp == 0) {
+          continue; // KO is permanent: a dead treat takes no chip and logs none
+        }
+        const uint16_t newHp =
+            (tr.hp > chip) ? static_cast<uint16_t>(tr.hp - chip) : 0;
+        tr.hp = newHp;
+        // The victim carries the entry's side/slot -- a chip has no actor.
+        WriteLogEntry(&log, nEntries++ == 0, side, slot, "chip",
+                      wire::kMoveSlotEmpty, wire::kTargetNone, "neu", chip,
+                      false, newHp, newHp == 0);
+      }
+    }
+  }
+
+  // ---- semantics 6: advance round, decide winner (on the POST-chip hp) ----
   s.round = static_cast<uint16_t>(s.round + 1);
   bool side0Dead = true, side1Dead = true;
   uint32_t sum0 = 0, sum1 = 0;
@@ -677,7 +754,15 @@ int32_t duel_apply(const uint8_t* st, uint32_t stLen, const uint8_t* ord,
     sum0 += s.treats[0][slot].hp;
     sum1 += s.treats[1][slot].hp;
   }
-  if (side1Dead) {
+  if (side0Dead && side1Dead) {
+    // Both teams wiped in the same round. Only sudden death can do this (an
+    // action can't be taken by a treat that's already dead, so a round of
+    // ATTACKS can never wipe both sides), and it must be a DRAW: awarding it
+    // to side 0 -- which is what checking side1Dead first would do -- hands
+    // side 0 every symmetric mirror match, the exact bias the round-alternating
+    // turn order above exists to remove.
+    s.phase = wire::kPhaseDraw;
+  } else if (side1Dead) {
     s.phase = wire::kPhaseSide0Won; // enemy of side0 is all dead
   } else if (side0Dead) {
     s.phase = wire::kPhaseSide1Won;
@@ -690,6 +775,17 @@ int32_t duel_apply(const uint8_t* st, uint32_t stLen, const uint8_t* ord,
   duel::jb_raw(&log, "],\"phase\":");
   duel::jb_u32(&log, s.phase);
   duel::jb_raw(&log, "}");
+
+  // The log did not fit. jsonout.h drops past-cap writes, so what is in the
+  // buffer now is TRUNCATED JSON -- the client's JSON.parse(readLog()) would
+  // throw on it. Reject the round instead, BEFORE committing any output, so a
+  // rejected round leaves the caller's state exactly as it was (the same
+  // contract as every other reject path in this function).
+  if (log.overflow) {
+    g_outLen = 0;
+    g_logLen = 0;
+    return -1;
+  }
 
   const uint32_t written = duel::encode_state(s, g_out, kOutCap);
   if (written == 0) {

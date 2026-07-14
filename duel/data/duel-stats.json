@@ -398,6 +398,8 @@
     "block_pct_256": 102,
     "round_cap": 30,
     "team_size": 3,
-    "loadout_size": 4
+    "loadout_size": 4,
+    "sudden_start": 12,
+    "sudden_step": 6
   }
 }

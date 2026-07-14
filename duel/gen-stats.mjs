@@ -98,6 +98,8 @@ const TUNABLE_KEYS = [
   'round_cap',
   'team_size',
   'loadout_size',
+  'sudden_start',
+  'sudden_step',
 ];
 for (const k of TUNABLE_KEYS) {
   if (typeof tunables[k] !== 'number') fail(`tunables.${k} missing or not a number in ${STATS_JSON}`);
@@ -162,12 +164,20 @@ struct DuelTunables {
   uint8_t round_cap;
   uint8_t team_size;
   uint8_t loadout_size;
+  // Sudden death (combat-depth Task 2): from round \`sudden_start\` on, the arena
+  // collapses -- every LIVING treat takes sudden_step * (playedRound -
+  // sudden_start + 1) chip damage at end of round. It escalates past any
+  // reachable max_hp well before round_cap, so the cap's Sum-HP tiebreak stops
+  // being a win-on-time button (and turtling stops being a strategy).
+  uint8_t sudden_start;
+  uint8_t sudden_step;
 };
 
 constexpr DuelTunables kTun = {
     ${tunables.hp_base}, ${tunables.hp_per_quality}, ${tunables.hp_per_sweetness},
     ${tunables.adv_mult_256}, ${tunables.dis_mult_256}, ${tunables.block_pct_256},
-    ${tunables.round_cap}, ${tunables.team_size}, ${tunables.loadout_size}};
+    ${tunables.round_cap}, ${tunables.team_size}, ${tunables.loadout_size},
+    ${tunables.sudden_start}, ${tunables.sudden_step}};
 
 } // namespace duel
 `;
@@ -228,6 +238,10 @@ export interface DuelTunables {
   round_cap: number;
   team_size: number;
   loadout_size: number;
+  /** Sudden death: first round in which the arena chips every living treat (combat-depth Task 2). */
+  sudden_start: number;
+  /** Sudden-death chip = sudden_step * (playedRound - sudden_start + 1) — escalates, ignores block/shield. */
+  sudden_step: number;
 }
 
 export const DUEL_TUNABLES: DuelTunables = ${JSON.stringify(
