@@ -28,6 +28,7 @@
 
 #include <json/json.h>
 
+#include <cstdlib>
 #include <sstream>
 #include <iostream>
 #include <vector>
@@ -165,6 +166,18 @@ MoveProcessor::ProcessOneAdmin (const Json::Value& cmd)
 
   HandleGodMode (cmd["god"]);
   HandleSetParam (cmd["param"]);
+
+  /* Fork-only dev tool (grant a fighter of any quality, so duels can be tested
+     with verb-carrying treats).  Gated on an environment variable that is set
+     ONLY in the forked-test compose and NEVER in the production image/deploy, so
+     it is literally unreachable on Polygon.  It is also inert-and-deterministic
+     there: with the var unset EVERY node ignores the command identically (and
+     the goldenreplay build gate runs with it unset, so golden is unchanged).
+     The envelope stays {cmd:{god:{grantfighter:...}}} for consistency with the
+     other god-mode verbs, but it is dispatched HERE (not inside HandleGodMode)
+     because the fork runs as chain=POLYGON, whose roconfig has god_mode=false. */
+  if (std::getenv ("TF_ENABLE_GRANT") != nullptr)
+    MaybeGrantFighter (cmd["god"]["grantfighter"]);
 }
 
 void
@@ -182,6 +195,69 @@ MoveProcessor::HandleGodMode (const Json::Value& cmd)
 	MaybeSetNewCostMultiplier (cmd["cost"]);
 	MaybeSetNewVersionIdentifier (cmd["version"]);
 	MaybeSetNewVanillaDownloadUrl (cmd["vanillaurl"]);
+}
+
+void
+MoveProcessor::MaybeGrantFighter (const Json::Value& cmd)
+{
+  if (!cmd.isObject ())
+    return;
+
+  /* All fields validated -- an admin move must never CHECK-crash the daemon. */
+  const auto& toVal = cmd["to"];
+  const auto& qVal = cmd["quality"];
+  if (!toVal.isString () || !qVal.isInt ())
+    {
+      LOG (WARNING) << "grantfighter: needs {to:string, quality:int}: " << cmd;
+      return;
+    }
+  const std::string owner = toVal.asString ();
+  const int64_t q = qVal.asInt64 ();
+  /* Quality 1-4 = Common/Uncommon/Rare/Epic (0 = None, not grantable). */
+  if (q < 1 || q > 4)
+    {
+      LOG (WARNING) << "grantfighter: quality out of range (1-4): " << q;
+      return;
+    }
+  int64_t count = 1;
+  if (cmd.isMember ("count"))
+    {
+      if (!cmd["count"].isInt ())
+        {
+          LOG (WARNING) << "grantfighter: count must be an int";
+          return;
+        }
+      count = cmd["count"].asInt64 ();
+      if (count < 1 || count > 50)
+        {
+          LOG (WARNING) << "grantfighter: count out of range (1-50): " << count;
+          return;
+        }
+    }
+
+  const auto quality = static_cast<pxd::Quality> (static_cast<int32_t> (q));
+  for (int64_t i = 0; i < count; ++i)
+    {
+      /* Reuse the EXACT production path a cook takes: generate a recipe of the
+         requested quality (which rolls the quality-appropriate move set), build
+         the fighter from it (FighterTable::CreateNew rolls moves + armour), land
+         it Available, then delete the scaffolding recipe so no phantom is left. */
+      const uint32_t recipeId
+          = pxd::RecipeInstance::Generate (quality, ctx.RoConfig (), rnd, db, owner);
+      if (recipeId == 0)
+        {
+          /* Generate's own no-blueprint / infinite-loop guard already logged. */
+          LOG (WARNING) << "grantfighter: could not generate a quality-" << q
+                        << " recipe; skipping one";
+          continue;
+        }
+      auto fighter = fighters.CreateNew (owner, recipeId, ctx.RoConfig (), rnd);
+      fighter->SetStatus (pxd::FighterStatus::Available);
+      fighter.reset ();
+      recipeTbl.DeleteById (recipeId);
+    }
+  LOG (INFO) << "grantfighter: granted " << count << " quality-" << q
+             << " fighter(s) to " << owner;
 }
 
 void

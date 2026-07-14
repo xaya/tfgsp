@@ -332,6 +332,22 @@ private:
   void MaybeSetNewCostMultiplier (const Json::Value& cmd);
   void MaybeSetNewVersionIdentifier (const Json::Value& cmd);
   void MaybeSetNewVanillaDownloadUrl (const Json::Value& cmd);
+
+  /**
+   * FORK/DEV ONLY: instantly grant a fighter of an arbitrary quality to a player,
+   * so duels can be tested with verb-carrying Uncommon/Rare/Epic treats that would
+   * otherwise take the full sweetness climb to earn.  Dispatched from
+   * ProcessOneAdmin ONLY when the env var TF_ENABLE_GRANT is set -- never in the
+   * production image -- so it is unreachable on POLYGON and inert-and-deterministic
+   * there (every node ignores it identically; the goldenreplay build gate runs with
+   * the var unset, so golden is byte-unchanged).  Command shape:
+   *   {"cmd":{"god":{"grantfighter":{"to":"<name>","quality":1-4,"count":1-50}}}}
+   * Reuses the EXACT production generation path (RecipeInstance::Generate ->
+   * FighterTable::CreateNew rolls quality-appropriate moves), then consumes the
+   * scaffolding recipe so no phantom is left.  Soft-fails (LOG + skip), never
+   * CHECK -- an admin move must not be able to crash the daemon.
+   */
+  void MaybeGrantFighter (const Json::Value& cmd);
   
   /* Copy from logic.cpp, to make sure we recalc after user buys from exchange */
   
