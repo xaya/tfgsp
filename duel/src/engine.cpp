@@ -487,16 +487,23 @@ bool decode_state(const uint8_t* buf, uint32_t len, DuelState* out) {
   const uint16_t round = static_cast<uint16_t>(
       buf[wire::kStateOffRound] |
       (static_cast<uint16_t>(buf[wire::kStateOffRound + 1]) << 8));
-  // An ACTIVE duel at or past the round cap is unreachable from duel_init +
-  // duel_apply (apply always sets a terminal phase once round >= round_cap),
-  // so accepting one would only ever admit a CRAFTED state -- and sudden
-  // death (combat-depth Task 2) makes that dangerous: the chip term scales
-  // with (round - sudden_start), so a forged round = 60000 would one-shot the
-  // whole arena. Reject it here, at the only door into the engine. (A
-  // terminal-phase state AT the cap is the legitimate end state of a
-  // round-cap duel and still decodes -- duel_apply rejects it on `phase !=
-  // active` instead.)
-  if (phase == wire::kPhaseActive && round >= kTun.round_cap) {
+  // Wire-format validity must NEVER depend on a mutable tunable (state.h
+  // invariant): if it did, a later gen-stats retune could retroactively brick a
+  // validly-countersigned in-flight state. So this bound is the ABSOLUTE
+  // wire::kMaxRound (255), NOT kTun.round_cap -- exactly as ValidTeamShape gates
+  // on kMaxTeamSize, never kTun.team_size. round_cap is a uint8_t and a
+  // legitimate ACTIVE state always has round < round_cap (duel_apply sets a
+  // terminal phase once round >= round_cap), so no legit active round ever
+  // exceeds 254 for ANY tuning -- kMaxRound=255 can never reject a legit state.
+  // This is a MALLEABILITY bound only, not a safety one: the sudden-death chip
+  // term is already computed in u32 (see the SUDDEN DEATH block below), so a
+  // forged round = 60000 no longer overflows -- rejecting round >= 255 just
+  // keeps the door shut on a crafted active state that play can never produce.
+  // (A terminal-phase state at/beyond the cap is the legitimate end state and
+  // still decodes -- duel_apply rejects it on `phase != active` instead; and the
+  // GAME still ends every duel at round_cap -- only this DECODE bound is
+  // decoupled from round_cap, not duel_apply's cap logic.)
+  if (phase == wire::kPhaseActive && round >= wire::kMaxRound) {
     return false;
   }
 

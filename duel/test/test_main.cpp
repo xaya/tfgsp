@@ -1980,12 +1980,17 @@ void test_apply_round_cap() {
   }
 }
 
-// R6 — an ACTIVE state at/past the round cap is unreachable from duel_init +
-// duel_apply (apply always sets a terminal phase once round >= round_cap), and
-// with sudden death it is actively dangerous (a crafted round = 60000 makes the
-// chip term enormous). decode_state must reject it outright — a terminal-phase
-// state AT the cap is the legitimate end state and must still decode.
-void test_decode_rejects_active_state_at_round_cap() {
+// R6 (wire-consensus Fix B) — decode validity gates an ACTIVE round on the
+// ABSOLUTE wire::kMaxRound (255), NOT the mutable kTun.round_cap. round_cap is a
+// uint8_t and a legit active state always has round < round_cap, so no legit
+// active round exceeds 254 for ANY tuning; an absolute 255 bound therefore never
+// bricks a validly-signed in-flight state when a future retune lowers round_cap
+// (the state.h "validity independent of tunables" invariant — same reason
+// ValidTeamShape uses kMaxTeamSize, never kTun.team_size). The chip term is
+// already u32-safe, so this is a malleability bound only. A terminal-phase state
+// at/beyond the cap is the legitimate end state and still decodes; the GAME
+// still ends every duel at round_cap (duel_apply, untouched).
+void test_decode_active_round_absolute_bound() {
   const uint8_t m[] = {24}, c[] = {0};
   uint8_t buf[kMaxStateLen];
   duel::DuelState o{};
@@ -1998,20 +2003,41 @@ void test_decode_rejects_active_state_at_round_cap() {
     const uint32_t len = duel::encode_state(s, buf, sizeof(buf));
     CHECK(duel::decode_state(buf, len, &o));
   }
-  // active, round == round_cap → rejected (and duel_apply rejects it too).
+  // active, round == round_cap → NOW decodes (pre-fix this rejected). Decode
+  // validity no longer couples to the mutable round_cap. The GAME still caps it:
+  // duel_apply plays one final round and lands a terminal phase, unchanged.
   {
     duel::DuelState s = MakeState(1, 1, duel::kTun.round_cap);
     SetTreat(s, 0, 0, 100, 100, 1, 1, 1, m, c);
     SetTreat(s, 1, 0, 100, 100, 1, 1, 1, m, c);
     const uint32_t len = duel::encode_state(s, buf, sizeof(buf));
-    CHECK(duel::decode_state(buf, len, &o) == false);
+    CHECK(duel::decode_state(buf, len, &o));
     uint8_t ord[32];
     OrdRecoverAll(ord, 1);
-    CHECK(duel_apply(buf, len, ord, duel::wire::OrdersLen(1)) == -1);
-    CHECK(duel_out_len() == 0);
-    CHECK(duel_log_len() == 0);
+    CHECK(duel_apply(buf, len, ord, duel::wire::OrdersLen(1)) == 0);
+    duel::DuelState after{};
+    CHECK(DecodeOut(&after));
+    CHECK(after.phase != duel::wire::kPhaseActive); // game still ends at the cap
   }
-  // active, absurd round (the crafted-chip hazard) → rejected.
+  // active, round == 254 → NOW decodes. THE MUTATION-CATCHER: with the default
+  // round_cap == 30, a mutant that reverted this guard to `round >= round_cap`
+  // would reject 254 (254 >= 30); the absolute kMaxRound bound accepts it.
+  {
+    duel::DuelState s = MakeState(1, 1, 254);
+    SetTreat(s, 0, 0, 100, 100, 1, 1, 1, m, c);
+    SetTreat(s, 1, 0, 100, 100, 1, 1, 1, m, c);
+    const uint32_t len = duel::encode_state(s, buf, sizeof(buf));
+    CHECK(duel::decode_state(buf, len, &o)); // 254 < kMaxRound (255)
+  }
+  // active, round == 255 (== kMaxRound) → rejected: the exact boundary.
+  {
+    duel::DuelState s = MakeState(1, 1, duel::wire::kMaxRound);
+    SetTreat(s, 0, 0, 100, 100, 1, 1, 1, m, c);
+    SetTreat(s, 1, 0, 100, 100, 1, 1, 1, m, c);
+    const uint32_t len = duel::encode_state(s, buf, sizeof(buf));
+    CHECK(duel::decode_state(buf, len, &o) == false);
+  }
+  // active, absurd round → still rejected (60000 >= 255).
   {
     duel::DuelState s = MakeState(1, 1, 60000);
     SetTreat(s, 0, 0, 100, 100, 1, 1, 1, m, c);
@@ -4991,7 +5017,7 @@ int main(int argc, char** argv) {
   RUN(test_duel_init_reject_vector);
   RUN(test_state_codec_roundtrip);
   RUN(test_state_codec_decode_rejects_bad_state);
-  RUN(test_decode_rejects_active_state_at_round_cap);
+  RUN(test_decode_active_round_absolute_bound);
   RUN(test_jsonout_i32_min);
   RUN(test_apply_clash_advantage);
   RUN(test_apply_clash_disadvantage);

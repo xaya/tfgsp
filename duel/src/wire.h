@@ -44,6 +44,17 @@ constexpr uint8_t kMinSweetness = 1;
 constexpr uint8_t kMaxSweetness = 10;
 constexpr uint32_t kMoveUniverse = 39; // dense move-index count (Task 2 codegen)
 
+// Absolute upper bound on a decodable ACTIVE round. round_cap is a uint8_t, so
+// no legitimate active state ever has round > 254 (duel_apply sets a terminal
+// phase once round >= round_cap, and round_cap can never exceed 255); this
+// ABSOLUTE ceiling replaces the old round_cap-coupled decode check so a future
+// gen-stats retune of round_cap can NEVER retroactively brick a validly-signed
+// in-flight state (the state.h "validity must not depend on a mutable tunable"
+// invariant, honoured exactly like ValidTeamShape validates against kMaxTeamSize
+// rather than kTun.team_size). The sudden-death chip term is already computed in
+// u32 (engine.cpp), so this is a malleability bound only, not an overflow guard.
+constexpr uint16_t kMaxRound = 255;
+
 // ---- sentinel byte values ----
 constexpr uint8_t kActionRecover = 0xFE;  // orders.action: free fallback move
 constexpr uint8_t kTargetNone = 0xFF;     // orders.target: required for Recover
