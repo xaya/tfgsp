@@ -40,13 +40,24 @@ const MOVE_TYPE_NAMES = ['Heavy', 'Speedy', 'Tricky', 'Distance', 'Blocking'];
 // carries, and their C++ symbol names. Effects partition into exactly two
 // groups, each legal on exactly one side of the MoveType 4 (Blocking) split —
 // see the partition check in the entries map below.
-const EFFECT_CODES = { damage: 0, block: 1, guard: 2, aoe: 3, heal: 4, siphon: 5, shield: 6, counter: 7 };
+//
+// `groupheal` (combat-depth Task 6) is the 9th — the effect table is compile-time,
+// so a new verb costs ZERO wire bytes: `effect` is a stat-table column, never a
+// state/orders field. Adding it here is the whole cost.
+const EFFECT_CODES = { damage: 0, block: 1, guard: 2, aoe: 3, heal: 4, siphon: 5, shield: 6, counter: 7, groupheal: 8 };
 const EFFECT_CPP_SYMBOL = {
   damage: 'kEffDamage', block: 'kEffBlock', guard: 'kEffGuard', aoe: 'kEffAoe',
   heal: 'kEffHeal', siphon: 'kEffSiphon', shield: 'kEffShield', counter: 'kEffCounter',
+  groupheal: 'kEffGroupHeal',
 };
 const STANCE_EFFECTS = new Set(['block', 'guard', 'shield', 'counter']); // legal ONLY on MoveType 4
-const ACTION_EFFECTS = new Set(['damage', 'aoe', 'heal', 'siphon']); // legal ONLY on MoveType 0-3
+const ACTION_EFFECTS = new Set(['damage', 'aoe', 'heal', 'siphon', 'groupheal']); // legal ONLY on MoveType 0-3
+// The effects whose order NAMES NOBODY: the engine REQUIRES the kTargetAll (0xFE)
+// sentinel in their target byte, and FORBIDS it for every other effect (one
+// logical order, exactly one byte encoding — game channels sign order bytes).
+// Kept here as the single written-down statement of that rule; the engine's
+// duel_apply enforces it, and duel/test/test_main.cpp pins both directions.
+const TARGET_ALL_EFFECTS = new Set(['aoe', 'groupheal']);
 
 function fail(msg) {
   console.error(`gen-stats.mjs: ${msg}`);
@@ -115,10 +126,10 @@ const TUNABLE_KEYS = [
   'loadout_size',
   'sudden_start',
   'sudden_step',
-  // combat-depth Task 3: new-verb tunables, wired up by Tasks 4/5/6 (AoE
-  // splash %, guard block %, siphon lifesteal %, counter reflect %). Landed
-  // now so kDuelMoves[*].effect has something to point at once the resolver
-  // reads them; not consumed by any behaviour yet.
+  // The new-verb percentages, all four now consumed by the resolver: AoE splash %
+  // (Task 5 — and REUSED by Task 6's group-heal as its per-head spread: healing
+  // everyone costs potency exactly as spraying everyone does), guard intercept %
+  // (Task 4), siphon lifesteal % (Task 6), counter reflect % (Task 4).
   'aoe_pct_256',
   'guard_pct_256',
   'siphon_pct_256',
@@ -177,8 +188,8 @@ const entries = dense.map((bp, idx) => {
 
   // Rule 3: the effect/MoveType partition, enforced in BOTH directions. Stance
   // effects {block,guard,shield,counter} are legal ONLY on MoveType 4
-  // (Blocking); action effects {damage,aoe,heal,siphon} are legal ONLY on
-  // MoveType 0-3. This subsumes and replaces the old `block !== (moveType ===
+  // (Blocking); action effects {damage,aoe,heal,siphon,groupheal} are legal ONLY
+  // on MoveType 0-3. This subsumes and replaces the old `block !== (moveType ===
   // 4)` check now that MoveType 4 generalises from "IS the block marker" to
   // "IS the stance marker".
   if (STANCE_EFFECTS.has(effect) && bp.moveType !== 4) {
@@ -204,6 +215,17 @@ const entries = dense.map((bp, idx) => {
   const hits = stat.hits ?? 1;
   if (!Number.isInteger(hits) || hits < 1 || hits > 2) {
     fail(`${bp.aid} (${bp.name}) hits ${hits} outside [1,2]`);
+  }
+  // Rule 6 (combat-depth Task 6): a MULTI-HIT is legal ONLY on plain `damage`.
+  // The resolve loop strikes twice down the single-target damage path and nowhere
+  // else, so `hits: 2` on any other effect would be a stat the engine silently
+  // ignores — an authored lie. Failing the build keeps the resolve loop honest
+  // and the effect x hits combinatorics finite.
+  if (hits > 1 && effect !== 'damage') {
+    fail(
+      `${bp.aid} (${bp.name}) has hits ${hits} on effect "${effect}" — a multi-hit is legal ONLY on ` +
+        `effect "damage" (every other effect resolves once, so the extra hits would be silently ignored)`,
+    );
   }
 
   return {
@@ -248,10 +270,11 @@ namespace duel {
 // MoveType (matches database/fighter.hpp pxd::MoveType / the proto MoveType field):
 // 0 Heavy, 1 Speedy, 2 Tricky, 3 Distance, 4 Blocking.
 //
-// Move effects (combat-depth Task 3): stance effects {block,guard,shield,counter}
-// are legal ONLY on MoveType 4 (Blocking); action effects {damage,aoe,heal,siphon}
-// are legal ONLY on MoveType 0-3. gen-stats.mjs enforces this partition in both
-// directions, so an illegal (effect, type) pair can never reach this table.
+// Move effects (combat-depth Tasks 3 + 6): stance effects {block,guard,shield,
+// counter} are legal ONLY on MoveType 4 (Blocking); action effects {damage,aoe,
+// heal,siphon,groupheal} are legal ONLY on MoveType 0-3. gen-stats.mjs enforces
+// this partition in both directions, so an illegal (effect, type) pair can never
+// reach this table -- as it enforces that hits > 1 is legal ONLY on kEffDamage.
 enum : uint8_t { ${Object.entries(EFFECT_CODES)
   .map(([name, code]) => `${EFFECT_CPP_SYMBOL[name]} = ${code}`)
   .join(', ')} };
@@ -284,10 +307,16 @@ struct DuelTunables {
   // being a win-on-time button (and turtling stops being a strategy).
   uint8_t sudden_start;
   uint8_t sudden_step;
-  // combat-depth Task 3: new-verb tunables, wired up by Tasks 4/5/6 (AoE splash
-  // %, guard block %, siphon lifesteal %, counter reflect %). Landed now so
-  // kDuelMoves[*].effect has something to point at once the resolver reads
-  // them; not consumed by any behaviour yet.
+  // The new-verb percentages (combat-depth Tasks 4/5/6), all four consumed by
+  // duel_apply:
+  //   aoe_pct_256     an AoE's damage per victim, as a fraction of a normal blow
+  //                   -- and, DELIBERATELY THE SAME NUMBER, a group-heal's
+  //                   restore per ally: reaching everyone costs per-head potency,
+  //                   and that is one idea, not two.
+  //   guard_pct_256   the fraction of an intercepted blow the guardian takes.
+  //   siphon_pct_256  the fraction of the hp a siphon actually DRAINED (never the
+  //                   force it landed) that comes back as healing.
+  //   counter_pct_256 the fraction of the blow's LANDED force a counter reflects.
   uint16_t aoe_pct_256;
   uint16_t guard_pct_256;
   uint16_t siphon_pct_256;
@@ -329,11 +358,16 @@ const ts = `/**
 export type DuelMoveType = 0 | 1 | 2 | 3 | 4;
 
 /**
- * Move effect (combat-depth Task 3, mirrors kEff* in stats_gen.h). Partitions into
+ * Move effect (combat-depth Tasks 3 + 6, mirrors kEff* in stats_gen.h). Partitions into
  * stance effects — legal ONLY on type 4 (Blocking) — and action effects — legal ONLY
  * on type 0-3; gen-stats.mjs enforces that split in both directions at codegen time.
+ *
+ * 'aoe' and 'groupheal' are the two that NAME NOBODY: their order's target byte must be
+ * the TARGET_ALL sentinel (see src/duel/targeting.ts) — the engine rejects a slot index
+ * there, and rejects TARGET_ALL on everything else.
  */
-export type DuelEffect = 'damage' | 'block' | 'guard' | 'aoe' | 'heal' | 'siphon' | 'shield' | 'counter';
+export type DuelEffect =
+  | 'damage' | 'block' | 'guard' | 'aoe' | 'heal' | 'siphon' | 'shield' | 'counter' | 'groupheal';
 
 export interface DuelMoveStat {
   guid: string;
@@ -344,7 +378,8 @@ export interface DuelMoveStat {
   speed: number;
   cooldown: number;
   effect: DuelEffect;
-  /** 1 = normal; 2 = a double-strike (a move PROPERTY, never a proc). */
+  /** 1 = normal; 2 = a double-strike: it resolves TWICE, each strike clashing and killing
+   *  independently. A move PROPERTY, never a proc — legal only on effect 'damage'. */
   hits: number;
   /** 255 = unlimited; 1-2 = a signature ultimate. */
   maxUses: number;
@@ -376,13 +411,15 @@ export interface DuelTunables {
   sudden_start: number;
   /** Sudden-death chip = sudden_step * (playedRound - sudden_start + 1) — escalates, ignores block/shield. */
   sudden_step: number;
-  /** combat-depth Task 3/4: AoE splash damage %, of a normal single-target hit's damage. */
+  /** AoE damage per victim, as a fraction of a normal blow — and, the same number by design,
+   *  a group-heal's restore per ally (reaching everyone costs per-head potency). */
   aoe_pct_256: number;
-  /** combat-depth Task 3/5: Guard stance block % (stronger than a plain block). */
+  /** The fraction of an intercepted blow that the GUARDIAN takes instead of the ward. */
   guard_pct_256: number;
-  /** combat-depth Task 3/5: Siphon lifesteal %, of damage dealt returned as healing. */
+  /** Siphon lifesteal: the fraction of the hp the blow actually DRAINED (not the force it
+   *  landed — a blow eaten by a shield drains, and so heals, nothing) returned as healing. */
   siphon_pct_256: number;
-  /** combat-depth Task 3/6: Counter reflect %, of the triggering blow's damage. */
+  /** Counter reflect: the fraction of the blow's LANDED force thrown back at the attacker. */
   counter_pct_256: number;
 }
 

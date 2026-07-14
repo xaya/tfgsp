@@ -217,28 +217,40 @@ constexpr uint8_t kAoeMove = 34; // Gold Rush (Distance, power 51, speed 69, cd 
 // Pins the codegen's contract from the C++ side: every entry's effect is a
 // valid kEff*, the stance/action partition holds against type (stance
 // effects {block,guard,shield,counter} legal ONLY on type==4 Blocking;
-// action effects {damage,aoe,heal,siphon} legal ONLY on type!=4 -- a total
-// partition, so exactly one of isStance/isAction holds for every move),
-// hits is in [1,2], and max_uses is in [1,255] (never the unusable 0).
-// gen-stats.mjs enforces all of this at codegen time; this is the C++-side
-// pin that would fail if a future regeneration ever produced a table that
-// violated it.
+// action effects {damage,aoe,heal,siphon,groupheal} legal ONLY on type!=4 -- a
+// total partition, so exactly one of isStance/isAction holds for every move),
+// hits is in [1,2] and ONLY EVER > 1 on a plain damage move, and max_uses is in
+// [1,255] (never the unusable 0). gen-stats.mjs enforces all of this at codegen
+// time; this is the C++-side pin that would fail if a future regeneration ever
+// produced a table that violated it.
 void test_stats_gen_effect_partition_and_limits() {
-  int aoeCount = 0;
+  int aoeCount = 0, healCount = 0, groupHealCount = 0, siphonCount = 0;
+  int multiHitCount = 0, limitedUseCount = 0;
   for (uint32_t i = 0; i < duel::wire::kMoveUniverse; ++i) {
     const duel::DuelMoveStat& mv = duel::kDuelMoves[i];
-    CHECK(mv.effect <= duel::kEffCounter); // a valid kEff* (0..7)
+    CHECK(mv.effect <= duel::kEffGroupHeal); // a valid kEff* (0..8)
     const bool isStance = mv.effect == duel::kEffBlock || mv.effect == duel::kEffGuard ||
                            mv.effect == duel::kEffShield || mv.effect == duel::kEffCounter;
     const bool isAction = mv.effect == duel::kEffDamage || mv.effect == duel::kEffAoe ||
-                           mv.effect == duel::kEffHeal || mv.effect == duel::kEffSiphon;
+                           mv.effect == duel::kEffHeal || mv.effect == duel::kEffSiphon ||
+                           mv.effect == duel::kEffGroupHeal;
     CHECK(isStance != isAction);       // total partition: exactly one holds
     CHECK(isStance == (mv.type == 4)); // stance <=> Blocking, both directions
     CHECK(mv.hits >= 1 && mv.hits <= 2);
-    CHECK(mv.max_uses >= 1); // max_uses <= 255 always holds (uint8_t)
-    if (mv.effect == duel::kEffAoe) {
-      ++aoeCount;
+    // combat-depth Task 6: the resolve loop strikes twice down the single-target DAMAGE
+    // path and nowhere else, so hits > 1 on any other effect would be an authored lie.
+    if (mv.hits > 1) {
+      CHECK(mv.effect == duel::kEffDamage);
+      ++multiHitCount;
     }
+    CHECK(mv.max_uses >= 1); // max_uses <= 255 always holds (uint8_t)
+    if (mv.max_uses != 255) {
+      ++limitedUseCount;
+    }
+    if (mv.effect == duel::kEffAoe) ++aoeCount;
+    if (mv.effect == duel::kEffHeal) ++healCount;
+    if (mv.effect == duel::kEffGroupHeal) ++groupHealCount;
+    if (mv.effect == duel::kEffSiphon) ++siphonCount;
   }
   // combat-depth Task 5 authored exactly five AoE moves (Golden Shower of Chips [22],
   // Conductive Coat [31], Gold Rush [34], Explosive Jawbreaker [16] and the deliberate q2
@@ -246,6 +258,19 @@ void test_stats_gen_effect_partition_and_limits() {
   // unreachable from the compile-time table, so this pins that the DATA landed too.
   CHECK(aoeCount == 5);
   CHECK(duel::kDuelMoves[kAoeMove].effect == duel::kEffAoe); // the vectors' caster
+  // ...and combat-depth Task 6 authored exactly one of each of the last verbs. Same
+  // reasoning: without the DATA, the resolve paths below are unreachable and untested.
+  CHECK(healCount == 1);      // Sugar Rush [27]
+  CHECK(groupHealCount == 1); // Super Sugary Rush [10]
+  CHECK(siphonCount == 1);    // Pucker Sucker [6]
+  CHECK(multiHitCount == 1);  // Limon Shuriken [15]
+  CHECK(limitedUseCount == 2); // Super Sugary Rush [10] + Silver Knuckles [37], both 2
+  CHECK(duel::kDuelMoves[27].effect == duel::kEffHeal);
+  CHECK(duel::kDuelMoves[10].effect == duel::kEffGroupHeal);
+  CHECK(duel::kDuelMoves[10].max_uses == 2);
+  CHECK(duel::kDuelMoves[6].effect == duel::kEffSiphon);
+  CHECK(duel::kDuelMoves[15].hits == 2);
+  CHECK(duel::kDuelMoves[37].max_uses == 2);
 }
 
 // kTun mirrors duel/data/duel-stats.json's top-level "tunables" verbatim
@@ -345,8 +370,10 @@ void MakeBaselineCfg(uint8_t cfg[kBaselineCfgLen]) {
 // Also pins duel_init's v2 seeding contract (controller resolution R3,
 // closed by combat-depth Task 3): a fresh treat's shield is 0, its 4
 // reserved bytes are 0, and uses_left[j] is kDuelMoves[m].max_uses for a
-// real move slot / 0 for a filler slot -- every move defaults to
-// max_uses=255 (unlimited) today, so this still reads 255 for a real slot.
+// real move slot / 0 for a filler slot. Asserted against the TABLE, not
+// against a literal 255: combat-depth Task 6 authored the first moves with a
+// real max_uses (2), and a fresh duel must seed a signature move with its two
+// uses, not with the unlimited sentinel.
 void CheckStateTreat(const uint8_t* out, uint32_t teamSize, uint32_t loadoutSize,
                       uint32_t side, uint32_t slot, uint8_t quality,
                       uint8_t sweetness, uint8_t moveCount,
@@ -370,8 +397,10 @@ void CheckStateTreat(const uint8_t* out, uint32_t teamSize, uint32_t loadoutSize
   for (uint32_t j = 0; j < loadoutSize; ++j) {
     CHECK(out[movesOff + j] == moves[j]);
     CHECK(out[cdOff + j] == 0); // fresh state: every cooldown starts ready
-    // R3: real slots seed unlimited (255); filler slots are canonically 0.
-    CHECK(out[ulOff + j] == (j < moveCount ? 255 : 0));
+    // R3: a real slot seeds its move's authored max_uses (255 == unlimited);
+    // a filler slot is canonically 0.
+    CHECK(out[ulOff + j] ==
+          (j < moveCount ? duel::kDuelMoves[moves[j]].max_uses : 0));
   }
 }
 
@@ -809,9 +838,21 @@ duel::DuelState MakeState(uint8_t teamSize, uint8_t loadoutSize,
 // `shield` (combat-depth Task 4) seeds the absorb pool a PRIOR round left
 // behind -- the vectors that pin "a shield persists across rounds until
 // consumed" start from exactly such a state.
+//
+// `realUses` (combat-depth Task 6, default null) seeds uses_left for the real
+// slots. NULL means "as a fresh duel would": uses_left[j] =
+// kDuelMoves[moves[j]].max_uses -- the SAME rule duel_init uses (DecodeConfig),
+// so a hand-built vector is always a state duel_init could actually have
+// produced. This default is load-bearing, not cosmetic: it used to leave
+// uses_left at the struct's zero-init, which encoded real-slot uses_left = 0 in
+// EVERY hand-built vector. That was harmless while the byte was inert, but the
+// moment Task 6 made `uses_left == 0` a hard reject, all 89 of them would have
+// become illegal orders. Pass an explicit array only to pin the spent/limited
+// paths (a signature move down to its last use, or already spent).
 void SetTreat(duel::DuelState& s, int side, int slot, uint16_t hp, uint16_t maxhp,
               uint8_t q, uint8_t sw, uint8_t mc, const uint8_t* realMoves,
-              const uint8_t* realCds, uint8_t shield = 0) {
+              const uint8_t* realCds, uint8_t shield = 0,
+              const uint8_t* realUses = nullptr) {
   duel::TreatState& t = s.treats[side][slot];
   t.hp = hp;
   t.max_hp = maxhp;
@@ -823,9 +864,13 @@ void SetTreat(duel::DuelState& s, int side, int slot, uint16_t hp, uint16_t maxh
     if (j < mc) {
       t.moves[j] = realMoves[j];
       t.cooldowns[j] = realCds[j];
+      t.uses_left[j] = (realUses != nullptr)
+                           ? realUses[j]
+                           : duel::kDuelMoves[realMoves[j]].max_uses;
     } else {
       t.moves[j] = duel::wire::kMoveSlotEmpty;
       t.cooldowns[j] = 0;
+      t.uses_left[j] = 0; // canonical filler
     }
   }
 }
@@ -899,18 +944,28 @@ int LogCount(const char* needle) {
 // Dense move indices used in the behavioral vectors (from stats_gen.h):
 //   [0]  Gum Drop Kick       {power 11, speed 46, cd 0, Blocking, block}
 //   [1]  Gilded Bonds        {power 23, speed 45, cd 2, Blocking, GUARD}
+//   [2]  Quicksilver Slice   {power 50, speed 93, cd 3, Speedy}
 //   [3]  Coco Chaos          {power 24, speed 98, cd 0, Speedy}
-//   [6]  Pucker Sucker       {power 24, speed 57, cd 0, Tricky}
+//   [6]  Pucker Sucker       {power 24, speed 57, cd 0, Tricky, SIPHON}  (Task 6)
 //   [8]  Berry Bounce        {power 20, speed 46, cd 1, Blocking, COUNTER}
-//   [10] Super Sugary Rush   {power 51, speed 97, cd 3, Speedy}
+//   [10] Super Sugary Rush   {power 51, speed 97, cd 3, Speedy, GROUPHEAL, max_uses 2} (Task 6)
 //   [11] Candied Shell       {power 20, speed 47, cd 1, Blocking, SHIELD}
-//   [12] Chewy Absorption    {power 15, speed 42, cd 0, Blocking, block}
+//   [12] Chewy Absorption    {power 15, speed 42, cd 0, Blocking, SHIELD} (Task 6)
+//   [15] Limon Shuriken      {power 41, speed 75, cd 2, Distance, hits 2} (Task 6)
 //   [18] Sugar Shield        {power 12, speed 43, cd 0, Blocking, SHIELD}
 //   [21] Bouncing Barrage    {power 24, speed 45, cd 2, Blocking, COUNTER}
 //   [24] Pop Rock Pop        {power 26, speed 27, cd 0, Heavy}
 //   [25] Bubble Trouble      {power 25, speed 76, cd 0, Distance}
 //   [26] Vicious Jawbreaker  {power 40, speed 28, cd 2, Heavy}
+//   [27] Sugar Rush          {power 37, speed 82, cd 2, Speedy, HEAL}    (Task 6)
+//   [32] Sugary Sweep        {power 25, speed 64, cd 0, Tricky}
 //   [34] Gold Rush           {power 51, speed 69, cd 3, Distance, AOE}   (Task 5, kAoeMove)
+//   [37] Silver Knuckles     {power 45, speed 30, cd 3, Heavy, max_uses 2} (Task 6)
+//
+// Combat-depth Task 6 gave [6]/[10]/[12] their real verbs, so the older vectors
+// that used them as a generic Tricky/fast-Speedy/block move were re-pointed at
+// [32]/[2]/[0] -- a vector that means "a plain damage move" must not silently
+// become a vector that means "a siphon".
 
 // jsonout: jb_i32 must not overflow when negating INT32_MIN (classic edge; the
 // helper widens to int64 first). Log/view use jb_u32, but this pins jb_i32.
@@ -1058,7 +1113,7 @@ ApplyVec MakeVec_ClashDisadvantage() {
   v.name = "clash_disadvantage";
   duel::DuelState s = MakeState(1, 1);
   const uint8_t mH[] = {26}, cH[] = {0}; // Heavy power 40
-  const uint8_t mT[] = {6}, cT[] = {0};  // Tricky
+  const uint8_t mT[] = {32}, cT[] = {0}; // Sugary Sweep (Tricky, plain damage)
   SetTreat(s, 0, 0, 250, 250, 3, 6, 1, mH, cH);
   SetTreat(s, 1, 0, 250, 250, 1, 1, 1, mT, cT);
   v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
@@ -1084,14 +1139,15 @@ void test_apply_clash_disadvantage() {
 // 154, so the surviving fraction is 256-154 = 102, and the two multiplies are
 // FUSED into one >>16 rather than chained through two >>8 truncations).
 // (B) the stance holds even when the blocker's own action fires LAST (attacker
-// faster). Both use Chewy Absorption [12] -- Sugar Shield [18] is a SHIELD move
-// now (Task 4), and only `effect == block` still buys the flat reduction.
+// faster). Both use Gum Drop Kick [0] -- the only effects that still buy the
+// flat reduction are `block`, and Sugar Shield [18] / Chewy Absorption [12] are
+// both SHIELD moves (Tasks 4 and 6), which buy no reduction at all.
 ApplyVec MakeVec_BlockStanceA() {
   ApplyVec v{};
   v.name = "block_stance_a";
   duel::DuelState s = MakeState(1, 1);
   const uint8_t mH[] = {26}, cH[] = {0}; // Heavy power 40, speed 28
-  const uint8_t mB[] = {12}, cB[] = {0}; // Blocking/block, speed 42 (acts first here)
+  const uint8_t mB[] = {0}, cB[] = {0};  // Gum Drop Kick (block, power 11), speed 46 (acts first here)
   SetTreat(s, 0, 0, 250, 250, 3, 6, 1, mH, cH);
   SetTreat(s, 1, 0, 250, 250, 1, 1, 1, mB, cB);
   v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
@@ -1107,7 +1163,7 @@ ApplyVec MakeVec_BlockStanceLate() {
   v.name = "block_stance_late_blocker";
   duel::DuelState s = MakeState(1, 1);
   const uint8_t mS[] = {3}, cS[] = {0};  // Speedy, speed 98 (fires first)
-  const uint8_t mB[] = {12}, cB[] = {0}; // Blocking/block, speed 42 (fires last)
+  const uint8_t mB[] = {0}, cB[] = {0};  // Gum Drop Kick (block), speed 46 (fires last)
   SetTreat(s, 0, 0, 250, 250, 1, 1, 1, mS, cS);
   SetTreat(s, 1, 0, 250, 250, 1, 1, 1, mB, cB);
   v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
@@ -1144,7 +1200,7 @@ void test_apply_block_stance() {
     const int i1 = LogIndexOf("\"side\":1");
     CHECK(i0 >= 0);
     CHECK(i1 >= 0);
-    CHECK(i0 < i1); // attacker (speed 98) resolves before the blocker (speed 43)
+    CHECK(i0 < i1); // attacker (speed 98) resolves before the blocker (speed 46)
   }
 }
 
@@ -1154,7 +1210,7 @@ ApplyVec MakeVec_SpeedOrderKoSkip() {
   ApplyVec v{};
   v.name = "speed_order_ko_skip";
   duel::DuelState s = MakeState(1, 1);
-  const uint8_t mS[] = {10}, cS[] = {0}; // Speedy power 51, speed 97
+  const uint8_t mS[] = {2}, cS[] = {0};  // Quicksilver Slice (Speedy 50), speed 93
   const uint8_t mD[] = {25}, cD[] = {0}; // Distance, speed 76
   SetTreat(s, 0, 0, 250, 250, 4, 10, 1, mS, cS);
   SetTreat(s, 1, 0, 40, 110, 1, 1, 1, mD, cD);
@@ -1172,7 +1228,7 @@ void test_apply_speed_order_ko_skip() {
   duel::DuelState o{};
   CHECK(DecodeOut(&o));
   CHECK(o.treats[1][0].hp == 0);
-  CHECK(LogHas("\"dmg\":76")); // Speedy>Distance adv: 51*384>>8 = 76
+  CHECK(LogHas("\"dmg\":75")); // Speedy>Distance adv: 50*384>>8 = 75
   CHECK(LogHas("\"ko\":true"));
   CHECK(LogHas("{\"side\":1,\"slot\":0,\"kind\":\"skip\"")); // victim skipped
   CHECK(o.phase == duel::wire::kPhaseSide0Won);
@@ -1193,7 +1249,7 @@ ApplyVec MakeVec_FizzleOnDeath() {
   ApplyVec v{};
   v.name = "fizzle_on_death";
   duel::DuelState s = MakeState(2, 1);
-  const uint8_t mS[] = {10}, cS[] = {0}; // Speedy power 51, speed 97 → KOs slot 0
+  const uint8_t mS[] = {2}, cS[] = {0};  // Quicksilver Slice (Speedy 50), speed 93 → KOs slot 0
   const uint8_t mH[] = {26}, cH[] = {0}; // Heavy power 40, speed 28, authored cd 2 → whiffs
   const uint8_t mD[] = {24}, cD[] = {0};
   SetTreat(s, 0, 0, 250, 250, 4, 10, 1, mS, cS);
@@ -1236,7 +1292,7 @@ ApplyVec MakeVec_FizzleMultiLivingUntouched() {
   ApplyVec v{};
   v.name = "fizzle_multi_living_untouched";
   duel::DuelState s = MakeState(3, 1);
-  const uint8_t mS[] = {10}, cS[] = {0}; // Speedy power 51, speed 97 — KOs slot 0
+  const uint8_t mS[] = {2}, cS[] = {0};  // Quicksilver Slice (Speedy 50), speed 93 — KOs slot 0
   const uint8_t mH[] = {26}, cH[] = {0}; // Heavy  power 40, speed 28 — whiffs
   const uint8_t mD[] = {24}, cD[] = {0}; // filler move for the recovering treats
   SetTreat(s, 0, 0, 250, 250, 4, 10, 1, mS, cS);
@@ -1549,7 +1605,7 @@ ApplyVec MakeVec_Win() {
   ApplyVec v{};
   v.name = "win";
   duel::DuelState s = MakeState(3, 1);
-  const uint8_t mS[] = {10}, cS[] = {0}; // Speedy power 51 → 51 dmg vs recover
+  const uint8_t mS[] = {2}, cS[] = {0};  // Quicksilver Slice (Speedy 50) → 50 dmg vs recover
   const uint8_t mD[] = {24}, cD[] = {0};
   for (int slot = 0; slot < 3; ++slot) SetTreat(s, 0, slot, 250, 250, 4, 10, 1, mS, cS);
   for (int slot = 0; slot < 3; ++slot) SetTreat(s, 1, slot, 40, 110, 1, 1, 1, mD, cD);
@@ -1865,7 +1921,7 @@ ApplyVec MakeVec_Deterministic() {
   ApplyVec v{};
   v.name = "deterministic";
   duel::DuelState s = MakeState(2, 1);
-  const uint8_t mS[] = {10}, cS[] = {0};
+  const uint8_t mS[] = {2}, cS[] = {0};
   const uint8_t mH[] = {26}, cH[] = {0};
   const uint8_t mD[] = {24}, cD[] = {0};
   SetTreat(s, 0, 0, 250, 250, 4, 10, 1, mS, cS);
@@ -2063,7 +2119,7 @@ ApplyVec MakeVec_GuardDeadGuardianLapses() {
   ApplyVec v{};
   v.name = "guard_dead_guardian_lapses";
   duel::DuelState s = MakeState(2, 1);
-  const uint8_t mS[] = {10}, cS[] = {0}; // Super Sugary Rush (Speedy 51), speed 97
+  const uint8_t mS[] = {2}, cS[] = {0};  // Quicksilver Slice (Speedy 50), speed 93
   const uint8_t mH[] = {24}, cH[] = {0}; // Pop Rock Pop (Heavy 26), speed 27
   const uint8_t mG[] = {1}, cG[] = {0};  // Gilded Bonds (guard), speed 45
   SetTreat(s, 0, 0, 250, 250, 4, 10, 1, mS, cS);
@@ -2085,7 +2141,7 @@ void test_apply_guard_dead_guardian_cannot_intercept() {
   CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
   duel::DuelState o{};
   CHECK(DecodeOut(&o));
-  // Speedy vs the guardian's Blocking = dis 170: (51*170*256)>>16 = 33 > 30 hp.
+  // Speedy vs the guardian's Blocking = dis 170: (50*170*256)>>16 = 33 > 30 hp.
   CHECK(o.treats[1][0].hp == 0);
   // The guard lapsed: the ward takes the SECOND blow in full (26, neutral --
   // it is recovering), not the 18 a live guardian would have absorbed for it.
@@ -2640,7 +2696,7 @@ ApplyVec MakeVec_AoeBlockAndShieldPerVictim() {
   v.name = "aoe_block_and_shield_per_victim";
   duel::DuelState s = MakeState(3, 1);
   const uint8_t mA[] = {kAoeMove}, cA[] = {0};
-  const uint8_t mB[] = {12}, cB[] = {0}; // Chewy Absorption (Blocking/block, power 15)
+  const uint8_t mB[] = {0}, cB[] = {0};  // Gum Drop Kick (Blocking/block, power 11)
   const uint8_t mH[] = {24}, cH[] = {0};
   SetTreat(s, 0, 0, 250, 250, 3, 6, 1, mA, cA);
   SetTreat(s, 0, 1, 250, 250, 3, 6, 1, mH, cH);
@@ -2673,8 +2729,8 @@ void test_apply_aoe_block_and_shield_per_victim() {
                "\"dmg\":8,\"blocked\":true,\"absorbed\":0,\"targetHp\":242,\"ko\":false}"));
   CHECK(LogHas("\"kind\":\"aoe\",\"move\":34,\"target\":1,\"via\":255,\"clash\":\"neu\","
                "\"dmg\":30,\"blocked\":false,\"absorbed\":20,\"targetHp\":240,\"ko\":false}"));
-  // Chewy Absorption (Blocking) BEATS Distance: (15*384)>>8 = 22 on the caster.
-  CHECK(o.treats[0][0].hp == 228);
+  // Gum Drop Kick (Blocking) BEATS Distance: (11*384)>>8 = 16 on the caster.
+  CHECK(o.treats[0][0].hp == 234);
 }
 
 // Case C — AoE IGNORES GUARD. slot0 guards slot1; the spray hits the ward DIRECTLY
@@ -2817,7 +2873,7 @@ ApplyVec MakeVec_AoeAllDeadWhiffs() {
   v.name = "aoe_all_dead_whiffs";
   duel::DuelState s = MakeState(2, 1);
   const uint8_t mA[] = {kAoeMove}, cA[] = {0}; // speed 69 -- acts SECOND
-  const uint8_t mS[] = {10}, cS[] = {0};       // Super Sugary Rush, speed 97 -- acts FIRST
+  const uint8_t mS[] = {2}, cS[] = {0};        // Quicksilver Slice, speed 93 -- acts FIRST
   const uint8_t mH[] = {24}, cH[] = {0};
   SetTreat(s, 0, 0, 250, 250, 3, 6, 1, mA, cA);
   SetTreat(s, 0, 1, 250, 250, 4, 10, 1, mS, cS);
@@ -2953,6 +3009,766 @@ void test_apply_aoe_target_byte_is_canonical() {
   CHECK(LogCount("\"kind\":\"aoe\"") == 3);
 }
 
+// ====== combat-depth Task 6: heal, group-heal, siphon, uses, double-strikes ======
+//
+// The last of the verbs. Every one of them is bounded by the SAME rule, and it is the
+// hardest rule in the engine:
+//
+//   KO IS PERMANENT. An unguarded heal is an accidental REVIVE.
+//
+// A heal on a dead ally is an explicit NO-OP -- not a reject (that would strand a duel
+// whose only legal heal target died between the order being picked and the round
+// resolving), not a revive. Every healing path below goes through the one hp == 0 guard,
+// and the vectors here exist mostly to prove it holds from every direction: single heal,
+// group heal, a siphon whose attacker was felled by the riposte before it could drink.
+//
+// Move stats used (stats_gen.h): Sugar Rush [27] {37 power, speed 82, cd 2, Speedy, HEAL};
+// Super Sugary Rush [10] {51, 97, cd 3, Speedy, GROUPHEAL, max_uses 2}; Pucker Sucker [6]
+// {24, 57, cd 0, Tricky, SIPHON}; Limon Shuriken [15] {41, 75, cd 2, Distance, hits 2};
+// Silver Knuckles [37] {45, 30, cd 3, Heavy, max_uses 2}.
+
+// --- Heal ---
+
+// A heal restores `power` to an ALLY on the caster's OWN side. It is not a blow: no clash
+// multiplier, and the ally's block/shield are irrelevant. 100 + 37 = 137.
+ApplyVec MakeVec_HealWoundedAlly() {
+  ApplyVec v{};
+  v.name = "heal_wounded_ally";
+  duel::DuelState s = MakeState(2, 1);
+  const uint8_t mHeal[] = {27}, cHeal[] = {0}; // Sugar Rush (heal 37), speed 82
+  const uint8_t mH[] = {24}, cH[] = {0};       // Pop Rock Pop
+  SetTreat(s, 0, 0, 250, 250, 3, 6, 1, mHeal, cHeal);
+  SetTreat(s, 0, 1, 100, 250, 3, 6, 1, mH, cH); // the WOUNDED ally
+  SetTreat(s, 1, 0, 250, 250, 3, 6, 1, mH, cH);
+  SetTreat(s, 1, 1, 250, 250, 3, 6, 1, mH, cH);
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdRecoverAll(v.ord, 2);
+  OrdSet(v.ord, 2, 0, 0, 0, 1); // heal -> ALLY slot 1 (own side!)
+  v.ordLen = duel::wire::OrdersLen(2);
+  return v;
+}
+
+void test_apply_heal_wounded_ally() {
+  ApplyVec v = MakeVec_HealWoundedAlly();
+  CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
+  duel::DuelState o{};
+  CHECK(DecodeOut(&o));
+  CHECK(o.treats[0][1].hp == 137);         // 100 + 37, no clash multiplier anywhere
+  CHECK(o.treats[1][0].hp == 250);         // a heal deals NO damage to anyone
+  CHECK(o.treats[0][0].cooldowns[0] == 2); // ...and burns its cooldown like any move
+  CHECK(LogHas("{\"side\":0,\"slot\":0,\"kind\":\"heal\",\"move\":27,\"target\":1,"
+               "\"via\":255,\"clash\":\"neu\",\"dmg\":37,\"blocked\":false,"
+               "\"absorbed\":0,\"targetHp\":137,\"ko\":false}"));
+}
+
+// Healing a FULL-HP ally is legal and simply WASTED: overheal is not an error, and the
+// log reports the amount ACTUALLY restored (0), not the move's power.
+ApplyVec MakeVec_HealFullHpWasted() {
+  ApplyVec v = MakeVec_HealWoundedAlly();
+  v.name = "heal_full_hp_wasted";
+  duel::DuelState s = MakeState(2, 1);
+  const uint8_t mHeal[] = {27}, cHeal[] = {0};
+  const uint8_t mH[] = {24}, cH[] = {0};
+  SetTreat(s, 0, 0, 250, 250, 3, 6, 1, mHeal, cHeal);
+  SetTreat(s, 0, 1, 250, 250, 3, 6, 1, mH, cH); // already FULL
+  SetTreat(s, 1, 0, 250, 250, 3, 6, 1, mH, cH);
+  SetTreat(s, 1, 1, 250, 250, 3, 6, 1, mH, cH);
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  return v;
+}
+
+void test_apply_heal_full_hp_is_wasted_not_an_error() {
+  ApplyVec v = MakeVec_HealFullHpWasted();
+  CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0); // legal, not a reject
+  duel::DuelState o{};
+  CHECK(DecodeOut(&o));
+  CHECK(o.treats[0][1].hp == 250); // clamped at max_hp: no hp over the cap, ever
+  CHECK(LogHas("\"kind\":\"heal\",\"move\":27,\"target\":1,\"via\":255,\"clash\":\"neu\","
+               "\"dmg\":0,\"blocked\":false,\"absorbed\":0,\"targetHp\":250,\"ko\":false}"));
+}
+
+// *** THE LOAD-BEARING VECTOR OF THIS WHOLE TASK ***
+//
+// A heal on a DEAD ally is a NO-OP. Not a reject -- the order is legal, it is simply
+// wasted -- and above all NOT A REVIVE: hp stays exactly 0, and the WIN CHECK is
+// unaffected. Here side 0's slot 1 is already a corpse and its slot 0 is felled in this
+// same round, so side 0 is WIPED and loses -- even though its dying act was to pour a
+// heal into the corpse. If an unguarded heal could revive, this duel would still be
+// ACTIVE, and that is exactly the bug this vector exists to make impossible.
+ApplyVec MakeVec_HealDeadAllyIsNoop() {
+  ApplyVec v{};
+  v.name = "heal_dead_ally_is_a_noop";
+  duel::DuelState s = MakeState(2, 1);
+  const uint8_t mHeal[] = {27}, cHeal[] = {0}; // Sugar Rush (heal), speed 82 -- acts FIRST
+  const uint8_t mJ[] = {26}, cJ[] = {0};       // Vicious Jawbreaker (Heavy 40), speed 28
+  const uint8_t mH[] = {24}, cH[] = {0};
+  SetTreat(s, 0, 0, 20, 250, 3, 6, 1, mHeal, cHeal); // 20 hp: the Jawbreaker fells it
+  SetTreat(s, 0, 1, 0, 250, 3, 6, 1, mH, cH);        // ALREADY DEAD
+  SetTreat(s, 1, 0, 250, 250, 3, 6, 1, mJ, cJ);
+  SetTreat(s, 1, 1, 250, 250, 3, 6, 1, mH, cH);
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdRecoverAll(v.ord, 2); // the dead ally: canonical Recover, as the wire demands
+  OrdSet(v.ord, 2, 0, 0, 0, 1); // heal -> the CORPSE in ally slot 1
+  OrdSet(v.ord, 2, 1, 0, 0, 0); // Heavy -> enemy slot 0 (Heavy > Speedy: adv 60 >= 20 hp)
+  v.ordLen = duel::wire::OrdersLen(2);
+  return v;
+}
+
+void test_apply_heal_on_a_dead_ally_is_a_noop_never_a_revive() {
+  ApplyVec v = MakeVec_HealDeadAllyIsNoop();
+  CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0); // LEGAL -- a no-op, not a reject
+  duel::DuelState o{};
+  CHECK(DecodeOut(&o));
+  CHECK(o.treats[0][1].hp == 0); // *** NO REVIVE. Exactly 0. ***
+  CHECK(o.treats[0][0].hp == 0); // the healer itself is felled by the Jawbreaker
+  // ...so side 0 is WIPED and LOSES. A revive would have left this duel active.
+  CHECK(o.phase == duel::wire::kPhaseSide1Won);
+  // The wasted heal still LOGS -- the player aimed it there, and the client has to be
+  // able to show that it did nothing (dmg 0, targetHp 0, and no `ko` on a corpse).
+  CHECK(LogHas("{\"side\":0,\"slot\":0,\"kind\":\"heal\",\"move\":27,\"target\":1,"
+               "\"via\":255,\"clash\":\"neu\",\"dmg\":0,\"blocked\":false,"
+               "\"absorbed\":0,\"targetHp\":0,\"ko\":false}"));
+}
+
+// SELF-HEAL IS LEGAL (target == the caster's own slot) -- unlike guard, which rejects
+// covering itself. In a 1v1 it is the only heal there is.
+ApplyVec MakeVec_HealSelf() {
+  ApplyVec v{};
+  v.name = "heal_self";
+  duel::DuelState s = MakeState(1, 1);
+  const uint8_t mHeal[] = {27}, cHeal[] = {0};
+  const uint8_t mH[] = {24}, cH[] = {0};
+  SetTreat(s, 0, 0, 100, 250, 3, 6, 1, mHeal, cHeal);
+  SetTreat(s, 1, 0, 250, 250, 3, 6, 1, mH, cH);
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdRecoverAll(v.ord, 1);
+  OrdSet(v.ord, 1, 0, 0, 0, 0); // target == OWN slot
+  v.ordLen = duel::wire::OrdersLen(1);
+  return v;
+}
+
+void test_apply_heal_self_is_legal() {
+  ApplyVec v = MakeVec_HealSelf();
+  CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
+  duel::DuelState o{};
+  CHECK(DecodeOut(&o));
+  CHECK(o.treats[0][0].hp == 137); // 100 + 37, poured into itself
+  CHECK(LogHas("\"kind\":\"heal\",\"move\":27,\"target\":0,"));
+}
+
+// A heal names an ALLY SLOT, so an out-of-range index and the kTargetAll sentinel are
+// both rejects (0xFE >= any legal team_size -- the same one check catches it).
+ApplyVec MakeVec_HealBadTarget(const char* name, uint8_t target) {
+  ApplyVec v = MakeVec_HealWoundedAlly();
+  v.name = name;
+  OrdSet(v.ord, 2, 0, 0, 0, target);
+  return v;
+}
+ApplyVec MakeVec_HealRejectOutOfRange() {
+  return MakeVec_HealBadTarget("heal_reject_out_of_range", 2); // team_size is 2
+}
+ApplyVec MakeVec_HealRejectTargetAll() {
+  return MakeVec_HealBadTarget("heal_reject_target_all", duel::wire::kTargetAll);
+}
+
+void test_apply_heal_rejects_bad_target() {
+  ApplyVec oor = MakeVec_HealRejectOutOfRange();
+  CHECK(duel_apply(oor.st, oor.stLen, oor.ord, oor.ordLen) == -1);
+  CHECK(duel_out_len() == 0);
+  ApplyVec all = MakeVec_HealRejectTargetAll();
+  CHECK(duel_apply(all.st, all.stLen, all.ord, all.ordLen) == -1);
+  CHECK(duel_out_len() == 0);
+}
+
+// --- Group-heal ---
+
+// A group-heal names NOBODY (kTargetAll) and restores (power * aoe_pct_256) >> 8 =
+// (51*154)>>8 = 30 to EVERY LIVING ALLY INCLUDING THE CASTER, in slot order. aoe_pct is
+// reused deliberately as the SPREAD: reaching everyone costs per-head potency, exactly as
+// it does for an AoE. Overheal clamps per ally; DEAD ALLIES GET NOTHING and log nothing --
+// a group-heal is not a mass revive either.
+ApplyVec MakeVec_GroupHeal() {
+  ApplyVec v{};
+  v.name = "group_heal";
+  duel::DuelState s = MakeState(3, 1);
+  const uint8_t mG[] = {10}, cG[] = {0}; // Super Sugary Rush (groupheal 51, max_uses 2)
+  const uint8_t mH[] = {24}, cH[] = {0};
+  SetTreat(s, 0, 0, 200, 250, 4, 10, 1, mG, cG); // the caster heals ITSELF too: +30
+  SetTreat(s, 0, 1, 240, 250, 3, 6, 1, mH, cH);  // clamps: only 10 of the 30 fits
+  SetTreat(s, 0, 2, 0, 250, 3, 6, 1, mH, cH);    // DEAD: gets nothing, logs nothing
+  for (int slot = 0; slot < 3; ++slot) SetTreat(s, 1, slot, 250, 250, 3, 6, 1, mH, cH);
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdRecoverAll(v.ord, 3);
+  OrdSet(v.ord, 3, 0, 0, 0, duel::wire::kTargetAll);
+  v.ordLen = duel::wire::OrdersLen(3);
+  return v;
+}
+
+void test_apply_group_heal() {
+  ApplyVec v = MakeVec_GroupHeal();
+  CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
+  duel::DuelState o{};
+  CHECK(DecodeOut(&o));
+  CHECK(o.treats[0][0].hp == 230); // 200 + 30 -- the caster is an ally too
+  CHECK(o.treats[0][1].hp == 250); // 240 + min(30, 10) -- clamped at max_hp
+  CHECK(o.treats[0][2].hp == 0);   // *** DEAD STAYS DEAD. No mass revive. ***
+  CHECK(LogCount("\"kind\":\"heal\"") == 2); // one entry per LIVING ally; the corpse gets none
+  CHECK(LogHas("{\"side\":0,\"slot\":0,\"kind\":\"heal\",\"move\":10,\"target\":0,"
+               "\"via\":255,\"clash\":\"neu\",\"dmg\":30,\"blocked\":false,"
+               "\"absorbed\":0,\"targetHp\":230,\"ko\":false}"));
+  CHECK(LogHas("{\"side\":0,\"slot\":0,\"kind\":\"heal\",\"move\":10,\"target\":1,"
+               "\"via\":255,\"clash\":\"neu\",\"dmg\":10,\"blocked\":false,"
+               "\"absorbed\":0,\"targetHp\":250,\"ko\":false}"));
+  // Deterministic SLOT ORDER (not initiative order).
+  const int i0 = LogIndexOf("\"kind\":\"heal\",\"move\":10,\"target\":0");
+  const int i1 = LogIndexOf("\"kind\":\"heal\",\"move\":10,\"target\":1");
+  CHECK(i0 >= 0 && i1 > i0);
+  CHECK(o.treats[0][0].uses_left[0] == 1); // the ultimate spent one of its two uses
+  CHECK(o.treats[1][0].hp == 250);         // a group-heal deals no damage
+}
+
+// A group-heal REQUIRES kTargetAll, exactly as an AoE does -- one logical order, one byte
+// encoding. A slot index there is a hard reject, not a silently-ignored byte.
+ApplyVec MakeVec_GroupHealRejectSlotTarget() {
+  ApplyVec v = MakeVec_GroupHeal();
+  v.name = "group_heal_reject_slot_target";
+  OrdSet(v.ord, 3, 0, 0, 0, 0); // "aimed" at ally slot 0 -> REJECT
+  return v;
+}
+
+void test_apply_group_heal_requires_target_all() {
+  ApplyVec bad = MakeVec_GroupHealRejectSlotTarget();
+  CHECK(duel_apply(bad.st, bad.stLen, bad.ord, bad.ordLen) == -1);
+  CHECK(duel_out_len() == 0);
+  CHECK(duel_log_len() == 0);
+  // The accept control (without it, "always reject" would pass the check above).
+  ApplyVec ok = MakeVec_GroupHeal();
+  CHECK(duel_apply(ok.st, ok.stLen, ok.ord, ok.ordLen) == 0);
+}
+
+// --- Life siphon ---
+
+// A siphon is a NORMAL SINGLE-TARGET BLOW first -- clash, block, shield and guard all
+// apply -- and then heals the attacker by (siphon_pct_256 * DRAINED) >> 8.
+//
+// DRAINED, NOT LANDED. `drained` is the victim's ACTUAL hp decrease, after its shield ate
+// its share; `landed` is the force that reached it. The counter (Task 4) uses the OTHER
+// one. They are NOT one number: see the fully-shielded vector below, which is the one
+// state where they visibly diverge, and its counter-side twin
+// (counter_reflects_landed_not_drained). Collapsing them into a single "damage dealt"
+// helper passes every other gate in this repo while silently deleting a consensus rule.
+//
+// Pucker Sucker (Tricky 24) vs a Heavy target: Tricky BEATS Heavy -> adv 384 ->
+// landed = (24*384)>>8 = 36, drained 36 (no shield) -> heal = (36*128)>>8 = 18.
+ApplyVec MakeVec_SiphonDrains() {
+  ApplyVec v{};
+  v.name = "siphon_drains";
+  duel::DuelState s = MakeState(1, 1);
+  const uint8_t mS[] = {6}, cS[] = {0};  // Pucker Sucker (siphon 24), speed 57
+  const uint8_t mH[] = {24}, cH[] = {0}; // Pop Rock Pop (Heavy 26), speed 27
+  SetTreat(s, 0, 0, 100, 250, 3, 6, 1, mS, cS);
+  SetTreat(s, 1, 0, 250, 250, 3, 6, 1, mH, cH);
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdInit(v.ord);
+  OrdSet(v.ord, 1, 0, 0, 0, 0);
+  OrdSet(v.ord, 1, 1, 0, 0, 0);
+  v.ordLen = duel::wire::OrdersLen(1);
+  return v;
+}
+
+void test_apply_siphon_heals_off_drained() {
+  ApplyVec v = MakeVec_SiphonDrains();
+  CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
+  duel::DuelState o{};
+  CHECK(DecodeOut(&o));
+  CHECK(o.treats[1][0].hp == 214); // 250 - 36
+  // 100 + 18 (siphoned) - 17 (the Heavy's dis-170 swing: (26*170)>>8) = 101.
+  CHECK(o.treats[0][0].hp == 101);
+  CHECK(LogHas("{\"side\":0,\"slot\":0,\"kind\":\"hit\",\"move\":6,\"target\":0,"
+               "\"via\":255,\"clash\":\"adv\",\"dmg\":36,\"blocked\":false,"
+               "\"absorbed\":0,\"targetHp\":214,\"ko\":false}"));
+  // The lifesteal rides in as its OWN `heal` entry on the attacker (target == its own
+  // slot), so the client can float a green +18 over it.
+  CHECK(LogHas("{\"side\":0,\"slot\":0,\"kind\":\"heal\",\"move\":6,\"target\":0,"
+               "\"via\":255,\"clash\":\"neu\",\"dmg\":18,\"blocked\":false,"
+               "\"absorbed\":0,\"targetHp\":118,\"ko\":false}"));
+}
+
+// A BLOCKED siphon drains LESS, so it heals less: adv 384 then block (surviving 102) ->
+// landed = (24*384*102)>>16 = 14, drained 14 -> heal = (14*128)>>8 = 7 (not 18).
+ApplyVec MakeVec_SiphonBlockedHealsLess() {
+  ApplyVec v{};
+  v.name = "siphon_blocked_heals_less";
+  duel::DuelState s = MakeState(1, 1);
+  const uint8_t mS[] = {6}, cS[] = {0}; // Pucker Sucker, speed 57
+  const uint8_t mB[] = {0}, cB[] = {0}; // Gum Drop Kick (block 11), speed 46
+  SetTreat(s, 0, 0, 100, 250, 3, 6, 1, mS, cS);
+  SetTreat(s, 1, 0, 250, 250, 3, 6, 1, mB, cB);
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdInit(v.ord);
+  OrdSet(v.ord, 1, 0, 0, 0, 0);
+  OrdSet(v.ord, 1, 1, 0, 0, 0);
+  v.ordLen = duel::wire::OrdersLen(1);
+  return v;
+}
+
+void test_apply_siphon_blocked_heals_less() {
+  ApplyVec v = MakeVec_SiphonBlockedHealsLess();
+  CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
+  duel::DuelState o{};
+  CHECK(DecodeOut(&o));
+  CHECK(o.treats[1][0].hp == 236); // 250 - 14 (adv, then blocked)
+  // 100 + 7 (half of the 14 it actually drained) - 7 (Gum Drop Kick's dis swing) = 100.
+  CHECK(o.treats[0][0].hp == 100);
+  CHECK(LogHas("\"kind\":\"heal\",\"move\":6,\"target\":0,\"via\":255,\"clash\":\"neu\","
+               "\"dmg\":7,")); // 7, not the 18 an unblocked drain would have fed it
+}
+
+// *** THE `drained` vs `landed` PIN. *** A blow the victim's SHIELD ate whole drains
+// NOTHING -- so it siphons NOTHING, even though it LANDED at full force. "I can only
+// drain what I actually take out of you."
+//
+// The victim recovers (no move type -> neutral clash), so landed = (24*256)>>8 = 24, and
+// its 50-point shield absorbs all 24: drained = 0 -> heal = 0. A siphon wired to `landed`
+// would heal (24*128)>>8 = 12 here, and every other siphon vector in this file would still
+// pass.
+ApplyVec MakeVec_SiphonFullyShieldedHealsNothing() {
+  ApplyVec v{};
+  v.name = "siphon_fully_shielded_heals_nothing";
+  duel::DuelState s = MakeState(1, 1);
+  const uint8_t mS[] = {6}, cS[] = {0};
+  const uint8_t mH[] = {24}, cH[] = {0};
+  SetTreat(s, 0, 0, 100, 250, 3, 6, 1, mS, cS);
+  SetTreat(s, 1, 0, 250, 250, 3, 6, 1, mH, cH, /*shield=*/50);
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdInit(v.ord);
+  OrdSet(v.ord, 1, 0, 0, 0, 0);
+  OrdSet(v.ord, 1, 1, 0, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  v.ordLen = duel::wire::OrdersLen(1);
+  return v;
+}
+
+void test_apply_siphon_fully_shielded_heals_nothing() {
+  ApplyVec v = MakeVec_SiphonFullyShieldedHealsNothing();
+  CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
+  duel::DuelState o{};
+  CHECK(DecodeOut(&o));
+  CHECK(o.treats[1][0].hp == 250);    // the pool ate the WHOLE blow: hp untouched
+  CHECK(o.treats[1][0].shield == 26); // 50 - 24
+  CHECK(o.treats[0][0].hp == 100);    // *** and the siphon drank NOTHING ***
+  CHECK(LogHas("\"kind\":\"hit\",\"move\":6,\"target\":0,\"via\":255,\"clash\":\"neu\","
+               "\"dmg\":24,\"blocked\":false,\"absorbed\":24,\"targetHp\":250,\"ko\":false}"));
+  CHECK(LogHas("\"kind\":\"heal\",\"move\":6,\"target\":0,\"via\":255,\"clash\":\"neu\","
+               "\"dmg\":0,")); // NOT 12 -- `drained` is 0, however hard the blow landed
+}
+
+// A FIZZLED siphon (its target died earlier in the round) siphons nothing: there is no
+// blow at all, so there is nothing to drain -- one `skip`, no `heal` entry.
+ApplyVec MakeVec_SiphonFizzledHealsNothing() {
+  ApplyVec v{};
+  v.name = "siphon_fizzled_heals_nothing";
+  duel::DuelState s = MakeState(2, 1);
+  const uint8_t mC[] = {3}, cC[] = {0};  // Coco Chaos (Speedy 24), speed 98 -- kills first
+  const uint8_t mS[] = {6}, cS[] = {0};  // Pucker Sucker (siphon), speed 57 -- too late
+  const uint8_t mH[] = {24}, cH[] = {0};
+  SetTreat(s, 0, 0, 250, 250, 3, 6, 1, mC, cC);
+  SetTreat(s, 0, 1, 100, 250, 3, 6, 1, mS, cS);
+  SetTreat(s, 1, 0, 1, 250, 3, 6, 1, mH, cH); // 1 hp: dies to the Speedy
+  SetTreat(s, 1, 1, 250, 250, 3, 6, 1, mH, cH);
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdRecoverAll(v.ord, 2);
+  OrdSet(v.ord, 2, 0, 0, 0, 0); // both aim at enemy slot 0
+  OrdSet(v.ord, 2, 0, 1, 0, 0);
+  v.ordLen = duel::wire::OrdersLen(2);
+  return v;
+}
+
+void test_apply_siphon_fizzled_heals_nothing() {
+  ApplyVec v = MakeVec_SiphonFizzledHealsNothing();
+  CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
+  duel::DuelState o{};
+  CHECK(DecodeOut(&o));
+  CHECK(o.treats[1][0].hp == 0);
+  CHECK(o.treats[0][1].hp == 100); // the siphoner drank NOTHING off a corpse
+  CHECK(LogCount("\"kind\":\"heal\"") == 0);
+  CHECK(LogHas("{\"side\":0,\"slot\":1,\"kind\":\"skip\",\"move\":6,"));
+}
+
+// A GUARDED siphon drains from the GUARDIAN -- it is the one that actually took the hit.
+// Neutral clash (the ward recovers) then guard_pct: landed = (24*256*179)>>16 = 16 on the
+// guardian, drained 16 -> heal = (16*128)>>8 = 8.
+ApplyVec MakeVec_SiphonGuardedDrainsGuardian() {
+  ApplyVec v{};
+  v.name = "siphon_guarded_drains_the_guardian";
+  duel::DuelState s = MakeState(2, 1);
+  const uint8_t mS[] = {6}, cS[] = {0};  // Pucker Sucker (siphon), speed 57
+  const uint8_t mG[] = {1}, cG[] = {0};  // Gilded Bonds (guard), speed 45
+  const uint8_t mH[] = {24}, cH[] = {0};
+  SetTreat(s, 0, 0, 100, 250, 3, 6, 1, mS, cS);
+  SetTreat(s, 0, 1, 250, 250, 3, 6, 1, mH, cH);
+  SetTreat(s, 1, 0, 250, 250, 3, 6, 1, mG, cG); // the GUARDIAN
+  SetTreat(s, 1, 1, 250, 250, 3, 6, 1, mH, cH); // the WARD (recovers)
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdRecoverAll(v.ord, 2);
+  OrdSet(v.ord, 2, 0, 0, 0, 1); // the siphon aims at the ward...
+  OrdSet(v.ord, 2, 1, 0, 0, 1); // ...and the guardian steps in front of it
+  v.ordLen = duel::wire::OrdersLen(2);
+  return v;
+}
+
+void test_apply_siphon_guarded_drains_the_guardian() {
+  ApplyVec v = MakeVec_SiphonGuardedDrainsGuardian();
+  CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
+  duel::DuelState o{};
+  CHECK(DecodeOut(&o));
+  CHECK(o.treats[1][0].hp == 234); // the GUARDIAN bled 16...
+  CHECK(o.treats[1][1].hp == 250); // ...and the ward not at all
+  CHECK(o.treats[0][0].hp == 108); // 100 + 8: drained off whoever actually took it
+  CHECK(LogHas("\"kind\":\"hit\",\"move\":6,\"target\":1,\"via\":0,\"clash\":\"neu\","
+               "\"dmg\":16,"));
+  CHECK(LogHas("\"kind\":\"heal\",\"move\":6,\"target\":0,\"via\":255,\"clash\":\"neu\","
+               "\"dmg\":8,"));
+}
+
+// A siphon CANNOT OVERHEAL: 245/250 drinks 18 but keeps only the 5 that fit.
+ApplyVec MakeVec_SiphonCannotOverheal() {
+  ApplyVec v = MakeVec_SiphonDrains();
+  v.name = "siphon_cannot_overheal";
+  duel::DuelState s = MakeState(1, 1);
+  const uint8_t mS[] = {6}, cS[] = {0};
+  const uint8_t mH[] = {24}, cH[] = {0};
+  SetTreat(s, 0, 0, 245, 250, 3, 6, 1, mS, cS); // 5 points of room, 18 of lifesteal
+  SetTreat(s, 1, 0, 250, 250, 3, 6, 1, mH, cH);
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  return v;
+}
+
+void test_apply_siphon_cannot_overheal() {
+  ApplyVec v = MakeVec_SiphonCannotOverheal();
+  CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
+  duel::DuelState o{};
+  CHECK(DecodeOut(&o));
+  CHECK(o.treats[0][0].hp == 233); // 245 + min(18, 5) = 250, then the Heavy's 17
+  CHECK(LogHas("\"kind\":\"heal\",\"move\":6,\"target\":0,\"via\":255,\"clash\":\"neu\","
+               "\"dmg\":5,\"blocked\":false,\"absorbed\":0,\"targetHp\":250,\"ko\":false}"));
+}
+
+// A siphoner FELLED BY THE RIPOSTE drinks NOTHING. KO is permanent, so the corpse does not
+// heal itself back up off the blow that killed it -- the same hp == 0 guard that stops a
+// heal reviving an ally, reached from the other direction. (The blow still lands: its
+// victim is down 36 all the same.)
+ApplyVec MakeVec_SiphonFelledByCounterHealsNothing() {
+  ApplyVec v{};
+  v.name = "siphon_felled_by_counter_heals_nothing";
+  duel::DuelState s = MakeState(1, 1);
+  const uint8_t mS[] = {6}, cS[] = {0}; // Pucker Sucker (siphon 24), speed 57
+  const uint8_t mC[] = {8}, cC[] = {0}; // Berry Bounce (counter), speed 46
+  SetTreat(s, 0, 0, 5, 250, 3, 6, 1, mS, cS); // 5 hp: the reflect (14) fells it
+  SetTreat(s, 1, 0, 250, 250, 3, 6, 1, mC, cC);
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdInit(v.ord);
+  OrdSet(v.ord, 1, 0, 0, 0, 0);
+  OrdSet(v.ord, 1, 1, 0, 0, 0);
+  v.ordLen = duel::wire::OrdersLen(1);
+  return v;
+}
+
+void test_apply_siphon_felled_by_counter_heals_nothing() {
+  ApplyVec v = MakeVec_SiphonFelledByCounterHealsNothing();
+  CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
+  duel::DuelState o{};
+  CHECK(DecodeOut(&o));
+  // Tricky vs Blocking = adv 384 -> 36 lands; the reflect is (36*102)>>8 = 14 >= 5 hp.
+  CHECK(o.treats[1][0].hp == 214);
+  CHECK(o.treats[0][0].hp == 0);             // *** dead, and it stays dead ***
+  CHECK(LogCount("\"kind\":\"heal\"") == 0); // a corpse drinks nothing
+  CHECK(o.phase == duel::wire::kPhaseSide1Won);
+}
+
+// --- Limited-use ultimates (max_uses) ---
+//
+// The owner's replacement for action points: the same "can I afford this now?" tension at
+// a fraction of the cost. 255 is the UNLIMITED sentinel and is never decremented; an
+// action whose uses_left is 0 is a HARD REJECT.
+
+// Silver Knuckles [37] (max_uses 2) + Pop Rock Pop [24] (unlimited) in one loadout: round
+// 1 spends the ultimate, round 2 (on round 1's OUTPUT state) proves uses_left SURVIVED the
+// encode/decode -- and that the unlimited move never ticks down at all.
+ApplyVec MakeVec_UsesRound1() {
+  ApplyVec v{};
+  v.name = "uses_round1_spend";
+  duel::DuelState s = MakeState(1, 2);
+  const uint8_t mA[] = {37, 24}, cA[] = {0, 0}; // [0] the ultimate, [1] the unlimited move
+  const uint8_t mB[] = {24, 25}, cB[] = {0, 0};
+  SetTreat(s, 0, 0, 250, 250, 4, 10, 2, mA, cA);
+  SetTreat(s, 1, 0, 250, 250, 3, 6, 2, mB, cB);
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdInit(v.ord);
+  OrdSet(v.ord, 1, 0, 0, 0, 0); // Silver Knuckles
+  OrdSet(v.ord, 1, 1, 0, 0, 0);
+  v.ordLen = duel::wire::OrdersLen(1);
+  return v;
+}
+
+// Round 2 = round 1's output, now using the UNLIMITED move (Silver Knuckles is cooling).
+ApplyVec MakeVec_UsesRound2() {
+  ApplyVec r1 = MakeVec_UsesRound1();
+  duel_apply(r1.st, r1.stLen, r1.ord, r1.ordLen);
+  ApplyVec v{};
+  v.name = "uses_round2_unlimited_never_ticks";
+  v.stLen = duel_out_len();
+  for (uint32_t i = 0; i < v.stLen; ++i) v.st[i] = duel_out_ptr()[i];
+  OrdInit(v.ord);
+  OrdSet(v.ord, 1, 0, 0, 1, 0); // the unlimited move
+  OrdSet(v.ord, 1, 1, 0, 0, 0);
+  v.ordLen = duel::wire::OrdersLen(1);
+  return v;
+}
+
+// The SPENT ultimate: the same state with uses_left[0] == 0. Ordering it is a hard reject.
+ApplyVec MakeVec_UsesSpentRejects() {
+  ApplyVec v{};
+  v.name = "uses_spent_rejects";
+  duel::DuelState s = MakeState(1, 2);
+  const uint8_t mA[] = {37, 24}, cA[] = {0, 0};
+  const uint8_t uA[] = {0, 255}; // Silver Knuckles: SPENT
+  const uint8_t mB[] = {24, 25}, cB[] = {0, 0};
+  SetTreat(s, 0, 0, 250, 250, 4, 10, 2, mA, cA, /*shield=*/0, uA);
+  SetTreat(s, 1, 0, 250, 250, 3, 6, 2, mB, cB);
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdInit(v.ord);
+  OrdSet(v.ord, 1, 0, 0, 0, 0); // the SPENT move -> -1
+  OrdSet(v.ord, 1, 1, 0, 0, 0);
+  v.ordLen = duel::wire::OrdersLen(1);
+  return v;
+}
+
+// The accept control: the SAME state, but with its last use left. Without this, "always
+// reject" would pass the vector above.
+ApplyVec MakeVec_UsesLastOneAccepts() {
+  ApplyVec v = MakeVec_UsesSpentRejects();
+  v.name = "uses_last_one_accepts";
+  duel::DuelState s = MakeState(1, 2);
+  const uint8_t mA[] = {37, 24}, cA[] = {0, 0};
+  const uint8_t uA[] = {1, 255}; // ONE use left
+  const uint8_t mB[] = {24, 25}, cB[] = {0, 0};
+  SetTreat(s, 0, 0, 250, 250, 4, 10, 2, mA, cA, /*shield=*/0, uA);
+  SetTreat(s, 1, 0, 250, 250, 3, 6, 2, mB, cB);
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  return v;
+}
+
+void test_apply_limited_uses() {
+  // Round 1: the ultimate lands and BURNS a use (2 -> 1); the unlimited move is untouched.
+  ApplyVec r1 = MakeVec_UsesRound1();
+  CHECK(duel_apply(r1.st, r1.stLen, r1.ord, r1.ordLen) == 0);
+  {
+    duel::DuelState o{};
+    CHECK(DecodeOut(&o));
+    CHECK(o.treats[0][0].uses_left[0] == 1);   // 2 - 1
+    CHECK(o.treats[0][0].uses_left[1] == 255); // the unlimited sentinel: NEVER decremented
+    CHECK(o.treats[0][0].cooldowns[0] == 3);   // Silver Knuckles' authored cd
+    // Heavy 45 vs Heavy = neutral: 250 - 45 = 205.
+    CHECK(o.treats[1][0].hp == 205);
+  }
+
+  // Round 2 replays that OUTPUT state: uses_left survived the encode/decode round-trip,
+  // and spending the UNLIMITED move leaves 255 at 255.
+  ApplyVec r2 = MakeVec_UsesRound2();
+  CHECK(duel_apply(r2.st, r2.stLen, r2.ord, r2.ordLen) == 0);
+  {
+    duel::DuelState o{};
+    CHECK(DecodeOut(&o));
+    CHECK(o.treats[0][0].uses_left[0] == 1);   // SURVIVED the round-trip, untouched
+    CHECK(o.treats[0][0].uses_left[1] == 255); // still unlimited after being used
+    CHECK(o.treats[0][0].cooldowns[0] == 2);   // ...and its cooldown ticked 3 -> 2
+  }
+
+  // A SPENT move is a hard reject -- the same door every other illegal order is refused at.
+  ApplyVec spent = MakeVec_UsesSpentRejects();
+  CHECK(duel_apply(spent.st, spent.stLen, spent.ord, spent.ordLen) == -1);
+  CHECK(duel_out_len() == 0);
+  CHECK(duel_log_len() == 0);
+
+  // ...and its LAST use is still perfectly legal.
+  ApplyVec last = MakeVec_UsesLastOneAccepts();
+  CHECK(duel_apply(last.st, last.stLen, last.ord, last.ordLen) == 0);
+  {
+    duel::DuelState o{};
+    CHECK(DecodeOut(&o));
+    CHECK(o.treats[0][0].uses_left[0] == 0); // spent to exactly 0 -- and it stops there
+  }
+}
+
+// --- Double-strike (hits: 2) ---
+//
+// A move PROPERTY, never a proc: there is no RNG anywhere in this engine. Limon Shuriken
+// [15] resolves its damage branch TWICE; each strike clashes independently, can KO
+// independently, gets its OWN log entry, and is punished by the recipient's counter
+// separately.
+
+// Two strikes, two entries. Distance BEATS Heavy -> adv 384 -> 61 per strike, 122 total.
+ApplyVec MakeVec_DoubleStrike() {
+  ApplyVec v{};
+  v.name = "double_strike";
+  duel::DuelState s = MakeState(1, 1);
+  const uint8_t mL[] = {15}, cL[] = {0}; // Limon Shuriken (Distance 41, hits 2), speed 75
+  const uint8_t mH[] = {24}, cH[] = {0}; // Pop Rock Pop (Heavy 26), speed 27
+  SetTreat(s, 0, 0, 250, 250, 3, 6, 1, mL, cL);
+  SetTreat(s, 1, 0, 250, 250, 3, 6, 1, mH, cH);
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdInit(v.ord);
+  OrdSet(v.ord, 1, 0, 0, 0, 0);
+  OrdSet(v.ord, 1, 1, 0, 0, 0);
+  v.ordLen = duel::wire::OrdersLen(1);
+  return v;
+}
+
+void test_apply_double_strike() {
+  ApplyVec v = MakeVec_DoubleStrike();
+  CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
+  duel::DuelState o{};
+  CHECK(DecodeOut(&o));
+  CHECK(o.treats[1][0].hp == 128);            // 250 - 61 - 61
+  CHECK(LogCount("\"move\":15") == 2);        // TWO entries -- the client plays two impacts
+  CHECK(LogHas("\"kind\":\"hit\",\"move\":15,\"target\":0,\"via\":255,\"clash\":\"adv\","
+               "\"dmg\":61,\"blocked\":false,\"absorbed\":0,\"targetHp\":189,\"ko\":false}"));
+  CHECK(LogHas("\"kind\":\"hit\",\"move\":15,\"target\":0,\"via\":255,\"clash\":\"adv\","
+               "\"dmg\":61,\"blocked\":false,\"absorbed\":0,\"targetHp\":128,\"ko\":false}"));
+  // The Heavy swings back into a Distance move -- Distance BEATS Heavy, so it is at a
+  // disadvantage: (26*170)>>8 = 17.
+  CHECK(o.treats[0][0].hp == 233);
+}
+
+// If STRIKE 1 KILLS, STRIKE 2 NEVER HAPPENS -- and emits no entry. Consistent with
+// fizzle-on-death: you cannot beat a corpse.
+ApplyVec MakeVec_DoubleStrikeStopsOnKo() {
+  ApplyVec v{};
+  v.name = "double_strike_stops_on_ko";
+  duel::DuelState s = MakeState(1, 1);
+  const uint8_t mL[] = {15}, cL[] = {0};
+  const uint8_t mH[] = {24}, cH[] = {0};
+  SetTreat(s, 0, 0, 250, 250, 3, 6, 1, mL, cL);
+  SetTreat(s, 1, 0, 50, 250, 3, 6, 1, mH, cH); // 50 hp: strike 1 (61) fells it
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdInit(v.ord);
+  OrdSet(v.ord, 1, 0, 0, 0, 0);
+  OrdSet(v.ord, 1, 1, 0, 0, 0);
+  v.ordLen = duel::wire::OrdersLen(1);
+  return v;
+}
+
+void test_apply_double_strike_stops_on_ko() {
+  ApplyVec v = MakeVec_DoubleStrikeStopsOnKo();
+  CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
+  duel::DuelState o{};
+  CHECK(DecodeOut(&o));
+  CHECK(o.treats[1][0].hp == 0);
+  CHECK(LogCount("\"move\":15") == 1); // ONE entry: the second shuriken is never thrown
+  CHECK(LogHas("\"kind\":\"hit\",\"move\":15,\"target\":0,\"via\":255,\"clash\":\"adv\","
+               "\"dmg\":61,\"blocked\":false,\"absorbed\":0,\"targetHp\":0,\"ko\":true}"));
+  CHECK(o.phase == duel::wire::kPhaseSide0Won);
+}
+
+// EACH STRIKE IS A BLOW, so each triggers the recipient's counter: two strikes into a
+// counter-stance = TWO reflects. No special case -- it falls out of Task 4's rule.
+// Blocking BEATS Distance -> dis 170 -> 27 per strike; each reflects (27*102)>>8 = 10.
+ApplyVec MakeVec_DoubleStrikeCounteredTwice() {
+  ApplyVec v{};
+  v.name = "double_strike_countered_twice";
+  duel::DuelState s = MakeState(1, 1);
+  const uint8_t mL[] = {15}, cL[] = {0}; // Limon Shuriken, speed 75 -- strikes first
+  const uint8_t mC[] = {8}, cC[] = {0};  // Berry Bounce (counter 20), speed 46
+  SetTreat(s, 0, 0, 250, 250, 3, 6, 1, mL, cL);
+  SetTreat(s, 1, 0, 250, 250, 3, 6, 1, mC, cC);
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdInit(v.ord);
+  OrdSet(v.ord, 1, 0, 0, 0, 0);
+  OrdSet(v.ord, 1, 1, 0, 0, 0);
+  v.ordLen = duel::wire::OrdersLen(1);
+  return v;
+}
+
+void test_apply_double_strike_is_countered_twice() {
+  ApplyVec v = MakeVec_DoubleStrikeCounteredTwice();
+  CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
+  duel::DuelState o{};
+  CHECK(DecodeOut(&o));
+  CHECK(o.treats[1][0].hp == 196);              // 250 - 27 - 27
+  CHECK(LogCount("\"move\":15") == 2);
+  CHECK(LogCount("\"kind\":\"counter\"") == 2); // ONE PER STRIKE -- you pay twice
+  // 250 - 10 - 10 (the two reflects) - 30 (Berry Bounce's own adv swing) = 200.
+  CHECK(o.treats[0][0].hp == 200);
+}
+
+// A COUNTER THAT FELLS THE ATTACKER between the strikes STOPS the second one -- KO is
+// permanent, and a dead treat takes no further part in the round (the same rule that stops
+// an AoE caster mid-spray).
+ApplyVec MakeVec_DoubleStrikeAttackerFelledMidStrike() {
+  ApplyVec v{};
+  v.name = "double_strike_attacker_felled_mid_strike";
+  duel::DuelState s = MakeState(1, 1);
+  const uint8_t mL[] = {15}, cL[] = {0};
+  const uint8_t mC[] = {8}, cC[] = {0}; // Berry Bounce (counter), speed 46
+  SetTreat(s, 0, 0, 5, 250, 3, 6, 1, mL, cL); // 5 hp: strike 1's reflect (10) fells it
+  SetTreat(s, 1, 0, 250, 250, 3, 6, 1, mC, cC);
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdInit(v.ord);
+  OrdSet(v.ord, 1, 0, 0, 0, 0);
+  OrdSet(v.ord, 1, 1, 0, 0, 0);
+  v.ordLen = duel::wire::OrdersLen(1);
+  return v;
+}
+
+void test_apply_double_strike_attacker_felled_mid_strike() {
+  ApplyVec v = MakeVec_DoubleStrikeAttackerFelledMidStrike();
+  CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
+  duel::DuelState o{};
+  CHECK(DecodeOut(&o));
+  CHECK(o.treats[0][0].hp == 0);
+  CHECK(o.treats[1][0].hp == 223);              // struck ONCE (250 - 27), never twice
+  CHECK(LogCount("\"move\":15") == 1);
+  CHECK(LogCount("\"kind\":\"counter\"") == 1);
+  CHECK(o.phase == duel::wire::kPhaseSide1Won);
+}
+
+// The GUARD REDIRECT is recomputed PER STRIKE. Strike 1 lands on the guardian and KILLS
+// it; the guard then LAPSES, so strike 2 lands on the ward it was covering -- at full
+// force, because the guardian is no longer there to take it at guard_pct.
+ApplyVec MakeVec_DoubleStrikeGuardLapsesMidStrike() {
+  ApplyVec v{};
+  v.name = "double_strike_guard_lapses_mid_strike";
+  duel::DuelState s = MakeState(2, 1);
+  const uint8_t mL[] = {15}, cL[] = {0}; // Limon Shuriken (hits 2), speed 75
+  const uint8_t mG[] = {1}, cG[] = {0};  // Gilded Bonds (guard), speed 45
+  const uint8_t mH[] = {24}, cH[] = {0};
+  SetTreat(s, 0, 0, 250, 250, 3, 6, 1, mL, cL);
+  SetTreat(s, 0, 1, 250, 250, 3, 6, 1, mH, cH);
+  SetTreat(s, 1, 0, 20, 250, 3, 6, 1, mG, cG); // the GUARDIAN, 20 hp -- strike 1 fells it
+  SetTreat(s, 1, 1, 250, 250, 3, 6, 1, mH, cH); // the WARD (recovers -> neutral clash)
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdRecoverAll(v.ord, 2);
+  OrdSet(v.ord, 2, 0, 0, 0, 1); // both strikes aim at enemy slot 1 (the ward)
+  OrdSet(v.ord, 2, 1, 0, 0, 1); // guard -> ALLY slot 1
+  v.ordLen = duel::wire::OrdersLen(2);
+  return v;
+}
+
+void test_apply_double_strike_guard_lapses_mid_strike() {
+  ApplyVec v = MakeVec_DoubleStrikeGuardLapsesMidStrike();
+  CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
+  duel::DuelState o{};
+  CHECK(DecodeOut(&o));
+  // Strike 1: neutral (the ward recovers) then guard_pct -> (41*256*179)>>16 = 28 >= 20 hp.
+  CHECK(o.treats[1][0].hp == 0);
+  // Strike 2: the guard has LAPSED, so it lands on the ward in full: 250 - 41 = 209.
+  CHECK(o.treats[1][1].hp == 209);
+  CHECK(LogHas("\"kind\":\"hit\",\"move\":15,\"target\":1,\"via\":0,\"clash\":\"neu\","
+               "\"dmg\":28,\"blocked\":false,\"absorbed\":0,\"targetHp\":0,\"ko\":true}"));
+  CHECK(LogHas("\"kind\":\"hit\",\"move\":15,\"target\":1,\"via\":255,\"clash\":\"neu\","
+               "\"dmg\":41,\"blocked\":false,\"absorbed\":0,\"targetHp\":209,\"ko\":false}"));
+}
+
 // ---- Task 4 Step 3: self-play soak + fuzz (test-side PRNG only) ----
 
 uint32_t g_rng = 0x1234567u;
@@ -3045,10 +3861,15 @@ void test_selfplay_soak() {
                    duel::wire::kTargetNone);
             continue;
           }
+          // A move is orderable iff it is off cooldown AND has a use left (combat-depth
+          // Task 6: uses_left == 0 is a hard reject, so a soak that kept offering a spent
+          // ultimate would fail on a LEGAL-orders-only contract it was itself breaking).
           uint8_t ready[4];
           int nready = 0;
           for (uint32_t j = 0; j < s.loadout_size && j < t.move_count; ++j) {
-            if (t.cooldowns[j] == 0) ready[nready++] = static_cast<uint8_t>(j);
+            if (t.cooldowns[j] == 0 && t.uses_left[j] != 0) {
+              ready[nready++] = static_cast<uint8_t>(j);
+            }
           }
           if (nready == 0 || (Xr() & 1u)) {
             OrdSet(ord, teamSize, side, slot, duel::wire::kActionRecover,
@@ -3076,13 +3897,17 @@ void test_selfplay_soak() {
             OrdSet(ord, teamSize, side, slot, a, allies[XrN(nAllies)]);
             continue;
           }
-          // An AOE (combat-depth Task 5) names NOBODY: its target byte MUST be
-          // kTargetAll, and a slot index there is a hard reject. (It needs no living
-          // enemy to be a LEGAL order -- with none left it simply whiffs.)
-          if (duel::kDuelMoves[t.moves[a]].effect == duel::kEffAoe) {
+          // An AOE (Task 5) and a GROUP-HEAL (Task 6) name NOBODY: their target byte MUST
+          // be kTargetAll, and a slot index there is a hard reject. (Neither needs a
+          // living target to be a LEGAL order -- with none left they simply whiff.)
+          const uint8_t eff = duel::kDuelMoves[t.moves[a]].effect;
+          if (eff == duel::kEffAoe || eff == duel::kEffGroupHeal) {
             OrdSet(ord, teamSize, side, slot, a, duel::wire::kTargetAll);
             continue;
           }
+          // Everything else names a SLOT INDEX: an ALLY slot for a `heal` (self-heal is
+          // legal, and a dead ally is a legal-but-wasted no-op), an ENEMY slot for every
+          // damaging move. Both are range-checked identically, so one random slot serves.
           OrdSet(ord, teamSize, side, slot, a,
                  static_cast<uint8_t>(XrN(teamSize)));
         }
@@ -3117,7 +3942,7 @@ void test_selfplay_soak() {
 void test_fuzz_no_crash() {
   g_rng = 0x9E3779B9u;
   duel::DuelState s = MakeState(3, 4);
-  const uint8_t mA[] = {10, 26}, cA[] = {0, 0};
+  const uint8_t mA[] = {2, 26}, cA[] = {0, 0};
   const uint8_t mB[] = {24, 3}, cB[] = {0, 0};
   for (int slot = 0; slot < 3; ++slot) SetTreat(s, 0, slot, 250, 250, 4, 10, 2, mA, cA);
   for (int slot = 0; slot < 3; ++slot) SetTreat(s, 1, slot, 200, 200, 1, 1, 2, mB, cB);
@@ -3304,6 +4129,31 @@ void DumpGolden() {
   DumpApplyVector(MakeVec_AoeRejectTargetNone());
   DumpApplyVector(MakeVec_NonAoeRejectTargetAll());
   DumpApplyVector(MakeVec_AoeCanonicalTargetAccepts());
+  // combat-depth Task 6: heal, group-heal, siphon, limited uses, double-strikes.
+  DumpApplyVector(MakeVec_HealWoundedAlly());
+  DumpApplyVector(MakeVec_HealFullHpWasted());
+  DumpApplyVector(MakeVec_HealDeadAllyIsNoop());
+  DumpApplyVector(MakeVec_HealSelf());
+  DumpApplyVector(MakeVec_HealRejectOutOfRange());
+  DumpApplyVector(MakeVec_HealRejectTargetAll());
+  DumpApplyVector(MakeVec_GroupHeal());
+  DumpApplyVector(MakeVec_GroupHealRejectSlotTarget());
+  DumpApplyVector(MakeVec_SiphonDrains());
+  DumpApplyVector(MakeVec_SiphonBlockedHealsLess());
+  DumpApplyVector(MakeVec_SiphonFullyShieldedHealsNothing());
+  DumpApplyVector(MakeVec_SiphonFizzledHealsNothing());
+  DumpApplyVector(MakeVec_SiphonGuardedDrainsGuardian());
+  DumpApplyVector(MakeVec_SiphonCannotOverheal());
+  DumpApplyVector(MakeVec_SiphonFelledByCounterHealsNothing());
+  DumpApplyVector(MakeVec_UsesRound1());
+  DumpApplyVector(MakeVec_UsesRound2());
+  DumpApplyVector(MakeVec_UsesSpentRejects());
+  DumpApplyVector(MakeVec_UsesLastOneAccepts());
+  DumpApplyVector(MakeVec_DoubleStrike());
+  DumpApplyVector(MakeVec_DoubleStrikeStopsOnKo());
+  DumpApplyVector(MakeVec_DoubleStrikeCounteredTwice());
+  DumpApplyVector(MakeVec_DoubleStrikeAttackerFelledMidStrike());
+  DumpApplyVector(MakeVec_DoubleStrikeGuardLapsesMidStrike());
 }
 
 } // namespace
@@ -3378,6 +4228,26 @@ int main(int argc, char** argv) {
   RUN(test_apply_aoe_whiffs_when_every_enemy_is_dead);
   RUN(test_apply_aoe_caster_felled_mid_spray_stops);
   RUN(test_apply_aoe_target_byte_is_canonical);
+  RUN(test_apply_heal_wounded_ally);
+  RUN(test_apply_heal_full_hp_is_wasted_not_an_error);
+  RUN(test_apply_heal_on_a_dead_ally_is_a_noop_never_a_revive);
+  RUN(test_apply_heal_self_is_legal);
+  RUN(test_apply_heal_rejects_bad_target);
+  RUN(test_apply_group_heal);
+  RUN(test_apply_group_heal_requires_target_all);
+  RUN(test_apply_siphon_heals_off_drained);
+  RUN(test_apply_siphon_blocked_heals_less);
+  RUN(test_apply_siphon_fully_shielded_heals_nothing);
+  RUN(test_apply_siphon_fizzled_heals_nothing);
+  RUN(test_apply_siphon_guarded_drains_the_guardian);
+  RUN(test_apply_siphon_cannot_overheal);
+  RUN(test_apply_siphon_felled_by_counter_heals_nothing);
+  RUN(test_apply_limited_uses);
+  RUN(test_apply_double_strike);
+  RUN(test_apply_double_strike_stops_on_ko);
+  RUN(test_apply_double_strike_is_countered_twice);
+  RUN(test_apply_double_strike_attacker_felled_mid_strike);
+  RUN(test_apply_double_strike_guard_lapses_mid_strike);
   RUN(test_selfplay_soak);
   RUN(test_fuzz_no_crash);
 

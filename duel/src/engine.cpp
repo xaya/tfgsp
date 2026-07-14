@@ -101,6 +101,16 @@ constexpr uint32_t kOutCap = 4096;
 // + 10 chips = 65 entries ~ 9.9 KB. The over-count is what we size against.)
 // static_assert'd below, against the same formula the code uses.
 //
+// The AoE is STILL the worst actor after combat-depth Task 6, so the arithmetic
+// above stands unchanged -- re-checked verb by verb, since a new one that could
+// out-log it would silently turn a legal round into a REJECTED one:
+//   group-heal  <= 5 heal entries (one per living ally), and it draws no counters = 5
+//   hits: 2     <= 2 hit entries + 2 counters (each strike is a blow)             = 4
+//   siphon      <= 1 hit + 1 counter + 1 heal entry (its own lifesteal)           = 3
+// -- all under the AoE's 10, which is what kLogEntriesPerActor encodes. Nor is any
+// entry WIDER: "heal" is shorter than "counter", and a heal's dmg (<= a move's
+// power, 60) is shorter than the 3-digit chip the 152 B figure was sized on.
+//
 // Running out of log buffer is NOT a truncation we can ship (the client's
 // JSON.parse would throw) -- duel_apply hard-rejects on overflow instead, so
 // this cap is a consensus-visible number, not a hint.
@@ -622,37 +632,56 @@ int32_t duel_apply(const uint8_t* st, uint32_t stLen, const uint8_t* ord,
           return -1;
         }
       } else {
-        // A real move: a ready loadout index.
-        if (a >= tr.move_count || tr.cooldowns[a] != 0) {
+        // A real move: a ready loadout index that still has a USE left.
+        //
+        // LIMITED USES (combat-depth Task 6) -- the owner's replacement for action
+        // points: the same "can I afford this now?" tension at a fraction of the
+        // cost. uses_left == 0 means the signature move is SPENT, and ordering it
+        // is a hard reject, exactly like ordering one that is still cooling.
+        // (255 is the unlimited sentinel and never decrements, so an ordinary
+        // move can never reach 0 -- see semantics 5.)
+        if (a >= tr.move_count || tr.cooldowns[a] != 0 || tr.uses_left[a] == 0) {
           return -1;
         }
         const uint8_t moveEff = duel::kDuelMoves[tr.moves[a]].effect;
         if (moveEff == duel::kEffGuard) {
-          // GUARD (combat-depth Task 4) is the one move whose `target` names an
-          // ALLY ON ITS OWN SIDE, not an enemy: in range, ALIVE (there is
-          // nothing to cover otherwise), and NOT ITSELF -- self-guard is
-          // meaningless, and silently allowing it would give one logical order
-          // ("I guard nobody") two byte-encodings.
+          // GUARD (combat-depth Task 4) names an ALLY ON ITS OWN SIDE: in range,
+          // ALIVE (there is nothing to cover otherwise), and NOT ITSELF --
+          // self-guard is meaningless, and silently allowing it would give one
+          // logical order ("I guard nobody") two byte-encodings.
+          //
+          // A HEAL (Task 6) also names an ally, but with neither extra rule:
+          // SELF-HEAL IS LEGAL (that is the whole point of a heal in a 1v1), and
+          // a heal on a DEAD ally is legal too -- it resolves as an explicit
+          // NO-OP (never a revive; see the resolve loop). Rejecting the corpse
+          // case here would STRAND a duel whose only heal target died between the
+          // order being picked and the round resolving. So a heal falls through
+          // to the plain in-range check below, which is all it needs.
           if (t >= teamSize || t == slot || s.treats[side][t].hp == 0) {
             return -1;
           }
-        } else if (moveEff == duel::kEffAoe) {
-          // AOE (combat-depth Task 5) names NOBODY -- it hits every living enemy
-          // -- so its target byte MUST be exactly kTargetAll. Accepting an AoE
-          // "aimed" at a slot and then ignoring the byte would give ONE logical
-          // order MANY byte-encodings, and game channels SIGN order bytes: one
-          // encoding per logical order is the contract. (It needs no living
-          // enemy to be legal: with none left the spray simply whiffs.)
+        } else if (moveEff == duel::kEffAoe || moveEff == duel::kEffGroupHeal) {
+          // THE kTargetAll RULE (Task 5, generalised by Task 6): the effects that
+          // name NOBODY -- an AoE hits every living enemy, a group-heal restores
+          // every living ally -- REQUIRE exactly kTargetAll, and every other
+          // effect FORBIDS it (the `t >= teamSize` check below catches 0xFE,
+          // which is >= any legal team_size). Accepting one of these "aimed" at a
+          // slot and then ignoring the byte would give ONE logical order MANY
+          // byte-encodings, and game channels SIGN order bytes: one encoding per
+          // logical order is the contract. (Neither needs a living target to be
+          // legal: with none left, they simply whiff.)
           if (t != wire::kTargetAll) {
             return -1;
           }
         } else if (t >= teamSize) {
-          // Every other move aims at an enemy slot -- and, the other direction of
-          // that same canonical rule, must NOT use kTargetAll: 0xFE is >= any
-          // legal team_size (max 5), so this one check rejects it. (A `shield`
-          // deals no damage and ignores this byte entirely -- it is still
-          // range-checked, and its log entry always reads target 255, so the
-          // ignored value can never reach the state or the log.)
+          // Every other move names a SLOT INDEX -- an ALLY slot for a `heal`, an
+          // ENEMY slot for every damaging move -- and the byte is range-checked
+          // identically for both; which SIDE it indexes is the resolve loop's
+          // business, not the wire's. This is also the other direction of the
+          // kTargetAll rule above. (A `shield` deals no damage and ignores this
+          // byte entirely -- it is still range-checked, and its log entry always
+          // reads target 255, so the ignored value can never reach the state or
+          // the log.)
           return -1;
         }
       }
@@ -792,7 +821,9 @@ int32_t duel_apply(const uint8_t* st, uint32_t stLen, const uint8_t* ord,
     }
 
     const uint8_t mvIdx = actor.moves[act];
-    const uint8_t eff = duel::kDuelMoves[mvIdx].effect;
+    const duel::DuelMoveStat& mv = duel::kDuelMoves[mvIdx];
+    const uint8_t eff = mv.effect;
+    const uint32_t power = mv.power;
     const uint32_t enemy = 1u - aS;
     const uint32_t tgtSlot = target[aS][aL];
 
@@ -814,7 +845,6 @@ int32_t duel_apply(const uint8_t* st, uint32_t stLen, const uint8_t* ord,
     // the order's target byte.
     if (eff == duel::kEffShield) {
       const uint32_t room = 255u - actor.shield; // u8 pool: raising it CLAMPS
-      const uint32_t power = duel::kDuelMoves[mvIdx].power;
       const uint32_t gain = (power < room) ? power : room;
       actor.shield = static_cast<uint8_t>(actor.shield + gain);
       WriteLogEntry(&log, nEntries++ == 0, aS, aL, "shield", mvIdx,
@@ -822,8 +852,76 @@ int32_t duel_apply(const uint8_t* st, uint32_t stLen, const uint8_t* ord,
       continue;
     }
 
-    const uint8_t atkType = duel::kDuelMoves[mvIdx].type;
-    const uint32_t power = duel::kDuelMoves[mvIdx].power;
+    // ============================ THE ONE HEAL (Task 6) ============================
+    //
+    // *** KO IS PERMANENT. AN UNGUARDED HEAL IS AN ACCIDENTAL REVIVE. ***
+    //
+    // Every point of hp any treat ever GAINS -- single heal, group-heal, life siphon --
+    // goes through this one function, for exactly one reason: so that the `hp == 0` guard
+    // below is written once and cannot be forgotten at a call site. A heal poured into a
+    // corpse restores NOTHING and returns 0; it is not a reject (the order was legal, it
+    // is simply wasted) and it is emphatically not a resurrection.
+    //
+    // It also clamps at max_hp -- OVERHEAL IS WASTED, NOT AN ERROR -- and returns the
+    // amount ACTUALLY restored, which is what the log reports (so the client floats the
+    // green +N a player actually got, not the number the move promised). The `hp >= max_hp`
+    // form of the clamp deliberately also absorbs a crafted hp > max_hp state: it gives
+    // nothing rather than underflowing the remaining room.
+    auto HealTreat = [](TreatState& t, uint32_t amount) -> uint32_t {
+      if (t.hp == 0) {
+        return 0; // *** NO REVIVE. This is the single most dangerous line in the task. ***
+      }
+      const uint32_t hp = t.hp;
+      const uint32_t maxHp = t.max_hp;
+      if (hp >= maxHp) {
+        return 0; // already full: legal, and worth nothing
+      }
+      const uint32_t room = maxHp - hp;
+      const uint32_t gain = (amount < room) ? amount : room;
+      t.hp = static_cast<uint16_t>(hp + gain);
+      return gain;
+    };
+
+    // HEAL (combat-depth Task 6): restores `power` to an ALLY ON THE CASTER'S OWN SIDE
+    // (validated in range above; SELF-HEAL IS LEGAL, unlike guard). It is NOT a blow: no
+    // clash multiplier applies, and the target's block/shield are irrelevant -- there is
+    // nothing to mitigate and nothing to absorb.
+    //
+    // The wasted cases still LOG (dmg = what was actually restored, 0 if none): the player
+    // aimed the heal there, and the client has to be able to show that it did nothing.
+    if (eff == duel::kEffHeal) {
+      TreatState& ally = s.treats[aS][tgtSlot]; // OWN side -- the one move that reads aS
+      const uint32_t gain = HealTreat(ally, power);
+      WriteLogEntry(&log, nEntries++ == 0, aS, aL, "heal", mvIdx, tgtSlot, "neu", gain,
+                    false, ally.hp, false);
+      continue;
+    }
+
+    // GROUP-HEAL (combat-depth Task 6). Like an AoE it names NOBODY (its target byte is
+    // kTargetAll, checked above): it restores (power * aoe_pct_256) >> 8 to EVERY LIVING
+    // ALLY, THE CASTER INCLUDED, in SLOT ORDER.
+    //
+    // aoe_pct_256 is REUSED as the spread multiplier, deliberately: reaching everyone costs
+    // per-head potency, and that is one idea, not two (see the tunable's comment).
+    //
+    // DEAD ALLIES GET NOTHING and log nothing -- a group-heal is not a mass revive either
+    // (HealTreat's guard, again). A living-but-full ally still logs, at dmg 0: it received
+    // the heal, it simply had no room for it.
+    if (eff == duel::kEffGroupHeal) {
+      const uint32_t amount = (power * kTun.aoe_pct_256) >> 8;
+      for (uint32_t hSlot = 0; hSlot < teamSize; ++hSlot) {
+        TreatState& ally = s.treats[aS][hSlot];
+        if (ally.hp == 0) {
+          continue; // KO is permanent: a corpse is not healed and logs nothing
+        }
+        const uint32_t gain = HealTreat(ally, amount);
+        WriteLogEntry(&log, nEntries++ == 0, aS, aL, "heal", mvIdx, hSlot, "neu", gain,
+                      false, ally.hp, false);
+      }
+      continue;
+    }
+
+    const uint8_t atkType = mv.type;
 
     // The clash multiplier against the enemy in `defSlot`, read off THAT treat's OWN
     // picked move (Recover has no move type at all -> neutral). Single-target reads it
@@ -860,28 +958,39 @@ int32_t duel_apply(const uint8_t* st, uint32_t stLen, const uint8_t* ord,
     // and guard, goes through the attacker's own shield (an absorb pool absorbs
     // anything), can KO, and can NEVER itself be countered: it is not a move, so
     // nothing re-enters this lambda.
+    //
+    // *** RETURNS `drained` -- the recipient's ACTUAL hp decrease, i.e. `landed` MINUS
+    // whatever its shield ate -- which is a DIFFERENT NUMBER from the `landed` the counter
+    // reflects, and the life siphon (Task 6) heals off THIS one. "I can only drain what I
+    // actually take out of you." Do NOT collapse the two into one "damage dealt" value:
+    // they diverge exactly when the recipient holds a shield, both directions are pinned
+    // by golden vectors (counter_reflects_landed_not_drained /
+    // siphon_fully_shielded_heals_nothing), and merging them passes tests, sanitizers AND
+    // native-vs-wasm parity while silently deleting a consensus rule. ***
     auto LandBlow = [&](const char* kind, uint32_t tgt, uint32_t rcvSlot, uint32_t via,
-                        uint16_t mult, uint32_t landed, bool blocked) {
+                        uint16_t mult, uint32_t landed, bool blocked) -> uint32_t {
       TreatState& rcv = s.treats[enemy][rcvSlot];
       // 2. SHIELD ABSORB, on whoever finally receives it. The EXCESS CARRIES
       // THROUGH to hp -- a shield blunts a blow, it does not stop it.
       const uint32_t absorbed = (rcv.shield < landed) ? rcv.shield : landed;
       rcv.shield = static_cast<uint8_t>(rcv.shield - absorbed);
       const uint32_t toHp = landed - absorbed;
-      // 3. HP.
-      const uint16_t newHp =
-          (rcv.hp > toHp) ? static_cast<uint16_t>(rcv.hp - toHp) : 0;
+      // 3. HP. `drained` is what hp ACTUALLY lost -- toHp, or all the hp there was left if
+      // the blow overkilled it. (An overkill drains only what was there to take.)
+      const bool fatal = rcv.hp <= toHp;
+      const uint32_t drained = fatal ? rcv.hp : toHp;
+      const uint16_t newHp = fatal ? 0 : static_cast<uint16_t>(rcv.hp - toHp);
       rcv.hp = newHp;
       WriteLogEntry(&log, nEntries++ == 0, aS, aL, kind, mvIdx, tgt,
                     ClashLabel(mult), landed, blocked, newHp, newHp == 0, absorbed,
                     via);
       if (newHp == 0) {
-        return; // the dead do not riposte
+        return drained; // the dead do not riposte
       }
       const uint8_t rcvAct = action[enemy][rcvSlot];
       if (rcvAct == wire::kActionRecover ||
           duel::kDuelMoves[rcv.moves[rcvAct]].effect != duel::kEffCounter) {
-        return;
+        return drained;
       }
       const uint32_t reflect = (landed * kTun.counter_pct_256) >> 8;
       const uint32_t rAbsorbed = (actor.shield < reflect) ? actor.shield : reflect;
@@ -893,6 +1002,7 @@ int32_t duel_apply(const uint8_t* st, uint32_t stLen, const uint8_t* ord,
       WriteLogEntry(&log, nEntries++ == 0, enemy, rcvSlot, "counter",
                     rcv.moves[rcvAct], aL, "neu", reflect, false, atkHp,
                     atkHp == 0, rAbsorbed);
+      return drained;
     };
 
     // AOE (combat-depth Task 5). It names NOBODY (its target byte is kTargetAll, checked
@@ -959,46 +1069,103 @@ int32_t duel_apply(const uint8_t* st, uint32_t stLen, const uint8_t* ord,
       continue;
     }
 
-    const uint16_t mult = ClashVs(tgtSlot);
-
-    // 1. GUARD REDIRECT. The blow lands on the guardian instead, at guard_pct.
-    // It is SINGLE-HOP and NEVER CHAINED: if A guards B and B guards C, a blow
-    // at C goes to B and STOPS there -- it is not then passed on to A (chaining
-    // is an infinite-loop hazard and a consensus footgun). A guardian KO'd
-    // EARLIER IN THIS ROUND cannot intercept -- hence the hp check HERE, at
-    // intercept time, not back when the map was built -- and the guard simply
-    // lapses, landing the blow on the ward.
+    // DOUBLE-STRIKE (combat-depth Task 6): a `hits: 2` move resolves the damage branch
+    // TWICE. It is a MOVE PROPERTY, NEVER A PROC -- there is no RNG anywhere in this
+    // engine, and a crit you can COUNT ON is a decision; a crit you can only hope for is a
+    // slot machine. Each strike clashes independently, can KO independently, gets its OWN
+    // log entry (so the client plays two impacts), and is punished by the recipient's
+    // counter separately -- two strikes into a counter-stance = two reflects, straight out
+    // of LandBlow with no special case.
     //
-    // Exactly ONE mitigation percentage applies to a blow: a guarded ward's own
-    // block stance is irrelevant, because the ward is not the one being hit.
-    uint32_t rcvSlot = tgtSlot;
-    uint32_t via = wire::kTargetNone;
-    uint32_t mitig = kSplashFull; // no mitigation
-    bool blocked = false;
-    const uint8_t guardian = guardedBy[enemy][tgtSlot];
-    if (guardian != kNoGuardian && s.treats[enemy][guardian].hp > 0) {
-      rcvSlot = guardian;
-      via = guardian;
-      mitig = kTun.guard_pct_256;
-    } else if (blockStance[enemy][tgtSlot]) {
-      blocked = true;
-      mitig = 256u - kTun.block_pct_256;
+    // gen-stats.mjs enforces hits > 1 ONLY on plain `damage`, so nothing else reaches this
+    // loop more than once.
+    const uint32_t nHits = mv.hits;
+    for (uint32_t h = 0; h < nHits; ++h) {
+      // A later strike is CALLED OFF if the target fell to an earlier one (you cannot beat
+      // a corpse -- fizzle-on-death, and it emits NO entry) or if the recipient's riposte
+      // felled the ATTACKER (KO is permanent; the same rule stops an AoE mid-spray).
+      if (h > 0 && (s.treats[enemy][tgtSlot].hp == 0 || actor.hp == 0)) {
+        break;
+      }
+
+      // EVERYTHING BELOW IS RECOMPUTED PER STRIKE, and that is the point: a guardian that
+      // an earlier strike KILLED can no longer intercept the next one, so the guard LAPSES
+      // mid-move and the rest of the volley lands on the ward it was covering.
+      const uint16_t mult = ClashVs(tgtSlot);
+
+      // 1. GUARD REDIRECT. The blow lands on the guardian instead, at guard_pct.
+      // It is SINGLE-HOP and NEVER CHAINED: if A guards B and B guards C, a blow
+      // at C goes to B and STOPS there -- it is not then passed on to A (chaining
+      // is an infinite-loop hazard and a consensus footgun). A guardian KO'd
+      // EARLIER IN THIS ROUND cannot intercept -- hence the hp check HERE, at
+      // intercept time, not back when the map was built -- and the guard simply
+      // lapses, landing the blow on the ward.
+      //
+      // Exactly ONE mitigation percentage applies to a blow: a guarded ward's own
+      // block stance is irrelevant, because the ward is not the one being hit.
+      uint32_t rcvSlot = tgtSlot;
+      uint32_t via = wire::kTargetNone;
+      uint32_t mitig = kSplashFull; // no mitigation
+      bool blocked = false;
+      const uint8_t guardian = guardedBy[enemy][tgtSlot];
+      if (guardian != kNoGuardian && s.treats[enemy][guardian].hp > 0) {
+        rcvSlot = guardian;
+        via = guardian;
+        mitig = kTun.guard_pct_256;
+      } else if (blockStance[enemy][tgtSlot]) {
+        blocked = true;
+        mitig = 256u - kTun.block_pct_256;
+      }
+      const uint32_t drained =
+          LandBlow("hit", tgtSlot, rcvSlot, via, mult,
+                   BlowDamage(power, mult, kSplashFull, mitig), blocked);
+
+      // LIFE SIPHON (combat-depth Task 6). The blow above was an ORDINARY one -- clash,
+      // block, shield and guard all applied, and a GUARDED siphon therefore drains from the
+      // GUARDIAN, who is the treat that actually took the hit. Now the attacker drinks:
+      //
+      //   heal = (siphon_pct_256 * DRAINED) >> 8    -- never `landed`. See LandBlow.
+      //
+      // The three consequences that MUST hold all fall out of that one word: a FIZZLED hit
+      // (the target died first) never reaches here at all; a BLOCKED hit drains less, so it
+      // heals less; and a hit the victim's SHIELD ATE WHOLE drains nothing, so it heals
+      // nothing -- however hard it landed.
+      //
+      // And an attacker FELLED BY THE RIPOSTE heals nothing either: HealTreat's hp == 0
+      // guard is what enforces that, not a special case here. KO is permanent, in every
+      // direction. A corpse also logs nothing further, hence the `actor.hp > 0` on the
+      // entry (the same rule that stops the dead riposting).
+      if (eff == duel::kEffSiphon) {
+        const uint32_t gain = HealTreat(actor, (drained * kTun.siphon_pct_256) >> 8);
+        if (actor.hp > 0) {
+          WriteLogEntry(&log, nEntries++ == 0, aS, aL, "heal", mvIdx, aL, "neu", gain,
+                        false, actor.hp, false);
+        }
+      }
     }
-    LandBlow("hit", tgtSlot, rcvSlot, via, mult,
-             BlowDamage(power, mult, kSplashFull, mitig), blocked);
   }
 
-  // ---- semantics 5: end-of-round cooldowns (living treats only) ----
+  // ---- semantics 5: end-of-round cooldowns + limited uses (living treats only) ----
+  //
+  // Both are burned off the ACTION TAKEN, never off whether it connected: a whiffed swing
+  // costs you the turn AND the move (fizzle-on-death), and a group-heal that found the team
+  // at full hp still spends one of its two uses. Committing an ultimate is a BET.
   for (uint32_t side = 0; side < 2; ++side) {
     for (uint32_t slot = 0; slot < teamSize; ++slot) {
       TreatState& tr = s.treats[side][slot];
       if (tr.hp == 0) {
-        continue; // KO'd treats are out -- cooldowns untouched
+        continue; // KO'd treats are out -- cooldowns/uses untouched (KO is permanent)
       }
       const uint8_t act = action[side][slot];
       for (uint32_t j = 0; j < loadoutSize; ++j) {
         if (act != wire::kActionRecover && j == act) {
           tr.cooldowns[j] = duel::kDuelMoves[tr.moves[act]].cooldown;
+          // LIMITED USES (combat-depth Task 6). 255 is the UNLIMITED sentinel and is NEVER
+          // decremented -- that is what makes an ordinary move ordinary. Validation already
+          // rejected uses_left == 0, so this can never underflow.
+          if (tr.uses_left[j] != 255) {
+            tr.uses_left[j] = static_cast<uint8_t>(tr.uses_left[j] - 1);
+          }
         } else if (tr.cooldowns[j] > 0) {
           tr.cooldowns[j] = static_cast<uint8_t>(tr.cooldowns[j] - 1);
         }

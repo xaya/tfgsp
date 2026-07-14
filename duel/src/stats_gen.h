@@ -16,11 +16,12 @@ namespace duel {
 // MoveType (matches database/fighter.hpp pxd::MoveType / the proto MoveType field):
 // 0 Heavy, 1 Speedy, 2 Tricky, 3 Distance, 4 Blocking.
 //
-// Move effects (combat-depth Task 3): stance effects {block,guard,shield,counter}
-// are legal ONLY on MoveType 4 (Blocking); action effects {damage,aoe,heal,siphon}
-// are legal ONLY on MoveType 0-3. gen-stats.mjs enforces this partition in both
-// directions, so an illegal (effect, type) pair can never reach this table.
-enum : uint8_t { kEffDamage = 0, kEffBlock = 1, kEffGuard = 2, kEffAoe = 3, kEffHeal = 4, kEffSiphon = 5, kEffShield = 6, kEffCounter = 7 };
+// Move effects (combat-depth Tasks 3 + 6): stance effects {block,guard,shield,
+// counter} are legal ONLY on MoveType 4 (Blocking); action effects {damage,aoe,
+// heal,siphon,groupheal} are legal ONLY on MoveType 0-3. gen-stats.mjs enforces
+// this partition in both directions, so an illegal (effect, type) pair can never
+// reach this table -- as it enforces that hits > 1 is legal ONLY on kEffDamage.
+enum : uint8_t { kEffDamage = 0, kEffBlock = 1, kEffGuard = 2, kEffAoe = 3, kEffHeal = 4, kEffSiphon = 5, kEffShield = 6, kEffCounter = 7, kEffGroupHeal = 8 };
 
 struct DuelMoveStat {
   uint16_t power; uint8_t speed; uint8_t cooldown; uint8_t type;
@@ -36,16 +37,16 @@ constexpr DuelMoveStat kDuelMoves[39] = {
     {24, 98, 0, 1, kEffDamage, 1, 255}, // [3] 1d1dec74-ca35-0cc4-d930-164786a9dd81 Coco Chaos (q1 Speedy)
     {24, 94, 0, 1, kEffDamage, 1, 255}, // [4] 1e47a8e0-acfd-1244-0b7d-539d62429060 Icing on the Cake (q1 Speedy)
     {42, 54, 2, 2, kEffDamage, 1, 255}, // [5] 2569d967-c676-8b44-cbdf-d514e4c5c73d Toffee Tripper (q3 Tricky)
-    {24, 57, 0, 2, kEffDamage, 1, 255}, // [6] 29d559bb-41a7-9f14-5bf8-605da8166943 Pucker Sucker (q1 Tricky)
+    {24, 57, 0, 2, kEffSiphon, 1, 255}, // [6] 29d559bb-41a7-9f14-5bf8-605da8166943 Pucker Sucker (q1 Tricky)
     {24, 70, 0, 3, kEffDamage, 1, 255}, // [7] 2c555752-8a84-58f4-395e-6460b7864069 Get Over Here! (q1 Distance)
     {20, 46, 1, 4, kEffCounter, 1, 255}, // [8] 2c94f949-a10e-2524-2827-6588982ce0b1 Berry Bounce (q3 Blocking)
     {53, 55, 3, 2, kEffDamage, 1, 255}, // [9] 34a115db-3153-aff4-9a46-97700634f1fb Gilded Tripper (q4 Tricky)
-    {51, 97, 3, 1, kEffDamage, 1, 255}, // [10] 3e76f2fa-072c-5654-dac9-c9b0e4e1643a Super Sugary Rush (q4 Speedy)
+    {51, 97, 3, 1, kEffGroupHeal, 1, 2}, // [10] 3e76f2fa-072c-5654-dac9-c9b0e4e1643a Super Sugary Rush (q4 Speedy)
     {20, 47, 1, 4, kEffShield, 1, 255}, // [11] 41416afb-0d72-f9b4-ba30-f089b713500f Candied Shell (q3 Blocking)
-    {15, 42, 0, 4, kEffBlock, 1, 255}, // [12] 431900a2-54d4-df34-d9f7-6a4608fecfaa Chewy Absorption (q2 Blocking)
+    {15, 42, 0, 4, kEffShield, 1, 255}, // [12] 431900a2-54d4-df34-d9f7-6a4608fecfaa Chewy Absorption (q2 Blocking)
     {27, 49, 2, 4, kEffBlock, 1, 255}, // [13] 4dbb297f-6a80-ca44-a94f-3ea9ed3311e8 Tarnising Knee Drop (q4 Blocking)
     {24, 49, 2, 4, kEffBlock, 1, 255}, // [14] 55cafe03-4a58-0f44-6a27-f9fc6fce881a Heavy Gumdrop Kick (q4 Blocking)
-    {41, 75, 2, 3, kEffDamage, 1, 255}, // [15] 55e05ece-a3f6-a924-3833-2222a0eee6a3 Limon Shuriken (q3 Distance)
+    {41, 75, 2, 3, kEffDamage, 2, 255}, // [15] 55e05ece-a3f6-a924-3833-2222a0eee6a3 Limon Shuriken (q3 Distance)
     {51, 28, 3, 0, kEffAoe, 1, 255}, // [16] 61d8b3ec-9a01-0e64-fb45-27d2b858e332 Explosive Jawbreaker (q4 Heavy)
     {26, 86, 0, 1, kEffDamage, 1, 255}, // [17] 628ebc0b-bb19-ee64-68b8-2f66f4b92720 One Thousand Tiny Slices (q1 Speedy)
     {12, 43, 0, 4, kEffShield, 1, 255}, // [18] 73eb61fc-70a9-25a4-ba01-0ecaa0d547c5 Sugar Shield (q1 Blocking)
@@ -57,7 +58,7 @@ constexpr DuelMoveStat kDuelMoves[39] = {
     {26, 27, 0, 0, kEffDamage, 1, 255}, // [24] 9fd0b9ef-2e7d-d344-8926-69f1fab99f65 Pop Rock Pop (q1 Heavy)
     {25, 76, 0, 3, kEffDamage, 1, 255}, // [25] a9d69fc0-a1b8-ae24-cbd7-249760200211 Bubble Trouble (q1 Distance)
     {40, 28, 2, 0, kEffDamage, 1, 255}, // [26] aa7d8565-99e1-84f4-49d2-8925c2602a7b Vicious Jawbreaker (q3 Heavy)
-    {37, 82, 2, 1, kEffDamage, 1, 255}, // [27] ad6d5d28-08b4-4304-6b49-11f8f5f9ff1c Sugar Rush (q3 Speedy)
+    {37, 82, 2, 1, kEffHeal, 1, 255}, // [27] ad6d5d28-08b4-4304-6b49-11f8f5f9ff1c Sugar Rush (q3 Speedy)
     {32, 99, 1, 1, kEffDamage, 1, 255}, // [28] b1bd32de-88b2-1204-7b2e-0680677d78c4 Come Over Here and Slip on it (q2 Speedy)
     {29, 60, 1, 2, kEffDamage, 1, 255}, // [29] b889835e-1cd6-d3d4-f9b4-dd1989f49dac Kick in the Beans (q2 Tricky)
     {51, 63, 3, 2, kEffDamage, 1, 255}, // [30] b96f1ff8-66d5-f244-79fd-260735d4c3d7 Barfing Blow (q4 Tricky)
@@ -67,7 +68,7 @@ constexpr DuelMoveStat kDuelMoves[39] = {
     {51, 69, 3, 3, kEffAoe, 1, 255}, // [34] c6770789-4a1f-7f24-f921-c4dc66c2697a Gold Rush (q4 Distance)
     {42, 28, 2, 0, kEffDamage, 1, 255}, // [35] e16531a7-33fd-a3e4-69fd-ff10eba65cb7 Blackout Shot (q3 Heavy)
     {32, 81, 1, 3, kEffAoe, 1, 255}, // [36] e201f964-8949-9d74-fbee-4ee8786284ca Cinnamon Blast (q2 Distance)
-    {45, 30, 3, 0, kEffDamage, 1, 255}, // [37] e55a3d69-9fb4-5194-4812-c2f85e887aca Silver Knuckles (q4 Heavy)
+    {45, 30, 3, 0, kEffDamage, 1, 2}, // [37] e55a3d69-9fb4-5194-4812-c2f85e887aca Silver Knuckles (q4 Heavy)
     {29, 62, 1, 2, kEffDamage, 1, 255}, // [38] fa6144f9-ad49-8124-386f-351a7f1ab546 Float Like a Butter Cream (q2 Tricky)
 };
 
@@ -88,10 +89,16 @@ struct DuelTunables {
   // being a win-on-time button (and turtling stops being a strategy).
   uint8_t sudden_start;
   uint8_t sudden_step;
-  // combat-depth Task 3: new-verb tunables, wired up by Tasks 4/5/6 (AoE splash
-  // %, guard block %, siphon lifesteal %, counter reflect %). Landed now so
-  // kDuelMoves[*].effect has something to point at once the resolver reads
-  // them; not consumed by any behaviour yet.
+  // The new-verb percentages (combat-depth Tasks 4/5/6), all four consumed by
+  // duel_apply:
+  //   aoe_pct_256     an AoE's damage per victim, as a fraction of a normal blow
+  //                   -- and, DELIBERATELY THE SAME NUMBER, a group-heal's
+  //                   restore per ally: reaching everyone costs per-head potency,
+  //                   and that is one idea, not two.
+  //   guard_pct_256   the fraction of an intercepted blow the guardian takes.
+  //   siphon_pct_256  the fraction of the hp a siphon actually DRAINED (never the
+  //                   force it landed) that comes back as healing.
+  //   counter_pct_256 the fraction of the blow's LANDED force a counter reflects.
   uint16_t aoe_pct_256;
   uint16_t guard_pct_256;
   uint16_t siphon_pct_256;

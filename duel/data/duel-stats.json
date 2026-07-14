@@ -45,8 +45,8 @@
     "power": 24,
     "speed": 57,
     "cooldown": 0,
-    "effect": "damage",
-    "description": "A sour candy flicked straight at the face — disorienting more than damaging."
+    "effect": "siphon",
+    "description": "A sour sucker clamped onto the foe that drinks them in: a normal blow that also DRAINS. You heal for half of the health it actually takes off them — so a hit their shield swallowed whole, or one that finds them already down, feeds you nothing."
   },
   "2c555752-8a84-58f4-395e-6460b7864069": {
     "power": 24,
@@ -73,8 +73,9 @@
     "power": 51,
     "speed": 97,
     "cooldown": 3,
-    "effect": "damage",
-    "description": "An overloaded sugar rush pushed past the limit — top-tier speed with the power to match."
+    "effect": "groupheal",
+    "max_uses": 2,
+    "description": "An overloaded sugar rush poured over the WHOLE team: every living ally, you included, is restored by about 60% of its 51 points. Pick no target — it reaches them all. It will not raise the fallen. Only TWICE per duel."
   },
   "41416afb-0d72-f9b4-ba30-f089b713500f": {
     "power": 20,
@@ -87,8 +88,8 @@
     "power": 15,
     "speed": 42,
     "cooldown": 0,
-    "effect": "block",
-    "description": "Goes soft and gummy, letting the next hit sink in without doing its full damage."
+    "effect": "shield",
+    "description": "Goes soft and gummy and ABSORBS: 15 points of chewy shield. It soaks damage before your health does and keeps whatever survives into later rounds. Deals no damage."
   },
   "4dbb297f-6a80-ca44-a94f-3ea9ed3311e8": {
     "power": 27,
@@ -109,7 +110,8 @@
     "speed": 75,
     "cooldown": 2,
     "effect": "damage",
-    "description": "A razor-edged lime candy flung like a shuriken — sharp reach damage from afar."
+    "hits": 2,
+    "description": "Flings TWO razor-edged lime candies in a single breath. They land as two separate strikes — each clashes on its own, each can fell the foe, and each is punished on its own by a counter. If the first one kills, the second is never thrown."
   },
   "61d8b3ec-9a01-0e64-fb45-27d2b858e332": {
     "power": 51,
@@ -192,8 +194,8 @@
     "power": 37,
     "speed": 82,
     "cooldown": 2,
-    "effect": "damage",
-    "description": "A caffeinated burst of speed that closes distance and lands before the foe can set up."
+    "effect": "heal",
+    "description": "Pours a caffeinated rush of sugar into an ALLY — or into yourself — restoring 37 health. Pick a friend, not a foe. It cannot raise a fallen treat: a KO is forever, and healing the dead does nothing at all."
   },
   "b1bd32de-88b2-1204-7b2e-0680677d78c4": {
     "power": 32,
@@ -263,7 +265,8 @@
     "speed": 30,
     "cooldown": 3,
     "effect": "damage",
-    "description": "A knuckle-duster forged from hardened silver taffy — a slow, bone-rattling haymaker."
+    "max_uses": 2,
+    "description": "A knuckle-duster forged from hardened silver taffy, swung with everything you have — a slow, bone-rattling haymaker. You only have the strength to throw it TWICE per duel."
   },
   "fa6144f9-ad49-8124-386f-351a7f1ab546": {
     "power": 29,
