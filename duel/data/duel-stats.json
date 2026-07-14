@@ -3,391 +3,274 @@
     "power": 11,
     "speed": 46,
     "cooldown": 0,
-    "effects": [
-      {
-        "kind": "block"
-      }
-    ]
+    "effect": "block",
+    "description": "Plants a stubborn gumdrop stance — soaks part of the next blow."
   },
   "01b34a91-37d8-29d4-09cb-2d515f51e315": {
     "power": 23,
     "speed": 45,
     "cooldown": 2,
-    "effects": [
-      {
-        "kind": "block"
-      }
-    ]
+    "effect": "block",
+    "description": "Wraps the fighter in shimmering caramel bindings, bracing to blunt whatever lands next."
   },
   "1a67cc79-b97a-4624-ca67-36c9fcbee970": {
     "power": 50,
     "speed": 93,
     "cooldown": 3,
-    "effects": [
-      {
-        "kind": "damage"
-      }
-    ]
+    "effect": "damage",
+    "description": "A flashing mercury-quick slash — rare speed backing up serious power."
   },
   "1d1dec74-ca35-0cc4-d930-164786a9dd81": {
     "power": 24,
     "speed": 98,
     "cooldown": 0,
-    "effects": [
-      {
-        "kind": "damage"
-      }
-    ]
+    "effect": "damage",
+    "description": "A frantic chocolate-fisted flurry, fast enough to strike before the foe can react."
   },
   "1e47a8e0-acfd-1244-0b7d-539d62429060": {
     "power": 24,
     "speed": 94,
     "cooldown": 0,
-    "effects": [
-      {
-        "kind": "damage"
-      }
-    ]
+    "effect": "damage",
+    "description": "A swift dollop of icing flicked like a whip — light but blisteringly fast."
   },
   "2569d967-c676-8b44-cbdf-d514e4c5c73d": {
     "power": 42,
     "speed": 54,
     "cooldown": 2,
-    "effects": [
-      {
-        "kind": "damage"
-      }
-    ]
+    "effect": "damage",
+    "description": "A sticky toffee snare underfoot, punished the instant the foe stumbles."
   },
   "29d559bb-41a7-9f14-5bf8-605da8166943": {
     "power": 24,
     "speed": 57,
     "cooldown": 0,
-    "effects": [
-      {
-        "kind": "damage"
-      }
-    ]
+    "effect": "damage",
+    "description": "A sour candy flicked straight at the face — disorienting more than damaging."
   },
   "2c555752-8a84-58f4-395e-6460b7864069": {
     "power": 24,
     "speed": 70,
     "cooldown": 0,
-    "effects": [
-      {
-        "kind": "damage"
-      }
-    ]
+    "effect": "damage",
+    "description": "Yanks the fight to close range with a taffy-rope pull before landing the hit."
   },
   "2c94f949-a10e-2524-2827-6588982ce0b1": {
     "power": 20,
     "speed": 46,
     "cooldown": 1,
-    "effects": [
-      {
-        "kind": "block"
-      }
-    ]
+    "effect": "block",
+    "description": "A springy berry-skin crouch that cushions the next hit and bounces some of the force away."
   },
   "34a115db-3153-aff4-9a46-97700634f1fb": {
     "power": 53,
     "speed": 55,
     "cooldown": 3,
-    "effects": [
-      {
-        "kind": "damage"
-      }
-    ]
+    "effect": "damage",
+    "description": "A gilded feint that sends the foe stumbling before the real blow lands."
   },
   "3e76f2fa-072c-5654-dac9-c9b0e4e1643a": {
     "power": 51,
     "speed": 97,
     "cooldown": 3,
-    "effects": [
-      {
-        "kind": "damage"
-      }
-    ]
+    "effect": "damage",
+    "description": "An overloaded sugar rush pushed past the limit — top-tier speed with the power to match."
   },
   "41416afb-0d72-f9b4-ba30-f089b713500f": {
     "power": 20,
     "speed": 47,
     "cooldown": 1,
-    "effects": [
-      {
-        "kind": "block"
-      }
-    ]
+    "effect": "block",
+    "description": "Hardens into a glassy candy shell, taking the edge off the next blow."
   },
   "431900a2-54d4-df34-d9f7-6a4608fecfaa": {
     "power": 15,
     "speed": 42,
     "cooldown": 0,
-    "effects": [
-      {
-        "kind": "block"
-      }
-    ]
+    "effect": "block",
+    "description": "Goes soft and gummy, letting the next hit sink in without doing its full damage."
   },
   "4dbb297f-6a80-ca44-a94f-3ea9ed3311e8": {
     "power": 27,
     "speed": 49,
     "cooldown": 2,
-    "effects": [
-      {
-        "kind": "block"
-      }
-    ]
+    "effect": "block",
+    "description": "Drops into a tarnished-silver crouch that digs in and shrugs off part of the next strike."
   },
   "55cafe03-4a58-0f44-6a27-f9fc6fce881a": {
     "power": 24,
     "speed": 49,
     "cooldown": 2,
-    "effects": [
-      {
-        "kind": "block"
-      }
-    ]
+    "effect": "block",
+    "description": "A heavier stomp into a gumdrop stance, braced hard against whatever's coming."
   },
   "55e05ece-a3f6-a924-3833-2222a0eee6a3": {
     "power": 41,
     "speed": 75,
     "cooldown": 2,
-    "effects": [
-      {
-        "kind": "damage"
-      }
-    ]
+    "effect": "damage",
+    "description": "A razor-edged lime candy flung like a shuriken — sharp reach damage from afar."
   },
   "61d8b3ec-9a01-0e64-fb45-27d2b858e332": {
     "power": 51,
     "speed": 28,
     "cooldown": 3,
-    "effects": [
-      {
-        "kind": "damage"
-      }
-    ]
+    "effect": "damage",
+    "description": "A jawbreaker packed with popping powder — the biggest bang in the loadout, slow to load."
   },
   "628ebc0b-bb19-ee64-68b8-2f66f4b92720": {
     "power": 26,
     "speed": 86,
     "cooldown": 0,
-    "effects": [
-      {
-        "kind": "damage"
-      }
-    ]
+    "effect": "damage",
+    "description": "A blur of paper-thin candy shards — many quick nicks rather than one big cut."
   },
   "73eb61fc-70a9-25a4-ba01-0ecaa0d547c5": {
     "power": 12,
     "speed": 43,
     "cooldown": 0,
-    "effects": [
-      {
-        "kind": "block"
-      }
-    ]
+    "effect": "block",
+    "description": "Raises a crystallized sugar shield to blunt the next attack."
   },
   "86b323c2-b2fd-2494-ab5e-bc3514bc92d8": {
     "power": 26,
     "speed": 29,
     "cooldown": 0,
-    "effects": [
-      {
-        "kind": "damage"
-      }
-    ]
+    "effect": "damage",
+    "description": "A basic candy-coated haymaker — dependable weight behind every swing."
   },
   "86bd4f81-e96b-9864-78b5-5fc51fbff6a4": {
     "power": 34,
     "speed": 69,
     "cooldown": 1,
-    "effects": [
-      {
-        "kind": "damage"
-      }
-    ]
+    "effect": "damage",
+    "description": "A frosty strike thrown from range that chills on impact — reach over raw power."
   },
   "8e4753b5-c739-aaf4-ab79-4d333a69cae6": {
     "power": 24,
     "speed": 45,
     "cooldown": 2,
-    "effects": [
-      {
-        "kind": "block"
-      }
-    ]
+    "effect": "block",
+    "description": "A flurry of bouncing guards that soaks up part of the next incoming hit."
   },
   "92f7b745-c1ff-3cd4-f9cf-0fe0dafb5536": {
     "power": 54,
     "speed": 30,
     "cooldown": 3,
-    "effects": [
-      {
-        "kind": "damage"
-      }
-    ]
+    "effect": "damage",
+    "description": "Rains gilded chocolate chips down in a devastating downpour — the hardest hit around, slow to wind up."
   },
   "9f0df0ed-13a6-84c4-781d-9dbf9741c66e": {
     "power": 29,
     "speed": 30,
     "cooldown": 1,
-    "effects": [
-      {
-        "kind": "damage"
-      }
-    ]
+    "effect": "damage",
+    "description": "A crunching chocolate-bar clothesline — solid, no-frills power."
   },
   "9fd0b9ef-2e7d-d344-8926-69f1fab99f65": {
     "power": 26,
     "speed": 27,
     "cooldown": 0,
-    "effects": [
-      {
-        "kind": "damage"
-      }
-    ]
+    "effect": "damage",
+    "description": "A fistful of popping candy detonated point-blank — quick to throw, light but always ready."
   },
   "a9d69fc0-a1b8-ae24-cbd7-249760200211": {
     "power": 25,
     "speed": 76,
     "cooldown": 0,
-    "effects": [
-      {
-        "kind": "damage"
-      }
-    ]
+    "effect": "damage",
+    "description": "A bubblegum bubble lobbed from afar that pops right on target."
   },
   "aa7d8565-99e1-84f4-49d2-8925c2602a7b": {
     "power": 40,
     "speed": 28,
     "cooldown": 2,
-    "effects": [
-      {
-        "kind": "damage"
-      }
-    ]
+    "effect": "damage",
+    "description": "Winds up and hurls a rock-hard jawbreaker — brutal, but you'll see it coming."
   },
   "ad6d5d28-08b4-4304-6b49-11f8f5f9ff1c": {
     "power": 37,
     "speed": 82,
     "cooldown": 2,
-    "effects": [
-      {
-        "kind": "damage"
-      }
-    ]
+    "effect": "damage",
+    "description": "A caffeinated burst of speed that closes distance and lands before the foe can set up."
   },
   "b1bd32de-88b2-1204-7b2e-0680677d78c4": {
     "power": 32,
     "speed": 99,
     "cooldown": 1,
-    "effects": [
-      {
-        "kind": "damage"
-      }
-    ]
+    "effect": "damage",
+    "description": "Slides a caramel puddle underfoot and closes the gap in a flash."
   },
   "b889835e-1cd6-d3d4-f9b4-dd1989f49dac": {
     "power": 29,
     "speed": 60,
     "cooldown": 1,
-    "effects": [
-      {
-        "kind": "damage"
-      }
-    ]
+    "effect": "damage",
+    "description": "A cheeky low blow to the jellybean midsection — as rude as it is effective."
   },
   "b96f1ff8-66d5-f244-79fd-260735d4c3d7": {
     "power": 51,
     "speed": 63,
     "cooldown": 3,
-    "effects": [
-      {
-        "kind": "damage"
-      }
-    ]
+    "effect": "damage",
+    "description": "An unsettling gut-churner of a hit that leaves the target queasy and off their game."
   },
   "bbf71f26-78f5-5014-5b4b-a1c3866cb75b": {
     "power": 51,
     "speed": 56,
     "cooldown": 3,
-    "effects": [
-      {
-        "kind": "damage"
-      }
-    ]
+    "effect": "damage",
+    "description": "A crackling metallic coating that shocks on contact — unpredictable and painful."
   },
   "bd27fe1c-ce9a-f524-c887-61f9e4d5088b": {
     "power": 25,
     "speed": 64,
     "cooldown": 0,
-    "effects": [
-      {
-        "kind": "damage"
-      }
-    ]
+    "effect": "damage",
+    "description": "A low sweeping kick that scatters loose sugar and knocks the foe off balance."
   },
   "c28e13b4-cb1f-6ea4-680f-91010a400e10": {
     "power": 25,
     "speed": 88,
     "cooldown": 0,
-    "effects": [
-      {
-        "kind": "damage"
-      }
-    ]
+    "effect": "damage",
+    "description": "A snappy jab aimed straight at the sweet spot — quick and precise."
   },
   "c6770789-4a1f-7f24-f921-c4dc66c2697a": {
     "power": 51,
     "speed": 69,
     "cooldown": 3,
-    "effects": [
-      {
-        "kind": "damage"
-      }
-    ]
+    "effect": "damage",
+    "description": "A shimmering hail of golden shot fired from range — punishing reach damage."
   },
   "e16531a7-33fd-a3e4-69fd-ff10eba65cb7": {
     "power": 42,
     "speed": 28,
     "cooldown": 2,
-    "effects": [
-      {
-        "kind": "damage"
-      }
-    ]
+    "effect": "damage",
+    "description": "A licorice haymaker thrown with everything behind it — heavy, but leaves an opening."
   },
   "e201f964-8949-9d74-fbee-4ee8786284ca": {
     "power": 32,
     "speed": 81,
     "cooldown": 1,
-    "effects": [
-      {
-        "kind": "damage"
-      }
-    ]
+    "effect": "damage",
+    "description": "A fiery cinnamon burst hurled across the arena — stings from a distance."
   },
   "e55a3d69-9fb4-5194-4812-c2f85e887aca": {
     "power": 45,
     "speed": 30,
     "cooldown": 3,
-    "effects": [
-      {
-        "kind": "damage"
-      }
-    ]
+    "effect": "damage",
+    "description": "A knuckle-duster forged from hardened silver taffy — a slow, bone-rattling haymaker."
   },
   "fa6144f9-ad49-8124-386f-351a7f1ab546": {
     "power": 29,
     "speed": 62,
     "cooldown": 1,
-    "effects": [
-      {
-        "kind": "damage"
-      }
-    ]
+    "effect": "damage",
+    "description": "Drifts in soft as butter cream, then lands a hit the foe never saw coming."
   },
   "tunables": {
     "hp_base": 100,
@@ -400,6 +283,10 @@
     "team_size": 3,
     "loadout_size": 4,
     "sudden_start": 12,
-    "sudden_step": 6
+    "sudden_step": 6,
+    "aoe_pct_256": 154,
+    "guard_pct_256": 179,
+    "siphon_pct_256": 128,
+    "counter_pct_256": 102
   }
 }

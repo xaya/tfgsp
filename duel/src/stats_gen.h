@@ -14,55 +14,62 @@
 namespace duel {
 
 // MoveType (matches database/fighter.hpp pxd::MoveType / the proto MoveType field):
-// 0 Heavy, 1 Speedy, 2 Tricky, 3 Distance, 4 Blocking. DuelMoveStat has no separate
-// "block" flag — type==4 (Blocking) IS the block marker.
+// 0 Heavy, 1 Speedy, 2 Tricky, 3 Distance, 4 Blocking.
+//
+// Move effects (combat-depth Task 3): stance effects {block,guard,shield,counter}
+// are legal ONLY on MoveType 4 (Blocking); action effects {damage,aoe,heal,siphon}
+// are legal ONLY on MoveType 0-3. gen-stats.mjs enforces this partition in both
+// directions, so an illegal (effect, type) pair can never reach this table.
+enum : uint8_t { kEffDamage = 0, kEffBlock = 1, kEffGuard = 2, kEffAoe = 3,
+                 kEffHeal = 4, kEffSiphon = 5, kEffShield = 6, kEffCounter = 7 };
+
 struct DuelMoveStat {
-  uint16_t power;
-  uint8_t speed;
-  uint8_t cooldown;
-  uint8_t type;
+  uint16_t power; uint8_t speed; uint8_t cooldown; uint8_t type;
+  uint8_t effect;    // kEff*
+  uint8_t hits;      // 1 = normal; 2 = a double-strike (a move PROPERTY, never a proc)
+  uint8_t max_uses;  // 255 = unlimited; 1-2 = a signature ultimate
 };
 
 constexpr DuelMoveStat kDuelMoves[39] = {
-    {11, 46, 0, 4}, // [0] 0090580c-04ef-9d84-e883-32f52c977b98 Gum Drop Kick (q1 Blocking)
-    {23, 45, 2, 4}, // [1] 01b34a91-37d8-29d4-09cb-2d515f51e315 Gilded Bonds (q4 Blocking)
-    {50, 93, 3, 1}, // [2] 1a67cc79-b97a-4624-ca67-36c9fcbee970 Quicksilver Slice (q4 Speedy)
-    {24, 98, 0, 1}, // [3] 1d1dec74-ca35-0cc4-d930-164786a9dd81 Coco Chaos (q1 Speedy)
-    {24, 94, 0, 1}, // [4] 1e47a8e0-acfd-1244-0b7d-539d62429060 Icing on the Cake (q1 Speedy)
-    {42, 54, 2, 2}, // [5] 2569d967-c676-8b44-cbdf-d514e4c5c73d Toffee Tripper (q3 Tricky)
-    {24, 57, 0, 2}, // [6] 29d559bb-41a7-9f14-5bf8-605da8166943 Pucker Sucker (q1 Tricky)
-    {24, 70, 0, 3}, // [7] 2c555752-8a84-58f4-395e-6460b7864069 Get Over Here! (q1 Distance)
-    {20, 46, 1, 4}, // [8] 2c94f949-a10e-2524-2827-6588982ce0b1 Berry Bounce (q3 Blocking)
-    {53, 55, 3, 2}, // [9] 34a115db-3153-aff4-9a46-97700634f1fb Gilded Tripper (q4 Tricky)
-    {51, 97, 3, 1}, // [10] 3e76f2fa-072c-5654-dac9-c9b0e4e1643a Super Sugary Rush (q4 Speedy)
-    {20, 47, 1, 4}, // [11] 41416afb-0d72-f9b4-ba30-f089b713500f Candied Shell (q3 Blocking)
-    {15, 42, 0, 4}, // [12] 431900a2-54d4-df34-d9f7-6a4608fecfaa Chewy Absorption (q2 Blocking)
-    {27, 49, 2, 4}, // [13] 4dbb297f-6a80-ca44-a94f-3ea9ed3311e8 Tarnising Knee Drop (q4 Blocking)
-    {24, 49, 2, 4}, // [14] 55cafe03-4a58-0f44-6a27-f9fc6fce881a Heavy Gumdrop Kick (q4 Blocking)
-    {41, 75, 2, 3}, // [15] 55e05ece-a3f6-a924-3833-2222a0eee6a3 Limon Shuriken (q3 Distance)
-    {51, 28, 3, 0}, // [16] 61d8b3ec-9a01-0e64-fb45-27d2b858e332 Explosive Jawbreaker (q4 Heavy)
-    {26, 86, 0, 1}, // [17] 628ebc0b-bb19-ee64-68b8-2f66f4b92720 One Thousand Tiny Slices (q1 Speedy)
-    {12, 43, 0, 4}, // [18] 73eb61fc-70a9-25a4-ba01-0ecaa0d547c5 Sugar Shield (q1 Blocking)
-    {26, 29, 0, 0}, // [19] 86b323c2-b2fd-2494-ab5e-bc3514bc92d8 Candied Knuckles (q1 Heavy)
-    {34, 69, 1, 3}, // [20] 86bd4f81-e96b-9864-78b5-5fc51fbff6a4 Chilling Blow (q2 Distance)
-    {24, 45, 2, 4}, // [21] 8e4753b5-c739-aaf4-ab79-4d333a69cae6 Bouncing Barrage (q4 Blocking)
-    {54, 30, 3, 0}, // [22] 92f7b745-c1ff-3cd4-f9cf-0fe0dafb5536 Golden Shower of Chips (q4 Heavy)
-    {29, 30, 1, 0}, // [23] 9f0df0ed-13a6-84c4-781d-9dbf9741c66e Choco Crunch (q2 Heavy)
-    {26, 27, 0, 0}, // [24] 9fd0b9ef-2e7d-d344-8926-69f1fab99f65 Pop Rock Pop (q1 Heavy)
-    {25, 76, 0, 3}, // [25] a9d69fc0-a1b8-ae24-cbd7-249760200211 Bubble Trouble (q1 Distance)
-    {40, 28, 2, 0}, // [26] aa7d8565-99e1-84f4-49d2-8925c2602a7b Vicious Jawbreaker (q3 Heavy)
-    {37, 82, 2, 1}, // [27] ad6d5d28-08b4-4304-6b49-11f8f5f9ff1c Sugar Rush (q3 Speedy)
-    {32, 99, 1, 1}, // [28] b1bd32de-88b2-1204-7b2e-0680677d78c4 Come Over Here and Slip on it (q2 Speedy)
-    {29, 60, 1, 2}, // [29] b889835e-1cd6-d3d4-f9b4-dd1989f49dac Kick in the Beans (q2 Tricky)
-    {51, 63, 3, 2}, // [30] b96f1ff8-66d5-f244-79fd-260735d4c3d7 Barfing Blow (q4 Tricky)
-    {51, 56, 3, 2}, // [31] bbf71f26-78f5-5014-5b4b-a1c3866cb75b Conductive Coat (q4 Tricky)
-    {25, 64, 0, 2}, // [32] bd27fe1c-ce9a-f524-c887-61f9e4d5088b Sugary Sweep (q1 Tricky)
-    {25, 88, 0, 1}, // [33] c28e13b4-cb1f-6ea4-680f-91010a400e10 Right on the Button (q1 Speedy)
-    {51, 69, 3, 3}, // [34] c6770789-4a1f-7f24-f921-c4dc66c2697a Gold Rush (q4 Distance)
-    {42, 28, 2, 0}, // [35] e16531a7-33fd-a3e4-69fd-ff10eba65cb7 Blackout Shot (q3 Heavy)
-    {32, 81, 1, 3}, // [36] e201f964-8949-9d74-fbee-4ee8786284ca Cinnamon Blast (q2 Distance)
-    {45, 30, 3, 0}, // [37] e55a3d69-9fb4-5194-4812-c2f85e887aca Silver Knuckles (q4 Heavy)
-    {29, 62, 1, 2}, // [38] fa6144f9-ad49-8124-386f-351a7f1ab546 Float Like a Butter Cream (q2 Tricky)
+    {11, 46, 0, 4, kEffBlock, 1, 255}, // [0] 0090580c-04ef-9d84-e883-32f52c977b98 Gum Drop Kick (q1 Blocking)
+    {23, 45, 2, 4, kEffBlock, 1, 255}, // [1] 01b34a91-37d8-29d4-09cb-2d515f51e315 Gilded Bonds (q4 Blocking)
+    {50, 93, 3, 1, kEffDamage, 1, 255}, // [2] 1a67cc79-b97a-4624-ca67-36c9fcbee970 Quicksilver Slice (q4 Speedy)
+    {24, 98, 0, 1, kEffDamage, 1, 255}, // [3] 1d1dec74-ca35-0cc4-d930-164786a9dd81 Coco Chaos (q1 Speedy)
+    {24, 94, 0, 1, kEffDamage, 1, 255}, // [4] 1e47a8e0-acfd-1244-0b7d-539d62429060 Icing on the Cake (q1 Speedy)
+    {42, 54, 2, 2, kEffDamage, 1, 255}, // [5] 2569d967-c676-8b44-cbdf-d514e4c5c73d Toffee Tripper (q3 Tricky)
+    {24, 57, 0, 2, kEffDamage, 1, 255}, // [6] 29d559bb-41a7-9f14-5bf8-605da8166943 Pucker Sucker (q1 Tricky)
+    {24, 70, 0, 3, kEffDamage, 1, 255}, // [7] 2c555752-8a84-58f4-395e-6460b7864069 Get Over Here! (q1 Distance)
+    {20, 46, 1, 4, kEffBlock, 1, 255}, // [8] 2c94f949-a10e-2524-2827-6588982ce0b1 Berry Bounce (q3 Blocking)
+    {53, 55, 3, 2, kEffDamage, 1, 255}, // [9] 34a115db-3153-aff4-9a46-97700634f1fb Gilded Tripper (q4 Tricky)
+    {51, 97, 3, 1, kEffDamage, 1, 255}, // [10] 3e76f2fa-072c-5654-dac9-c9b0e4e1643a Super Sugary Rush (q4 Speedy)
+    {20, 47, 1, 4, kEffBlock, 1, 255}, // [11] 41416afb-0d72-f9b4-ba30-f089b713500f Candied Shell (q3 Blocking)
+    {15, 42, 0, 4, kEffBlock, 1, 255}, // [12] 431900a2-54d4-df34-d9f7-6a4608fecfaa Chewy Absorption (q2 Blocking)
+    {27, 49, 2, 4, kEffBlock, 1, 255}, // [13] 4dbb297f-6a80-ca44-a94f-3ea9ed3311e8 Tarnising Knee Drop (q4 Blocking)
+    {24, 49, 2, 4, kEffBlock, 1, 255}, // [14] 55cafe03-4a58-0f44-6a27-f9fc6fce881a Heavy Gumdrop Kick (q4 Blocking)
+    {41, 75, 2, 3, kEffDamage, 1, 255}, // [15] 55e05ece-a3f6-a924-3833-2222a0eee6a3 Limon Shuriken (q3 Distance)
+    {51, 28, 3, 0, kEffDamage, 1, 255}, // [16] 61d8b3ec-9a01-0e64-fb45-27d2b858e332 Explosive Jawbreaker (q4 Heavy)
+    {26, 86, 0, 1, kEffDamage, 1, 255}, // [17] 628ebc0b-bb19-ee64-68b8-2f66f4b92720 One Thousand Tiny Slices (q1 Speedy)
+    {12, 43, 0, 4, kEffBlock, 1, 255}, // [18] 73eb61fc-70a9-25a4-ba01-0ecaa0d547c5 Sugar Shield (q1 Blocking)
+    {26, 29, 0, 0, kEffDamage, 1, 255}, // [19] 86b323c2-b2fd-2494-ab5e-bc3514bc92d8 Candied Knuckles (q1 Heavy)
+    {34, 69, 1, 3, kEffDamage, 1, 255}, // [20] 86bd4f81-e96b-9864-78b5-5fc51fbff6a4 Chilling Blow (q2 Distance)
+    {24, 45, 2, 4, kEffBlock, 1, 255}, // [21] 8e4753b5-c739-aaf4-ab79-4d333a69cae6 Bouncing Barrage (q4 Blocking)
+    {54, 30, 3, 0, kEffDamage, 1, 255}, // [22] 92f7b745-c1ff-3cd4-f9cf-0fe0dafb5536 Golden Shower of Chips (q4 Heavy)
+    {29, 30, 1, 0, kEffDamage, 1, 255}, // [23] 9f0df0ed-13a6-84c4-781d-9dbf9741c66e Choco Crunch (q2 Heavy)
+    {26, 27, 0, 0, kEffDamage, 1, 255}, // [24] 9fd0b9ef-2e7d-d344-8926-69f1fab99f65 Pop Rock Pop (q1 Heavy)
+    {25, 76, 0, 3, kEffDamage, 1, 255}, // [25] a9d69fc0-a1b8-ae24-cbd7-249760200211 Bubble Trouble (q1 Distance)
+    {40, 28, 2, 0, kEffDamage, 1, 255}, // [26] aa7d8565-99e1-84f4-49d2-8925c2602a7b Vicious Jawbreaker (q3 Heavy)
+    {37, 82, 2, 1, kEffDamage, 1, 255}, // [27] ad6d5d28-08b4-4304-6b49-11f8f5f9ff1c Sugar Rush (q3 Speedy)
+    {32, 99, 1, 1, kEffDamage, 1, 255}, // [28] b1bd32de-88b2-1204-7b2e-0680677d78c4 Come Over Here and Slip on it (q2 Speedy)
+    {29, 60, 1, 2, kEffDamage, 1, 255}, // [29] b889835e-1cd6-d3d4-f9b4-dd1989f49dac Kick in the Beans (q2 Tricky)
+    {51, 63, 3, 2, kEffDamage, 1, 255}, // [30] b96f1ff8-66d5-f244-79fd-260735d4c3d7 Barfing Blow (q4 Tricky)
+    {51, 56, 3, 2, kEffDamage, 1, 255}, // [31] bbf71f26-78f5-5014-5b4b-a1c3866cb75b Conductive Coat (q4 Tricky)
+    {25, 64, 0, 2, kEffDamage, 1, 255}, // [32] bd27fe1c-ce9a-f524-c887-61f9e4d5088b Sugary Sweep (q1 Tricky)
+    {25, 88, 0, 1, kEffDamage, 1, 255}, // [33] c28e13b4-cb1f-6ea4-680f-91010a400e10 Right on the Button (q1 Speedy)
+    {51, 69, 3, 3, kEffDamage, 1, 255}, // [34] c6770789-4a1f-7f24-f921-c4dc66c2697a Gold Rush (q4 Distance)
+    {42, 28, 2, 0, kEffDamage, 1, 255}, // [35] e16531a7-33fd-a3e4-69fd-ff10eba65cb7 Blackout Shot (q3 Heavy)
+    {32, 81, 1, 3, kEffDamage, 1, 255}, // [36] e201f964-8949-9d74-fbee-4ee8786284ca Cinnamon Blast (q2 Distance)
+    {45, 30, 3, 0, kEffDamage, 1, 255}, // [37] e55a3d69-9fb4-5194-4812-c2f85e887aca Silver Knuckles (q4 Heavy)
+    {29, 62, 1, 2, kEffDamage, 1, 255}, // [38] fa6144f9-ad49-8124-386f-351a7f1ab546 Float Like a Butter Cream (q2 Tricky)
 };
 
 struct DuelTunables {
@@ -82,12 +89,21 @@ struct DuelTunables {
   // being a win-on-time button (and turtling stops being a strategy).
   uint8_t sudden_start;
   uint8_t sudden_step;
+  // combat-depth Task 3: new-verb tunables, wired up by Tasks 4/5/6 (AoE splash
+  // %, guard block %, siphon lifesteal %, counter reflect %). Landed now so
+  // kDuelMoves[*].effect has something to point at once the resolver reads
+  // them; not consumed by any behaviour yet.
+  uint16_t aoe_pct_256;
+  uint16_t guard_pct_256;
+  uint16_t siphon_pct_256;
+  uint16_t counter_pct_256;
 };
 
 constexpr DuelTunables kTun = {
     100, 30, 10,
     384, 170, 102,
     30, 3, 4,
-    12, 6};
+    12, 6,
+    154, 179, 128, 102};
 
 } // namespace duel

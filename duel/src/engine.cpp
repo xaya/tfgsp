@@ -195,11 +195,12 @@ bool DecodeConfig(const uint8_t* cfg, uint32_t len, DuelState* out) {
       t.quality = static_cast<uint8_t>(quality);
       t.sweetness = static_cast<uint8_t>(sweetness);
       t.move_count = static_cast<uint8_t>(moveCount);
-      // v2 (controller resolution R3): shield/reserved always seed to 0;
-      // uses_left seeds 255 (unlimited) for a real slot, 0 (canonical
-      // filler) otherwise. NOT kDuelMoves[m].max_uses -- that field doesn't
-      // exist until Task 3, which repoints this seed at it (defaulting to
-      // 255 for every move today, so this stays byte-identical then too).
+      // v2 (controller resolution R3, closed by combat-depth Task 3): shield/
+      // reserved always seed to 0; uses_left seeds from kDuelMoves[m].max_uses
+      // (255 = unlimited) for a real slot, 0 (canonical filler) otherwise.
+      // Every move defaults to max_uses=255 today, so this stays
+      // byte-identical to the old literal-255 seed until a later task gives
+      // some move a lower max_uses.
       t.shield = 0;
       for (uint32_t k = 0; k < wire::kStateTreatReservedLen; ++k) {
         t.reserved[k] = 0;
@@ -207,7 +208,7 @@ bool DecodeConfig(const uint8_t* cfg, uint32_t len, DuelState* out) {
       for (uint32_t j = 0; j < loadoutSize; ++j) {
         t.moves[j] = moves[j];
         t.cooldowns[j] = 0;
-        t.uses_left[j] = (j < moveCount) ? 255 : 0;
+        t.uses_left[j] = (j < moveCount) ? duel::kDuelMoves[moves[j]].max_uses : 0;
       }
       const uint32_t maxHp = kTun.hp_base + (quality - 1) * kTun.hp_per_quality +
                               sweetness * kTun.hp_per_sweetness;

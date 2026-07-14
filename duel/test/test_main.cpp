@@ -208,8 +208,35 @@ void test_stats_gen_bounds_and_blocking_count() {
   CHECK(blockingCount >= 5);
 }
 
+// ---- combat-depth Task 3: kDuelMoves effect/hits/max_uses invariants ----
+//
+// Pins the codegen's contract from the C++ side: every entry's effect is a
+// valid kEff*, the stance/action partition holds against type (stance
+// effects {block,guard,shield,counter} legal ONLY on type==4 Blocking;
+// action effects {damage,aoe,heal,siphon} legal ONLY on type!=4 -- a total
+// partition, so exactly one of isStance/isAction holds for every move),
+// hits is in [1,2], and max_uses is in [1,255] (never the unusable 0).
+// gen-stats.mjs enforces all of this at codegen time; this is the C++-side
+// pin that would fail if a future regeneration ever produced a table that
+// violated it.
+void test_stats_gen_effect_partition_and_limits() {
+  for (uint32_t i = 0; i < duel::wire::kMoveUniverse; ++i) {
+    const duel::DuelMoveStat& mv = duel::kDuelMoves[i];
+    CHECK(mv.effect <= duel::kEffCounter); // a valid kEff* (0..7)
+    const bool isStance = mv.effect == duel::kEffBlock || mv.effect == duel::kEffGuard ||
+                           mv.effect == duel::kEffShield || mv.effect == duel::kEffCounter;
+    const bool isAction = mv.effect == duel::kEffDamage || mv.effect == duel::kEffAoe ||
+                           mv.effect == duel::kEffHeal || mv.effect == duel::kEffSiphon;
+    CHECK(isStance != isAction);       // total partition: exactly one holds
+    CHECK(isStance == (mv.type == 4)); // stance <=> Blocking, both directions
+    CHECK(mv.hits >= 1 && mv.hits <= 2);
+    CHECK(mv.max_uses >= 1); // max_uses <= 255 always holds (uint8_t)
+  }
+}
+
 // kTun mirrors duel/data/duel-stats.json's top-level "tunables" verbatim
-// (plan Task 2 Step 2 exact values).
+// (plan Task 2 Step 2 exact values; combat-depth Task 3 adds the four
+// new-verb percentages, not consumed by any behaviour yet).
 void test_stats_gen_tunables_exact() {
   CHECK(duel::kTun.hp_base == 100);
   CHECK(duel::kTun.hp_per_quality == 30);
@@ -227,6 +254,12 @@ void test_stats_gen_tunables_exact() {
   // button once heals exist.
   CHECK(duel::kTun.sudden_start == 12);
   CHECK(duel::kTun.sudden_step == 6);
+  // Combat-depth Task 3: aoe_pct_256 ~60%, guard_pct_256 ~70%,
+  // siphon_pct_256 50%, counter_pct_256 40% (Task 7 retunes these).
+  CHECK(duel::kTun.aoe_pct_256 == 154);
+  CHECK(duel::kTun.guard_pct_256 == 179);
+  CHECK(duel::kTun.siphon_pct_256 == 128);
+  CHECK(duel::kTun.counter_pct_256 == 102);
 }
 
 // ---- Task 3: duel_init (config validation + initial state) ----
@@ -292,10 +325,11 @@ void MakeBaselineCfg(uint8_t cfg[kBaselineCfgLen]) {
 // decode_state so this actually exercises duel_init's output bytes, not
 // just its own codec agreeing with itself).
 //
-// Also pins duel_init's v2 seeding contract (controller resolution R3): a
-// fresh treat's shield is 0, its 4 reserved bytes are 0, and uses_left[j] is
-// 255 (unlimited) for a real move slot / 0 for a filler slot -- NOT seeded
-// from kDuelMoves[m].max_uses (that field doesn't exist until Task 3).
+// Also pins duel_init's v2 seeding contract (controller resolution R3,
+// closed by combat-depth Task 3): a fresh treat's shield is 0, its 4
+// reserved bytes are 0, and uses_left[j] is kDuelMoves[m].max_uses for a
+// real move slot / 0 for a filler slot -- every move defaults to
+// max_uses=255 (unlimited) today, so this still reads 255 for a real slot.
 void CheckStateTreat(const uint8_t* out, uint32_t teamSize, uint32_t loadoutSize,
                       uint32_t side, uint32_t slot, uint8_t quality,
                       uint8_t sweetness, uint8_t moveCount,
@@ -2151,6 +2185,7 @@ int main(int argc, char** argv) {
   RUN(test_jsonout_overflow_flag);
   RUN(test_stats_gen_dense_order_matches_blueprint_ends);
   RUN(test_stats_gen_bounds_and_blocking_count);
+  RUN(test_stats_gen_effect_partition_and_limits);
   RUN(test_stats_gen_tunables_exact);
   RUN(test_duel_init_valid_3v3_produces_initial_state);
   RUN(test_duel_init_valid_2v2_loadout2_shape);
