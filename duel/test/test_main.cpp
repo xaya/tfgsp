@@ -182,6 +182,8 @@ constexpr uint32_t kBaselineTeamSize = 3;
 constexpr uint32_t kBaselineLoadoutSize = 4;
 constexpr uint32_t kBaselineCfgLen =
     duel::wire::CfgLen(kBaselineTeamSize, kBaselineLoadoutSize); // 46
+constexpr uint32_t kBaselineStateLen =
+    duel::wire::StateLen(kBaselineTeamSize, kBaselineLoadoutSize); // 152
 
 // The plan's Task 3 vector: six treats spanning q1sw1 (3 moves) .. q4sw10
 // (4 moves). Byte layout follows wire.h's CFG_* offsets exactly (header 4
@@ -189,7 +191,7 @@ constexpr uint32_t kBaselineCfgLen =
 void MakeBaselineCfg(uint8_t cfg[kBaselineCfgLen]) {
   const uint8_t bytes[kBaselineCfgLen] = {
       // version, team_size, loadout_size, reserved
-      1, 3, 4, 0,
+      duel::wire::kVersion, 3, 4, 0,
       // -- side 0 --
       // slot0: q1 sw1 mc3 moves[0,1,2,FF]
       1, 1, 3, 0, 1, 2, 0xFF,
@@ -214,6 +216,11 @@ void MakeBaselineCfg(uint8_t cfg[kBaselineCfgLen]) {
 // via wire.h offsets (independent of the engine's own encode_state/
 // decode_state so this actually exercises duel_init's output bytes, not
 // just its own codec agreeing with itself).
+//
+// Also pins duel_init's v2 seeding contract (controller resolution R3): a
+// fresh treat's shield is 0, its 4 reserved bytes are 0, and uses_left[j] is
+// 255 (unlimited) for a real move slot / 0 for a filler slot -- NOT seeded
+// from kDuelMoves[m].max_uses (that field doesn't exist until Task 3).
 void CheckStateTreat(const uint8_t* out, uint32_t teamSize, uint32_t loadoutSize,
                       uint32_t side, uint32_t slot, uint8_t quality,
                       uint8_t sweetness, uint8_t moveCount,
@@ -227,12 +234,18 @@ void CheckStateTreat(const uint8_t* out, uint32_t teamSize, uint32_t loadoutSize
   CHECK(out[base + duel::wire::kStateTreatOffQuality] == quality);
   CHECK(out[base + duel::wire::kStateTreatOffSweetness] == sweetness);
   CHECK(out[base + duel::wire::kStateTreatOffMoveCount] == moveCount);
-  CHECK(out[base + duel::wire::kStateTreatOffPad] == 0);
+  CHECK(out[base + duel::wire::kStateTreatOffShield] == 0); // fresh state: no shield yet
+  for (uint32_t k = 0; k < duel::wire::kStateTreatReservedLen; ++k) {
+    CHECK(out[base + duel::wire::kStateTreatOffReserved + k] == 0);
+  }
   const uint32_t movesOff = base + duel::wire::kStateTreatOffMoves;
   const uint32_t cdOff = base + duel::wire::StateTreatOffCooldowns(loadoutSize);
+  const uint32_t ulOff = base + duel::wire::StateTreatOffUsesLeft(loadoutSize);
   for (uint32_t j = 0; j < loadoutSize; ++j) {
     CHECK(out[movesOff + j] == moves[j]);
     CHECK(out[cdOff + j] == 0); // fresh state: every cooldown starts ready
+    // R3: real slots seed unlimited (255); filler slots are canonically 0.
+    CHECK(out[ulOff + j] == (j < moveCount ? 255 : 0));
   }
 }
 
@@ -243,7 +256,7 @@ void test_duel_init_valid_3v3_produces_initial_state() {
   CHECK(duel_init(cfg, kBaselineCfgLen) == 0);
   CHECK(duel_out_len() ==
         duel::wire::StateLen(kBaselineTeamSize, kBaselineLoadoutSize));
-  CHECK(duel_out_len() == 104);
+  CHECK(duel_out_len() == kBaselineStateLen);
 
   const uint8_t* out = duel_out_ptr();
   CHECK(out[duel::wire::kStateOffVersion] == duel::wire::kVersion);
@@ -276,7 +289,7 @@ void test_duel_init_valid_3v3_produces_initial_state() {
 constexpr uint32_t kShape2v2Loadout2CfgLen = 24;
 void Make2v2Loadout2Cfg(uint8_t cfg[kShape2v2Loadout2CfgLen]) {
   const uint8_t bytes[kShape2v2Loadout2CfgLen] = {
-      1, 2, 2, 0,             // header
+      duel::wire::kVersion, 2, 2, 0, // header
       1, 2, 1, 0, 0xFF,       // side0 slot0: q1 sw2 mc1 moves[0,FF]
       2, 5, 2, 1, 2,          // side0 slot1: q2 sw5 mc2 moves[1,2]
       3, 8, 1, 3, 0xFF,       // side1 slot0: q3 sw8 mc1 moves[3,FF]
@@ -299,7 +312,7 @@ void test_duel_init_valid_2v2_loadout2_shape() {
 
   CHECK(duel_init(cfg, kCfgLen) == 0);
   constexpr uint32_t kExpectedStateLen = duel::wire::StateLen(kTeamSize, kLoadoutSize);
-  CHECK(kExpectedStateLen == 56); // 8 + 2*2*(8+2*2)
+  CHECK(kExpectedStateLen == 80); // 8 + 2*2*(12+3*2)
   CHECK(duel_out_len() == kExpectedStateLen);
 
   const uint8_t* out = duel_out_ptr();
@@ -324,7 +337,10 @@ void test_duel_init_rejects_invalid_configs() {
   uint8_t cfg[kBaselineCfgLen];
 
   MakeBaselineCfg(cfg);
-  cfg[duel::wire::kCfgOffVersion] = 2; // bad version
+  // Relative to kVersion (not a hardcoded "2") so a future version bump can
+  // never silently make this mutation ACCEPT a buffer it should reject.
+  cfg[duel::wire::kCfgOffVersion] =
+      static_cast<uint8_t>(duel::wire::kVersion + 1); // bad version
   CHECK(duel_init(cfg, kBaselineCfgLen) == -1);
   CHECK(duel_out_len() == 0);
 
@@ -434,28 +450,36 @@ void test_state_codec_roundtrip() {
     t.hp = 55; t.max_hp = 120; t.quality = 2; t.sweetness = 5; t.move_count = 2;
     t.moves[0] = 1; t.moves[1] = 4; t.moves[2] = duel::wire::kMoveSlotEmpty;
     t.cooldowns[0] = 0; t.cooldowns[1] = 2; t.cooldowns[2] = 0;
+    // v2 positive round-trip: shield = 42 and a real-slot uses_left = 2 must
+    // survive byte-identically; the filler slot (index 2, move_count == 2)
+    // stays canonically 0 (default zero-init, untouched here).
+    t.shield = 42;
+    t.uses_left[0] = 2; t.uses_left[1] = 200;
   }
   {
     duel::TreatState& t = s.treats[0][1];
     t.hp = 200; t.max_hp = 200; t.quality = 4; t.sweetness = 10; t.move_count = 3;
     t.moves[0] = 10; t.moves[1] = 20; t.moves[2] = 30;
     t.cooldowns[0] = 1; t.cooldowns[1] = 1; t.cooldowns[2] = 3;
+    t.uses_left[0] = 255; t.uses_left[1] = 1; t.uses_left[2] = 0;
   }
   {
     duel::TreatState& t = s.treats[1][0];
     t.hp = 0; t.max_hp = 110; t.quality = 1; t.sweetness = 1; t.move_count = 1;
     t.moves[0] = 0; t.moves[1] = duel::wire::kMoveSlotEmpty; t.moves[2] = duel::wire::kMoveSlotEmpty;
     t.cooldowns[0] = 0; t.cooldowns[1] = 0; t.cooldowns[2] = 0;
+    t.uses_left[0] = 255;
   }
   {
     duel::TreatState& t = s.treats[1][1];
     t.hp = 80; t.max_hp = 80; t.quality = 1; t.sweetness = 10; t.move_count = 3;
     t.moves[0] = 38; t.moves[1] = 5; t.moves[2] = 6;
     t.cooldowns[0] = 0; t.cooldowns[1] = 0; t.cooldowns[2] = 0;
+    t.uses_left[0] = 0; t.uses_left[1] = 0; t.uses_left[2] = 0;
   }
 
   constexpr uint32_t kLen = duel::wire::StateLen(2, 3);
-  CHECK(kLen == 64); // 8 + 2*2*(8+2*3)
+  CHECK(kLen == 92); // 8 + 2*2*(12+3*3)
   uint8_t buf[kLen];
   CHECK(duel::encode_state(s, buf, sizeof(buf)) == kLen);
 
@@ -475,12 +499,24 @@ void test_state_codec_roundtrip() {
       CHECK(a.quality == b.quality);
       CHECK(a.sweetness == b.sweetness);
       CHECK(a.move_count == b.move_count);
+      CHECK(a.shield == b.shield);
+      for (uint32_t k = 0; k < duel::wire::kStateTreatReservedLen; ++k) {
+        CHECK(a.reserved[k] == b.reserved[k]);
+      }
       for (uint32_t j = 0; j < s.loadout_size; ++j) {
         CHECK(a.moves[j] == b.moves[j]);
         CHECK(a.cooldowns[j] == b.cooldowns[j]);
+        CHECK(a.uses_left[j] == b.uses_left[j]);
       }
     }
   }
+
+  // encode(decode(buf)) reproduces buf byte-identically -- the actual
+  // "encode -> decode -> encode" round-trip the v2 shield/uses_left fields
+  // must satisfy (not just a struct-field comparison).
+  uint8_t buf2[kLen];
+  CHECK(duel::encode_state(decoded, buf2, sizeof(buf2)) == kLen);
+  CHECK(std::memcmp(buf, buf2, kLen) == 0);
 
   // cap smaller than the required length: no partial write, 0 returned.
   uint8_t tiny[kLen - 1];
@@ -491,78 +527,93 @@ void test_state_codec_decode_rejects_bad_state() {
   uint8_t cfg[kBaselineCfgLen];
   MakeBaselineCfg(cfg);
   CHECK(duel_init(cfg, kBaselineCfgLen) == 0);
-  CHECK(duel_out_len() == 104);
-  uint8_t st[104];
-  for (uint32_t i = 0; i < 104; ++i) {
+  CHECK(duel_out_len() == kBaselineStateLen);
+  uint8_t st[kBaselineStateLen];
+  for (uint32_t i = 0; i < kBaselineStateLen; ++i) {
     st[i] = duel_out_ptr()[i];
   }
 
   duel::DuelState decoded{};
-  CHECK(duel::decode_state(st, 104, &decoded)); // sanity: the good copy decodes
+  CHECK(duel::decode_state(st, kBaselineStateLen, &decoded)); // sanity: the good copy decodes
 
-  CHECK(duel::decode_state(st, 103, &decoded) == false); // too short
+  CHECK(duel::decode_state(st, kBaselineStateLen - 1, &decoded) == false); // too short
   {
-    uint8_t big[105]; // genuinely larger buffer, not just a bigger claimed len
-    for (uint32_t i = 0; i < 104; ++i) {
+    uint8_t big[kBaselineStateLen + 1]; // genuinely larger buffer, not just a bigger claimed len
+    for (uint32_t i = 0; i < kBaselineStateLen; ++i) {
       big[i] = st[i];
     }
-    big[104] = 0;
-    CHECK(duel::decode_state(big, 105, &decoded) == false); // too long
+    big[kBaselineStateLen] = 0;
+    CHECK(duel::decode_state(big, kBaselineStateLen + 1, &decoded) == false); // too long
   }
 
-  uint8_t bad[104];
+  uint8_t bad[kBaselineStateLen];
   auto reset = [&]() {
-    for (uint32_t i = 0; i < 104; ++i) {
+    for (uint32_t i = 0; i < kBaselineStateLen; ++i) {
       bad[i] = st[i];
     }
   };
 
   reset();
-  bad[duel::wire::kStateOffVersion] = 2;
-  CHECK(duel::decode_state(bad, 104, &decoded) == false); // bad version
+  // Relative to kVersion so a future bump can never silently ACCEPT this.
+  bad[duel::wire::kStateOffVersion] = static_cast<uint8_t>(duel::wire::kVersion + 1);
+  CHECK(duel::decode_state(bad, kBaselineStateLen, &decoded) == false); // bad version
 
   reset();
   bad[duel::wire::kStateOffTeamSize] = 0;
-  CHECK(duel::decode_state(bad, 104, &decoded) == false); // team_size 0
+  CHECK(duel::decode_state(bad, kBaselineStateLen, &decoded) == false); // team_size 0
 
   reset();
   bad[duel::wire::kStateOffTeamSize] = 6;
-  CHECK(duel::decode_state(bad, 104, &decoded) == false); // team_size 6
+  CHECK(duel::decode_state(bad, kBaselineStateLen, &decoded) == false); // team_size 6
 
   reset();
   bad[duel::wire::kStateOffLoadoutSize] = 0;
-  CHECK(duel::decode_state(bad, 104, &decoded) == false); // loadout_size 0
+  CHECK(duel::decode_state(bad, kBaselineStateLen, &decoded) == false); // loadout_size 0
 
   reset();
   bad[duel::wire::kStateOffPhase] = 4;
-  CHECK(duel::decode_state(bad, 104, &decoded) == false); // phase out of range
+  CHECK(duel::decode_state(bad, kBaselineStateLen, &decoded) == false); // phase out of range
 
   // side0/slot0's moves array: baseline echoes moves[0,1,2,0xFF], move_count 3.
   const uint32_t treat0MovesOff =
       duel::wire::kStateOffTeams + duel::wire::kStateTreatOffMoves;
   reset();
   bad[treat0MovesOff + 0] = 39;
-  CHECK(duel::decode_state(bad, 104, &decoded) == false); // move index >= 39
+  CHECK(duel::decode_state(bad, kBaselineStateLen, &decoded) == false); // move index >= 39
 
   reset();
   bad[treat0MovesOff + 1] = bad[treat0MovesOff + 0];
-  CHECK(duel::decode_state(bad, 104, &decoded) == false); // duplicate move
+  CHECK(duel::decode_state(bad, kBaselineStateLen, &decoded) == false); // duplicate move
 
   reset();
   bad[treat0MovesOff + 3] = 5;
-  CHECK(duel::decode_state(bad, 104, &decoded) == false); // filler != 0xFF
+  CHECK(duel::decode_state(bad, kBaselineStateLen, &decoded) == false); // filler != 0xFF
 
-  // Canonical encoding: non-zero reserved/pad bytes must be rejected -- a
-  // buffer that validates-but-hashes-differently from the canonical bytes
-  // would be a signature-malleability hazard once states are hashed/signed
-  // inside game channels.
+  // Canonical encoding: non-zero reserved bytes must be rejected -- a buffer
+  // that validates-but-hashes-differently from the canonical bytes would be
+  // a signature-malleability hazard once states are hashed/signed inside
+  // game channels.
   reset();
   bad[duel::wire::kStateOffReserved + 1] = 0x01; // header reserved u16 = 0x0100
-  CHECK(duel::decode_state(bad, 104, &decoded) == false);
+  CHECK(duel::decode_state(bad, kBaselineStateLen, &decoded) == false);
 
+  // v2: the treat-level reserved[4] bytes (future stun/dot/atk_mod/spd_mod)
+  // MUST each independently be 0 -- 4 distinct reject cases. shield (the
+  // byte the old pad-must-be-zero case used to sit on, offset 7) is now a
+  // FREE byte instead -- see the positive 0xFF round-trip check below.
+  const uint32_t treat0ReservedOff =
+      duel::wire::kStateOffTeams + duel::wire::kStateTreatOffReserved;
+  for (uint32_t k = 0; k < duel::wire::kStateTreatReservedLen; ++k) {
+    reset();
+    bad[treat0ReservedOff + k] = 0xFF;
+    CHECK(duel::decode_state(bad, kBaselineStateLen, &decoded) == false); // reserved[k] != 0
+  }
+
+  // shield is a free byte now (v2) -- every value, including the old pad
+  // sentinel 0xFF, must round-trip rather than reject.
   reset();
-  bad[duel::wire::kStateOffTeams + duel::wire::kStateTreatOffPad] = 0xFF;
-  CHECK(duel::decode_state(bad, 104, &decoded) == false); // treat pad != 0
+  bad[duel::wire::kStateOffTeams + duel::wire::kStateTreatOffShield] = 0xFF;
+  CHECK(duel::decode_state(bad, kBaselineStateLen, &decoded)); // shield is free
 
   // Filler-slot cooldowns MUST be 0 too: side0/slot0 has move_count 3 with
   // loadout 4, so cooldown index 3 is a filler slot. A non-zero byte there is
@@ -575,11 +626,31 @@ void test_state_codec_decode_rejects_bad_state() {
       duel::wire::StateTreatOffCooldowns(kBaselineLoadoutSize) + 3;
   reset();
   bad[treat0FillerCd] = 1;
-  CHECK(duel::decode_state(bad, 104, &decoded) == false); // filler cd != 0
+  CHECK(duel::decode_state(bad, kBaselineStateLen, &decoded) == false); // filler cd != 0
+
+  // v2 (controller resolution R4): the same rule for filler uses_left --
+  // side0/slot0's index 3 is filler (move_count 3, loadout 4), so its
+  // uses_left byte is meaningless and MUST be 0.
+  const uint32_t treat0FillerUsesLeft =
+      duel::wire::kStateOffTeams +
+      duel::wire::StateTreatOffUsesLeft(kBaselineLoadoutSize) + 3;
+  reset();
+  bad[treat0FillerUsesLeft] = 1;
+  CHECK(duel::decode_state(bad, kBaselineStateLen, &decoded) == false); // filler uses_left != 0
+
+  // ... but a REAL slot's uses_left is a free byte (v2): any value round-trips.
+  const uint32_t treat0RealUsesLeft =
+      duel::wire::kStateOffTeams +
+      duel::wire::StateTreatOffUsesLeft(kBaselineLoadoutSize) + 0;
+  reset();
+  bad[treat0RealUsesLeft] = 0xFF;
+  CHECK(duel::decode_state(bad, kBaselineStateLen, &decoded)); // real-slot uses_left is free
 
   // ... and duel_apply rejects the same buffer outright (lens cleared).
   // Orders: all six treats Recover (version byte, then 0xFE/0xFF pairs).
   {
+    reset();
+    bad[treat0FillerCd] = 1; // back to a genuinely-invalid buffer for this check
     constexpr uint32_t kOrdLen = duel::wire::OrdersLen(kBaselineTeamSize); // 13
     uint8_t ord[kOrdLen];
     ord[duel::wire::kOrdersOffVersion] = duel::wire::kVersion;
@@ -587,7 +658,7 @@ void test_state_codec_decode_rejects_bad_state() {
       ord[i] = duel::wire::kActionRecover;
       ord[i + 1] = duel::wire::kTargetNone;
     }
-    CHECK(duel_apply(bad, 104, ord, kOrdLen) == -1);
+    CHECK(duel_apply(bad, kBaselineStateLen, ord, kOrdLen) == -1);
     CHECK(duel_out_len() == 0);
     CHECK(duel_log_len() == 0);
   }
@@ -1556,7 +1627,12 @@ void test_selfplay_soak() {
     uint8_t cfg[80];
     const uint32_t cfgLen = BuildRandomConfig(cfg);
     CHECK(duel_init(cfg, cfgLen) == 0);
-    uint8_t st[200];
+    // Formula-sized (not a magic 200): v2 grew StateTreatLen, so the old
+    // literal 200 no longer covers the max team_size=5/loadout_size=4 shape
+    // (StateLen(5,4) == 248) that BuildRandomConfig can produce -- ASan
+    // caught this as a stack buffer overflow the plain (unsanitized) build
+    // didn't.
+    uint8_t st[duel::wire::StateLen(duel::wire::kMaxTeamSize, duel::wire::kMaxLoadoutSize)];
     uint32_t stLen = duel_out_len();
     const uint32_t constLen = stLen;
     for (uint32_t i = 0; i < stLen; ++i) st[i] = duel_out_ptr()[i];

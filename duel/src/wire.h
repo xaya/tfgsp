@@ -10,10 +10,19 @@
 //
 // Every length below is a function of team_size/loadout_size because the
 // prototype's engine parameter allows team_size 1..5 and loadout_size 1..4;
-// the plan's three concrete numbers (CFG_LEN 46 / STATE_LEN 104 /
+// the plan's three concrete numbers (CFG_LEN 46 / STATE_LEN 152 /
 // ORDERS_LEN 13) are for the reference 3v3, 4-move-loadout shape and are
 // pinned below via static_assert so a formula typo fails the build, not a
 // later test.
+//
+// v2 (combat-depth Task 1, docs/superpowers/plans/2026-07-14-duel-combat-
+// depth.md): the ONLY task allowed to change this byte layout, because once
+// game channels sign state bytes the layout is frozen forever. It bumps
+// kVersion and grows each per-treat state record with `shield` (a free
+// absorb-pool byte), 4 reserved bytes for future status effects (stun/dot/
+// atk_mod/spd_mod), and a parallel `uses_left[]` array for limited-use
+// ultimates -- every byte later combat-depth tasks will ever need is
+// reserved NOW so none of them has to touch this layout again.
 
 #pragma once
 
@@ -22,7 +31,7 @@
 namespace duel {
 namespace wire {
 
-constexpr uint8_t kVersion = 1;
+constexpr uint8_t kVersion = 2;
 
 // ---- bounds (config validation, Task 3) ----
 constexpr uint8_t kMinTeamSize = 1;
@@ -39,6 +48,11 @@ constexpr uint32_t kMoveUniverse = 39; // dense move-index count (Task 2 codegen
 constexpr uint8_t kActionRecover = 0xFE;  // orders.action: free fallback move
 constexpr uint8_t kTargetNone = 0xFF;     // orders.target: required for Recover
 constexpr uint8_t kMoveSlotEmpty = 0xFF;  // config moves[]: filler past move_count
+// orders.target AoE sentinel (a later task hooks this up). NB: numerically
+// the same byte as kActionRecover (0xFE), but that sentinel lives on the
+// ACTION field -- a different byte of the same orders record -- so there is
+// no collision.
+constexpr uint8_t kTargetAll = 0xFE;
 
 // ---- state.phase values ----
 constexpr uint8_t kPhaseActive = 0;
@@ -77,10 +91,15 @@ constexpr uint32_t CfgLen(uint32_t teamSize, uint32_t loadoutSize) {
 
 // ==================== state (duel_init/duel_apply output) ====================
 // u8 version | u8 team_size | u8 loadout_size | u8 phase
-// u16 round | u16 reserved=0
+// u16 round | u16 reserved=0 (v2: the future team energy-pool slot; still
+//   canonical-zero today -- no task spends it yet)
 // per side per slot:
-//   u16 hp | u16 max_hp | u8 quality | u8 sweetness | u8 move_count | u8 pad=0
+//   u16 hp | u16 max_hp | u8 quality | u8 sweetness | u8 move_count
+//   u8 shield (v2: free absorb-pool byte, 0..255)
+//   u8 reserved[4] (v2: MUST be 0 -- future stun/dot/atk_mod/spd_mod)
 //   u8 moves[loadout_size] | u8 cooldowns[loadout_size]
+//   u8 uses_left[loadout_size] (v2: 255 = unlimited; filler slots
+//     (index >= move_count) MUST be 0, same canonical rule as cooldowns)
 
 constexpr uint32_t kStateHeaderLen = 8;
 constexpr uint32_t kStateOffVersion = 0;
@@ -89,6 +108,11 @@ constexpr uint32_t kStateOffLoadoutSize = 2;
 constexpr uint32_t kStateOffPhase = 3;
 constexpr uint32_t kStateOffRound = 4;    // u16 LE
 constexpr uint32_t kStateOffReserved = 6; // u16 LE
+// Same byte offset as kStateOffReserved, under the name this reserved slot
+// will carry once a later task spends it (the team energy/action-point
+// pool) -- both names exist so existing call sites keep working; validation
+// is unchanged (still canonical-zero, see decode_state).
+constexpr uint32_t kStateOffEnergyReserved = kStateOffReserved;
 constexpr uint32_t kStateOffTeams = kStateHeaderLen;
 
 // Per-treat record, relative offsets.
@@ -97,15 +121,20 @@ constexpr uint32_t kStateTreatOffMaxHp = 2;    // u16 LE
 constexpr uint32_t kStateTreatOffQuality = 4;
 constexpr uint32_t kStateTreatOffSweetness = 5;
 constexpr uint32_t kStateTreatOffMoveCount = 6;
-constexpr uint32_t kStateTreatOffPad = 7;
-constexpr uint32_t kStateTreatOffMoves = 8;
-constexpr uint32_t kStateTreatBaseLen = 8; // up through pad
+constexpr uint32_t kStateTreatOffShield = 7;   // v2: was kStateTreatOffPad
+constexpr uint32_t kStateTreatOffReserved = 8; // v2: 4 bytes, MUST be 0
+constexpr uint32_t kStateTreatReservedLen = 4;
+constexpr uint32_t kStateTreatOffMoves = 12;   // v2: was 8
+constexpr uint32_t kStateTreatBaseLen = 12;    // v2: was 8 (up through reserved[4])
 
 constexpr uint32_t StateTreatOffCooldowns(uint32_t loadoutSize) {
   return kStateTreatOffMoves + loadoutSize;
 }
+constexpr uint32_t StateTreatOffUsesLeft(uint32_t loadoutSize) {
+  return StateTreatOffCooldowns(loadoutSize) + loadoutSize;
+}
 constexpr uint32_t StateTreatLen(uint32_t loadoutSize) {
-  return kStateTreatBaseLen + 2 * loadoutSize;
+  return kStateTreatBaseLen + 3 * loadoutSize; // v2: was 2 * loadoutSize
 }
 constexpr uint32_t StateSideLen(uint32_t teamSize, uint32_t loadoutSize) {
   return teamSize * StateTreatLen(loadoutSize);
@@ -141,7 +170,7 @@ constexpr uint32_t kRefTeamSize = 3;
 constexpr uint32_t kRefLoadoutSize = 4;
 static_assert(CfgLen(kRefTeamSize, kRefLoadoutSize) == 46,
               "CFG_LEN contract pin (3v3/loadout4) broken");
-static_assert(StateLen(kRefTeamSize, kRefLoadoutSize) == 104,
+static_assert(StateLen(kRefTeamSize, kRefLoadoutSize) == 152,
               "STATE_LEN contract pin (3v3/loadout4) broken");
 static_assert(OrdersLen(kRefTeamSize) == 13,
               "ORDERS_LEN contract pin (3v3/loadout4) broken");

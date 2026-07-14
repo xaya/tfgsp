@@ -15,7 +15,7 @@
 // a bump pointer that WRAPS TO THE START when a request no longer fits.
 // `duel_free` is a permanent no-op. This is deliberate, not a placeholder
 // to revisit: inputs here are config/state/orders buffers on the order of
-// a few hundred bytes (wire.h's frozen shapes; STATE_LEN maxes out at 168
+// a few hundred bytes (wire.h's frozen shapes; STATE_LEN maxes out at 248
 // bytes for team_size=5/loadout_size=4), so a 64 KiB arena holds hundreds
 // of calls' worth of inputs before wrapping, and a real malloc/free would
 // pull libc allocator machinery into the wasm build for no benefit.
@@ -61,7 +61,7 @@ namespace {
 
 // ---- duel_alloc/duel_free scratch arena ----
 // Sized well above any single wire-format buffer (at the max
-// team_size=5/loadout_size=4 shape: CFG_LEN 74, STATE_LEN 168,
+// team_size=5/loadout_size=4 shape: CFG_LEN 74, STATE_LEN 248,
 // ORDERS_LEN 21) to leave generous headroom before wrap-on-full kicks in.
 constexpr uint32_t kArenaCap = 1u << 16; // 64 KiB
 uint8_t g_arena[kArenaCap];
@@ -181,9 +181,19 @@ bool DecodeConfig(const uint8_t* cfg, uint32_t len, DuelState* out) {
       t.quality = static_cast<uint8_t>(quality);
       t.sweetness = static_cast<uint8_t>(sweetness);
       t.move_count = static_cast<uint8_t>(moveCount);
+      // v2 (controller resolution R3): shield/reserved always seed to 0;
+      // uses_left seeds 255 (unlimited) for a real slot, 0 (canonical
+      // filler) otherwise. NOT kDuelMoves[m].max_uses -- that field doesn't
+      // exist until Task 3, which repoints this seed at it (defaulting to
+      // 255 for every move today, so this stays byte-identical then too).
+      t.shield = 0;
+      for (uint32_t k = 0; k < wire::kStateTreatReservedLen; ++k) {
+        t.reserved[k] = 0;
+      }
       for (uint32_t j = 0; j < loadoutSize; ++j) {
         t.moves[j] = moves[j];
         t.cooldowns[j] = 0;
+        t.uses_left[j] = (j < moveCount) ? 255 : 0;
       }
       const uint32_t maxHp = kTun.hp_base + (quality - 1) * kTun.hp_per_quality +
                               sweetness * kTun.hp_per_sweetness;
@@ -309,12 +319,17 @@ uint32_t encode_state(const DuelState& s, uint8_t* out, uint32_t cap) {
       out[base + wire::kStateTreatOffQuality] = t.quality;
       out[base + wire::kStateTreatOffSweetness] = t.sweetness;
       out[base + wire::kStateTreatOffMoveCount] = t.move_count;
-      out[base + wire::kStateTreatOffPad] = 0;
+      out[base + wire::kStateTreatOffShield] = t.shield;
+      for (uint32_t k = 0; k < wire::kStateTreatReservedLen; ++k) {
+        out[base + wire::kStateTreatOffReserved + k] = t.reserved[k];
+      }
       const uint32_t movesOff = base + wire::kStateTreatOffMoves;
       const uint32_t cdOff = base + wire::StateTreatOffCooldowns(loadoutSize);
+      const uint32_t ulOff = base + wire::StateTreatOffUsesLeft(loadoutSize);
       for (uint32_t j = 0; j < loadoutSize; ++j) {
         out[movesOff + j] = t.moves[j];
         out[cdOff + j] = t.cooldowns[j];
+        out[ulOff + j] = t.uses_left[j];
       }
     }
   }
@@ -366,8 +381,16 @@ bool decode_state(const uint8_t* buf, uint32_t len, DuelState* out) {
       if (!ValidTreatHeader(quality, sweetness, moveCount, loadoutSize)) {
         return false;
       }
-      if (buf[base + wire::kStateTreatOffPad] != 0) {
-        return false; // canonical encoding: pad byte MUST be 0
+      // Canonical encoding (v2): each of the 4 reserved bytes MUST be 0 --
+      // they're future stun/dot/atk_mod/spd_mod slots with no meaning yet,
+      // so a non-zero value would be a second encoding of the same logical
+      // state (same malleability rule as the header reserved u16 above).
+      // `shield` (the byte this used to be a MUST-be-zero pad at) is a free
+      // byte instead -- no check, any value decodes.
+      for (uint32_t k = 0; k < wire::kStateTreatReservedLen; ++k) {
+        if (buf[base + wire::kStateTreatOffReserved + k] != 0) {
+          return false;
+        }
       }
       const uint8_t* moves = buf + base + wire::kStateTreatOffMoves;
       if (!ValidTreatMoves(moves, loadoutSize, moveCount)) {
@@ -385,7 +408,12 @@ bool decode_state(const uint8_t* buf, uint32_t len, DuelState* out) {
       t.quality = static_cast<uint8_t>(quality);
       t.sweetness = static_cast<uint8_t>(sweetness);
       t.move_count = static_cast<uint8_t>(moveCount);
+      t.shield = buf[base + wire::kStateTreatOffShield]; // free byte, no validation
+      for (uint32_t k = 0; k < wire::kStateTreatReservedLen; ++k) {
+        t.reserved[k] = buf[base + wire::kStateTreatOffReserved + k]; // == 0, checked above
+      }
       const uint32_t cdOff = base + wire::StateTreatOffCooldowns(loadoutSize);
+      const uint32_t ulOff = base + wire::StateTreatOffUsesLeft(loadoutSize);
       for (uint32_t j = 0; j < loadoutSize; ++j) {
         const uint8_t cd = buf[cdOff + j];
         if (j >= moveCount && cd != 0) {
@@ -393,11 +421,19 @@ bool decode_state(const uint8_t* buf, uint32_t len, DuelState* out) {
           // byte is meaningless -- it MUST be 0, or two byte-distinct
           // encodings of the same logical state would both decode (and then
           // resolve/re-encode differently once the end-of-round decrement
-          // ticks the copied value). Same malleability rule as pad/filler.
+          // ticks the copied value). Same malleability rule as reserved/filler.
+          return false;
+        }
+        const uint8_t ul = buf[ulOff + j];
+        if (j >= moveCount && ul != 0) {
+          // v2 (controller resolution R4): the identical rule for
+          // uses_left -- a filler slot holds no move, so its uses_left byte
+          // is equally meaningless and MUST be 0.
           return false;
         }
         t.moves[j] = moves[j];
         t.cooldowns[j] = cd;
+        t.uses_left[j] = ul; // real slot: free byte, any value decodes
       }
     }
   }
