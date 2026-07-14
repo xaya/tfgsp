@@ -2382,6 +2382,57 @@ void test_apply_counter_reflect_absorbed_by_shield() {
                "\"targetHp\":242,\"ko\":false}"));
 }
 
+// The reflect is counter_pct of `landed` -- the blow's force at the moment it
+// reached the recipient -- NEVER `drained` -- the recipient's actual hp
+// decrease after ITS OWN shield ate part of the blow. The two are
+// indistinguishable in every OTHER counter vector above, because none of them
+// leaves the counter-stance recipient holding a nonzero shield: with
+// shield == 0, absorbed == 0 and landed == drained by construction. This is
+// the one state where they diverge, and it is the only vector that would
+// catch the reflect silently being refactored onto `drained` (the quantity
+// Task 6's siphon correctly uses).
+//
+// Attacker's Heavy vs the counter-er's Blocking = adv 384 -> landed =
+// (26*384*256)>>16 = 39. The counter-er's OWN 20-point shield absorbs 20 of
+// that (drained = 19), but the reflect must still be counter_pct of the full
+// 39: (39*102)>>8 = 15 -- NOT (19*102)>>8 = 7.
+ApplyVec MakeVec_CounterReflectsLandedNotDrained() {
+  ApplyVec v{};
+  v.name = "counter_reflects_landed_not_drained";
+  duel::DuelState s = MakeState(1, 1);
+  const uint8_t mH[] = {24}, cH[] = {0}; // Pop Rock Pop (Heavy 26), speed 27
+  const uint8_t mC[] = {8}, cC[] = {0};  // Berry Bounce (counter 20), speed 46
+  SetTreat(s, 0, 0, 250, 250, 3, 6, 1, mH, cH);
+  SetTreat(s, 1, 0, 250, 250, 3, 6, 1, mC, cC, /*shield=*/20); // the counter-er ALSO shielded
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdInit(v.ord);
+  OrdSet(v.ord, 1, 0, 0, 0, 0);
+  OrdSet(v.ord, 1, 1, 0, 0, 0);
+  v.ordLen = duel::wire::OrdersLen(1);
+  return v;
+}
+
+void test_apply_counter_reflects_landed_not_drained() {
+  ApplyVec v = MakeVec_CounterReflectsLandedNotDrained();
+  CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
+  duel::DuelState o{};
+  CHECK(DecodeOut(&o));
+  // Berry Bounce swings first (speed 46): Blocking vs Heavy = dis 170 ->
+  // (20*170*256)>>16 = 13, straight to the attacker's hp (it holds no shield).
+  CHECK(o.treats[0][0].hp == 222); // 250 - 13 (its swing) - 15 (the reflect, off `landed`)
+  // The attacker's 39 lands second: the counter-er's 20-point shield absorbs
+  // 20, leaving 19 to reach hp (250 - 19 = 231) -- but the reflect below is
+  // computed off the pre-absorb 39, not this drained 19.
+  CHECK(o.treats[1][0].hp == 231);
+  CHECK(o.treats[1][0].shield == 0);
+  CHECK(LogHas("{\"side\":0,\"slot\":0,\"kind\":\"hit\",\"move\":24,\"target\":0,"
+               "\"via\":255,\"clash\":\"adv\",\"dmg\":39,\"blocked\":false,"
+               "\"absorbed\":20,\"targetHp\":231,\"ko\":false}"));
+  CHECK(LogHas("{\"side\":1,\"slot\":0,\"kind\":\"counter\",\"move\":8,"
+               "\"target\":0,\"via\":255,\"clash\":\"neu\",\"dmg\":15,"
+               "\"blocked\":false,\"absorbed\":0,\"targetHp\":222,\"ko\":false}"));
+}
+
 // A reflect CAN KO the attacker (it is real damage, and the win check sees it).
 ApplyVec MakeVec_CounterReflectKos() {
   ApplyVec v{};
@@ -2807,6 +2858,7 @@ void DumpGolden() {
   DumpApplyVector(MakeVec_CounterNoneOnRedirect());
   DumpApplyVector(MakeVec_CounterReflectNotCountered());
   DumpApplyVector(MakeVec_CounterReflectAbsorbed());
+  DumpApplyVector(MakeVec_CounterReflectsLandedNotDrained());
   DumpApplyVector(MakeVec_CounterReflectKos());
   DumpApplyVector(MakeVec_CounterKilledDoesNotReflect());
   DumpApplyVector(MakeVec_SuddenDeathIgnoresGuardShield());
@@ -2872,6 +2924,7 @@ int main(int argc, char** argv) {
   RUN(test_apply_counter_none_on_redirected_blow);
   RUN(test_apply_counter_reflect_cannot_be_countered);
   RUN(test_apply_counter_reflect_absorbed_by_shield);
+  RUN(test_apply_counter_reflects_landed_not_drained);
   RUN(test_apply_counter_reflect_can_ko);
   RUN(test_apply_counter_killed_does_not_reflect);
   RUN(test_apply_sudden_death_ignores_guard_and_shield);

@@ -11,7 +11,7 @@
     "speed": 45,
     "cooldown": 2,
     "effect": "guard",
-    "description": "Binds you to an ALLY in shimmering caramel: you take the next single blow aimed at them, at 70% of its force. Pick an ally, not an enemy. Deals no damage."
+    "description": "Binds you to an ALLY in shimmering caramel for the round: every single-target blow aimed at them lands on you instead, at 70% of its force. Pick an ally, not an enemy. Deals no damage."
   },
   "1a67cc79-b97a-4624-ca67-36c9fcbee970": {
     "power": 50,
