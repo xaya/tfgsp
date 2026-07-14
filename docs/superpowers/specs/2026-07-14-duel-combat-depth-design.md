@@ -138,6 +138,18 @@ If the owner later insists on true randomness, it IS feasible — seed from BOTH
 orders (neither can grind what they cannot see) — but it costs commit-reveal in the channel phase.
 **Not now.**
 
+## Turn order is systematically unfair (owner-spotted) — FIX
+
+*"who goes first, seems same side goes first every time, it should probably alternate so it's more
+fair."* **Correct, and it is a real bug.** The resolve order is `(speed DESC, side ASC, slot ASC)` —
+so **on a speed tie, side 0 acts first every round of every duel.** In a mirror match side 0 wins
+every tie and lands every kill first. For a mode that will **stake treats**, that is indefensible.
+
+**Fix:** the tie-breaking side **alternates by round**. Order becomes
+`(speed DESC, side == (round % 2) first, slot ASC)`.
+Deterministic, total, and **zero state** (`round` is already in the state buffer). Must be pinned by
+a golden vector, because it changes resolve order on ties.
+
 ## Block must be worth taking
 
 Owner: *"what's the point doing block, unless blocks all i guess."* **Correct — this is a live bug.**
