@@ -2327,7 +2327,9 @@ ApplyVec MakeVec_ShieldRaiseAbsorb() {
   v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
   OrdInit(v.ord);
   OrdSet(v.ord, 1, 0, 0, 0, 0);
-  OrdSet(v.ord, 1, 1, 0, 0, 0);
+  // A plain shield NAMES NOBODY -- its order target is the kTargetNone sentinel, never a
+  // slot (the engine rejects a slot index outright). One logical order, one byte encoding.
+  OrdSet(v.ord, 1, 1, 0, 0, duel::wire::kTargetNone);
   v.ordLen = duel::wire::OrdersLen(1);
   return v;
 }
@@ -2417,7 +2419,8 @@ ApplyVec MakeVec_ShieldClamp255() {
   v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
   OrdInit(v.ord);
   OrdSet(v.ord, 1, 0, 0, 0, 0);
-  OrdSet(v.ord, 1, 1, 0, 0, 0);
+  // Shield names nobody: kTargetNone, not a slot (see MakeVec_ShieldRaiseAbsorb).
+  OrdSet(v.ord, 1, 1, 0, 0, duel::wire::kTargetNone);
   v.ordLen = duel::wire::OrdersLen(1);
   return v;
 }
@@ -2432,6 +2435,70 @@ void test_apply_shield_clamps_at_255() {
   CHECK(o.treats[1][0].hp == 250); // nothing reached hp
   CHECK(LogHas("\"kind\":\"shield\",\"move\":18,\"target\":255,\"via\":255,"
                "\"clash\":\"neu\",\"dmg\":5,")); // only the 5 points that FIT
+}
+
+// --- Shield: CANONICAL ORDER (one logical order, exactly one byte encoding) ---
+//
+// A plain shield NAMES NOBODY -- it wards only its own caster -- so, exactly like Recover,
+// its order target is locked to the kTargetNone sentinel (0xFF). At team_size >= 2 the OLD
+// code range-checked the byte (`< team_size`) and then IGNORED it, so all team_size slot
+// indices encoded the very same logical order "cast shield": team_size distinct byte
+// encodings, and game channels HASH and SIGN order bytes. A slot index AND kTargetAll now
+// both HARD-REJECT; only kTargetNone resolves. (kTargetNone, not kTargetAll: kTargetAll is
+// the group-shield's byte -- it wards every ally -- and a plain shield reaches only itself.)
+// This is at team_size 2 deliberately: it is exactly where the non-canonicity lived.
+ApplyVec MakeVec_ShieldCanonical(const char* name, uint8_t target) {
+  ApplyVec v{};
+  v.name = name;
+  duel::DuelState s = MakeState(2, 1);
+  const uint8_t mS[] = {18}, cS[] = {0}; // Sugar Shield (shield 28) -- caster: side 0 slot 0
+  const uint8_t mH[] = {24}, cH[] = {0};
+  SetTreat(s, 0, 0, 250, 250, 3, 6, 1, mS, cS);
+  SetTreat(s, 0, 1, 250, 250, 3, 6, 1, mH, cH);
+  SetTreat(s, 1, 0, 250, 250, 3, 6, 1, mH, cH);
+  SetTreat(s, 1, 1, 250, 250, 3, 6, 1, mH, cH);
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdRecoverAll(v.ord, 2);
+  OrdSet(v.ord, 2, 0, 0, 0, target); // side 0 slot 0 raises the shield with `target`
+  v.ordLen = duel::wire::OrdersLen(2);
+  return v;
+}
+
+// A shield "aimed" at a SLOT (team_size 2, so slot 0 is in range) -> reject, NOT the old
+// "accepted, byte ignored" -- this is the multiple-encodings hole the fix closes.
+ApplyVec MakeVec_ShieldRejectSlotTarget() {
+  return MakeVec_ShieldCanonical("shield_reject_slot_target", 0);
+}
+// A shield carrying the group/AoE sentinel kTargetAll (0xFE) -> reject: a plain shield reaches
+// only its caster, so kTargetAll is the WRONG names-nobody byte for it.
+ApplyVec MakeVec_ShieldRejectTargetAll() {
+  return MakeVec_ShieldCanonical("shield_reject_target_all", duel::wire::kTargetAll);
+}
+// ...and the accept control: the canonical kTargetNone shield resolves and wards its caster.
+ApplyVec MakeVec_ShieldCanonicalAccepts() {
+  return MakeVec_ShieldCanonical("shield_names_nobody_accepts", duel::wire::kTargetNone);
+}
+
+void test_apply_shield_target_byte_is_canonical() {
+  ApplyVec slotTgt = MakeVec_ShieldRejectSlotTarget();
+  CHECK(duel_apply(slotTgt.st, slotTgt.stLen, slotTgt.ord, slotTgt.ordLen) == -1);
+  CHECK(duel_out_len() == 0);
+  CHECK(duel_log_len() == 0);
+
+  ApplyVec allTgt = MakeVec_ShieldRejectTargetAll();
+  CHECK(duel_apply(allTgt.st, allTgt.stLen, allTgt.ord, allTgt.ordLen) == -1);
+  CHECK(duel_out_len() == 0);
+
+  // The accept control (without it, "always reject" would pass the two above): the canonical
+  // kTargetNone shield resolves, raises ONLY the caster's absorb pool (it names nobody), and
+  // logs target 255.
+  ApplyVec ok = MakeVec_ShieldCanonicalAccepts();
+  CHECK(duel_apply(ok.st, ok.stLen, ok.ord, ok.ordLen) == 0);
+  duel::DuelState o{};
+  CHECK(DecodeOut(&o));
+  CHECK(o.treats[0][0].shield == 28); // the caster is warded (Sugar Shield's flat 28)...
+  CHECK(o.treats[0][1].shield == 0);  // ...and NOBODY else -- a shield names only its caster
+  CHECK(LogHas("{\"side\":0,\"slot\":0,\"kind\":\"shield\",\"move\":18,\"target\":255,"));
 }
 
 // --- Counter ---
@@ -4224,6 +4291,15 @@ void test_selfplay_soak() {
             OrdSet(ord, teamSize, side, slot, a, duel::wire::kTargetAll);
             continue;
           }
+          // A plain SHIELD also names NOBODY -- it wards only its caster -- but with the
+          // kTargetNone sentinel (0xFF), not kTargetAll (that is the group-shield's byte).
+          // A slot index there is now a hard reject; this branch is what keeps this soak's
+          // "legal orders only" contract true for the self-shield, the exact sibling of the
+          // group-shield gate above.
+          if (eff == duel::kEffShield) {
+            OrdSet(ord, teamSize, side, slot, a, duel::wire::kTargetNone);
+            continue;
+          }
           // Everything else names a SLOT INDEX: an ALLY slot for a `heal` (self-heal is
           // legal, and a dead ally is a legal-but-wasted no-op), an ENEMY slot for every
           // damaging move. Both are range-checked identically, so one random slot serves.
@@ -4428,6 +4504,9 @@ void DumpGolden() {
   DumpApplyVector(MakeVec_ShieldPersistRound1());
   DumpApplyVector(MakeVec_ShieldPersistRound2());
   DumpApplyVector(MakeVec_ShieldClamp255());
+  DumpApplyVector(MakeVec_ShieldRejectSlotTarget());
+  DumpApplyVector(MakeVec_ShieldRejectTargetAll());
+  DumpApplyVector(MakeVec_ShieldCanonicalAccepts());
   DumpApplyVector(MakeVec_CounterReflects());
   DumpApplyVector(MakeVec_CounterNoneOnRedirect());
   DumpApplyVector(MakeVec_CounterReflectNotCountered());
@@ -4937,6 +5016,7 @@ int main(int argc, char** argv) {
   RUN(test_apply_shield_raise_and_absorb);
   RUN(test_apply_shield_persists_between_rounds);
   RUN(test_apply_shield_clamps_at_255);
+  RUN(test_apply_shield_target_byte_is_canonical);
   RUN(test_apply_counter_reflects);
   RUN(test_apply_counter_none_on_redirected_blow);
   RUN(test_apply_counter_reflect_cannot_be_countered);

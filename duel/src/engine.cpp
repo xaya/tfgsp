@@ -683,15 +683,27 @@ int32_t duel_apply(const uint8_t* st, uint32_t stLen, const uint8_t* ord,
           if (t != wire::kTargetAll) {
             return -1;
           }
+        } else if (moveEff == duel::kEffShield) {
+          // A plain SHIELD NAMES NOBODY: it wards only its own caster and ignores any
+          // slot the order might name, so -- exactly like Recover -- it is locked to the
+          // kTargetNone sentinel (0xFF), and a slot index AND kTargetAll both reject.
+          // This is the SELF-only sibling of the group-shield (which wards every ally and
+          // correctly uses kTargetAll above); kTargetNone, not kTargetAll, because a
+          // shield reaches only its caster, not everyone.
+          //
+          // NOT range-checked-and-ignored (what it used to be): at team_size >= 2 that let
+          // team_size distinct target bytes ALL encode the one logical order "cast shield",
+          // and game channels HASH and SIGN order bytes -- one byte encoding per logical
+          // order is the contract every other target-ignoring effect here already keeps.
+          if (t != wire::kTargetNone) {
+            return -1;
+          }
         } else if (t >= teamSize) {
           // Every other move names a SLOT INDEX -- an ALLY slot for a `heal`, an
           // ENEMY slot for every damaging move -- and the byte is range-checked
           // identically for both; which SIDE it indexes is the resolve loop's
           // business, not the wire's. This is also the other direction of the
-          // kTargetAll rule above. (A `shield` deals no damage and ignores this
-          // byte entirely -- it is still range-checked, and its log entry always
-          // reads target 255, so the ignored value can never reach the state or
-          // the log.)
+          // kTargetAll rule above.
           return -1;
         }
       }
