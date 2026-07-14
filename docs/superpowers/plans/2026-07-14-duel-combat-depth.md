@@ -397,6 +397,80 @@ Modify `scripts/gen-duel-audio.mjs`
 
 ---
 
+## Task 12: Duel battle music (owner-supplied, 2026-07-14)
+
+Owner dropped **6 battle tracks** in `treatfighter/` (repo-root, outside both repos):
+`01_treat_fighter_anthem` · `02_candydoom_knockout` · `03_sweetest_survivor` · `04_sugar_rush_riot` ·
+`05_final_bell_fever` · `06_three_on_three` (*"original favourite"*). Owner: *"can be faded in/out and
+played in loop for duels/combat. when start combat probably that is when should play."*
+
+**Files:** Move/encode into `tf-frontend/public/audio/duel/music/`; modify `src/duel/audio.ts`,
+`src/audio/audioManager.ts`, `src/duel/DuelOverlay.tsx`; Test `tests/duel/audio.test.ts`
+
+- [ ] **Step 1: Encode.** They are **320 kbps, ~4.8 MB each (~29 MB total)** — far too heavy to ship
+      as-is. Re-encode to ~112–128 kbps (`ffmpeg -i in.mp3 -b:a 128k -ac 2 out.mp3`), targeting
+      **≤2 MB each**. A/B one track by ear before committing to the bitrate.
+- [ ] **Step 2: Never preload.** Music is fetched **on duel start only** (the existing battle SFX
+      bank stays preloaded; 29 MB — or even 12 MB — of music must never sit in the initial payload).
+- [ ] **Step 3: Deterministic track choice.** Pick by `fighterIds`/round-0 state, **not**
+      `Math.random()` — the same duel must always sound the same (same rule as `variantFor`).
+      Track 6 (`three_on_three`) is the owner's favourite → make it the **3v3 default**.
+- [ ] **Step 4: Fade in on combat start, loop, fade out on result.** Route through the existing
+      `AudioManager` so the HUD mute + music slider govern it like every other track, and so it
+      **ducks or replaces the zone music** rather than stacking on top of it.
+- [ ] **Step 5:** Test the deterministic pick + the manifest-on-disk rule (mirror
+      `tests/duel/audio.test.ts`). **Commit.**
+
+---
+
+## Pre-flight resolutions (controller, 2026-07-14 — owner asleep)
+
+Four conflicts found scanning the plan before execution. All are **task-ordering mechanics with one
+obvious correct answer**, not design changes — resolved as below and flagged for owner review.
+
+**R1 — every engine task is a TWO-REPO task.** The plan only says so in Task 1, but
+`tf-frontend/tests/duel/engine.test.ts` replays **every** golden vector through the **real
+`engine.wasm`** and byte-compares, and pins the vector count (`toHaveLength(27)`). So *any* engine
+change breaks the FE suite unless the artifacts move with it. **Mandatory tail for EVERY engine
+task (1,2,4,5,6,7):**
+```
+bash duel/build.sh test && bash duel/build.sh golden && bash duel/build.sh parity   # expect PARITY OK
+bash duel/publish-fe.sh                                                             # engine.wasm + .sha256 -> FE
+cp duel/test/golden.json ../tf-frontend/tests/duel/golden.json
+# update tests/duel/engine.test.ts: the toHaveLength(N) pin + the provenance comment (new sha/msg)
+cd ../tf-frontend && npx vitest run tests/duel                                      # green
+```
+Commit **both** repos (tfgsp `polygon-rewrite`, FE `master`). `gen-stats.mjs` likewise writes
+`tf-frontend/src/data/duel-stats.ts` directly, so Tasks 2/3/7 touch the FE too.
+
+**R2 — `sudden_start`/`sudden_step` move to Task 2.** Task 2 Step 5 consumes them, but Task 3 was
+the task adding new tunables. **Task 2 adds those two itself** (`duel-stats.json` + `gen-stats.mjs`
+`TUNABLE_KEYS` + the `DuelTunables` struct); Task 3 adds the rest (`aoe_pct_256`, `guard_pct_256`,
+`siphon_pct_256`, `counter_pct_256`). Suggested values: **`sudden_start = 12`, `sudden_step = 6`**
+(chip `6,12,18,…` from round 12 sums past any real max_hp by ~round 20, so the duel always ends
+well inside `round_cap = 30` — the cap becomes unreachable, which is the point).
+
+**R3 — `uses_left` seeding is staged.** Task 1 Step 3 seeds from `kDuelMoves[m].max_uses`, but
+`max_uses` does not exist until Task 3. **Task 1 seeds `uses_left[j] = 255` (unlimited) for
+`j < move_count`;** Task 3 repoints the real-slot seed at `kDuelMoves[m].max_uses` (which it
+defaults to 255 for every move, so **golden stays byte-identical** — Task 3's no-behaviour-change
+gate still holds).
+
+**R4 — canonical `uses_left` for filler slots = 0.** The plan does not say. Filler slots
+(`j >= move_count`) hold no move, so **`uses_left` MUST be 0 there and `decode_state` MUST reject a
+non-zero byte** — the identical malleability rule already enforced for filler *cooldowns*. Without
+it, one logical state has many byte encodings and the channel-phase signature is malleable.
+
+**R5 — `retargeted` dies with auto-retarget (Task 2).** Fizzle-on-death deletes the only code that
+could ever set it, so the log field becomes permanently `false` — dead weight in a format we are
+about to freeze. **Task 2 removes it** from the log schema *and* from
+`tf-frontend/src/duel/engine.ts`'s `DuelAction` (it is declared there but never read), plus the
+`playback`/`overlay` test fixtures. The three `retarget*` golden vectors are **replaced by
+fizzle vectors**, and `engine.test.ts`'s `golden.find(g => g.name === 'retarget')` case must be
+repointed.
+
+---
+
 ## Self-review
 
 **Spec coverage:** Wave 1 → Tasks 2, 4. Wave 1b → Task 9. Wave 2 → Tasks 5, 6, 7. Limited-use
