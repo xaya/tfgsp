@@ -16,11 +16,16 @@ fi
 # round" path is exercised by a REAL apply call. At the shipped 32 KiB cap no
 # legal round can overflow, so without this the guard would be untestable
 # end-to-end. It runs ONLY the log-cap test (`--logcap-only`) -- every other
-# test would (correctly) fail against a 320-byte log buffer. The shipped
+# test would (correctly) fail against a 400-byte log buffer. The shipped
 # native/wasm builds above never define DUEL_LOG_CAP.
+#
+# The cap is sized BETWEEN the two rounds test_apply_log_overflow_rejects
+# drives: a 1v1 recover-only round's log (325 B) must still FIT, and a 3v3's
+# (909 B) must NOT. Combat-depth Task 4 grew every entry by `via` + `absorbed`
+# (279 -> 325 B for the 1v1), which is why 320 no longer works.
 if [[ "$mode" == test || "$mode" == all ]]; then
   "$NAT" -O2 -std=c++17 -fno-exceptions -fno-rtti -Wall -Wextra -Werror \
-    -DDUEL_LOG_CAP=320 \
+    -DDUEL_LOG_CAP=400 \
     -I"$here/src" "$SRC" "$here/test/test_main.cpp" -o "$here/test/duel_tests_logcap"
 fi
 # sanitize: same native test binary under ASan+UBSan (abort on any UB), the

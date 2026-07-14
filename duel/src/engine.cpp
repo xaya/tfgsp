@@ -71,9 +71,10 @@ uint32_t g_arenaUsed = 0;
 // Sized for the JSON view/log output (Tasks 3-4); a state buffer is at most
 // a few hundred bytes and its JSON rendering a small multiple of that.
 constexpr uint32_t kOutCap = 4096;
-// Log capacity. Today's worst case is 2*team_size (max 5) = 10 action entries
-// + 10 sudden-death chip entries * ~125 B each + the
-// {"round":N,"actions":[...],"phase":P} wrapper ≈ 2.5 KB, but the headroom to
+// Log capacity. Today's worst case is 2*team_size (max 5) = 10 action entries,
+// each of which can spawn a counter-riposte entry of its own (combat-depth Task
+// 4), + 10 sudden-death chip entries = 30 entries * ~150 B each + the
+// {"round":N,"actions":[...],"phase":P} wrapper ≈ 4.5 KB, but the headroom to
 // 32 KiB is deliberate: AoE (Task 5) multiplies entries per action, and
 // running out of log buffer is NOT a truncation we can ship (the client's
 // JSON.parse would throw) — duel_apply hard-rejects on overflow instead, so
@@ -221,8 +222,8 @@ bool DecodeConfig(const uint8_t* cfg, uint32_t len, DuelState* out) {
 
 // ==================== Task 4: round resolve (duel_apply) ====================
 
-constexpr uint8_t kTypeBlocking = 4;   // MoveType Blocking (stats_gen.h enum)
 constexpr uint8_t kClashNeutral = 255; // sentinel: target has no move type
+constexpr uint8_t kNoGuardian = 255;   // sentinel: nobody is guarding this slot
 
 // Pentagon advantage (verbatim from src/logic_combat.cpp): does move type `a`
 // beat move type `b`? Types: 0 Heavy,1 Speedy,2 Tricky,3 Distance,4 Blocking.
@@ -264,9 +265,23 @@ const char* ClashLabel(uint16_t mult) {
 
 // Append one round-log action entry (schema in the plan's "Log JSON"). `move`
 // and `target` carry wire::kMoveSlotEmpty/kTargetNone (255) when absent
-// (recover/skip/chip). On a "chip" entry, side/slot are the VICTIM (sudden
-// death has no actor). Writes past capacity are dropped, but they latch
+// (recover/skip/chip/shield). On a "chip" entry, side/slot are the VICTIM
+// (sudden death has no actor). Writes past capacity are dropped, but they latch
 // b->overflow -- duel_apply turns that into a hard reject (see kLogCap).
+//
+// Per kind (combat-depth Task 4 added the last three):
+//   hit      side/slot = attacker, target = the enemy slot it AIMED at, `via` =
+//            the guardian that actually took it (255 = nobody), `dmg` = the
+//            force that reached the final recipient, `absorbed` = how much of
+//            that its shield ate, `targetHp`/`ko` = the FINAL RECIPIENT's.
+//   guard    side/slot = the guardian, target = the ALLY slot it is covering.
+//   shield   side/slot = the caster, `dmg` = the shield points actually GAINED
+//            (the u8 pool clamps at 255, so this can be less than the move's
+//            power). No damage, no target.
+//   counter  side/slot = the treat that riposted, target = the attacker's slot
+//            on the other side, `dmg` = the reflected damage, `absorbed` = what
+//            the attacker's own shield ate of it, `targetHp`/`ko` = the
+//            ATTACKER's. Shaped exactly like a `hit` on purpose.
 //
 // There is no `retargeted` field: fizzle-on-death (combat-depth Task 2)
 // deleted the auto-retarget rule that was the only thing that could ever set
@@ -275,7 +290,8 @@ const char* ClashLabel(uint16_t mult) {
 void WriteLogEntry(duel::JsonBuf* b, bool first, uint32_t side, uint32_t slot,
                    const char* kind, uint32_t move, uint32_t target,
                    const char* clash, uint32_t dmg, bool blocked,
-                   uint32_t targetHp, bool ko) {
+                   uint32_t targetHp, bool ko, uint32_t absorbed = 0,
+                   uint32_t via = wire::kTargetNone) {
   if (!first) {
     duel::jb_raw(b, ",");
   }
@@ -289,12 +305,16 @@ void WriteLogEntry(duel::JsonBuf* b, bool first, uint32_t side, uint32_t slot,
   duel::jb_u32(b, move);
   duel::jb_raw(b, ",\"target\":");
   duel::jb_u32(b, target);
+  duel::jb_raw(b, ",\"via\":");
+  duel::jb_u32(b, via);
   duel::jb_raw(b, ",\"clash\":");
   duel::jb_str(b, clash);
   duel::jb_raw(b, ",\"dmg\":");
   duel::jb_u32(b, dmg);
   duel::jb_raw(b, ",\"blocked\":");
   duel::jb_raw(b, blocked ? "true" : "false");
+  duel::jb_raw(b, ",\"absorbed\":");
+  duel::jb_u32(b, absorbed);
   duel::jb_raw(b, ",\"targetHp\":");
   duel::jb_u32(b, targetHp);
   duel::jb_raw(b, ",\"ko\":");
@@ -542,8 +562,24 @@ int32_t duel_apply(const uint8_t* st, uint32_t stLen, const uint8_t* ord,
           return -1;
         }
       } else {
-        // A real move: a ready loadout index aimed at a real enemy slot.
-        if (a >= tr.move_count || tr.cooldowns[a] != 0 || t >= teamSize) {
+        // A real move: a ready loadout index.
+        if (a >= tr.move_count || tr.cooldowns[a] != 0) {
+          return -1;
+        }
+        if (duel::kDuelMoves[tr.moves[a]].effect == duel::kEffGuard) {
+          // GUARD (combat-depth Task 4) is the one move whose `target` names an
+          // ALLY ON ITS OWN SIDE, not an enemy: in range, ALIVE (there is
+          // nothing to cover otherwise), and NOT ITSELF -- self-guard is
+          // meaningless, and silently allowing it would give one logical order
+          // ("I guard nobody") two byte-encodings.
+          if (t >= teamSize || t == slot || s.treats[side][t].hp == 0) {
+            return -1;
+          }
+        } else if (t >= teamSize) {
+          // Every other move aims at an enemy slot. (A `shield` deals no damage
+          // and ignores this byte entirely -- it is still range-checked, and its
+          // log entry always reads target 255, so the ignored value can never
+          // reach the state or the log.)
           return -1;
         }
       }
@@ -552,16 +588,48 @@ int32_t duel_apply(const uint8_t* st, uint32_t stLen, const uint8_t* ord,
     }
   }
 
-  // ---- semantics 2: block stances (living treat whose action is a real
-  // Blocking move; fixed for the whole round -- a dead treat is never a valid
-  // hit target, so "ends if KO'd mid-round" falls out for free) ----
+  // ---- semantics 2: STANCES (living treat whose action is a real stance move;
+  // fixed for the whole round -- a dead treat is never a valid hit target, so
+  // "ends if KO'd mid-round" falls out for free) ----
+  //
+  // THE STANCE SPLIT (combat-depth Task 4). MoveType 4 (Blocking) is the stance
+  // corner, but it is no longer one verb with four power levels: the stance a
+  // move grants is its EFFECT, and each buys exactly ONE thing.
+  //   block   -> the flat damage reduction (kTun.block_pct_256 -- the BIGGEST of
+  //              the four, which is what makes a plain block worth the turn)
+  //   guard   -> intercept a single-target blow aimed at an ALLY (below)
+  //   shield  -> a persisting absorb pool, raised at the caster's initiative in
+  //              the resolve loop (it is an action, not a round-wide stance)
+  //   counter -> reflect part of a landed blow back at whoever threw it
+  // guard/shield/counter deliberately do NOT also reduce incoming damage. That
+  // is what makes the four real CHOICES rather than strict upgrades of each
+  // other -- and it is the direct answer to "what's the point doing block".
   bool blockStance[2][wire::kMaxTeamSize] = {};
+  // guardedBy[side][slot] = the slot of the ally covering it, or kNoGuardian.
+  // Built HERE, before any action resolves, so a same-round intercept is fully
+  // computable no matter how the initiative falls. LOWEST GUARDIAN SLOT WINS a
+  // tie (the ascending scan below keeps the first writer) -- a total,
+  // deterministic rule; the engine has no coin to toss.
+  uint8_t guardedBy[2][wire::kMaxTeamSize];
+  for (uint32_t side = 0; side < 2; ++side) {
+    for (uint32_t slot = 0; slot < teamSize; ++slot) {
+      guardedBy[side][slot] = kNoGuardian;
+    }
+  }
   for (uint32_t side = 0; side < 2; ++side) {
     for (uint32_t slot = 0; slot < teamSize; ++slot) {
       const TreatState& tr = s.treats[side][slot];
-      if (tr.hp > 0 && action[side][slot] != wire::kActionRecover &&
-          duel::kDuelMoves[tr.moves[action[side][slot]]].type == kTypeBlocking) {
+      if (tr.hp == 0 || action[side][slot] == wire::kActionRecover) {
+        continue;
+      }
+      const uint8_t eff = duel::kDuelMoves[tr.moves[action[side][slot]]].effect;
+      if (eff == duel::kEffBlock) {
         blockStance[side][slot] = true;
+      } else if (eff == duel::kEffGuard) {
+        const uint8_t ward = target[side][slot]; // validated: ally, alive, != slot
+        if (guardedBy[side][ward] == kNoGuardian) {
+          guardedBy[side][ward] = static_cast<uint8_t>(slot);
+        }
       }
     }
   }
@@ -651,8 +719,35 @@ int32_t duel_apply(const uint8_t* st, uint32_t stLen, const uint8_t* ord,
     }
 
     const uint8_t mvIdx = actor.moves[act];
+    const uint8_t eff = duel::kDuelMoves[mvIdx].effect;
     const uint32_t enemy = 1u - aS;
     const uint32_t tgtSlot = target[aS][aL];
+
+    // GUARD (combat-depth Task 4): the map is already built (stance stage
+    // above), so the action itself is pure theatre -- it deals NO damage, and
+    // its `target` names the ALLY it is covering, not an enemy. Logging it here
+    // (rather than in the stance stage) keeps every entry in initiative order.
+    if (eff == duel::kEffGuard) {
+      WriteLogEntry(&log, nEntries++ == 0, aS, aL, "guard", mvIdx, tgtSlot,
+                    "neu", 0, false, 0, false);
+      continue;
+    }
+
+    // SHIELD (combat-depth Task 4): a self-absorb pool worth the move's power,
+    // raised AT THE CASTER'S INITIATIVE -- it is an action, not a round-wide
+    // stance, so a blow that resolves BEFORE the caster acts finds no shield up
+    // (that speed tension is the point; the pool's payoff is that it PERSISTS
+    // across rounds until something eats it). It deals no damage and ignores
+    // the order's target byte.
+    if (eff == duel::kEffShield) {
+      const uint32_t room = 255u - actor.shield; // u8 pool: raising it CLAMPS
+      const uint32_t power = duel::kDuelMoves[mvIdx].power;
+      const uint32_t gain = (power < room) ? power : room;
+      actor.shield = static_cast<uint8_t>(actor.shield + gain);
+      WriteLogEntry(&log, nEntries++ == 0, aS, aL, "shield", mvIdx,
+                    wire::kTargetNone, "neu", gain, false, actor.hp, false);
+      continue;
+    }
 
     // FIZZLE-ON-DEATH (combat-depth Task 2). The blow was aimed at THAT treat;
     // if it is already dead when the swing lands, the swing WHIFFS. It is not
@@ -672,7 +767,7 @@ int32_t duel_apply(const uint8_t* st, uint32_t stLen, const uint8_t* ord,
       continue;
     }
 
-    TreatState& tgt = s.treats[enemy][tgtSlot];
+    const TreatState& tgt = s.treats[enemy][tgtSlot];
     const uint8_t atkType = duel::kDuelMoves[mvIdx].type;
     uint8_t tgtClash = kClashNeutral;
     const uint8_t tgtAct = action[enemy][tgtSlot];
@@ -680,17 +775,89 @@ int32_t duel_apply(const uint8_t* st, uint32_t stLen, const uint8_t* ord,
       tgtClash = duel::kDuelMoves[tgt.moves[tgtAct]].type;
     }
     const uint16_t mult = ClashMult(atkType, tgtClash);
-    uint32_t dmg = (static_cast<uint32_t>(duel::kDuelMoves[mvIdx].power) * mult) >> 8;
-    const bool blocked = blockStance[enemy][tgtSlot];
-    if (blocked) {
-      dmg = (dmg * (256u - kTun.block_pct_256)) >> 8;
+
+    // ==== THE FIXED INTERACTION ORDER (combat-depth Task 4) ====
+    //   1. GUARD REDIRECT (single-target damage only)
+    //   2. SHIELD ABSORB  (on whoever FINALLY receives the blow)
+    //   3. HP
+    // and then the COUNTER fires off `landed` -- the force that reached the
+    // final recipient, BEFORE its shield ate any of it. Nothing here reorders.
+
+    // 1. GUARD REDIRECT. The blow lands on the guardian instead, at guard_pct.
+    // It is SINGLE-HOP and NEVER CHAINED: if A guards B and B guards C, a blow
+    // at C goes to B and STOPS there -- it is not then passed on to A (chaining
+    // is an infinite-loop hazard and a consensus footgun). A guardian KO'd
+    // EARLIER IN THIS ROUND cannot intercept -- hence the hp check HERE, at
+    // intercept time, not back when the map was built -- and the guard simply
+    // lapses, landing the blow on the ward.
+    //
+    // Exactly ONE mitigation percentage applies to a blow: a guarded ward's own
+    // block stance is irrelevant, because the ward is not the one being hit.
+    uint32_t rcvSlot = tgtSlot;
+    uint32_t via = wire::kTargetNone;
+    uint32_t pct = 256; // no mitigation
+    bool blocked = false;
+    const uint8_t guardian = guardedBy[enemy][tgtSlot];
+    if (guardian != kNoGuardian && s.treats[enemy][guardian].hp > 0) {
+      rcvSlot = guardian;
+      via = guardian;
+      pct = kTun.guard_pct_256;
+    } else if (blockStance[enemy][tgtSlot]) {
+      blocked = true;
+      pct = 256u - kTun.block_pct_256;
     }
+    // ONE FUSED MULTIPLY, never two chained >> 8 shifts: double truncation
+    // drifts, and native/wasm must agree bit-for-bit. Widths: power <= 60,
+    // mult <= 384, pct <= 256 -> at most 5,898,240, comfortably inside u32.
+    const uint32_t landed =
+        (static_cast<uint32_t>(duel::kDuelMoves[mvIdx].power) * mult * pct) >> 16;
+
+    TreatState& rcv = s.treats[enemy][rcvSlot];
+    // 2. SHIELD ABSORB, on whoever finally receives it. The EXCESS CARRIES
+    // THROUGH to hp -- a shield blunts a blow, it does not stop it.
+    const uint32_t absorbed = (rcv.shield < landed) ? rcv.shield : landed;
+    rcv.shield = static_cast<uint8_t>(rcv.shield - absorbed);
+    const uint32_t toHp = landed - absorbed;
+    // 3. HP.
     const uint16_t newHp =
-        (tgt.hp > dmg) ? static_cast<uint16_t>(tgt.hp - dmg) : 0;
-    tgt.hp = newHp;
-    const bool ko = (newHp == 0);
+        (rcv.hp > toHp) ? static_cast<uint16_t>(rcv.hp - toHp) : 0;
+    rcv.hp = newHp;
     WriteLogEntry(&log, nEntries++ == 0, aS, aL, "hit", mvIdx, tgtSlot,
-                  ClashLabel(mult), dmg, blocked, newHp, ko);
+                  ClashLabel(mult), landed, blocked, newHp, newHp == 0, absorbed,
+                  via);
+
+    // COUNTER. It fires iff the FINAL RECIPIENT's own picked move is a counter
+    // -- keying it off the recipient rather than the treat that was AIMED at is
+    // exactly what makes a redirected blow counter-free with no special case (a
+    // guardian's move is `guard`, never `counter`).
+    //
+    // A recipient FELLED by the blow does not riposte: KO is permanent, and a
+    // dead treat takes no further part in the round (the same rule that stops a
+    // dead guardian intercepting). Burst is the legible answer to a counter.
+    //
+    // The reflect is counter_pct of `landed` -- the blow's force, NOT the hp it
+    // actually drained -- so your own shield holding does not silently disarm
+    // your counter ("you swung at me, so you get punished"). It ignores clash
+    // and guard, goes through the attacker's own shield (an absorb pool absorbs
+    // anything), can KO, and can NEVER itself be countered: it is not a move, so
+    // nothing re-enters this branch.
+    if (newHp > 0) {
+      const uint8_t rcvAct = action[enemy][rcvSlot];
+      if (rcvAct != wire::kActionRecover &&
+          duel::kDuelMoves[rcv.moves[rcvAct]].effect == duel::kEffCounter) {
+        const uint32_t reflect = (landed * kTun.counter_pct_256) >> 8;
+        const uint32_t rAbsorbed =
+            (actor.shield < reflect) ? actor.shield : reflect;
+        actor.shield = static_cast<uint8_t>(actor.shield - rAbsorbed);
+        const uint32_t rToHp = reflect - rAbsorbed;
+        const uint16_t atkHp =
+            (actor.hp > rToHp) ? static_cast<uint16_t>(actor.hp - rToHp) : 0;
+        actor.hp = atkHp;
+        WriteLogEntry(&log, nEntries++ == 0, enemy, rcvSlot, "counter",
+                      rcv.moves[rcvAct], aL, "neu", reflect, false, atkHp,
+                      atkHp == 0, rAbsorbed);
+      }
+    }
   }
 
   // ---- semantics 5: end-of-round cooldowns (living treats only) ----
@@ -721,9 +888,10 @@ int32_t duel_apply(const uint8_t* st, uint32_t stLen, const uint8_t* ord,
   // authored 12/6, the chip sums past the largest reachable max_hp (290) by
   // round 21, so the cap is effectively unreachable.
   //
-  // It is NOT an attack -- it is the arena. It ignores the clash pentagon,
-  // block stance, shield and guard alike. TASK 4 MUST NOT MAKE `shield` ABSORB
-  // IT; there is nothing here to absorb.
+  // It is NOT an attack -- it is the arena. It ignores the clash pentagon, the
+  // block stance, the shield pool and the guard redirect alike (combat-depth
+  // Task 4 kept it that way, deliberately: there is nothing here to absorb and
+  // nobody to step in front of). It goes straight to hp.
   if (playedRound >= kTun.sudden_start) {
     const uint32_t chip =
         static_cast<uint32_t>(kTun.sudden_step) *

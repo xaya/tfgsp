@@ -10,8 +10,8 @@
     "power": 23,
     "speed": 45,
     "cooldown": 2,
-    "effect": "block",
-    "description": "Wraps the fighter in shimmering caramel bindings, bracing to blunt whatever lands next."
+    "effect": "guard",
+    "description": "Binds you to an ALLY in shimmering caramel: you take the next single blow aimed at them, at 70% of its force. Pick an ally, not an enemy. Deals no damage."
   },
   "1a67cc79-b97a-4624-ca67-36c9fcbee970": {
     "power": 50,
@@ -59,8 +59,8 @@
     "power": 20,
     "speed": 46,
     "cooldown": 1,
-    "effect": "block",
-    "description": "A springy berry-skin crouch that cushions the next hit and bounces some of the force away."
+    "effect": "counter",
+    "description": "A springy berry-skin stance: strike, then bounce 40% of any blow that lands on you this round straight back at whoever threw it. It soaks nothing — it punishes."
   },
   "34a115db-3153-aff4-9a46-97700634f1fb": {
     "power": 53,
@@ -80,8 +80,8 @@
     "power": 20,
     "speed": 47,
     "cooldown": 1,
-    "effect": "block",
-    "description": "Hardens into a glassy candy shell, taking the edge off the next blow."
+    "effect": "shield",
+    "description": "Hardens into a glassy candy shell worth 20 points of shield. It soaks damage before your health does and KEEPS whatever is left over for later rounds. Deals no damage."
   },
   "431900a2-54d4-df34-d9f7-6a4608fecfaa": {
     "power": 15,
@@ -129,8 +129,8 @@
     "power": 12,
     "speed": 43,
     "cooldown": 0,
-    "effect": "block",
-    "description": "Raises a crystallized sugar shield to blunt the next attack."
+    "effect": "shield",
+    "description": "Raises a crystallized sugar shield worth 12 points. It soaks damage before your health does and carries whatever survives into the next round. Deals no damage."
   },
   "86b323c2-b2fd-2494-ab5e-bc3514bc92d8": {
     "power": 26,
@@ -150,8 +150,8 @@
     "power": 24,
     "speed": 45,
     "cooldown": 2,
-    "effect": "block",
-    "description": "A flurry of bouncing guards that soaks up part of the next incoming hit."
+    "effect": "counter",
+    "description": "A heavier bouncing riposte: strike, then hurl 40% of any blow that lands on you this round back at its owner. Soaks nothing — a big enough hit still fells you before you swing back."
   },
   "92f7b745-c1ff-3cd4-f9cf-0fe0dafb5536": {
     "power": 54,
@@ -278,7 +278,7 @@
     "hp_per_sweetness": 10,
     "adv_mult_256": 384,
     "dis_mult_256": 170,
-    "block_pct_256": 102,
+    "block_pct_256": 154,
     "round_cap": 30,
     "team_size": 3,
     "loadout_size": 4,

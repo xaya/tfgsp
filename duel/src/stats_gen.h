@@ -31,27 +31,27 @@ struct DuelMoveStat {
 
 constexpr DuelMoveStat kDuelMoves[39] = {
     {11, 46, 0, 4, kEffBlock, 1, 255}, // [0] 0090580c-04ef-9d84-e883-32f52c977b98 Gum Drop Kick (q1 Blocking)
-    {23, 45, 2, 4, kEffBlock, 1, 255}, // [1] 01b34a91-37d8-29d4-09cb-2d515f51e315 Gilded Bonds (q4 Blocking)
+    {23, 45, 2, 4, kEffGuard, 1, 255}, // [1] 01b34a91-37d8-29d4-09cb-2d515f51e315 Gilded Bonds (q4 Blocking)
     {50, 93, 3, 1, kEffDamage, 1, 255}, // [2] 1a67cc79-b97a-4624-ca67-36c9fcbee970 Quicksilver Slice (q4 Speedy)
     {24, 98, 0, 1, kEffDamage, 1, 255}, // [3] 1d1dec74-ca35-0cc4-d930-164786a9dd81 Coco Chaos (q1 Speedy)
     {24, 94, 0, 1, kEffDamage, 1, 255}, // [4] 1e47a8e0-acfd-1244-0b7d-539d62429060 Icing on the Cake (q1 Speedy)
     {42, 54, 2, 2, kEffDamage, 1, 255}, // [5] 2569d967-c676-8b44-cbdf-d514e4c5c73d Toffee Tripper (q3 Tricky)
     {24, 57, 0, 2, kEffDamage, 1, 255}, // [6] 29d559bb-41a7-9f14-5bf8-605da8166943 Pucker Sucker (q1 Tricky)
     {24, 70, 0, 3, kEffDamage, 1, 255}, // [7] 2c555752-8a84-58f4-395e-6460b7864069 Get Over Here! (q1 Distance)
-    {20, 46, 1, 4, kEffBlock, 1, 255}, // [8] 2c94f949-a10e-2524-2827-6588982ce0b1 Berry Bounce (q3 Blocking)
+    {20, 46, 1, 4, kEffCounter, 1, 255}, // [8] 2c94f949-a10e-2524-2827-6588982ce0b1 Berry Bounce (q3 Blocking)
     {53, 55, 3, 2, kEffDamage, 1, 255}, // [9] 34a115db-3153-aff4-9a46-97700634f1fb Gilded Tripper (q4 Tricky)
     {51, 97, 3, 1, kEffDamage, 1, 255}, // [10] 3e76f2fa-072c-5654-dac9-c9b0e4e1643a Super Sugary Rush (q4 Speedy)
-    {20, 47, 1, 4, kEffBlock, 1, 255}, // [11] 41416afb-0d72-f9b4-ba30-f089b713500f Candied Shell (q3 Blocking)
+    {20, 47, 1, 4, kEffShield, 1, 255}, // [11] 41416afb-0d72-f9b4-ba30-f089b713500f Candied Shell (q3 Blocking)
     {15, 42, 0, 4, kEffBlock, 1, 255}, // [12] 431900a2-54d4-df34-d9f7-6a4608fecfaa Chewy Absorption (q2 Blocking)
     {27, 49, 2, 4, kEffBlock, 1, 255}, // [13] 4dbb297f-6a80-ca44-a94f-3ea9ed3311e8 Tarnising Knee Drop (q4 Blocking)
     {24, 49, 2, 4, kEffBlock, 1, 255}, // [14] 55cafe03-4a58-0f44-6a27-f9fc6fce881a Heavy Gumdrop Kick (q4 Blocking)
     {41, 75, 2, 3, kEffDamage, 1, 255}, // [15] 55e05ece-a3f6-a924-3833-2222a0eee6a3 Limon Shuriken (q3 Distance)
     {51, 28, 3, 0, kEffDamage, 1, 255}, // [16] 61d8b3ec-9a01-0e64-fb45-27d2b858e332 Explosive Jawbreaker (q4 Heavy)
     {26, 86, 0, 1, kEffDamage, 1, 255}, // [17] 628ebc0b-bb19-ee64-68b8-2f66f4b92720 One Thousand Tiny Slices (q1 Speedy)
-    {12, 43, 0, 4, kEffBlock, 1, 255}, // [18] 73eb61fc-70a9-25a4-ba01-0ecaa0d547c5 Sugar Shield (q1 Blocking)
+    {12, 43, 0, 4, kEffShield, 1, 255}, // [18] 73eb61fc-70a9-25a4-ba01-0ecaa0d547c5 Sugar Shield (q1 Blocking)
     {26, 29, 0, 0, kEffDamage, 1, 255}, // [19] 86b323c2-b2fd-2494-ab5e-bc3514bc92d8 Candied Knuckles (q1 Heavy)
     {34, 69, 1, 3, kEffDamage, 1, 255}, // [20] 86bd4f81-e96b-9864-78b5-5fc51fbff6a4 Chilling Blow (q2 Distance)
-    {24, 45, 2, 4, kEffBlock, 1, 255}, // [21] 8e4753b5-c739-aaf4-ab79-4d333a69cae6 Bouncing Barrage (q4 Blocking)
+    {24, 45, 2, 4, kEffCounter, 1, 255}, // [21] 8e4753b5-c739-aaf4-ab79-4d333a69cae6 Bouncing Barrage (q4 Blocking)
     {54, 30, 3, 0, kEffDamage, 1, 255}, // [22] 92f7b745-c1ff-3cd4-f9cf-0fe0dafb5536 Golden Shower of Chips (q4 Heavy)
     {29, 30, 1, 0, kEffDamage, 1, 255}, // [23] 9f0df0ed-13a6-84c4-781d-9dbf9741c66e Choco Crunch (q2 Heavy)
     {26, 27, 0, 0, kEffDamage, 1, 255}, // [24] 9fd0b9ef-2e7d-d344-8926-69f1fab99f65 Pop Rock Pop (q1 Heavy)
@@ -100,7 +100,7 @@ struct DuelTunables {
 
 constexpr DuelTunables kTun = {
     100, 30, 10,
-    384, 170, 102,
+    384, 170, 154,
     30, 3, 4,
     12, 6,
     154, 179, 128, 102};

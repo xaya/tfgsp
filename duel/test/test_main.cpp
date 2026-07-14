@@ -243,7 +243,10 @@ void test_stats_gen_tunables_exact() {
   CHECK(duel::kTun.hp_per_sweetness == 10);
   CHECK(duel::kTun.adv_mult_256 == 384);
   CHECK(duel::kTun.dis_mult_256 == 170);
-  CHECK(duel::kTun.block_pct_256 == 102);
+  // Combat-depth Task 4: 102 (40%) -> 154 (60%). A plain `block` buys the
+  // BIGGEST flat reduction of the four stances -- that is what makes it worth
+  // the turn next to guard/shield/counter, which reduce nothing at all.
+  CHECK(duel::kTun.block_pct_256 == 154);
   CHECK(duel::kTun.round_cap == 30);
   CHECK(duel::kTun.team_size == 3);
   CHECK(duel::kTun.loadout_size == 4);
@@ -789,15 +792,19 @@ duel::DuelState MakeState(uint8_t teamSize, uint8_t loadoutSize,
 
 // Fill one treat: the first `mc` loadout slots take realMoves/realCds; the rest
 // get the 0xFF filler + cooldown 0 (canonical, so encode/decode round-trips).
+// `shield` (combat-depth Task 4) seeds the absorb pool a PRIOR round left
+// behind -- the vectors that pin "a shield persists across rounds until
+// consumed" start from exactly such a state.
 void SetTreat(duel::DuelState& s, int side, int slot, uint16_t hp, uint16_t maxhp,
               uint8_t q, uint8_t sw, uint8_t mc, const uint8_t* realMoves,
-              const uint8_t* realCds) {
+              const uint8_t* realCds, uint8_t shield = 0) {
   duel::TreatState& t = s.treats[side][slot];
   t.hp = hp;
   t.max_hp = maxhp;
   t.quality = q;
   t.sweetness = sw;
   t.move_count = mc;
+  t.shield = shield;
   for (int j = 0; j < s.loadout_size; ++j) {
     if (j < mc) {
       t.moves[j] = realMoves[j];
@@ -876,10 +883,16 @@ int LogCount(const char* needle) {
 }
 
 // Dense move indices used in the behavioral vectors (from stats_gen.h):
+//   [0]  Gum Drop Kick       {power 11, speed 46, cd 0, Blocking, block}
+//   [1]  Gilded Bonds        {power 23, speed 45, cd 2, Blocking, GUARD}
 //   [3]  Coco Chaos          {power 24, speed 98, cd 0, Speedy}
 //   [6]  Pucker Sucker       {power 24, speed 57, cd 0, Tricky}
+//   [8]  Berry Bounce        {power 20, speed 46, cd 1, Blocking, COUNTER}
 //   [10] Super Sugary Rush   {power 51, speed 97, cd 3, Speedy}
-//   [18] Sugar Shield        {power 12, speed 43, cd 0, Blocking}
+//   [11] Candied Shell       {power 20, speed 47, cd 1, Blocking, SHIELD}
+//   [12] Chewy Absorption    {power 15, speed 42, cd 0, Blocking, block}
+//   [18] Sugar Shield        {power 12, speed 43, cd 0, Blocking, SHIELD}
+//   [21] Bouncing Barrage    {power 24, speed 45, cd 2, Blocking, COUNTER}
 //   [24] Pop Rock Pop        {power 26, speed 27, cd 0, Heavy}
 //   [25] Bubble Trouble      {power 25, speed 76, cd 0, Distance}
 //   [26] Vicious Jawbreaker  {power 40, speed 28, cd 2, Heavy}
@@ -1052,14 +1065,18 @@ void test_apply_clash_disadvantage() {
 }
 
 // Case 3 — Block stance. (A) Heavy(power 40) vs a Blocking target → adv ×384
-// then block: ((40*384)>>8 *154)>>8 = 36. (B) the stance holds even when the
-// blocker's own action fires LAST (attacker faster).
+// then block: (40*384*102)>>16 = 23 (combat-depth Task 4 raised block_pct_256 to
+// 154, so the surviving fraction is 256-154 = 102, and the two multiplies are
+// FUSED into one >>16 rather than chained through two >>8 truncations).
+// (B) the stance holds even when the blocker's own action fires LAST (attacker
+// faster). Both use Chewy Absorption [12] -- Sugar Shield [18] is a SHIELD move
+// now (Task 4), and only `effect == block` still buys the flat reduction.
 ApplyVec MakeVec_BlockStanceA() {
   ApplyVec v{};
   v.name = "block_stance_a";
   duel::DuelState s = MakeState(1, 1);
   const uint8_t mH[] = {26}, cH[] = {0}; // Heavy power 40, speed 28
-  const uint8_t mB[] = {18}, cB[] = {0}; // Blocking, speed 43 (acts first here)
+  const uint8_t mB[] = {12}, cB[] = {0}; // Blocking/block, speed 42 (acts first here)
   SetTreat(s, 0, 0, 250, 250, 3, 6, 1, mH, cH);
   SetTreat(s, 1, 0, 250, 250, 1, 1, 1, mB, cB);
   v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
@@ -1075,7 +1092,7 @@ ApplyVec MakeVec_BlockStanceLate() {
   v.name = "block_stance_late_blocker";
   duel::DuelState s = MakeState(1, 1);
   const uint8_t mS[] = {3}, cS[] = {0};  // Speedy, speed 98 (fires first)
-  const uint8_t mB[] = {18}, cB[] = {0}; // Blocking, speed 43 (fires last)
+  const uint8_t mB[] = {12}, cB[] = {0}; // Blocking/block, speed 42 (fires last)
   SetTreat(s, 0, 0, 250, 250, 1, 1, 1, mS, cS);
   SetTreat(s, 1, 0, 250, 250, 1, 1, 1, mB, cB);
   v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
@@ -1087,16 +1104,17 @@ ApplyVec MakeVec_BlockStanceLate() {
 }
 
 void test_apply_block_stance() {
-  // (A) exact 36
+  // (A) exact 23 -- a plain block is worth the turn now: (40*384*102)>>16.
   {
     ApplyVec v = MakeVec_BlockStanceA();
     CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
     duel::DuelState o{};
     CHECK(DecodeOut(&o));
-    CHECK(o.treats[1][0].hp == 214); // 250 - 36 (adv then block)
+    CHECK(o.treats[1][0].hp == 227); // 250 - 23 (adv then block)
     CHECK(LogHas("\"blocked\":true"));
-    CHECK(LogHas("\"dmg\":36"));
+    CHECK(LogHas("\"dmg\":23"));
     CHECK(LogHas("\"clash\":\"adv\""));
+    CHECK(o.treats[1][0].shield == 0); // a `block` raises no absorb pool
   }
   // (B) stance active even though the blocker resolves last
   {
@@ -1104,8 +1122,8 @@ void test_apply_block_stance() {
     CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
     duel::DuelState o{};
     CHECK(DecodeOut(&o));
-    // Speedy vs Blocking = dis 170: (24*170)>>8 = 15; block: (15*154)>>8 = 9.
-    CHECK(o.treats[1][0].hp == 241); // 250 - 9, blocked though blocker acts last
+    // Speedy vs Blocking = dis 170, then block: (24*170*102)>>16 = 6.
+    CHECK(o.treats[1][0].hp == 244); // 250 - 6, blocked though blocker acts last
     CHECK(LogHas("\"blocked\":true"));
     const int i0 = LogIndexOf("\"side\":0");
     const int i1 = LogIndexOf("\"side\":1");
@@ -1187,8 +1205,8 @@ void test_apply_fizzle_on_death() {
   // The whiffed swing is logged as a `skip` with dmg 0 and no target.
   CHECK(LogHas(
       "{\"side\":0,\"slot\":1,\"kind\":\"skip\",\"move\":26,\"target\":255,"
-      "\"clash\":\"neu\",\"dmg\":0,\"blocked\":false,\"targetHp\":0,"
-      "\"ko\":false}"));
+      "\"via\":255,\"clash\":\"neu\",\"dmg\":0,\"blocked\":false,"
+      "\"absorbed\":0,\"targetHp\":0,\"ko\":false}"));
   CHECK(!LogHas("\"retargeted\"")); // the dead field is gone from the format
   // ...and it still BURNS the cooldown (Vicious Jawbreaker's authored cd is 2):
   // over-committing costs you the turn *and* the move.
@@ -1233,7 +1251,7 @@ void test_apply_fizzle_multi_living_untouched() {
   CHECK(o.treats[1][1].hp == 100); // untouched
   CHECK(o.treats[1][2].hp == 60);  // untouched (the old rule hit THIS one for 40)
   CHECK(LogHas("{\"side\":0,\"slot\":1,\"kind\":\"skip\",\"move\":26,\"target\":255,"
-               "\"clash\":\"neu\",\"dmg\":0"));
+               "\"via\":255,\"clash\":\"neu\",\"dmg\":0"));
   CHECK(o.phase == duel::wire::kPhaseActive);
 }
 
@@ -1620,12 +1638,12 @@ void test_apply_sudden_death_escalates() {
     CHECK(LogCount("\"kind\":\"chip\"") == 2);
     CHECK(LogHas(
         "{\"side\":0,\"slot\":0,\"kind\":\"chip\",\"move\":255,\"target\":255,"
-        "\"clash\":\"neu\",\"dmg\":6,\"blocked\":false,\"targetHp\":244,"
-        "\"ko\":false}"));
+        "\"via\":255,\"clash\":\"neu\",\"dmg\":6,\"blocked\":false,"
+        "\"absorbed\":0,\"targetHp\":244,\"ko\":false}"));
     CHECK(LogHas(
         "{\"side\":1,\"slot\":0,\"kind\":\"chip\",\"move\":255,\"target\":255,"
-        "\"clash\":\"neu\",\"dmg\":6,\"blocked\":false,\"targetHp\":244,"
-        "\"ko\":false}"));
+        "\"via\":255,\"clash\":\"neu\",\"dmg\":6,\"blocked\":false,"
+        "\"absorbed\":0,\"targetHp\":244,\"ko\":false}"));
     CHECK(o.phase == duel::wire::kPhaseActive);
   }
   // (c) round 15: chip = 6 * (15 - 12 + 1) = 24 — it escalates every round.
@@ -1636,8 +1654,8 @@ void test_apply_sudden_death_escalates() {
     CHECK(DecodeOut(&o));
     CHECK(o.treats[0][0].hp == 226); // 250 - 24
     CHECK(o.treats[1][0].hp == 226);
-    CHECK(LogHas("\"kind\":\"chip\",\"move\":255,\"target\":255,\"clash\":\"neu\","
-                 "\"dmg\":24"));
+    CHECK(LogHas("\"kind\":\"chip\",\"move\":255,\"target\":255,\"via\":255,"
+                 "\"clash\":\"neu\",\"dmg\":24"));
   }
 }
 
@@ -1672,8 +1690,8 @@ void test_apply_sudden_death_ko() {
   CHECK(LogCount("\"kind\":\"chip\"") == 3); // 3 living victims, not 4
   CHECK(!LogHas("{\"side\":0,\"slot\":1,\"kind\":\"chip\"")); // ...and not the KO'd one
   CHECK(LogHas("{\"side\":1,\"slot\":0,\"kind\":\"chip\",\"move\":255,\"target\":255,"
-               "\"clash\":\"neu\",\"dmg\":24,\"blocked\":false,\"targetHp\":0,"
-               "\"ko\":true}"));
+               "\"via\":255,\"clash\":\"neu\",\"dmg\":24,\"blocked\":false,"
+               "\"absorbed\":0,\"targetHp\":0,\"ko\":true}"));
   CHECK(o.phase == duel::wire::kPhaseActive); // side 1 still has slot 1
 }
 
@@ -1868,6 +1886,599 @@ void test_apply_deterministic() {
   CHECK(std::memcmp(duel_log_ptr(), logA, logALen) == 0);
 }
 
+// ================= combat-depth Task 4: Guard, Shield, Counter =================
+//
+// The Blocking corner stops being a single verb with four power levels. The
+// stance an actor holds is now decided by its move's EFFECT, and each stance
+// buys exactly ONE thing:
+//   block   -> the flat damage reduction (the biggest one: 60%)
+//   guard   -> intercept a single-target blow aimed at an ALLY, at guard_pct
+//   shield  -> a persisting absorb pool (u8), consumed before HP
+//   counter -> reflect counter_pct of the blow BACK at whoever landed it
+// guard/shield/counter deliberately do NOT also reduce incoming damage -- the
+// tests below pin that ("the stance split"), because it is the whole reason
+// plain block is still a real choice.
+//
+// Fixed interaction order, pinned throughout: 1. guard redirect -> 2. shield
+// absorb (on whoever FINALLY receives it) -> 3. HP; then the counter fires off
+// `landed` (the force that reached the final recipient, BEFORE its shield ate
+// any of it).
+
+// --- Guard ---
+
+// A blow aimed at the ward lands on the GUARDIAN instead, at guard_pct (179):
+// (26 * 256 * 179) >> 16 = 18. The ward is untouched, and the hit entry's `via`
+// names the guardian.
+ApplyVec MakeVec_GuardIntercept() {
+  ApplyVec v{};
+  v.name = "guard_intercept";
+  duel::DuelState s = MakeState(2, 1);
+  const uint8_t mG[] = {1}, cG[] = {0};  // Gilded Bonds (guard), speed 45
+  const uint8_t mH[] = {24}, cH[] = {0}; // Pop Rock Pop (Heavy 26), speed 27
+  SetTreat(s, 0, 0, 250, 250, 3, 6, 1, mH, cH);
+  SetTreat(s, 0, 1, 250, 250, 3, 6, 1, mH, cH);
+  SetTreat(s, 1, 0, 250, 250, 3, 6, 1, mG, cG); // the GUARDIAN
+  SetTreat(s, 1, 1, 250, 250, 3, 6, 1, mH, cH); // the WARD
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdInit(v.ord);
+  OrdSet(v.ord, 2, 0, 0, 0, 1); // attacker -> enemy slot 1 (the ward)
+  OrdSet(v.ord, 2, 0, 1, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  OrdSet(v.ord, 2, 1, 0, 0, 1); // guard -> ALLY slot 1
+  OrdSet(v.ord, 2, 1, 1, 0, 0); // the ward swings back at enemy slot 0
+  v.ordLen = duel::wire::OrdersLen(2);
+  return v;
+}
+
+void test_apply_guard_intercepts() {
+  ApplyVec v = MakeVec_GuardIntercept();
+  CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
+  duel::DuelState o{};
+  CHECK(DecodeOut(&o));
+  CHECK(o.treats[1][0].hp == 232); // the GUARDIAN ate it: 250 - 18
+  CHECK(o.treats[1][1].hp == 250); // the ward is untouched
+  // A guard deals NO damage of its own -- side0/slot0 is only down by the
+  // ward's own 26-power swing (Heavy vs Heavy = neutral), not a point more.
+  CHECK(o.treats[0][0].hp == 224);
+  CHECK(LogHas("{\"side\":1,\"slot\":0,\"kind\":\"guard\",\"move\":1,\"target\":1,"
+               "\"via\":255,\"clash\":\"neu\",\"dmg\":0,\"blocked\":false,"
+               "\"absorbed\":0,\"targetHp\":0,\"ko\":false}"));
+  // The blow: aimed at slot 1, RECEIVED by slot 0 (via), and not "blocked" --
+  // guard is not block, and buys no flat reduction of its own.
+  CHECK(LogHas("{\"side\":0,\"slot\":0,\"kind\":\"hit\",\"move\":24,\"target\":1,"
+               "\"via\":0,\"clash\":\"neu\",\"dmg\":18,\"blocked\":false,"
+               "\"absorbed\":0,\"targetHp\":232,\"ko\":false}"));
+}
+
+// The three guard-target rejects. Each is an otherwise-legal 2v2 whose ONLY
+// defect is the guard's target byte -- so "-1" can only be that rule.
+ApplyVec MakeVec_GuardRejectTarget(const char* name, uint8_t guardTarget,
+                                   uint16_t allyHp) {
+  ApplyVec v{};
+  v.name = name;
+  duel::DuelState s = MakeState(2, 1);
+  const uint8_t mG[] = {1}, cG[] = {0};
+  const uint8_t mH[] = {24}, cH[] = {0};
+  SetTreat(s, 0, 0, 250, 250, 3, 6, 1, mH, cH);
+  SetTreat(s, 0, 1, 250, 250, 3, 6, 1, mH, cH);
+  SetTreat(s, 1, 0, 250, 250, 3, 6, 1, mG, cG);
+  SetTreat(s, 1, 1, allyHp, 250, 3, 6, 1, mH, cH);
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdInit(v.ord);
+  OrdSet(v.ord, 2, 0, 0, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  OrdSet(v.ord, 2, 0, 1, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  OrdSet(v.ord, 2, 1, 0, 0, guardTarget);
+  // A KO'd ally can only carry the canonical Recover encoding.
+  if (allyHp == 0) {
+    OrdSet(v.ord, 2, 1, 1, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  } else {
+    OrdSet(v.ord, 2, 1, 1, 0, 0);
+  }
+  v.ordLen = duel::wire::OrdersLen(2);
+  return v;
+}
+
+// Guarding YOURSELF is meaningless -- reject it rather than silently allowing a
+// second encoding of "I guard nobody".
+ApplyVec MakeVec_GuardRejectSelf() {
+  return MakeVec_GuardRejectTarget("guard_reject_self", 0, 250);
+}
+// Guarding a DEAD ally: there is nothing to cover.
+ApplyVec MakeVec_GuardRejectDeadAlly() {
+  return MakeVec_GuardRejectTarget("guard_reject_dead_ally", 1, 0);
+}
+// Guarding a slot that does not exist (team_size is 2).
+ApplyVec MakeVec_GuardRejectOutOfRange() {
+  return MakeVec_GuardRejectTarget("guard_reject_out_of_range", 2, 250);
+}
+
+void test_apply_guard_rejects_bad_target() {
+  ApplyVec self = MakeVec_GuardRejectSelf();
+  CHECK(duel_apply(self.st, self.stLen, self.ord, self.ordLen) == -1);
+  CHECK(duel_out_len() == 0);
+  CHECK(duel_log_len() == 0);
+
+  ApplyVec dead = MakeVec_GuardRejectDeadAlly();
+  CHECK(duel_apply(dead.st, dead.stLen, dead.ord, dead.ordLen) == -1);
+  CHECK(duel_out_len() == 0);
+
+  ApplyVec oor = MakeVec_GuardRejectOutOfRange();
+  CHECK(duel_apply(oor.st, oor.stLen, oor.ord, oor.ordLen) == -1);
+  CHECK(duel_out_len() == 0);
+}
+
+// Two allies guard the same ward: the LOWEST guardian slot wins the tie (a
+// total, deterministic rule -- the alternative is a coin the engine cannot toss).
+ApplyVec MakeVec_GuardTieLowestSlot() {
+  ApplyVec v{};
+  v.name = "guard_tie_lowest_slot";
+  duel::DuelState s = MakeState(3, 1);
+  const uint8_t mG[] = {1}, cG[] = {0};
+  const uint8_t mH[] = {24}, cH[] = {0};
+  for (int slot = 0; slot < 3; ++slot) SetTreat(s, 0, slot, 250, 250, 3, 6, 1, mH, cH);
+  SetTreat(s, 1, 0, 250, 250, 3, 6, 1, mG, cG); // guardian A (wins the tie)
+  SetTreat(s, 1, 1, 250, 250, 3, 6, 1, mG, cG); // guardian B
+  SetTreat(s, 1, 2, 250, 250, 3, 6, 1, mH, cH); // the ward
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdInit(v.ord);
+  OrdSet(v.ord, 3, 0, 0, 0, 2); // -> enemy slot 2 (the ward)
+  OrdSet(v.ord, 3, 0, 1, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  OrdSet(v.ord, 3, 0, 2, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  OrdSet(v.ord, 3, 1, 0, 0, 2); // both guard ally slot 2
+  OrdSet(v.ord, 3, 1, 1, 0, 2);
+  OrdSet(v.ord, 3, 1, 2, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  v.ordLen = duel::wire::OrdersLen(3);
+  return v;
+}
+
+void test_apply_guard_lowest_slot_wins_tie() {
+  ApplyVec v = MakeVec_GuardTieLowestSlot();
+  CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
+  duel::DuelState o{};
+  CHECK(DecodeOut(&o));
+  CHECK(o.treats[1][0].hp == 232); // guardian A took the blow (250 - 18)
+  CHECK(o.treats[1][1].hp == 250); // guardian B did not
+  CHECK(o.treats[1][2].hp == 250); // the ward is untouched
+  CHECK(LogHas("\"target\":2,\"via\":0,"));
+}
+
+// A guardian KO'd EARLIER IN THE SAME ROUND cannot intercept: the guard lapses
+// and the blow lands on the ward. (The map is built before any action resolves,
+// so the hp check has to happen at INTERCEPT time, not at map-build time.)
+ApplyVec MakeVec_GuardDeadGuardianLapses() {
+  ApplyVec v{};
+  v.name = "guard_dead_guardian_lapses";
+  duel::DuelState s = MakeState(2, 1);
+  const uint8_t mS[] = {10}, cS[] = {0}; // Super Sugary Rush (Speedy 51), speed 97
+  const uint8_t mH[] = {24}, cH[] = {0}; // Pop Rock Pop (Heavy 26), speed 27
+  const uint8_t mG[] = {1}, cG[] = {0};  // Gilded Bonds (guard), speed 45
+  SetTreat(s, 0, 0, 250, 250, 4, 10, 1, mS, cS);
+  SetTreat(s, 0, 1, 250, 250, 3, 6, 1, mH, cH);
+  SetTreat(s, 1, 0, 30, 250, 3, 6, 1, mG, cG);  // the guardian, 30 hp
+  SetTreat(s, 1, 1, 250, 250, 3, 6, 1, mH, cH); // the ward
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdInit(v.ord);
+  OrdSet(v.ord, 2, 0, 0, 0, 0); // the fast Speedy KOs the guardian first
+  OrdSet(v.ord, 2, 0, 1, 0, 1); // ...then this blow aims at the ward
+  OrdSet(v.ord, 2, 1, 0, 0, 1); // the guard that will never fire
+  OrdSet(v.ord, 2, 1, 1, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  v.ordLen = duel::wire::OrdersLen(2);
+  return v;
+}
+
+void test_apply_guard_dead_guardian_cannot_intercept() {
+  ApplyVec v = MakeVec_GuardDeadGuardianLapses();
+  CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
+  duel::DuelState o{};
+  CHECK(DecodeOut(&o));
+  // Speedy vs the guardian's Blocking = dis 170: (51*170*256)>>16 = 33 > 30 hp.
+  CHECK(o.treats[1][0].hp == 0);
+  // The guard lapsed: the ward takes the SECOND blow in full (26, neutral --
+  // it is recovering), not the 18 a live guardian would have absorbed for it.
+  CHECK(o.treats[1][1].hp == 224);
+  CHECK(LogHas("{\"side\":0,\"slot\":1,\"kind\":\"hit\",\"move\":24,\"target\":1,"
+               "\"via\":255,\"clash\":\"neu\",\"dmg\":26,\"blocked\":false,"
+               "\"absorbed\":0,\"targetHp\":224,\"ko\":false}"));
+  // ...and the dead guardian's own action is a plain skip, never a "guard".
+  CHECK(LogHas("{\"side\":1,\"slot\":0,\"kind\":\"skip\""));
+  CHECK(LogCount("\"kind\":\"guard\"") == 0);
+}
+
+// SINGLE HOP: A guards B, B guards C. A blow at C is redirected to B and STOPS
+// THERE -- it is not then redirected on to A. (Chaining is an infinite-loop
+// hazard and a consensus footgun.)
+ApplyVec MakeVec_GuardNoChain() {
+  ApplyVec v{};
+  v.name = "guard_no_chain";
+  duel::DuelState s = MakeState(3, 1);
+  const uint8_t mG[] = {1}, cG[] = {0};
+  const uint8_t mH[] = {24}, cH[] = {0};
+  for (int slot = 0; slot < 3; ++slot) SetTreat(s, 0, slot, 250, 250, 3, 6, 1, mH, cH);
+  SetTreat(s, 1, 0, 250, 250, 3, 6, 1, mG, cG); // A guards B
+  SetTreat(s, 1, 1, 250, 250, 3, 6, 1, mG, cG); // B guards C
+  SetTreat(s, 1, 2, 250, 250, 3, 6, 1, mH, cH); // C, the ward
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdInit(v.ord);
+  OrdSet(v.ord, 3, 0, 0, 0, 2); // blow at C
+  OrdSet(v.ord, 3, 0, 1, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  OrdSet(v.ord, 3, 0, 2, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  OrdSet(v.ord, 3, 1, 0, 0, 1); // A -> B
+  OrdSet(v.ord, 3, 1, 1, 0, 2); // B -> C
+  OrdSet(v.ord, 3, 1, 2, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  v.ordLen = duel::wire::OrdersLen(3);
+  return v;
+}
+
+void test_apply_guard_redirect_never_chains() {
+  ApplyVec v = MakeVec_GuardNoChain();
+  CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
+  duel::DuelState o{};
+  CHECK(DecodeOut(&o));
+  CHECK(o.treats[1][1].hp == 232); // B took it (250 - 18) and the hop ENDED
+  CHECK(o.treats[1][0].hp == 250); // A -- who guards B -- is untouched
+  CHECK(o.treats[1][2].hp == 250); // C, the original ward, is untouched
+  CHECK(LogHas("\"target\":2,\"via\":1,"));
+}
+
+// --- Shield ---
+
+// A shield move raises a self-absorb pool worth its `power` and deals NO damage.
+// The pool is eaten BEFORE hp and the excess carries through: Heavy 26 vs a
+// Blocking target = adv 384 -> (26*384*256)>>16 = 39; shield 12 eats 12, hp
+// takes the remaining 27. And because `shield` is not `block`, it buys no flat
+// reduction at all -- the blow lands for its full 39.
+ApplyVec MakeVec_ShieldRaiseAbsorb() {
+  ApplyVec v{};
+  v.name = "shield_raise_absorb";
+  duel::DuelState s = MakeState(1, 1);
+  const uint8_t mH[] = {24}, cH[] = {0}; // Pop Rock Pop (Heavy 26), speed 27
+  const uint8_t mS[] = {18}, cS[] = {0}; // Sugar Shield (shield 12), speed 43
+  SetTreat(s, 0, 0, 250, 250, 3, 6, 1, mH, cH);
+  SetTreat(s, 1, 0, 250, 250, 3, 6, 1, mS, cS);
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdInit(v.ord);
+  OrdSet(v.ord, 1, 0, 0, 0, 0);
+  OrdSet(v.ord, 1, 1, 0, 0, 0);
+  v.ordLen = duel::wire::OrdersLen(1);
+  return v;
+}
+
+void test_apply_shield_raise_and_absorb() {
+  ApplyVec v = MakeVec_ShieldRaiseAbsorb();
+  CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
+  duel::DuelState o{};
+  CHECK(DecodeOut(&o));
+  CHECK(o.treats[1][0].hp == 223);   // 250 - (39 - 12 absorbed)
+  CHECK(o.treats[1][0].shield == 0); // the pool is spent exactly
+  CHECK(o.treats[0][0].hp == 250);   // a shield deals NO damage
+  CHECK(LogHas("{\"side\":1,\"slot\":0,\"kind\":\"shield\",\"move\":18,"
+               "\"target\":255,\"via\":255,\"clash\":\"neu\",\"dmg\":12,"
+               "\"blocked\":false,\"absorbed\":0,\"targetHp\":250,\"ko\":false}"));
+  CHECK(LogHas("{\"side\":0,\"slot\":0,\"kind\":\"hit\",\"move\":24,\"target\":0,"
+               "\"via\":255,\"clash\":\"adv\",\"dmg\":39,\"blocked\":false,"
+               "\"absorbed\":12,\"targetHp\":223,\"ko\":false}"));
+}
+
+// A shield PERSISTS ACROSS ROUNDS until consumed. Round 1: a 50-point pool eats
+// a whole 26-damage blow (hp untouched, 24 left in the pool). Round 2 replays
+// the SAME orders against round 1's OUTPUT state: the last 24 points are eaten
+// exactly, and only the 2-point remainder reaches hp.
+ApplyVec MakeVec_ShieldPersistRound1() {
+  ApplyVec v{};
+  v.name = "shield_persist_round1";
+  duel::DuelState s = MakeState(1, 1);
+  const uint8_t mH[] = {24}, cH[] = {0};
+  const uint8_t mS[] = {18}, cS[] = {0};
+  SetTreat(s, 0, 0, 250, 250, 3, 6, 1, mH, cH);
+  SetTreat(s, 1, 0, 250, 250, 3, 6, 1, mS, cS, /*shield=*/50);
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdInit(v.ord);
+  OrdSet(v.ord, 1, 0, 0, 0, 0);
+  // The defender just recovers: the ONLY shield in play is the one it walked
+  // into the round already holding.
+  OrdSet(v.ord, 1, 1, 0, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  v.ordLen = duel::wire::OrdersLen(1);
+  return v;
+}
+
+// Round 2 = round 1's output state, same orders (Pop Rock Pop's cooldown is 0).
+ApplyVec MakeVec_ShieldPersistRound2() {
+  ApplyVec r1 = MakeVec_ShieldPersistRound1();
+  duel_apply(r1.st, r1.stLen, r1.ord, r1.ordLen);
+  ApplyVec v{};
+  v.name = "shield_persist_round2";
+  v.stLen = duel_out_len();
+  for (uint32_t i = 0; i < v.stLen; ++i) v.st[i] = duel_out_ptr()[i];
+  v.ordLen = r1.ordLen;
+  for (uint32_t i = 0; i < v.ordLen; ++i) v.ord[i] = r1.ord[i];
+  return v;
+}
+
+void test_apply_shield_persists_between_rounds() {
+  ApplyVec r1 = MakeVec_ShieldPersistRound1();
+  CHECK(duel_apply(r1.st, r1.stLen, r1.ord, r1.ordLen) == 0);
+  {
+    duel::DuelState o{};
+    CHECK(DecodeOut(&o));
+    CHECK(o.treats[1][0].hp == 250);    // the pool ate the WHOLE blow
+    CHECK(o.treats[1][0].shield == 24); // 50 - 26, carried into round 2
+    CHECK(LogHas("\"absorbed\":26,\"targetHp\":250"));
+  }
+  ApplyVec r2 = MakeVec_ShieldPersistRound2();
+  CHECK(duel_apply(r2.st, r2.stLen, r2.ord, r2.ordLen) == 0);
+  {
+    duel::DuelState o{};
+    CHECK(DecodeOut(&o));
+    CHECK(o.treats[1][0].hp == 248);   // 250 - (26 - 24 absorbed)
+    CHECK(o.treats[1][0].shield == 0); // consumed exactly, not clamped early
+    CHECK(LogHas("\"absorbed\":24,\"targetHp\":248"));
+  }
+}
+
+// The pool is a u8: raising it past 255 CLAMPS (250 + a 12-power Sugar Shield
+// grants only the 5 points that fit) rather than wrapping to 7.
+ApplyVec MakeVec_ShieldClamp255() {
+  ApplyVec v{};
+  v.name = "shield_clamp_255";
+  duel::DuelState s = MakeState(1, 1);
+  const uint8_t mH[] = {24}, cH[] = {0};
+  const uint8_t mS[] = {18}, cS[] = {0};
+  SetTreat(s, 0, 0, 250, 250, 3, 6, 1, mH, cH);
+  SetTreat(s, 1, 0, 250, 250, 3, 6, 1, mS, cS, /*shield=*/250);
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdInit(v.ord);
+  OrdSet(v.ord, 1, 0, 0, 0, 0);
+  OrdSet(v.ord, 1, 1, 0, 0, 0);
+  v.ordLen = duel::wire::OrdersLen(1);
+  return v;
+}
+
+void test_apply_shield_clamps_at_255() {
+  ApplyVec v = MakeVec_ShieldClamp255();
+  CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
+  duel::DuelState o{};
+  CHECK(DecodeOut(&o));
+  // 250 + min(12, 255-250) = 255, then the 39-damage blow eats 39 of it.
+  CHECK(o.treats[1][0].shield == 216);
+  CHECK(o.treats[1][0].hp == 250); // nothing reached hp
+  CHECK(LogHas("\"kind\":\"shield\",\"move\":18,\"target\":255,\"via\":255,"
+               "\"clash\":\"neu\",\"dmg\":5,")); // only the 5 points that FIT
+}
+
+// --- Counter ---
+
+// A counter-stance treat reflects counter_pct (102/256 = 40%) of `landed` back
+// at whoever struck it. Berry Bounce (Blocking) also swings normally: Blocking
+// vs Heavy = dis 170 -> (20*170*256)>>16 = 13 on the attacker. The attacker's
+// Heavy vs Blocking = adv 384 -> (26*384*256)>>16 = 39 -- landing IN FULL,
+// because a counter buys no flat reduction (the stance split) -- and the reflect
+// is (39*102)>>8 = 15.
+ApplyVec MakeVec_CounterReflects() {
+  ApplyVec v{};
+  v.name = "counter_reflects";
+  duel::DuelState s = MakeState(1, 1);
+  const uint8_t mH[] = {24}, cH[] = {0}; // Pop Rock Pop (Heavy 26), speed 27
+  const uint8_t mC[] = {8}, cC[] = {0};  // Berry Bounce (counter 20), speed 46
+  SetTreat(s, 0, 0, 250, 250, 3, 6, 1, mH, cH);
+  SetTreat(s, 1, 0, 250, 250, 3, 6, 1, mC, cC);
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdInit(v.ord);
+  OrdSet(v.ord, 1, 0, 0, 0, 0);
+  OrdSet(v.ord, 1, 1, 0, 0, 0);
+  v.ordLen = duel::wire::OrdersLen(1);
+  return v;
+}
+
+void test_apply_counter_reflects() {
+  ApplyVec v = MakeVec_CounterReflects();
+  CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
+  duel::DuelState o{};
+  CHECK(DecodeOut(&o));
+  CHECK(o.treats[1][0].hp == 211); // 250 - 39: NOT reduced, a counter isn't a block
+  CHECK(o.treats[0][0].hp == 222); // 250 - 13 (its swing) - 15 (the reflect)
+  CHECK(LogHas("{\"side\":1,\"slot\":0,\"kind\":\"counter\",\"move\":8,"
+               "\"target\":0,\"via\":255,\"clash\":\"neu\",\"dmg\":15,"
+               "\"blocked\":false,\"absorbed\":0,\"targetHp\":222,\"ko\":false}"));
+}
+
+// A REDIRECTED blow triggers NO counter -- it fires off the FINAL RECIPIENT's
+// own move, and the final recipient here is the guardian (whose move is
+// `guard`, never `counter`). No special case: it falls straight out of the rule.
+ApplyVec MakeVec_CounterNoneOnRedirect() {
+  ApplyVec v{};
+  v.name = "counter_none_on_redirect";
+  duel::DuelState s = MakeState(2, 1);
+  const uint8_t mH[] = {24}, cH[] = {0};
+  const uint8_t mG[] = {1}, cG[] = {0}; // Gilded Bonds (guard)
+  const uint8_t mC[] = {8}, cC[] = {0}; // Berry Bounce (counter)
+  SetTreat(s, 0, 0, 250, 250, 3, 6, 1, mH, cH);
+  SetTreat(s, 0, 1, 250, 250, 3, 6, 1, mH, cH);
+  SetTreat(s, 1, 0, 250, 250, 3, 6, 1, mG, cG); // guardian
+  SetTreat(s, 1, 1, 250, 250, 3, 6, 1, mC, cC); // the COUNTER-stance ward
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdInit(v.ord);
+  OrdSet(v.ord, 2, 0, 0, 0, 1); // strike the counter-er...
+  OrdSet(v.ord, 2, 0, 1, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  OrdSet(v.ord, 2, 1, 0, 0, 1); // ...but the guardian steps in front
+  OrdSet(v.ord, 2, 1, 1, 0, 0);
+  v.ordLen = duel::wire::OrdersLen(2);
+  return v;
+}
+
+void test_apply_counter_none_on_redirected_blow() {
+  ApplyVec v = MakeVec_CounterNoneOnRedirect();
+  CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
+  duel::DuelState o{};
+  CHECK(DecodeOut(&o));
+  // Heavy vs the ward's Blocking = adv 384, then guard_pct: (26*384*179)>>16 = 27.
+  CHECK(o.treats[1][0].hp == 223); // the guardian ate it
+  CHECK(o.treats[1][1].hp == 250); // the counter-er never got hit...
+  CHECK(LogCount("\"kind\":\"counter\"") == 0); // ...so it never countered
+  // The attacker is only down by the ward's own Berry Bounce swing (dis: 13).
+  CHECK(o.treats[0][0].hp == 237);
+}
+
+// A reflect CANNOT ITSELF BE COUNTERED -- it is not a move. Both sides hold a
+// counter stance and both swing: exactly TWO counter entries (one per blow), not
+// four, and certainly not a recursion.
+ApplyVec MakeVec_CounterReflectNotCountered() {
+  ApplyVec v{};
+  v.name = "counter_reflect_not_countered";
+  duel::DuelState s = MakeState(1, 1);
+  const uint8_t mB[] = {8}, cB[] = {0};  // Berry Bounce (counter 20), speed 46
+  const uint8_t mR[] = {21}, cR[] = {0}; // Bouncing Barrage (counter 24), speed 45
+  SetTreat(s, 0, 0, 250, 250, 3, 6, 1, mB, cB);
+  SetTreat(s, 1, 0, 250, 250, 3, 6, 1, mR, cR);
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdInit(v.ord);
+  OrdSet(v.ord, 1, 0, 0, 0, 0);
+  OrdSet(v.ord, 1, 1, 0, 0, 0);
+  v.ordLen = duel::wire::OrdersLen(1);
+  return v;
+}
+
+void test_apply_counter_reflect_cannot_be_countered() {
+  ApplyVec v = MakeVec_CounterReflectNotCountered();
+  CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
+  duel::DuelState o{};
+  CHECK(DecodeOut(&o));
+  // Blocking vs Blocking = neutral throughout. Side 0 swings first (speed 46):
+  // 20 lands, side 1 reflects (20*102)>>8 = 7. Side 1 then swings: 24 lands,
+  // side 0 reflects (24*102)>>8 = 9.
+  CHECK(o.treats[1][0].hp == 221); // 250 - 20 - 9
+  CHECK(o.treats[0][0].hp == 219); // 250 - 7 - 24
+  CHECK(LogCount("\"kind\":\"counter\"") == 2); // ONE per blow. No recursion.
+}
+
+// The reflect goes through the attacker's own SHIELD (an absorb pool absorbs
+// anything -- it does not care where the damage came from).
+ApplyVec MakeVec_CounterReflectAbsorbed() {
+  ApplyVec v{};
+  v.name = "counter_reflect_absorbed_by_shield";
+  duel::DuelState s = MakeState(1, 1);
+  const uint8_t mH[] = {24}, cH[] = {0};
+  const uint8_t mC[] = {8}, cC[] = {0};
+  SetTreat(s, 0, 0, 250, 250, 3, 6, 1, mH, cH, /*shield=*/20);
+  SetTreat(s, 1, 0, 250, 250, 3, 6, 1, mC, cC);
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdInit(v.ord);
+  OrdSet(v.ord, 1, 0, 0, 0, 0);
+  OrdSet(v.ord, 1, 1, 0, 0, 0);
+  v.ordLen = duel::wire::OrdersLen(1);
+  return v;
+}
+
+void test_apply_counter_reflect_absorbed_by_shield() {
+  ApplyVec v = MakeVec_CounterReflectAbsorbed();
+  CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
+  duel::DuelState o{};
+  CHECK(DecodeOut(&o));
+  // Berry Bounce lands 13 -> the 20-pool eats it all (7 left, hp untouched).
+  // The attacker's own 39 then reflects 15 -> the 7 remaining points are eaten,
+  // and only 8 reaches hp.
+  CHECK(o.treats[0][0].hp == 242);
+  CHECK(o.treats[0][0].shield == 0);
+  CHECK(LogHas("\"kind\":\"counter\",\"move\":8,\"target\":0,\"via\":255,"
+               "\"clash\":\"neu\",\"dmg\":15,\"blocked\":false,\"absorbed\":7,"
+               "\"targetHp\":242,\"ko\":false}"));
+}
+
+// A reflect CAN KO the attacker (it is real damage, and the win check sees it).
+ApplyVec MakeVec_CounterReflectKos() {
+  ApplyVec v{};
+  v.name = "counter_reflect_kos_attacker";
+  duel::DuelState s = MakeState(1, 1);
+  const uint8_t mH[] = {24}, cH[] = {0};
+  const uint8_t mC[] = {8}, cC[] = {0};
+  SetTreat(s, 0, 0, 20, 250, 3, 6, 1, mH, cH); // 20 hp: eats 13, then reflects 15
+  SetTreat(s, 1, 0, 250, 250, 3, 6, 1, mC, cC);
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdInit(v.ord);
+  OrdSet(v.ord, 1, 0, 0, 0, 0);
+  OrdSet(v.ord, 1, 1, 0, 0, 0);
+  v.ordLen = duel::wire::OrdersLen(1);
+  return v;
+}
+
+void test_apply_counter_reflect_can_ko() {
+  ApplyVec v = MakeVec_CounterReflectKos();
+  CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
+  duel::DuelState o{};
+  CHECK(DecodeOut(&o));
+  CHECK(o.treats[0][0].hp == 0);   // 20 - 13 = 7, then the 15-point reflect
+  CHECK(o.treats[1][0].hp == 211); // the counter-er still took the blow
+  CHECK(LogHas("\"kind\":\"counter\",\"move\":8,\"target\":0,\"via\":255,"
+               "\"clash\":\"neu\",\"dmg\":15,\"blocked\":false,\"absorbed\":0,"
+               "\"targetHp\":0,\"ko\":true}"));
+  CHECK(o.phase == duel::wire::kPhaseSide1Won); // the win check sees the reflect
+}
+
+// A KILLING blow disarms the riposte: a counter-stance treat FELLED by the blow
+// does not reflect (KO permanence -- a dead treat takes no further part in the
+// round, the same rule that stops a dead guardian intercepting). Burst is the
+// legible answer to a counter.
+ApplyVec MakeVec_CounterKilledDoesNotReflect() {
+  ApplyVec v{};
+  v.name = "counter_killed_does_not_reflect";
+  duel::DuelState s = MakeState(1, 1);
+  const uint8_t mJ[] = {26}, cJ[] = {0}; // Vicious Jawbreaker (Heavy 40), speed 28
+  const uint8_t mC[] = {8}, cC[] = {0};  // Berry Bounce (counter), speed 46
+  SetTreat(s, 0, 0, 250, 250, 3, 6, 1, mJ, cJ);
+  SetTreat(s, 1, 0, 30, 250, 3, 6, 1, mC, cC); // 30 hp vs a 60-damage blow
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdInit(v.ord);
+  OrdSet(v.ord, 1, 0, 0, 0, 0);
+  OrdSet(v.ord, 1, 1, 0, 0, 0);
+  v.ordLen = duel::wire::OrdersLen(1);
+  return v;
+}
+
+void test_apply_counter_killed_does_not_reflect() {
+  ApplyVec v = MakeVec_CounterKilledDoesNotReflect();
+  CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
+  duel::DuelState o{};
+  CHECK(DecodeOut(&o));
+  CHECK(o.treats[1][0].hp == 0);                // (40*384*256)>>16 = 60 >= 30
+  CHECK(o.treats[0][0].hp == 237);              // only Berry Bounce's own 13
+  CHECK(LogCount("\"kind\":\"counter\"") == 0); // the dead do not riposte
+  CHECK(o.phase == duel::wire::kPhaseSide0Won);
+}
+
+// --- Sudden death vs the new verbs ---
+//
+// The chip is the ARENA COLLAPSING, not an attack: it ignores Guard (no
+// redirect) and Shield (nothing to absorb) alike. Round 12, chip 6.
+ApplyVec MakeVec_SuddenDeathIgnoresGuardShield() {
+  ApplyVec v{};
+  v.name = "sudden_death_ignores_guard_and_shield";
+  duel::DuelState s = MakeState(2, 1, 12);
+  const uint8_t mG[] = {1}, cG[] = {0};
+  const uint8_t mH[] = {24}, cH[] = {0};
+  SetTreat(s, 0, 0, 250, 250, 3, 6, 1, mH, cH);
+  SetTreat(s, 0, 1, 250, 250, 3, 6, 1, mH, cH);
+  SetTreat(s, 1, 0, 250, 250, 3, 6, 1, mG, cG);              // guards slot 1
+  SetTreat(s, 1, 1, 250, 250, 3, 6, 1, mH, cH, /*shield=*/50); // and is shielded
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdInit(v.ord);
+  OrdSet(v.ord, 2, 0, 0, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  OrdSet(v.ord, 2, 0, 1, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  OrdSet(v.ord, 2, 1, 0, 0, 1); // the guard is up...
+  OrdSet(v.ord, 2, 1, 1, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  v.ordLen = duel::wire::OrdersLen(2);
+  return v;
+}
+
+void test_apply_sudden_death_ignores_guard_and_shield() {
+  ApplyVec v = MakeVec_SuddenDeathIgnoresGuardShield();
+  CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
+  duel::DuelState o{};
+  CHECK(DecodeOut(&o));
+  CHECK(o.treats[1][0].hp == 244);    // the guardian is chipped like anyone else
+  CHECK(o.treats[1][1].hp == 244);    // ...and the ward takes its OWN chip
+  CHECK(o.treats[1][1].shield == 50); // the pool is untouched: nothing to absorb
+  CHECK(o.treats[0][0].hp == 244);
+  CHECK(LogCount("\"kind\":\"chip\"") == 4);
+}
+
 // ---- Task 4 Step 3: self-play soak + fuzz (test-side PRNG only) ----
 
 uint32_t g_rng = 0x1234567u;
@@ -1968,11 +2579,31 @@ void test_selfplay_soak() {
           if (nready == 0 || (Xr() & 1u)) {
             OrdSet(ord, teamSize, side, slot, duel::wire::kActionRecover,
                    duel::wire::kTargetNone);
-          } else {
-            const uint8_t a = ready[XrN(static_cast<uint32_t>(nready))];
-            const uint8_t tgt = static_cast<uint8_t>(XrN(teamSize));
-            OrdSet(ord, teamSize, side, slot, a, tgt);
+            continue;
           }
+          const uint8_t a = ready[XrN(static_cast<uint32_t>(nready))];
+          // A GUARD move (combat-depth Task 4) names a LIVING ALLY that is not
+          // itself -- an enemy slot is not a legal target for it. If the side
+          // has no such ally (a 1v1, or the last treat standing), the move has
+          // no legal order at all this round and Recover is the only line.
+          if (duel::kDuelMoves[t.moves[a]].effect == duel::kEffGuard) {
+            uint8_t allies[duel::wire::kMaxTeamSize];
+            uint32_t nAllies = 0;
+            for (uint32_t k = 0; k < teamSize; ++k) {
+              if (k != slot && s.treats[side][k].hp > 0) {
+                allies[nAllies++] = static_cast<uint8_t>(k);
+              }
+            }
+            if (nAllies == 0) {
+              OrdSet(ord, teamSize, side, slot, duel::wire::kActionRecover,
+                     duel::wire::kTargetNone);
+              continue;
+            }
+            OrdSet(ord, teamSize, side, slot, a, allies[XrN(nAllies)]);
+            continue;
+          }
+          OrdSet(ord, teamSize, side, slot, a,
+                 static_cast<uint8_t>(XrN(teamSize)));
         }
       }
       const uint32_t ordLen = duel::wire::OrdersLen(teamSize);
@@ -2059,7 +2690,7 @@ void test_fuzz_no_crash() {
 // ---- Task 2 (combat depth): the hard log cap ----
 //
 // RUN ONLY BY duel_tests_logcap (`--logcap-only`), the twin binary build.sh
-// compiles with -DDUEL_LOG_CAP=320. jsonout.h drops past-cap writes, so a
+// compiles with -DDUEL_LOG_CAP=400. jsonout.h drops past-cap writes, so a
 // round whose log doesn't fit must be REJECTED (-1, both output buffers
 // cleared) rather than emitted as truncated JSON — the client's
 // JSON.parse(readLog()) would throw on it. At the shipped 32 KiB cap no legal
@@ -2074,7 +2705,7 @@ void test_fuzz_no_crash() {
 void test_apply_log_overflow_rejects() {
   const uint8_t m[] = {24}, c[] = {0};
 
-  // Positive control: a 1v1 recover-only round's log is 279 bytes — it fits.
+  // Positive control: a 1v1 recover-only round's log is 325 bytes — it fits.
   {
     duel::DuelState s = MakeState(1, 1);
     SetTreat(s, 0, 0, 250, 250, 1, 1, 1, m, c);
@@ -2088,7 +2719,7 @@ void test_apply_log_overflow_rejects() {
     CHECK(duel_out_len() > 0);
   }
 
-  // A 3v3 round's log is ~771 bytes — it does NOT fit. Reject, don't truncate:
+  // A 3v3 round's log is 909 bytes — it does NOT fit. Reject, don't truncate:
   // rc -1 with BOTH output buffers cleared, so a rejected round leaves the
   // caller's state untouched (same contract as every other reject path).
   {
@@ -2160,6 +2791,25 @@ void DumpGolden() {
   DumpApplyVector(MakeVec_RoundCapUnequalFinal());
   DumpApplyVector(MakeVec_RoundCapEqualFinal());
   DumpApplyVector(MakeVec_Deterministic());
+  // combat-depth Task 4: Guard, Shield, Counter.
+  DumpApplyVector(MakeVec_GuardIntercept());
+  DumpApplyVector(MakeVec_GuardRejectSelf());
+  DumpApplyVector(MakeVec_GuardRejectDeadAlly());
+  DumpApplyVector(MakeVec_GuardRejectOutOfRange());
+  DumpApplyVector(MakeVec_GuardTieLowestSlot());
+  DumpApplyVector(MakeVec_GuardDeadGuardianLapses());
+  DumpApplyVector(MakeVec_GuardNoChain());
+  DumpApplyVector(MakeVec_ShieldRaiseAbsorb());
+  DumpApplyVector(MakeVec_ShieldPersistRound1());
+  DumpApplyVector(MakeVec_ShieldPersistRound2());
+  DumpApplyVector(MakeVec_ShieldClamp255());
+  DumpApplyVector(MakeVec_CounterReflects());
+  DumpApplyVector(MakeVec_CounterNoneOnRedirect());
+  DumpApplyVector(MakeVec_CounterReflectNotCountered());
+  DumpApplyVector(MakeVec_CounterReflectAbsorbed());
+  DumpApplyVector(MakeVec_CounterReflectKos());
+  DumpApplyVector(MakeVec_CounterKilledDoesNotReflect());
+  DumpApplyVector(MakeVec_SuddenDeathIgnoresGuardShield());
 }
 
 } // namespace
@@ -2210,6 +2860,21 @@ int main(int argc, char** argv) {
   RUN(test_apply_sudden_death_terminates_and_mutual_ko_is_a_draw);
   RUN(test_apply_round_cap);
   RUN(test_apply_deterministic);
+  RUN(test_apply_guard_intercepts);
+  RUN(test_apply_guard_rejects_bad_target);
+  RUN(test_apply_guard_lowest_slot_wins_tie);
+  RUN(test_apply_guard_dead_guardian_cannot_intercept);
+  RUN(test_apply_guard_redirect_never_chains);
+  RUN(test_apply_shield_raise_and_absorb);
+  RUN(test_apply_shield_persists_between_rounds);
+  RUN(test_apply_shield_clamps_at_255);
+  RUN(test_apply_counter_reflects);
+  RUN(test_apply_counter_none_on_redirected_blow);
+  RUN(test_apply_counter_reflect_cannot_be_countered);
+  RUN(test_apply_counter_reflect_absorbed_by_shield);
+  RUN(test_apply_counter_reflect_can_ko);
+  RUN(test_apply_counter_killed_does_not_reflect);
+  RUN(test_apply_sudden_death_ignores_guard_and_shield);
   RUN(test_selfplay_soak);
   RUN(test_fuzz_no_crash);
 
