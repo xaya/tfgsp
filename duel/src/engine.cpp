@@ -71,13 +71,38 @@ uint32_t g_arenaUsed = 0;
 // Sized for the JSON view/log output (Tasks 3-4); a state buffer is at most
 // a few hundred bytes and its JSON rendering a small multiple of that.
 constexpr uint32_t kOutCap = 4096;
-// Log capacity. Today's worst case is 2*team_size (max 5) = 10 action entries,
-// each of which can spawn a counter-riposte entry of its own (combat-depth Task
-// 4), + 10 sudden-death chip entries = 30 entries * ~150 B each + the
-// {"round":N,"actions":[...],"phase":P} wrapper ≈ 4.5 KB, but the headroom to
-// 32 KiB is deliberate: AoE (Task 5) multiplies entries per action, and
-// running out of log buffer is NOT a truncation we can ship (the client's
-// JSON.parse would throw) — duel_apply hard-rejects on overflow instead, so
+//
+// LOG CAPACITY -- the real worst-case arithmetic, recomputed for AoE
+// (combat-depth Task 5; the plan's "10 actors x 5 victims = 50 entries" was an
+// UNDERCOUNT -- it forgot that every splashed victim can also COUNTER).
+//
+// Longest possible entry (WriteLogEntry's schema, every field at its widest --
+// kind "counter"/"recover" = 9 bytes with quotes, move/target/via/absorbed <=
+// 255 = 3 digits, dmg <= 108 (the round-29 sudden-death chip) = 3, targetHp <=
+// 290 = 3, clash "adv" = 5, blocked/ko "false" = 5), plus the comma that
+// separates it from the previous entry:
+//   {"side":0,"slot":0,"kind":"counter","move":255,"target":255,"via":255,
+//    "clash":"adv","dmg":108,"blocked":false,"absorbed":255,"targetHp":290,
+//    "ko":false}                                          = 151 B  (+1 comma)
+//                                                         = 152 B / entry
+// (Cross-check: a 1v1 recover-only round measures 325 B = 2 x 145 + 1 comma +
+// the 34 B {"round":N,"actions":[ ... ],"phase":P} wrapper. The formula holds.)
+//
+// Worst case at the biggest legal shape (team_size 5, i.e. 2 x 5 = 10 actors),
+// as a strict OVER-count -- assume every actor is an AoE that splashes all 5
+// enemies AND every one of those 5 victims survives and ripostes:
+//   10 actors x (5 aoe entries + 5 counter entries)      = 100 entries
+//   + one sudden-death chip per living treat (10)        =  10 entries
+//                                                        = 110 entries
+//   110 x 152 B + the 34 B wrapper                       = 16,754 B
+// -- half of the 32 KiB cap, so a legal round can never reach it. (The truly
+// reachable maximum is lower still: a treat's move is either an AoE or a
+// counter, never both, so the peak is 5 AoE casters x (5 + 5) + 5 single swings
+// + 10 chips = 65 entries ~ 9.9 KB. The over-count is what we size against.)
+// static_assert'd below, against the same formula the code uses.
+//
+// Running out of log buffer is NOT a truncation we can ship (the client's
+// JSON.parse would throw) -- duel_apply hard-rejects on overflow instead, so
 // this cap is a consensus-visible number, not a hint.
 //
 // DUEL_LOG_CAP is a build-time override with exactly ONE user: build.sh's
@@ -89,6 +114,20 @@ constexpr uint32_t kOutCap = 4096;
 #define DUEL_LOG_CAP 32768
 #endif
 constexpr uint32_t kLogCap = DUEL_LOG_CAP;
+
+// The worst case above, as code. Asserted against the SHIPPED 32768 rather than
+// kLogCap, because duel_tests_logcap compiles this same file with a deliberately
+// tiny kLogCap (that is the whole point of it) and must still build.
+constexpr uint32_t kLogShippedCap = 32768;
+constexpr uint32_t kLogMaxEntryLen = 152;   // widest entry + its separating comma
+constexpr uint32_t kLogWrapperLen = 34;     // {"round":N,"actions":[ ... ],"phase":P}
+constexpr uint32_t kLogActors = 2 * wire::kMaxTeamSize;          // 10 at team_size 5
+constexpr uint32_t kLogEntriesPerActor = 2 * wire::kMaxTeamSize; // <= 5 aoe + 5 counters
+constexpr uint32_t kLogWorstEntries =
+    kLogActors * kLogEntriesPerActor + kLogActors; // + one sudden-death chip each
+static_assert(kLogWorstEntries * kLogMaxEntryLen + kLogWrapperLen <= kLogShippedCap,
+              "the worst-case round log no longer fits kLogCap -- a legal round would be "
+              "REJECTED (see the arithmetic above)");
 uint8_t g_out[kOutCap];
 uint32_t g_outLen = 0;
 uint8_t g_log[kLogCap];
@@ -261,6 +300,27 @@ const char* ClashLabel(uint16_t mult) {
     return "dis";
   }
   return "neu";
+}
+
+// THE ONE DAMAGE FORMULA. Every factor is a /256 fixed-point fraction, and all three are
+// FUSED into a SINGLE >>24 truncation -- never chained >>8 shifts, whose double
+// truncation drifts by a point on some inputs, and native/wasm must agree bit-for-bit.
+//   power  <= 60         (gen-stats.mjs bounds every authored power to [10,60])
+//   clash  <= adv 384    (the pentagon: 384 adv / 170 dis / 256 neutral)
+//   splash == kSplashFull for a single-target blow, kTun.aoe_pct_256 for an AoE
+//            (combat-depth Task 5 -- an AoE trades per-target damage for reach)
+//   mitig  == kSplashFull (nothing), 256 - block_pct_256 (the victim BLOCKED), or
+//            guard_pct_256 (a guardian intercepted it)
+// kSplashFull == 256 is an exact identity here: (x * 256) >> 24 == x >> 16, so a
+// single-target blow's damage is byte-for-byte what the pre-AoE two-factor form produced.
+constexpr uint32_t kSplashFull = 256;
+static_assert(60u * static_cast<uint64_t>(kTun.adv_mult_256) *
+                      (kTun.aoe_pct_256 > kSplashFull ? kTun.aoe_pct_256 : kSplashFull) *
+                      (kTun.guard_pct_256 > kSplashFull ? kTun.guard_pct_256 : kSplashFull) <=
+                  0xFFFFFFFFull,
+              "BlowDamage's fused multiply overflows u32 at the current tunables");
+uint32_t BlowDamage(uint32_t power, uint32_t clash, uint32_t splash, uint32_t mitig) {
+  return (power * clash * splash * mitig) >> 24;
 }
 
 // Append one round-log action entry (schema in the plan's "Log JSON"). `move`
@@ -566,7 +626,8 @@ int32_t duel_apply(const uint8_t* st, uint32_t stLen, const uint8_t* ord,
         if (a >= tr.move_count || tr.cooldowns[a] != 0) {
           return -1;
         }
-        if (duel::kDuelMoves[tr.moves[a]].effect == duel::kEffGuard) {
+        const uint8_t moveEff = duel::kDuelMoves[tr.moves[a]].effect;
+        if (moveEff == duel::kEffGuard) {
           // GUARD (combat-depth Task 4) is the one move whose `target` names an
           // ALLY ON ITS OWN SIDE, not an enemy: in range, ALIVE (there is
           // nothing to cover otherwise), and NOT ITSELF -- self-guard is
@@ -575,11 +636,23 @@ int32_t duel_apply(const uint8_t* st, uint32_t stLen, const uint8_t* ord,
           if (t >= teamSize || t == slot || s.treats[side][t].hp == 0) {
             return -1;
           }
+        } else if (moveEff == duel::kEffAoe) {
+          // AOE (combat-depth Task 5) names NOBODY -- it hits every living enemy
+          // -- so its target byte MUST be exactly kTargetAll. Accepting an AoE
+          // "aimed" at a slot and then ignoring the byte would give ONE logical
+          // order MANY byte-encodings, and game channels SIGN order bytes: one
+          // encoding per logical order is the contract. (It needs no living
+          // enemy to be legal: with none left the spray simply whiffs.)
+          if (t != wire::kTargetAll) {
+            return -1;
+          }
         } else if (t >= teamSize) {
-          // Every other move aims at an enemy slot. (A `shield` deals no damage
-          // and ignores this byte entirely -- it is still range-checked, and its
-          // log entry always reads target 255, so the ignored value can never
-          // reach the state or the log.)
+          // Every other move aims at an enemy slot -- and, the other direction of
+          // that same canonical rule, must NOT use kTargetAll: 0xFE is >= any
+          // legal team_size (max 5), so this one check rejects it. (A `shield`
+          // deals no damage and ignores this byte entirely -- it is still
+          // range-checked, and its log entry always reads target 255, so the
+          // ignored value can never reach the state or the log.)
           return -1;
         }
       }
@@ -749,6 +822,125 @@ int32_t duel_apply(const uint8_t* st, uint32_t stLen, const uint8_t* ord,
       continue;
     }
 
+    const uint8_t atkType = duel::kDuelMoves[mvIdx].type;
+    const uint32_t power = duel::kDuelMoves[mvIdx].power;
+
+    // The clash multiplier against the enemy in `defSlot`, read off THAT treat's OWN
+    // picked move (Recover has no move type at all -> neutral). Single-target reads it
+    // once; an AoE reads it PER VICTIM -- which is the whole point of "clash per target".
+    auto ClashVs = [&](uint32_t defSlot) -> uint16_t {
+      const uint8_t defAct = action[enemy][defSlot];
+      uint8_t defClash = kClashNeutral;
+      if (defAct != wire::kActionRecover) {
+        defClash = duel::kDuelMoves[s.treats[enemy][defSlot].moves[defAct]].type;
+      }
+      return ClashMult(atkType, defClash);
+    };
+
+    // ==== THE FIXED INTERACTION ORDER (combat-depth Task 4) ====
+    //   1. GUARD REDIRECT (single-target damage only -- an AoE ignores it)
+    //   2. SHIELD ABSORB  (on whoever FINALLY receives the blow)
+    //   3. HP
+    // and then the COUNTER fires off `landed` -- the force that reached the
+    // final recipient, BEFORE its shield ate any of it. Nothing here reorders.
+    //
+    // Steps 2, 3 and the counter are THIS lambda -- the single place damage ever reaches
+    // a treat. The single-target path and the AoE path (Task 5) both go through it
+    // verbatim, which is exactly why "a counter fires iff the FINAL RECIPIENT's own
+    // picked move is a counter" holds for an AoE with NO special case: AoE beats Guard;
+    // Counter beats AoE.
+    //
+    // A recipient FELLED by the blow does not riposte: KO is permanent, and a
+    // dead treat takes no further part in the round (the same rule that stops a
+    // dead guardian intercepting). Burst is the legible answer to a counter.
+    //
+    // The reflect is counter_pct of `landed` -- the blow's force, NOT the hp it
+    // actually drained -- so your own shield holding does not silently disarm
+    // your counter ("you swung at me, so you get punished"). It ignores clash
+    // and guard, goes through the attacker's own shield (an absorb pool absorbs
+    // anything), can KO, and can NEVER itself be countered: it is not a move, so
+    // nothing re-enters this lambda.
+    auto LandBlow = [&](const char* kind, uint32_t tgt, uint32_t rcvSlot, uint32_t via,
+                        uint16_t mult, uint32_t landed, bool blocked) {
+      TreatState& rcv = s.treats[enemy][rcvSlot];
+      // 2. SHIELD ABSORB, on whoever finally receives it. The EXCESS CARRIES
+      // THROUGH to hp -- a shield blunts a blow, it does not stop it.
+      const uint32_t absorbed = (rcv.shield < landed) ? rcv.shield : landed;
+      rcv.shield = static_cast<uint8_t>(rcv.shield - absorbed);
+      const uint32_t toHp = landed - absorbed;
+      // 3. HP.
+      const uint16_t newHp =
+          (rcv.hp > toHp) ? static_cast<uint16_t>(rcv.hp - toHp) : 0;
+      rcv.hp = newHp;
+      WriteLogEntry(&log, nEntries++ == 0, aS, aL, kind, mvIdx, tgt,
+                    ClashLabel(mult), landed, blocked, newHp, newHp == 0, absorbed,
+                    via);
+      if (newHp == 0) {
+        return; // the dead do not riposte
+      }
+      const uint8_t rcvAct = action[enemy][rcvSlot];
+      if (rcvAct == wire::kActionRecover ||
+          duel::kDuelMoves[rcv.moves[rcvAct]].effect != duel::kEffCounter) {
+        return;
+      }
+      const uint32_t reflect = (landed * kTun.counter_pct_256) >> 8;
+      const uint32_t rAbsorbed = (actor.shield < reflect) ? actor.shield : reflect;
+      actor.shield = static_cast<uint8_t>(actor.shield - rAbsorbed);
+      const uint32_t rToHp = reflect - rAbsorbed;
+      const uint16_t atkHp =
+          (actor.hp > rToHp) ? static_cast<uint16_t>(actor.hp - rToHp) : 0;
+      actor.hp = atkHp;
+      WriteLogEntry(&log, nEntries++ == 0, enemy, rcvSlot, "counter",
+                    rcv.moves[rcvAct], aL, "neu", reflect, false, atkHp,
+                    atkHp == 0, rAbsorbed);
+    };
+
+    // AOE (combat-depth Task 5). It names NOBODY (its target byte is kTargetAll, checked
+    // above) and hits EVERY LIVING ENEMY, in SLOT ORDER, at kTun.aoe_pct_256 of power.
+    // This is the move that breaks the old proof that spreading damage is never better
+    // than concentrating it.
+    //   - CLASH IS PER VICTIM, against that victim's own picked move (ClashVs above).
+    //   - BLOCK applies per victim; SHIELD absorbs per victim (LandBlow).
+    //   - GUARD IS IGNORED: the spray hits the ward directly and the guardian eats only
+    //     its OWN splash. That is what makes AoE the answer to a Guard wall.
+    //   - COUNTER STILL FIRES, per victim (LandBlow, no special case). AoE beats Guard;
+    //     Counter beats AoE -- spray into three counter-stances and you pay three times.
+    //   - If a counter FELLS THE CASTER mid-spray, the spray STOPS with it: KO is
+    //     permanent and a dead treat takes no further part in the round (the same rule
+    //     that stops a dead guardian intercepting). A counter on a low slot can shield
+    //     the rest of its team from the rest of the blast.
+    //   - If EVERY enemy is already dead (an earlier actor this round felled the last
+    //     one), the spray whiffs as exactly ONE "skip" -- and still burns its cooldown.
+    if (eff == duel::kEffAoe) {
+      bool anyVictim = false;
+      for (uint32_t vSlot = 0; vSlot < teamSize; ++vSlot) {
+        if (actor.hp == 0) {
+          break; // felled by a victim's counter: the rest of the spray never happens
+        }
+        if (s.treats[enemy][vSlot].hp == 0) {
+          continue; // KO is permanent: a corpse is not splashed and logs nothing
+        }
+        anyVictim = true;
+        const uint16_t mult = ClashVs(vSlot);
+        uint32_t mitig = kSplashFull;
+        bool blocked = false;
+        if (blockStance[enemy][vSlot]) {
+          blocked = true;
+          mitig = 256u - kTun.block_pct_256;
+        }
+        const uint32_t landed = BlowDamage(power, mult, kTun.aoe_pct_256, mitig);
+        // kind "aoe", never "hit": the client has to be able to group ONE swing's
+        // victims, and "hit" must keep meaning single-target. `target` is the victim
+        // itself and `via` is always 255 -- no guardian ever stands in front of a spray.
+        LandBlow("aoe", vSlot, vSlot, wire::kTargetNone, mult, landed, blocked);
+      }
+      if (!anyVictim) {
+        WriteLogEntry(&log, nEntries++ == 0, aS, aL, "skip", mvIdx,
+                      wire::kTargetNone, "neu", 0, false, 0, false);
+      }
+      continue;
+    }
+
     // FIZZLE-ON-DEATH (combat-depth Task 2). The blow was aimed at THAT treat;
     // if it is already dead when the swing lands, the swing WHIFFS. It is not
     // redirected onto some other enemy, and the overkill is not refunded --
@@ -767,21 +959,7 @@ int32_t duel_apply(const uint8_t* st, uint32_t stLen, const uint8_t* ord,
       continue;
     }
 
-    const TreatState& tgt = s.treats[enemy][tgtSlot];
-    const uint8_t atkType = duel::kDuelMoves[mvIdx].type;
-    uint8_t tgtClash = kClashNeutral;
-    const uint8_t tgtAct = action[enemy][tgtSlot];
-    if (tgtAct != wire::kActionRecover) {
-      tgtClash = duel::kDuelMoves[tgt.moves[tgtAct]].type;
-    }
-    const uint16_t mult = ClashMult(atkType, tgtClash);
-
-    // ==== THE FIXED INTERACTION ORDER (combat-depth Task 4) ====
-    //   1. GUARD REDIRECT (single-target damage only)
-    //   2. SHIELD ABSORB  (on whoever FINALLY receives the blow)
-    //   3. HP
-    // and then the COUNTER fires off `landed` -- the force that reached the
-    // final recipient, BEFORE its shield ate any of it. Nothing here reorders.
+    const uint16_t mult = ClashVs(tgtSlot);
 
     // 1. GUARD REDIRECT. The blow lands on the guardian instead, at guard_pct.
     // It is SINGLE-HOP and NEVER CHAINED: if A guards B and B guards C, a blow
@@ -795,69 +973,19 @@ int32_t duel_apply(const uint8_t* st, uint32_t stLen, const uint8_t* ord,
     // block stance is irrelevant, because the ward is not the one being hit.
     uint32_t rcvSlot = tgtSlot;
     uint32_t via = wire::kTargetNone;
-    uint32_t pct = 256; // no mitigation
+    uint32_t mitig = kSplashFull; // no mitigation
     bool blocked = false;
     const uint8_t guardian = guardedBy[enemy][tgtSlot];
     if (guardian != kNoGuardian && s.treats[enemy][guardian].hp > 0) {
       rcvSlot = guardian;
       via = guardian;
-      pct = kTun.guard_pct_256;
+      mitig = kTun.guard_pct_256;
     } else if (blockStance[enemy][tgtSlot]) {
       blocked = true;
-      pct = 256u - kTun.block_pct_256;
+      mitig = 256u - kTun.block_pct_256;
     }
-    // ONE FUSED MULTIPLY, never two chained >> 8 shifts: double truncation
-    // drifts, and native/wasm must agree bit-for-bit. Widths: power <= 60,
-    // mult <= 384, pct <= 256 -> at most 5,898,240, comfortably inside u32.
-    const uint32_t landed =
-        (static_cast<uint32_t>(duel::kDuelMoves[mvIdx].power) * mult * pct) >> 16;
-
-    TreatState& rcv = s.treats[enemy][rcvSlot];
-    // 2. SHIELD ABSORB, on whoever finally receives it. The EXCESS CARRIES
-    // THROUGH to hp -- a shield blunts a blow, it does not stop it.
-    const uint32_t absorbed = (rcv.shield < landed) ? rcv.shield : landed;
-    rcv.shield = static_cast<uint8_t>(rcv.shield - absorbed);
-    const uint32_t toHp = landed - absorbed;
-    // 3. HP.
-    const uint16_t newHp =
-        (rcv.hp > toHp) ? static_cast<uint16_t>(rcv.hp - toHp) : 0;
-    rcv.hp = newHp;
-    WriteLogEntry(&log, nEntries++ == 0, aS, aL, "hit", mvIdx, tgtSlot,
-                  ClashLabel(mult), landed, blocked, newHp, newHp == 0, absorbed,
-                  via);
-
-    // COUNTER. It fires iff the FINAL RECIPIENT's own picked move is a counter
-    // -- keying it off the recipient rather than the treat that was AIMED at is
-    // exactly what makes a redirected blow counter-free with no special case (a
-    // guardian's move is `guard`, never `counter`).
-    //
-    // A recipient FELLED by the blow does not riposte: KO is permanent, and a
-    // dead treat takes no further part in the round (the same rule that stops a
-    // dead guardian intercepting). Burst is the legible answer to a counter.
-    //
-    // The reflect is counter_pct of `landed` -- the blow's force, NOT the hp it
-    // actually drained -- so your own shield holding does not silently disarm
-    // your counter ("you swung at me, so you get punished"). It ignores clash
-    // and guard, goes through the attacker's own shield (an absorb pool absorbs
-    // anything), can KO, and can NEVER itself be countered: it is not a move, so
-    // nothing re-enters this branch.
-    if (newHp > 0) {
-      const uint8_t rcvAct = action[enemy][rcvSlot];
-      if (rcvAct != wire::kActionRecover &&
-          duel::kDuelMoves[rcv.moves[rcvAct]].effect == duel::kEffCounter) {
-        const uint32_t reflect = (landed * kTun.counter_pct_256) >> 8;
-        const uint32_t rAbsorbed =
-            (actor.shield < reflect) ? actor.shield : reflect;
-        actor.shield = static_cast<uint8_t>(actor.shield - rAbsorbed);
-        const uint32_t rToHp = reflect - rAbsorbed;
-        const uint16_t atkHp =
-            (actor.hp > rToHp) ? static_cast<uint16_t>(actor.hp - rToHp) : 0;
-        actor.hp = atkHp;
-        WriteLogEntry(&log, nEntries++ == 0, enemy, rcvSlot, "counter",
-                      rcv.moves[rcvAct], aL, "neu", reflect, false, atkHp,
-                      atkHp == 0, rAbsorbed);
-      }
-    }
+    LandBlow("hit", tgtSlot, rcvSlot, via, mult,
+             BlowDamage(power, mult, kSplashFull, mitig), blocked);
   }
 
   // ---- semantics 5: end-of-round cooldowns (living treats only) ----

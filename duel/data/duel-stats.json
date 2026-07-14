@@ -115,8 +115,8 @@
     "power": 51,
     "speed": 28,
     "cooldown": 3,
-    "effect": "damage",
-    "description": "A jawbreaker packed with popping powder — the biggest bang in the loadout, slow to load."
+    "effect": "aoe",
+    "description": "Lobs a jawbreaker packed with popping powder into the middle of the enemy team — it detonates on EVERY living foe at once, each for about 60% of its force. Pick no target: it catches them all. It goes straight through a Guard, but every foe holding a counter still hits back."
   },
   "628ebc0b-bb19-ee64-68b8-2f66f4b92720": {
     "power": 26,
@@ -157,8 +157,8 @@
     "power": 54,
     "speed": 30,
     "cooldown": 3,
-    "effect": "damage",
-    "description": "Rains gilded chocolate chips down in a devastating downpour — the hardest hit around, slow to wind up."
+    "effect": "aoe",
+    "description": "Rains gilded chocolate chips down over the WHOLE enemy team — every living foe is caught in the downpour, each for about 60% of its force. Pick no target: it catches them all. It goes straight through a Guard, but every foe holding a counter still hits back."
   },
   "9f0df0ed-13a6-84c4-781d-9dbf9741c66e": {
     "power": 29,
@@ -220,8 +220,8 @@
     "power": 51,
     "speed": 56,
     "cooldown": 3,
-    "effect": "damage",
-    "description": "A crackling metallic coating that shocks on contact — unpredictable and painful."
+    "effect": "aoe",
+    "description": "A crackling metallic coating whose charge ARCS to every living foe at once, each for about 60% of its force. Pick no target: the chain finds them all. It goes straight through a Guard, but every foe holding a counter still hits back."
   },
   "bd27fe1c-ce9a-f524-c887-61f9e4d5088b": {
     "power": 25,
@@ -241,8 +241,8 @@
     "power": 51,
     "speed": 69,
     "cooldown": 3,
-    "effect": "damage",
-    "description": "A shimmering hail of golden shot fired from range — punishing reach damage."
+    "effect": "aoe",
+    "description": "Sprays a shimmering hail of golden shot across the whole arena — EVERY living foe is peppered for about 60% of its force. Pick no target: the volley covers them all. It goes straight through a Guard, but every foe holding a counter still hits back."
   },
   "e16531a7-33fd-a3e4-69fd-ff10eba65cb7": {
     "power": 42,
@@ -255,8 +255,8 @@
     "power": 32,
     "speed": 81,
     "cooldown": 1,
-    "effect": "damage",
-    "description": "A fiery cinnamon burst hurled across the arena — stings from a distance."
+    "effect": "aoe",
+    "description": "A fiery cinnamon burst that scatters over EVERY living foe for about 60% of its force — a small splash, but a fast one, and it reaches the whole team. Pick no target. It goes straight through a Guard, but every foe holding a counter still hits back."
   },
   "e55a3d69-9fb4-5194-4812-c2f85e887aca": {
     "power": 45,

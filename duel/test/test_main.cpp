@@ -208,6 +208,10 @@ void test_stats_gen_bounds_and_blocking_count() {
   CHECK(blockingCount >= 5);
 }
 
+// The AoE caster every combat-depth Task 5 vector uses (its section is far below; the
+// stats-table pin immediately after this needs the index too, so it lives up here).
+constexpr uint8_t kAoeMove = 34; // Gold Rush (Distance, power 51, speed 69, cd 3, AOE)
+
 // ---- combat-depth Task 3: kDuelMoves effect/hits/max_uses invariants ----
 //
 // Pins the codegen's contract from the C++ side: every entry's effect is a
@@ -220,6 +224,7 @@ void test_stats_gen_bounds_and_blocking_count() {
 // pin that would fail if a future regeneration ever produced a table that
 // violated it.
 void test_stats_gen_effect_partition_and_limits() {
+  int aoeCount = 0;
   for (uint32_t i = 0; i < duel::wire::kMoveUniverse; ++i) {
     const duel::DuelMoveStat& mv = duel::kDuelMoves[i];
     CHECK(mv.effect <= duel::kEffCounter); // a valid kEff* (0..7)
@@ -231,7 +236,16 @@ void test_stats_gen_effect_partition_and_limits() {
     CHECK(isStance == (mv.type == 4)); // stance <=> Blocking, both directions
     CHECK(mv.hits >= 1 && mv.hits <= 2);
     CHECK(mv.max_uses >= 1); // max_uses <= 255 always holds (uint8_t)
+    if (mv.effect == duel::kEffAoe) {
+      ++aoeCount;
+    }
   }
+  // combat-depth Task 5 authored exactly five AoE moves (Golden Shower of Chips [22],
+  // Conductive Coat [31], Gold Rush [34], Explosive Jawbreaker [16] and the deliberate q2
+  // "small splash" Cinnamon Blast [36]) -- without them the whole AoE resolve path is
+  // unreachable from the compile-time table, so this pins that the DATA landed too.
+  CHECK(aoeCount == 5);
+  CHECK(duel::kDuelMoves[kAoeMove].effect == duel::kEffAoe); // the vectors' caster
 }
 
 // kTun mirrors duel/data/duel-stats.json's top-level "tunables" verbatim
@@ -896,6 +910,7 @@ int LogCount(const char* needle) {
 //   [24] Pop Rock Pop        {power 26, speed 27, cd 0, Heavy}
 //   [25] Bubble Trouble      {power 25, speed 76, cd 0, Distance}
 //   [26] Vicious Jawbreaker  {power 40, speed 28, cd 2, Heavy}
+//   [34] Gold Rush           {power 51, speed 69, cd 3, Distance, AOE}   (Task 5, kAoeMove)
 
 // jsonout: jb_i32 must not overflow when negating INT32_MIN (classic edge; the
 // helper widens to int64 first). Log/view use jb_u32, but this pins jb_i32.
@@ -2530,6 +2545,414 @@ void test_apply_sudden_death_ignores_guard_and_shield() {
   CHECK(LogCount("\"kind\":\"chip\"") == 4);
 }
 
+// ======================= combat-depth Task 5: AoE =======================
+//
+// An AoE hits EVERY LIVING ENEMY, in slot order, at kTun.aoe_pct_256 of the move's
+// power -- and the clash multiplier is computed PER VICTIM, against that victim's OWN
+// picked move. It is the move that breaks the old "spreading damage is never better
+// than concentrating it" proof, and it is the designated answer to a Guard wall:
+//
+//   AoE BEATS GUARD -- it hits the ward directly; the guardian does not intercept.
+//   COUNTER BEATS AoE -- every countering victim reflects, so a caster who sprays into
+//                        a wall of counter-stances pays for it (per victim, no cap).
+//
+// Block applies per victim, shield absorbs per victim, and each victim gets its OWN log
+// entry with kind "aoe" (never "hit" -- the frontend has to be able to group one swing's
+// victims, and "hit" must keep meaning single-target).
+//
+// Every vector below is a 3v3 whose side0/slot0 casts Gold Rush [34] (Distance, power
+// 51, speed 69, cd 3). At aoe_pct_256 = 154 the three clash outcomes give three DIFFERENT
+// numbers, which is exactly what pins "per victim":
+//   adv  (51*384*154*256)>>24 = 46      dis  (51*170*154*256)>>24 = 20
+//   neu  (51*256*154*256)>>24 = 30      dis+block (51*170*154*102)>>24 = 8
+
+// Case A — three living enemies, each holding a DIFFERENT move TYPE, so the three
+// splash damages must all differ. A test whose enemies clashed identically would pass
+// even if the clash were computed ONCE against the wrong treat.
+//   enemy slot0 picks Heavy    -> Distance BEATS Heavy      -> adv -> 46
+//   enemy slot1 picks Speedy   -> Speedy BEATS Distance     -> dis -> 20
+//   enemy slot2 picks Distance -> same type                 -> neu -> 30
+ApplyVec MakeVec_AoePerVictimClash() {
+  ApplyVec v{};
+  v.name = "aoe_per_victim_clash";
+  duel::DuelState s = MakeState(3, 1);
+  const uint8_t mA[] = {kAoeMove}, cA[] = {0}; // the caster
+  const uint8_t mH[] = {24}, cH[] = {0};       // Pop Rock Pop  (Heavy,    speed 27)
+  const uint8_t mS[] = {3}, cS[] = {0};        // Coco Chaos    (Speedy,   speed 98)
+  const uint8_t mD[] = {25}, cD[] = {0};       // Bubble Trouble (Distance, speed 76)
+  SetTreat(s, 0, 0, 250, 250, 3, 6, 1, mA, cA);
+  SetTreat(s, 0, 1, 250, 250, 3, 6, 1, mH, cH);
+  SetTreat(s, 0, 2, 250, 250, 3, 6, 1, mH, cH);
+  SetTreat(s, 1, 0, 250, 250, 3, 6, 1, mH, cH);
+  SetTreat(s, 1, 1, 250, 250, 3, 6, 1, mS, cS);
+  SetTreat(s, 1, 2, 250, 250, 3, 6, 1, mD, cD);
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdInit(v.ord);
+  OrdSet(v.ord, 3, 0, 0, 0, duel::wire::kTargetAll); // the AoE: no slot, kTargetAll
+  OrdSet(v.ord, 3, 0, 1, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  OrdSet(v.ord, 3, 0, 2, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  OrdSet(v.ord, 3, 1, 0, 0, 0); // all three enemies swing back at the caster
+  OrdSet(v.ord, 3, 1, 1, 0, 0);
+  OrdSet(v.ord, 3, 1, 2, 0, 0);
+  v.ordLen = duel::wire::OrdersLen(3);
+  return v;
+}
+
+void test_apply_aoe_hits_every_living_enemy_per_victim_clash() {
+  ApplyVec v = MakeVec_AoePerVictimClash();
+  CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
+  duel::DuelState o{};
+  CHECK(DecodeOut(&o));
+  CHECK(o.treats[1][0].hp == 204); // 250 - 46 (adv: Distance > Heavy)
+  CHECK(o.treats[1][1].hp == 230); // 250 - 20 (dis: Speedy > Distance)
+  CHECK(o.treats[1][2].hp == 220); // 250 - 30 (neu: Distance vs Distance)
+  CHECK(LogCount("\"kind\":\"aoe\"") == 3); // one entry PER VICTIM, never one "hit"
+  CHECK(LogCount("\"kind\":\"hit\"") == 3); // ...and the three enemy swings ARE hits
+  CHECK(LogHas("{\"side\":0,\"slot\":0,\"kind\":\"aoe\",\"move\":34,\"target\":0,"
+               "\"via\":255,\"clash\":\"adv\",\"dmg\":46,\"blocked\":false,"
+               "\"absorbed\":0,\"targetHp\":204,\"ko\":false}"));
+  CHECK(LogHas("{\"side\":0,\"slot\":0,\"kind\":\"aoe\",\"move\":34,\"target\":1,"
+               "\"via\":255,\"clash\":\"dis\",\"dmg\":20,\"blocked\":false,"
+               "\"absorbed\":0,\"targetHp\":230,\"ko\":false}"));
+  CHECK(LogHas("{\"side\":0,\"slot\":0,\"kind\":\"aoe\",\"move\":34,\"target\":2,"
+               "\"via\":255,\"clash\":\"neu\",\"dmg\":30,\"blocked\":false,"
+               "\"absorbed\":0,\"targetHp\":220,\"ko\":false}"));
+  // The victims are splashed in SLOT ORDER (deterministic, not initiative order).
+  const int i0 = LogIndexOf("\"kind\":\"aoe\",\"move\":34,\"target\":0");
+  const int i1 = LogIndexOf("\"kind\":\"aoe\",\"move\":34,\"target\":1");
+  const int i2 = LogIndexOf("\"kind\":\"aoe\",\"move\":34,\"target\":2");
+  CHECK(i0 >= 0 && i1 > i0 && i2 > i1);
+  // The caster (Distance) eats all three swings: Coco Chaos adv 36, Bubble Trouble neu
+  // 25, Pop Rock Pop dis 17 -- and never counters (its own move is an aoe, not a counter).
+  CHECK(o.treats[0][0].hp == 172); // 250 - 36 - 25 - 17
+  CHECK(LogCount("\"kind\":\"counter\"") == 0);
+  CHECK(o.treats[0][0].cooldowns[0] == 3); // Gold Rush's authored cd
+  CHECK(o.phase == duel::wire::kPhaseActive);
+}
+
+// Case B — BLOCK applies per victim, SHIELD absorbs per victim.
+//   slot0 holds a `block` stance (Blocking, so also dis) -> (51*170*154*102)>>24 = 8
+//   slot1 walked in with a 20-point shield pool and recovers -> neu 30, 20 absorbed,
+//         only 10 reaches hp, pool spent exactly
+//   slot2 recovers bare -> neu 30 straight to hp
+ApplyVec MakeVec_AoeBlockAndShieldPerVictim() {
+  ApplyVec v{};
+  v.name = "aoe_block_and_shield_per_victim";
+  duel::DuelState s = MakeState(3, 1);
+  const uint8_t mA[] = {kAoeMove}, cA[] = {0};
+  const uint8_t mB[] = {12}, cB[] = {0}; // Chewy Absorption (Blocking/block, power 15)
+  const uint8_t mH[] = {24}, cH[] = {0};
+  SetTreat(s, 0, 0, 250, 250, 3, 6, 1, mA, cA);
+  SetTreat(s, 0, 1, 250, 250, 3, 6, 1, mH, cH);
+  SetTreat(s, 0, 2, 250, 250, 3, 6, 1, mH, cH);
+  SetTreat(s, 1, 0, 250, 250, 3, 6, 1, mB, cB);
+  SetTreat(s, 1, 1, 250, 250, 3, 6, 1, mH, cH, /*shield=*/20);
+  SetTreat(s, 1, 2, 250, 250, 3, 6, 1, mH, cH);
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdInit(v.ord);
+  OrdSet(v.ord, 3, 0, 0, 0, duel::wire::kTargetAll);
+  OrdSet(v.ord, 3, 0, 1, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  OrdSet(v.ord, 3, 0, 2, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  OrdSet(v.ord, 3, 1, 0, 0, 0); // the blocker swings back too
+  OrdSet(v.ord, 3, 1, 1, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  OrdSet(v.ord, 3, 1, 2, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  v.ordLen = duel::wire::OrdersLen(3);
+  return v;
+}
+
+void test_apply_aoe_block_and_shield_per_victim() {
+  ApplyVec v = MakeVec_AoeBlockAndShieldPerVictim();
+  CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
+  duel::DuelState o{};
+  CHECK(DecodeOut(&o));
+  CHECK(o.treats[1][0].hp == 242);   // 250 - 8 (dis THEN blocked)
+  CHECK(o.treats[1][1].hp == 240);   // 250 - (30 - 20 absorbed)
+  CHECK(o.treats[1][1].shield == 0); // the pool is spent exactly
+  CHECK(o.treats[1][2].hp == 220);   // 250 - 30, bare
+  CHECK(LogHas("\"kind\":\"aoe\",\"move\":34,\"target\":0,\"via\":255,\"clash\":\"dis\","
+               "\"dmg\":8,\"blocked\":true,\"absorbed\":0,\"targetHp\":242,\"ko\":false}"));
+  CHECK(LogHas("\"kind\":\"aoe\",\"move\":34,\"target\":1,\"via\":255,\"clash\":\"neu\","
+               "\"dmg\":30,\"blocked\":false,\"absorbed\":20,\"targetHp\":240,\"ko\":false}"));
+  // Chewy Absorption (Blocking) BEATS Distance: (15*384)>>8 = 22 on the caster.
+  CHECK(o.treats[0][0].hp == 228);
+}
+
+// Case C — AoE IGNORES GUARD. slot0 guards slot1; the spray hits the ward DIRECTLY
+// (`via` 255 on every aoe entry) and the guardian takes only its OWN splash. This is what
+// makes AoE the answer to a Guard wall.
+ApplyVec MakeVec_AoeIgnoresGuard() {
+  ApplyVec v{};
+  v.name = "aoe_ignores_guard";
+  duel::DuelState s = MakeState(3, 1);
+  const uint8_t mA[] = {kAoeMove}, cA[] = {0};
+  const uint8_t mG[] = {1}, cG[] = {0}; // Gilded Bonds (Blocking/guard)
+  const uint8_t mH[] = {24}, cH[] = {0};
+  SetTreat(s, 0, 0, 250, 250, 3, 6, 1, mA, cA);
+  SetTreat(s, 0, 1, 250, 250, 3, 6, 1, mH, cH);
+  SetTreat(s, 0, 2, 250, 250, 3, 6, 1, mH, cH);
+  SetTreat(s, 1, 0, 250, 250, 3, 6, 1, mG, cG); // the GUARDIAN
+  SetTreat(s, 1, 1, 250, 250, 3, 6, 1, mH, cH); // the WARD
+  SetTreat(s, 1, 2, 250, 250, 3, 6, 1, mH, cH);
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdInit(v.ord);
+  OrdSet(v.ord, 3, 0, 0, 0, duel::wire::kTargetAll);
+  OrdSet(v.ord, 3, 0, 1, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  OrdSet(v.ord, 3, 0, 2, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  OrdSet(v.ord, 3, 1, 0, 0, 1); // guard -> ALLY slot 1
+  OrdSet(v.ord, 3, 1, 1, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  OrdSet(v.ord, 3, 1, 2, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  v.ordLen = duel::wire::OrdersLen(3);
+  return v;
+}
+
+void test_apply_aoe_ignores_guard() {
+  ApplyVec v = MakeVec_AoeIgnoresGuard();
+  CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
+  duel::DuelState o{};
+  CHECK(DecodeOut(&o));
+  CHECK(o.treats[1][0].hp == 230); // the guardian takes only its OWN splash (dis 20)
+  CHECK(o.treats[1][1].hp == 220); // the WARD takes its full 30: the guard did NOT intercept
+  CHECK(o.treats[1][2].hp == 220);
+  CHECK(LogCount("\"kind\":\"guard\"") == 1); // the guard action still happened...
+  CHECK(!LogHas("\"kind\":\"aoe\",\"move\":34,\"target\":1,\"via\":0")); // ...and never fired
+  CHECK(LogHas("\"kind\":\"aoe\",\"move\":34,\"target\":1,\"via\":255,\"clash\":\"neu\","
+               "\"dmg\":30,\"blocked\":false,\"absorbed\":0,\"targetHp\":220,\"ko\":false}"));
+  CHECK(o.treats[0][0].hp == 250); // a guard deals no damage
+}
+
+// Case D — COUNTER FIRES PER VICTIM. Two of the three enemies hold counter stances, so
+// the one spray is reflected TWICE at the caster. This must fall out of Task 4's rule
+// ("a counter fires iff the FINAL RECIPIENT's own picked move is a counter") with no
+// special case at all -- AoE beats Guard, Counter beats AoE.
+ApplyVec MakeVec_AoeCounteredPerVictim() {
+  ApplyVec v{};
+  v.name = "aoe_countered_per_victim";
+  duel::DuelState s = MakeState(3, 1);
+  const uint8_t mA[] = {kAoeMove}, cA[] = {0};
+  const uint8_t mC1[] = {8}, cC1[] = {0};  // Berry Bounce      (counter, power 20, speed 46)
+  const uint8_t mC2[] = {21}, cC2[] = {0}; // Bouncing Barrage  (counter, power 24, speed 45)
+  const uint8_t mH[] = {24}, cH[] = {0};
+  SetTreat(s, 0, 0, 250, 250, 3, 6, 1, mA, cA);
+  SetTreat(s, 0, 1, 250, 250, 3, 6, 1, mH, cH);
+  SetTreat(s, 0, 2, 250, 250, 3, 6, 1, mH, cH);
+  SetTreat(s, 1, 0, 250, 250, 3, 6, 1, mC1, cC1);
+  SetTreat(s, 1, 1, 250, 250, 3, 6, 1, mC2, cC2);
+  SetTreat(s, 1, 2, 250, 250, 3, 6, 1, mH, cH);
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdInit(v.ord);
+  OrdSet(v.ord, 3, 0, 0, 0, duel::wire::kTargetAll);
+  OrdSet(v.ord, 3, 0, 1, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  OrdSet(v.ord, 3, 0, 2, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  OrdSet(v.ord, 3, 1, 0, 0, 0); // both counter-stances also swing at the caster
+  OrdSet(v.ord, 3, 1, 1, 0, 0);
+  OrdSet(v.ord, 3, 1, 2, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  v.ordLen = duel::wire::OrdersLen(3);
+  return v;
+}
+
+void test_apply_aoe_triggers_counter_per_victim() {
+  ApplyVec v = MakeVec_AoeCounteredPerVictim();
+  CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
+  duel::DuelState o{};
+  CHECK(DecodeOut(&o));
+  // Both counter-stances are Blocking, so the spray lands dis (20) on each; slot 2
+  // recovers and takes the neutral 30.
+  CHECK(o.treats[1][0].hp == 230);
+  CHECK(o.treats[1][1].hp == 230);
+  CHECK(o.treats[1][2].hp == 220);
+  CHECK(LogCount("\"kind\":\"aoe\"") == 3);
+  CHECK(LogCount("\"kind\":\"counter\"") == 2); // ONE PER COUNTERING VICTIM, not one per swing
+  // The caster pays for spraying into two counters: 2 x (20*102)>>8 = 2 x 7 reflected,
+  // then both Blocking swings land adv on its Distance move (30 + 36).
+  CHECK(o.treats[0][0].hp == 170); // 250 - 7 - 7 - 30 - 36
+  CHECK(LogHas("{\"side\":1,\"slot\":0,\"kind\":\"counter\",\"move\":8,\"target\":0,"
+               "\"via\":255,\"clash\":\"neu\",\"dmg\":7,"));
+  CHECK(LogHas("{\"side\":1,\"slot\":1,\"kind\":\"counter\",\"move\":21,\"target\":0,"
+               "\"via\":255,\"clash\":\"neu\",\"dmg\":7,"));
+}
+
+// Case E — the one move that can cash TWO KILLS in a round: both low-hp enemies fall to
+// the same spray.
+ApplyVec MakeVec_AoeKillsTwo() {
+  ApplyVec v{};
+  v.name = "aoe_kills_two_at_once";
+  duel::DuelState s = MakeState(3, 1);
+  const uint8_t mA[] = {kAoeMove}, cA[] = {0};
+  const uint8_t mH[] = {24}, cH[] = {0};
+  SetTreat(s, 0, 0, 250, 250, 3, 6, 1, mA, cA);
+  SetTreat(s, 0, 1, 250, 250, 3, 6, 1, mH, cH);
+  SetTreat(s, 0, 2, 250, 250, 3, 6, 1, mH, cH);
+  SetTreat(s, 1, 0, 20, 250, 3, 6, 1, mH, cH);  // dies to the 30-point splash
+  SetTreat(s, 1, 1, 20, 250, 3, 6, 1, mH, cH);  // ...and so does this one
+  SetTreat(s, 1, 2, 250, 250, 3, 6, 1, mH, cH);
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdInit(v.ord);
+  OrdSet(v.ord, 3, 0, 0, 0, duel::wire::kTargetAll);
+  OrdSet(v.ord, 3, 0, 1, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  OrdSet(v.ord, 3, 0, 2, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  OrdSet(v.ord, 3, 1, 0, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  OrdSet(v.ord, 3, 1, 1, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  OrdSet(v.ord, 3, 1, 2, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  v.ordLen = duel::wire::OrdersLen(3);
+  return v;
+}
+
+void test_apply_aoe_kills_two_at_once() {
+  ApplyVec v = MakeVec_AoeKillsTwo();
+  CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
+  duel::DuelState o{};
+  CHECK(DecodeOut(&o));
+  CHECK(o.treats[1][0].hp == 0);   // 20 - 30
+  CHECK(o.treats[1][1].hp == 0);   // 20 - 30
+  CHECK(o.treats[1][2].hp == 220); // 250 - 30
+  CHECK(LogCount("\"ko\":true") == 2); // TWO kills, one swing
+  CHECK(o.phase == duel::wire::kPhaseActive); // ...but slot 2 still stands
+}
+
+// Case F — every enemy is already dead when the spray resolves (an earlier actor in the
+// SAME round felled the last one): the AoE WHIFFS as exactly ONE "skip" entry, and still
+// burns its cooldown.
+ApplyVec MakeVec_AoeAllDeadWhiffs() {
+  ApplyVec v{};
+  v.name = "aoe_all_dead_whiffs";
+  duel::DuelState s = MakeState(2, 1);
+  const uint8_t mA[] = {kAoeMove}, cA[] = {0}; // speed 69 -- acts SECOND
+  const uint8_t mS[] = {10}, cS[] = {0};       // Super Sugary Rush, speed 97 -- acts FIRST
+  const uint8_t mH[] = {24}, cH[] = {0};
+  SetTreat(s, 0, 0, 250, 250, 3, 6, 1, mA, cA);
+  SetTreat(s, 0, 1, 250, 250, 4, 10, 1, mS, cS);
+  SetTreat(s, 1, 0, 0, 110, 1, 1, 1, mH, cH); // already KO'd
+  SetTreat(s, 1, 1, 1, 110, 1, 1, 1, mH, cH); // 1 hp: the Speedy fells the LAST living enemy
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdInit(v.ord);
+  OrdSet(v.ord, 2, 0, 0, 0, duel::wire::kTargetAll);
+  OrdSet(v.ord, 2, 0, 1, 0, 1);
+  OrdSet(v.ord, 2, 1, 0, duel::wire::kActionRecover, duel::wire::kTargetNone); // KO'd: canonical
+  OrdSet(v.ord, 2, 1, 1, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  v.ordLen = duel::wire::OrdersLen(2);
+  return v;
+}
+
+void test_apply_aoe_whiffs_when_every_enemy_is_dead() {
+  ApplyVec v = MakeVec_AoeAllDeadWhiffs();
+  CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
+  duel::DuelState o{};
+  CHECK(DecodeOut(&o));
+  CHECK(LogCount("\"kind\":\"aoe\"") == 0); // nothing to splash
+  CHECK(LogHas("{\"side\":0,\"slot\":0,\"kind\":\"skip\",\"move\":34,\"target\":255,"
+               "\"via\":255,\"clash\":\"neu\",\"dmg\":0,\"blocked\":false,"
+               "\"absorbed\":0,\"targetHp\":0,\"ko\":false}"));
+  CHECK(o.treats[0][0].cooldowns[0] == 3); // the whiff still burns the move
+  CHECK(o.phase == duel::wire::kPhaseSide0Won);
+}
+
+// Case G — a COUNTER that FELLS THE CASTER mid-spray STOPS IT. KO is permanent and a dead
+// treat takes no further part in the round (the same rule that stops a dead guardian
+// intercepting), so the enemies later in slot order are never splashed. It is the sharpest
+// edge of "Counter beats AoE": a counter-stance on the FIRST slot can shield the rest of
+// the team from a spray outright.
+ApplyVec MakeVec_AoeCasterFelledMidSpray() {
+  ApplyVec v{};
+  v.name = "aoe_caster_felled_mid_spray";
+  duel::DuelState s = MakeState(3, 1);
+  const uint8_t mA[] = {kAoeMove}, cA[] = {0};
+  const uint8_t mC[] = {8}, cC[] = {0}; // Berry Bounce (counter)
+  const uint8_t mH[] = {24}, cH[] = {0};
+  SetTreat(s, 0, 0, 5, 250, 3, 6, 1, mA, cA); // 5 hp: the first reflect (7) fells it
+  SetTreat(s, 0, 1, 250, 250, 3, 6, 1, mH, cH);
+  SetTreat(s, 0, 2, 250, 250, 3, 6, 1, mH, cH);
+  SetTreat(s, 1, 0, 250, 250, 3, 6, 1, mC, cC); // the counter-stance, in SLOT 0
+  SetTreat(s, 1, 1, 250, 250, 3, 6, 1, mH, cH);
+  SetTreat(s, 1, 2, 250, 250, 3, 6, 1, mH, cH);
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdInit(v.ord);
+  OrdSet(v.ord, 3, 0, 0, 0, duel::wire::kTargetAll);
+  OrdSet(v.ord, 3, 0, 1, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  OrdSet(v.ord, 3, 0, 2, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  OrdSet(v.ord, 3, 1, 0, 0, 0);
+  OrdSet(v.ord, 3, 1, 1, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  OrdSet(v.ord, 3, 1, 2, duel::wire::kActionRecover, duel::wire::kTargetNone);
+  v.ordLen = duel::wire::OrdersLen(3);
+  return v;
+}
+
+void test_apply_aoe_caster_felled_mid_spray_stops() {
+  ApplyVec v = MakeVec_AoeCasterFelledMidSpray();
+  CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
+  duel::DuelState o{};
+  CHECK(DecodeOut(&o));
+  CHECK(o.treats[0][0].hp == 0);   // felled by slot 0's reflect (5 hp - 7)
+  CHECK(o.treats[1][0].hp == 230); // it still ate its own splash (dis 20)
+  CHECK(o.treats[1][1].hp == 250); // ...and the spray STOPPED with the caster
+  CHECK(o.treats[1][2].hp == 250);
+  CHECK(LogCount("\"kind\":\"aoe\"") == 1);
+  CHECK(LogCount("\"kind\":\"counter\"") == 1);
+  CHECK(LogHas("\"kind\":\"counter\",\"move\":8,\"target\":0,\"via\":255,\"clash\":\"neu\","
+               "\"dmg\":7,\"blocked\":false,\"absorbed\":0,\"targetHp\":0,\"ko\":true}"));
+  // ...and the counter-stance's own swing then finds a corpse and whiffs.
+  CHECK(LogHas("{\"side\":1,\"slot\":0,\"kind\":\"skip\""));
+  CHECK(o.phase == duel::wire::kPhaseActive); // side 0 still has slots 1 and 2
+}
+
+// --- Validation: CANONICAL ORDERS (one logical order, exactly one byte encoding) ---
+//
+// An AoE REQUIRES target == kTargetAll (0xFE); a non-AoE must NEVER use it. Both
+// directions reject: accepting an AoE "aimed" at a slot and then ignoring the byte would
+// give one logical order many encodings, and game channels SIGN order bytes.
+ApplyVec MakeVec_AoeBadTarget(const char* name, uint8_t action, uint8_t target) {
+  ApplyVec v{};
+  v.name = name;
+  duel::DuelState s = MakeState(3, 2);
+  const uint8_t mA[] = {kAoeMove, 24}, cA[] = {0, 0}; // loadout: [0] the AoE, [1] a plain Heavy
+  const uint8_t mH[] = {24, 25}, cH[] = {0, 0};
+  SetTreat(s, 0, 0, 250, 250, 3, 6, 2, mA, cA);
+  SetTreat(s, 0, 1, 250, 250, 3, 6, 2, mH, cH);
+  SetTreat(s, 0, 2, 250, 250, 3, 6, 2, mH, cH);
+  for (int slot = 0; slot < 3; ++slot) SetTreat(s, 1, slot, 250, 250, 3, 6, 2, mH, cH);
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdRecoverAll(v.ord, 3);
+  OrdSet(v.ord, 3, 0, 0, action, target);
+  v.ordLen = duel::wire::OrdersLen(3);
+  return v;
+}
+
+// An AoE aimed at a SLOT -> reject (not "accepted, byte ignored").
+ApplyVec MakeVec_AoeRejectSlotTarget() {
+  return MakeVec_AoeBadTarget("aoe_reject_slot_target", 0, 0);
+}
+// An AoE with the Recover sentinel (0xFF) -> reject.
+ApplyVec MakeVec_AoeRejectTargetNone() {
+  return MakeVec_AoeBadTarget("aoe_reject_target_none", 0, duel::wire::kTargetNone);
+}
+// A NON-AoE (loadout slot 1, a plain Heavy) using kTargetAll -> reject.
+ApplyVec MakeVec_NonAoeRejectTargetAll() {
+  return MakeVec_AoeBadTarget("non_aoe_reject_target_all", 1, duel::wire::kTargetAll);
+}
+// ...and the accept control: the SAME state with the canonical AoE order resolves.
+ApplyVec MakeVec_AoeCanonicalTargetAccepts() {
+  return MakeVec_AoeBadTarget("aoe_canonical_target_accepts", 0, duel::wire::kTargetAll);
+}
+
+void test_apply_aoe_target_byte_is_canonical() {
+  ApplyVec slotTgt = MakeVec_AoeRejectSlotTarget();
+  CHECK(duel_apply(slotTgt.st, slotTgt.stLen, slotTgt.ord, slotTgt.ordLen) == -1);
+  CHECK(duel_out_len() == 0);
+  CHECK(duel_log_len() == 0);
+
+  ApplyVec noneTgt = MakeVec_AoeRejectTargetNone();
+  CHECK(duel_apply(noneTgt.st, noneTgt.stLen, noneTgt.ord, noneTgt.ordLen) == -1);
+  CHECK(duel_out_len() == 0);
+
+  ApplyVec nonAoe = MakeVec_NonAoeRejectTargetAll();
+  CHECK(duel_apply(nonAoe.st, nonAoe.stLen, nonAoe.ord, nonAoe.ordLen) == -1);
+  CHECK(duel_out_len() == 0);
+
+  // The accept control: without it, "always reject" would pass the three above.
+  ApplyVec ok = MakeVec_AoeCanonicalTargetAccepts();
+  CHECK(duel_apply(ok.st, ok.stLen, ok.ord, ok.ordLen) == 0);
+  CHECK(LogCount("\"kind\":\"aoe\"") == 3);
+}
+
 // ---- Task 4 Step 3: self-play soak + fuzz (test-side PRNG only) ----
 
 uint32_t g_rng = 0x1234567u;
@@ -2651,6 +3074,13 @@ void test_selfplay_soak() {
               continue;
             }
             OrdSet(ord, teamSize, side, slot, a, allies[XrN(nAllies)]);
+            continue;
+          }
+          // An AOE (combat-depth Task 5) names NOBODY: its target byte MUST be
+          // kTargetAll, and a slot index there is a hard reject. (It needs no living
+          // enemy to be a LEGAL order -- with none left it simply whiffs.)
+          if (duel::kDuelMoves[t.moves[a]].effect == duel::kEffAoe) {
+            OrdSet(ord, teamSize, side, slot, a, duel::wire::kTargetAll);
             continue;
           }
           OrdSet(ord, teamSize, side, slot, a,
@@ -2862,6 +3292,18 @@ void DumpGolden() {
   DumpApplyVector(MakeVec_CounterReflectKos());
   DumpApplyVector(MakeVec_CounterKilledDoesNotReflect());
   DumpApplyVector(MakeVec_SuddenDeathIgnoresGuardShield());
+  // combat-depth Task 5: AoE.
+  DumpApplyVector(MakeVec_AoePerVictimClash());
+  DumpApplyVector(MakeVec_AoeBlockAndShieldPerVictim());
+  DumpApplyVector(MakeVec_AoeIgnoresGuard());
+  DumpApplyVector(MakeVec_AoeCounteredPerVictim());
+  DumpApplyVector(MakeVec_AoeKillsTwo());
+  DumpApplyVector(MakeVec_AoeAllDeadWhiffs());
+  DumpApplyVector(MakeVec_AoeCasterFelledMidSpray());
+  DumpApplyVector(MakeVec_AoeRejectSlotTarget());
+  DumpApplyVector(MakeVec_AoeRejectTargetNone());
+  DumpApplyVector(MakeVec_NonAoeRejectTargetAll());
+  DumpApplyVector(MakeVec_AoeCanonicalTargetAccepts());
 }
 
 } // namespace
@@ -2928,6 +3370,14 @@ int main(int argc, char** argv) {
   RUN(test_apply_counter_reflect_can_ko);
   RUN(test_apply_counter_killed_does_not_reflect);
   RUN(test_apply_sudden_death_ignores_guard_and_shield);
+  RUN(test_apply_aoe_hits_every_living_enemy_per_victim_clash);
+  RUN(test_apply_aoe_block_and_shield_per_victim);
+  RUN(test_apply_aoe_ignores_guard);
+  RUN(test_apply_aoe_triggers_counter_per_victim);
+  RUN(test_apply_aoe_kills_two_at_once);
+  RUN(test_apply_aoe_whiffs_when_every_enemy_is_dead);
+  RUN(test_apply_aoe_caster_felled_mid_spray_stops);
+  RUN(test_apply_aoe_target_byte_is_canonical);
   RUN(test_selfplay_soak);
   RUN(test_fuzz_no_crash);
 
