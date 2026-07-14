@@ -22,9 +22,14 @@
 // of the 256 values is a valid, round-tripping encoding (v2, combat-depth
 // Task 1). It does NOT
 // enforce game-semantic invariants (e.g. hp <= max_hp, cooldown <= a move's
-// authored cooldown) — those are Task 4's resolve-time concern, not a wire-
-// format constraint; a structurally valid state with an out-of-range hp
-// value only matters once real resolve logic reads it.
+// authored cooldown, uses_left <= that move's max_uses) — those are Task 4's
+// resolve-time concern, not a wire-format constraint; a structurally valid
+// state with an out-of-range hp/cooldown/uses_left value only matters once
+// real resolve logic reads it. This is deliberate, not an oversight: a
+// state's validity must never depend on the mutable stat table (power,
+// cooldown, max_uses), or a future retune (a new gen-stats.mjs run) would
+// retroactively brick validly-countersigned in-flight duels whose
+// already-signed states no longer decode under the new table.
 
 #pragma once
 

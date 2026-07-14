@@ -3294,6 +3294,54 @@ void test_apply_siphon_heals_off_drained() {
                "\"absorbed\":0,\"targetHp\":118,\"ko\":false}"));
 }
 
+// *** THE OVERKILL-DRAIN PIN. *** LandBlow's `drained` is `fatal ? rcv.hp : toHp` -- a
+// siphon into a victim who does NOT have `toHp` hp left to give drains only what was there,
+// never the blow's full force. This is the SAME shape of hole as `drained` vs `landed`
+// above: every other siphon vector in this file lands on a victim with room to spare, so
+// `const uint32_t drained = toHp;` (the blow's full force, ignoring how much hp the victim
+// actually had) passes every one of them, sanitizers AND native-vs-wasm parity while
+// silently deleting this rule -- a future refactor collapsing the ternary would give every
+// FINISHING siphon a ~6x lifesteal swing, in signed channel state.
+//
+// Same clash as siphon_drains (Tricky beats Heavy -> adv 384 -> landed = (24*384)>>8 = 36),
+// but the victim has only 5 hp: fatal, so `drained` = 5 (not 36) -> heal = (5*128)>>8 = 2.
+// The victim dies to the blow before its own (slower, speed 27) turn comes round, so it
+// never swings back either -- the attacker's final hp is 100 + 2 = 102, not the 118 the
+// inverted rule would give (100 + ((36*128)>>8) = 118, siphon_drains' own number).
+ApplyVec MakeVec_SiphonOverkillDrainsOnlyWhatWasThere() {
+  ApplyVec v{};
+  v.name = "siphon_overkill_drains_only_what_was_there";
+  duel::DuelState s = MakeState(1, 1);
+  const uint8_t mS[] = {6}, cS[] = {0};  // Pucker Sucker (siphon 24), speed 57
+  const uint8_t mH[] = {24}, cH[] = {0}; // Pop Rock Pop (Heavy 26), speed 27
+  SetTreat(s, 0, 0, 100, 250, 3, 6, 1, mS, cS);
+  SetTreat(s, 1, 0, 5, 250, 3, 6, 1, mH, cH); // 5 hp: the 36-force blow overkills it
+  v.stLen = duel::encode_state(s, v.st, sizeof(v.st));
+  OrdInit(v.ord);
+  OrdSet(v.ord, 1, 0, 0, 0, 0);
+  OrdSet(v.ord, 1, 1, 0, 0, 0);
+  v.ordLen = duel::wire::OrdersLen(1);
+  return v;
+}
+
+void test_apply_siphon_overkill_drains_only_what_was_there() {
+  ApplyVec v = MakeVec_SiphonOverkillDrainsOnlyWhatWasThere();
+  CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
+  duel::DuelState o{};
+  CHECK(DecodeOut(&o));
+  CHECK(o.treats[1][0].hp == 0); // overkilled: the 36-force blow only had 5 hp to take
+  // 100 + 2 (siphoned off the 5 it ACTUALLY drained, not the 36 that landed); the victim
+  // is dead before its own slower turn, so no counter-swing lands back either.
+  CHECK(o.treats[0][0].hp == 102);
+  CHECK(LogHas("{\"side\":0,\"slot\":0,\"kind\":\"hit\",\"move\":6,\"target\":0,"
+               "\"via\":255,\"clash\":\"adv\",\"dmg\":36,\"blocked\":false,"
+               "\"absorbed\":0,\"targetHp\":0,\"ko\":true}"));
+  CHECK(LogHas("{\"side\":0,\"slot\":0,\"kind\":\"heal\",\"move\":6,\"target\":0,"
+               "\"via\":255,\"clash\":\"neu\",\"dmg\":2,\"blocked\":false,"
+               "\"absorbed\":0,\"targetHp\":102,\"ko\":false}")); // NOT 18 (the toHp answer)
+  CHECK(o.phase == duel::wire::kPhaseSide0Won);
+}
+
 // A BLOCKED siphon drains LESS, so it heals less: adv 384 then block (surviving 102) ->
 // landed = (24*384*102)>>16 = 14, drained 14 -> heal = (14*128)>>8 = 7 (not 18).
 ApplyVec MakeVec_SiphonBlockedHealsLess() {
@@ -4139,6 +4187,7 @@ void DumpGolden() {
   DumpApplyVector(MakeVec_GroupHeal());
   DumpApplyVector(MakeVec_GroupHealRejectSlotTarget());
   DumpApplyVector(MakeVec_SiphonDrains());
+  DumpApplyVector(MakeVec_SiphonOverkillDrainsOnlyWhatWasThere());
   DumpApplyVector(MakeVec_SiphonBlockedHealsLess());
   DumpApplyVector(MakeVec_SiphonFullyShieldedHealsNothing());
   DumpApplyVector(MakeVec_SiphonFizzledHealsNothing());
@@ -4236,6 +4285,7 @@ int main(int argc, char** argv) {
   RUN(test_apply_group_heal);
   RUN(test_apply_group_heal_requires_target_all);
   RUN(test_apply_siphon_heals_off_drained);
+  RUN(test_apply_siphon_overkill_drains_only_what_was_there);
   RUN(test_apply_siphon_blocked_heals_less);
   RUN(test_apply_siphon_fully_shielded_heals_nothing);
   RUN(test_apply_siphon_fizzled_heals_nothing);
