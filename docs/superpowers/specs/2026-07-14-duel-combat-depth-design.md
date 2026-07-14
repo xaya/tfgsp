@@ -97,6 +97,56 @@ short cooldowns makes them the consistent DPS baseline).
   of *that* read.
 - **Counter** — attackers who damage me this round take a fraction back.
 
+## Limited-use ultimates (replaces action points) — owner-decided
+
+Owner floated Axie-style **action points**, then landed on the better idea: *"maybe dont need action
+points, or some abilities can only use once if very powerful. or twice or something."* **Adopted.**
+
+- A move gains a compile-time `max_uses` (0 = unlimited, the default). A signature q4 move gets
+  **1–2 uses per duel, full stop.**
+- Delivers the same tension as an energy economy ("can I afford this *now*?") and makes a signature
+  move feel genuinely special — at a fraction of the cost. **Rejected action points** because
+  cooldowns already ration per-treat, energy is a *second* overlapping economy, it needs a
+  cross-treat budget rule (ugly in a blind simultaneous pick), and — decisively — **it does not fix
+  focus-fire**: you would still focus one enemy, just on a budget. The research ranked an energy
+  economy LAST on leverage-per-complexity.
+- **State cost:** `u8 uses_left[loadout_size]` per treat (+4 bytes at L=4). Include it in the ONE
+  wire bump. Also **reserve a byte for a future team energy pool** — costs nothing now, and keeps
+  action points a pure engine change later instead of a breaking format change *after channels
+  freeze the layout*.
+
+## Crits, double-attacks and misses — EARNED, never rolled
+
+Owner: *"maybe we need things like rare double attacks, or some treats have +% to double attacks? or
+crits… and maybe sometimes you should miss"* — and, in the same breath, *"needs all be
+deterministic etc."* Those two pull against each other. **Resolution: keep the drama, drop the dice.**
+
+RNG would actively destroy the thing we are building. The whole point of this rework is to add
+**skill**; dice launder skill away and merely relabel the grievance — from *"there's no skill"* to
+*"I lost to a crit."* It is also genuinely expensive: real randomness in a game channel needs a
+commit-reveal protocol (extra signed messages + new dispute paths), and a naive seed is grindable.
+
+So every one of those sensations ships — **caused by a player, not by a die**:
+
+| Owner's ask | Deterministic implementation |
+|---|---|
+| **Crit** | **You won the clash read.** Already in the engine (advantage multiplier). Just *sell* it: big gold number, crit sting, camera punch. A crit means you out-read them. |
+| **Miss** | **Someone made you miss.** The `Tripper` stun (miss a go) and `Float Like a Butter Cream` (evade → the next incoming attack whiffs). Also fizzle-on-death: you swung at a corpse. |
+| **Double attack** | **A move property, not a proc.** A rare Speedy move simply strikes twice (`hits: 2` in the move table — a compile-time field, zero wire cost). |
+
+If the owner later insists on true randomness, it IS feasible — seed from BOTH sides' blind-committed
+orders (neither can grind what they cannot see) — but it costs commit-reveal in the channel phase.
+**Not now.**
+
+## Block must be worth taking
+
+Owner: *"what's the point doing block, unless blocks all i guess."* **Correct — this is a live bug.**
+Block is a feeble −40% that protects only the blocker, which is why nobody picks it and why **four
+q4 Blocking moves are currently strictly worse than q1 ones**. Fix: raise the block value, and give
+the Blocking corner real jobs — **Guard** (intercept a hit aimed at an ally), **Shield** (absorb a
+flat chunk), **Counter** (reflect). A dead corner also means the pentagon is really a 4-way, so
+every clash read is noisier than it should be.
+
 ## Wave 3 — status effects (the only ones that cost state)
 
 **Stun / "miss a go"** (owner's ask), **poison (DoT)**, **slow/haste**, **attack-down**.
@@ -162,6 +212,19 @@ splash** · `Float Like a Butter Cream` → self-shield/evade · `Come Over Here
 **counter** · `Tarnising Knee Drop` → **attack-down (tarnish)** · `Heavy Gumdrop Kick` → **team
 shield** · `Super Sugary Rush` → **team haste / group heal** · `Quicksilver Slice` → **always acts
 first** · `Silver Knuckles` → huge single-target execute.
+
+## Staging the action (3D) — owner's ask
+
+*"if attacking i wonder if the treat should walk over to the one it's attacking and do the move
+there… if healing or whatever then turn to face whomever is getting healed."* **Yes — this is what
+sells the combat.** Frontend-only (`src/render/DuelStage.tsx`), zero engine impact:
+
+- **Attacker walks to its target**, plays its move animation *there*, then returns to its slot.
+- **Healer/guardian turns to face the ally** it is helping.
+- **Distance moves stay put** — the projectile already flies (that's their whole identity).
+- **AoE** strides to the centre of the enemy line and sweeps.
+All of it is driven off the existing `TimelineStep` seam; the resolve order already gives us a
+one-actor-at-a-time stage, so nobody overlaps.
 
 ## Fairness model (for staking / capture)
 
