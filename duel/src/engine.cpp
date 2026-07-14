@@ -320,16 +320,24 @@ uint32_t encode_state(const DuelState& s, uint8_t* out, uint32_t cap) {
       out[base + wire::kStateTreatOffSweetness] = t.sweetness;
       out[base + wire::kStateTreatOffMoveCount] = t.move_count;
       out[base + wire::kStateTreatOffShield] = t.shield;
+      // Hard-zero on encode, regardless of what the struct holds: reserved is
+      // canonical-MUST-be-0 (decode_state rejects any non-zero byte here), so
+      // encode_state must never be able to emit a value it would itself
+      // reject -- correctness must not depend on every TreatState producer
+      // (decode paths today, but not statically enforced) having zeroed it.
       for (uint32_t k = 0; k < wire::kStateTreatReservedLen; ++k) {
-        out[base + wire::kStateTreatOffReserved + k] = t.reserved[k];
+        out[base + wire::kStateTreatOffReserved + k] = 0;
       }
       const uint32_t movesOff = base + wire::kStateTreatOffMoves;
       const uint32_t cdOff = base + wire::StateTreatOffCooldowns(loadoutSize);
       const uint32_t ulOff = base + wire::StateTreatOffUsesLeft(loadoutSize);
       for (uint32_t j = 0; j < loadoutSize; ++j) {
         out[movesOff + j] = t.moves[j];
-        out[cdOff + j] = t.cooldowns[j];
-        out[ulOff + j] = t.uses_left[j];
+        // Same hard-zero rule for filler cooldown/uses_left slots (index >=
+        // move_count): canonical-MUST-be-0, so encode never trusts the
+        // struct to already hold 0 there.
+        out[cdOff + j] = (j < t.move_count) ? t.cooldowns[j] : 0;
+        out[ulOff + j] = (j < t.move_count) ? t.uses_left[j] : 0;
       }
     }
   }

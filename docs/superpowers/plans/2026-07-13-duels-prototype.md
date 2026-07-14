@@ -22,30 +22,42 @@
 
 ## Wire formats (contract for Tasks 1–7)
 
-All integers little-endian. Dense move index = position of the move's AuthoredId in the ASCII-sorted list of all 39 GUIDs from `proto/roconfig/fightermoveblueprint.pb.text`. Canonical encoding: every `reserved`/`pad` field below MUST be 0 and decoders MUST reject non-zero values (these buffers get hashed/signed in game channels — exactly one byte encoding per logical state, no malleability).
+> **v2 (2026-07-14):** the state format below was bumped `version=1 → 2` by
+> `docs/superpowers/plans/2026-07-14-duel-combat-depth.md` Task 1 — the only task ever allowed to
+> touch this layout, because once game channels sign state bytes it is frozen forever. It added a
+> per-treat `shield` byte, 4 reserved status bytes, and a parallel `uses_left[]` array so every byte
+> later combat-depth tasks will ever need was reserved up front. Config and orders are UNCHANGED.
+> This section describes v2; see that plan's Task 1 for the byte-for-byte diff against v1.
+
+All integers little-endian. Dense move index = position of the move's AuthoredId in the ASCII-sorted list of all 39 GUIDs from `proto/roconfig/fightermoveblueprint.pb.text`. Canonical encoding: every `reserved`/`pad` field below MUST be 0 and decoders MUST reject non-zero values (these buffers get hashed/signed in game channels — exactly one byte encoding per logical state, no malleability). The v2 `shield` and `uses_left` fields are the deliberate exception: they are **free bytes** (every value round-trips) — filler `uses_left` slots (index >= move_count) are the exception-to-the-exception and stay canonical-MUST-be-0, same rule as filler `cooldowns`.
 
 **Config (input to `duel_init`)** — `CFG_LEN = 4 + 2*team_size*(3+loadout_size)` (46 for 3v3/4):
 ```
-u8 version=1 | u8 team_size (1..5) | u8 loadout_size (1..4) | u8 reserved=0 (reject non-zero)
+u8 version=2 | u8 team_size (1..5) | u8 loadout_size (1..4) | u8 reserved=0 (reject non-zero)
 per side s in 0,1: per slot t in 0..team_size-1:
   u8 quality (1..4) | u8 sweetness (1..10) | u8 move_count (1..loadout_size)
   u8 moves[loadout_size]   // dense indices, strictly: entries >= move_count MUST be 0xFF,
                            // entries < move_count MUST be < 39 and unique within the treat
 ```
 
-**State (output of `duel_init`/`duel_apply`)** — `STATE_LEN = 8 + 2*team_size*(8+2*loadout_size)` (104 for 3v3/4):
+**State (output of `duel_init`/`duel_apply`)** — `StateTreatLen(L) = 12 + 3*L`, `STATE_LEN = 8 + 2*team_size*StateTreatLen(loadout_size)` (152 for 3v3/4, was 104 in v1):
 ```
-u8 version=1 | u8 team_size | u8 loadout_size | u8 phase (0 active,1 side0 won,2 side1 won,3 draw)
-u16 round (starts 0) | u16 reserved=0 (reject non-zero)
+u8 version=2 | u8 team_size | u8 loadout_size | u8 phase (0 active,1 side0 won,2 side1 won,3 draw)
+u16 round (starts 0) | u16 reserved=0 (reject non-zero -- the future team energy/action-point pool)
 per side, per slot:
-  u16 hp | u16 max_hp | u8 quality | u8 sweetness | u8 move_count | u8 pad=0 (reject non-zero)
+  u16 hp | u16 max_hp | u8 quality | u8 sweetness | u8 move_count
+  u8 shield                 // v2: absorb-pool byte, free (0..255, any value decodes)
+  u8 reserved[4]             // v2: MUST be 0 -- future stun/dot/atk_mod/spd_mod, 4 INDEPENDENT
+                             // reject cases (a non-zero byte at any of the 4 positions rejects)
   u8 moves[loadout_size] | u8 cooldowns[loadout_size]  // rounds until usable, 0=ready;
                            // filler slots (>= move_count) MUST be 0 (reject non-zero)
+  u8 uses_left[loadout_size] // v2: limited-use ultimates; 255 = unlimited; a REAL slot's byte is
+                             // free (any value decodes); filler slots (>= move_count) MUST be 0
 ```
 
-**Round orders (input to `duel_apply`)** — `ORDERS_LEN = 1 + 2*team_size*2` (13 for 3v3):
+**Round orders (input to `duel_apply`)** — `ORDERS_LEN = 1 + 2*team_size*2` (13 for 3v3, UNCHANGED by v2):
 ```
-u8 version=1
+u8 version=2
 per side, per slot:
   u8 action  // loadout index (< move_count, cooldown must be 0) or 0xFE = Recover
   u8 target  // enemy slot 0..team_size-1 for a move; MUST be 0xFF for Recover

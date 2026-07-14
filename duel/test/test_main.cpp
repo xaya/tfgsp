@@ -185,6 +185,13 @@ constexpr uint32_t kBaselineCfgLen =
 constexpr uint32_t kBaselineStateLen =
     duel::wire::StateLen(kBaselineTeamSize, kBaselineLoadoutSize); // 152
 
+// The largest a state buffer can ever be (team_size=5, loadout_size=4) --
+// scratch buffers below size off THIS, never a magic literal, so a future
+// wire grow (more loadout slots, bigger team cap) fails loud at compile time
+// instead of silently overflowing a stack array a sanitizer has to catch.
+constexpr uint32_t kMaxStateLen =
+    duel::wire::StateLen(duel::wire::kMaxTeamSize, duel::wire::kMaxLoadoutSize); // 248
+
 // The plan's Task 3 vector: six treats spanning q1sw1 (3 moves) .. q4sw10
 // (4 moves). Byte layout follows wire.h's CFG_* offsets exactly (header 4
 // bytes, then 6 treats of quality|sweetness|move_count|moves[4]).
@@ -777,7 +784,7 @@ void test_jsonout_i32_min() {
 // DumpGolden() both call it.
 struct ApplyVec {
   const char* name;
-  uint8_t st[200];
+  uint8_t st[kMaxStateLen];
   uint32_t stLen;
   uint8_t ord[32];
   uint32_t ordLen;
@@ -1490,7 +1497,7 @@ void test_apply_round_cap() {
     const uint8_t m[] = {24}, c[] = {0};
     SetTreat(s, 0, 0, 200, 200, 1, 1, 1, m, c);
     SetTreat(s, 1, 0, 100, 100, 1, 1, 1, m, c);
-    uint8_t st[200];
+    uint8_t st[kMaxStateLen];
     uint32_t stLen = duel::encode_state(s, st, sizeof(st));
     uint8_t ord[32];
     OrdRecoverAll(ord, 1);
@@ -1514,7 +1521,7 @@ void test_apply_round_cap() {
     const uint8_t m[] = {24}, c[] = {0};
     SetTreat(s, 0, 0, 150, 150, 1, 1, 1, m, c);
     SetTreat(s, 1, 0, 150, 150, 1, 1, 1, m, c);
-    uint8_t st[200];
+    uint8_t st[kMaxStateLen];
     uint32_t stLen = duel::encode_state(s, st, sizeof(st));
     uint8_t ord[32];
     OrdRecoverAll(ord, 1);
@@ -1556,8 +1563,9 @@ ApplyVec MakeVec_Deterministic() {
 void test_apply_deterministic() {
   ApplyVec v = MakeVec_Deterministic();
   CHECK(duel_apply(v.st, v.stLen, v.ord, v.ordLen) == 0);
-  uint8_t outA[200];
+  uint8_t outA[kMaxStateLen];
   const uint32_t outALen = duel_out_len();
+  CHECK(outALen <= sizeof(outA));
   for (uint32_t i = 0; i < outALen; ++i) outA[i] = duel_out_ptr()[i];
   uint8_t logA[1024];
   const uint32_t logALen = duel_log_len();
@@ -1629,10 +1637,10 @@ void test_selfplay_soak() {
     CHECK(duel_init(cfg, cfgLen) == 0);
     // Formula-sized (not a magic 200): v2 grew StateTreatLen, so the old
     // literal 200 no longer covers the max team_size=5/loadout_size=4 shape
-    // (StateLen(5,4) == 248) that BuildRandomConfig can produce -- ASan
+    // (kMaxStateLen == 248) that BuildRandomConfig can produce -- ASan
     // caught this as a stack buffer overflow the plain (unsanitized) build
     // didn't.
-    uint8_t st[duel::wire::StateLen(duel::wire::kMaxTeamSize, duel::wire::kMaxLoadoutSize)];
+    uint8_t st[kMaxStateLen];
     uint32_t stLen = duel_out_len();
     const uint32_t constLen = stLen;
     for (uint32_t i = 0; i < stLen; ++i) st[i] = duel_out_ptr()[i];
@@ -1712,7 +1720,7 @@ void test_fuzz_no_crash() {
   const uint8_t mB[] = {24, 3}, cB[] = {0, 0};
   for (int slot = 0; slot < 3; ++slot) SetTreat(s, 0, slot, 250, 250, 4, 10, 2, mA, cA);
   for (int slot = 0; slot < 3; ++slot) SetTreat(s, 1, slot, 200, 200, 1, 1, 2, mB, cB);
-  uint8_t baseSt[200];
+  uint8_t baseSt[kMaxStateLen];
   const uint32_t baseStLen = duel::encode_state(s, baseSt, sizeof(baseSt));
   uint8_t baseOrd[32];
   OrdInit(baseOrd);
